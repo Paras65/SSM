@@ -101,13 +101,25 @@ export const Footer: React.FC = () => {
 
         </div>
 
-        {/* Bottom copyright */}
-        <div className="pt-6 flex flex-col sm:flex-row justify-between items-center text-xs text-stone-500 gap-3">
-          <p>© {new Date().getFullYear()} {publicSchool.hindiName}. सर्वाधिकार सुरक्षित।</p>
-          <p className="flex items-center gap-1">
-            <span>विद्या भारती अखिल भारतीय शिक्षा संस्थान के मार्गदर्शन में समर्पित</span>
-            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
-          </p>
+        {/* Developer Vision & Portfolio Credit */}
+        <div className="pt-6 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center text-xs text-stone-400 gap-4">
+          <div className="space-y-1 text-center md:text-left">
+            <p>© {new Date().getFullYear()} {publicSchool.hindiName}। • सॉफ्टवेयर कॉपीराइट: <span className="text-amber-300 font-bold">init65.co.in</span></p>
+            <p className="text-[11px] text-stone-500 max-w-xl">
+              सरस्वती शिशु मंदिर के भैया-बहिनों, आचार्यों एवं विद्यालय प्रबंधन की व्यावहारिक समस्याओं के समाधान हेतु समर्पित स्वतंत्र ईआरपी प्रणाली।
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-stone-400 text-xs font-medium">निर्माता एवं डेवलपर:</span>
+            <a
+              href="https://www.init65.co.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-orange-950/80 border border-orange-700/60 text-amber-300 hover:text-white hover:border-amber-400 font-mono font-bold text-xs transition shadow-xs flex items-center gap-1.5"
+            >
+              <span>🌐 init65.co.in</span>
+            </a>
+          </div>
         </div>
 
       </div>

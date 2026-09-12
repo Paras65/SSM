@@ -2,6 +2,12 @@
 
 This project is a school management application with a public landing page, admin dashboard, and student portal. The frontend is built with Vite + React + TypeScript, and the backend is an Express API connected to MongoDB.
 
+## 🌟 Developer Vision & Creator: init65.co.in
+
+> *"As a full-stack developer at init65.co.in, I built this school management ERP to solve the real, everyday challenges faced by Saraswati Shishu Mandir (SSM) schools, Acharyas (teachers), and students. By replacing tedious manual paperwork with intuitive digital tools, eliminating expensive SMS charges with zero-cost WhatsApp alerts, and honoring the timeless values of Vidya Bharati and Panchmukhi Shiksha, this platform empowers schools to become truly paperless, transparent, and digitally empowered."*
+
+- **Website / Portfolio**: [init65.co.in](https://www.init65.co.in)
+
 ## Stack
 
 - Frontend: React, TypeScript, Vite

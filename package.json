@@ -1,7 +1,18 @@
 {
-  "name": "ssm",
+  "name": "ssm-school-erp",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Saraswati Shishu Mandir (SSM) School ERP & Management System built by init65.co.in",
+  "author": "init65.co.in <https://www.init65.co.in>",
+  "homepage": "https://www.init65.co.in",
+  "license": "MIT",
+  "keywords": [
+    "school-erp",
+    "saraswati-shishu-mandir",
+    "vidya-bharati",
+    "education-management",
+    "init65"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",

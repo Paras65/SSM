@@ -5,32 +5,61 @@ export const LegalInformation: React.FC = () => {
   const { language, t } = useLanguage();
   const content = language === 'hi'
     ? {
-        privacy: 'यह मंच अभिभावक या अधिकृत संरक्षक द्वारा दी गई छात्र एवं संपर्क जानकारी केवल प्रवेश पूछताछ को चुनी गई शाखा तक भेजने और विद्यालय प्रबंधन सेवाएं देने के लिए एकत्र करता है। जानकारी उसी शाखा और उसके अधिकृत कर्मचारियों के साथ साझा की जाती है।',
-        rights: 'आप चुनी गई शाखा से अपने डेटा की जानकारी, सुधार, सहमति वापस लेने या कानून के अनुसार हटाने का अनुरोध कर सकते हैं। छात्र जानकारी का उपयोग विज्ञापन या अनावश्यक प्रोफाइलिंग के लिए नहीं किया जाता।',
-        terms: 'शाखा प्रशासक अपने विद्यालय के लिए दर्ज रिकॉर्ड की शुद्धता, वैध उपयोग, संरक्षण और अवधि के लिए जिम्मेदार हैं। प्रवेश विवरण और प्रमाण-पत्र साझा नहीं किए जाने चाहिए।',
-        review: 'यह सूचना प्रारूप है और उत्पादन उपयोग से पहले विद्यालय संगठन तथा योग्य कानूनी सलाहकार द्वारा अनुमोदित की जानी चाहिए।'
+        dpdpTitle: 'डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम (DPDPA 2023) अनुपालन',
+        privacy: 'यह सॉफ्टवेयर मंच (SSM ERP) भारतीय डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023 (DPDP Act, 2023) के प्रावधानों के अनुरूप संचालित होता है। छात्र-छात्राओं के व्यक्तिगत विवरण केवल अधिकृत अभिभावक अथवा संरक्षक की वैध सहमति से ही प्रवेश व विद्यालयी प्रबंधन सेवाओं हेतु एकत्र किए जाते हैं।',
+        rights: 'अभिभावकों को अपने बच्चे के डेटा तक पहुंच, उसमें संशोधन, सहमति वापस लेने अथवा कानूनी आवश्यकता समाप्त होने पर डेटा हटाने (Right to Erasure) का पूर्ण अधिकार है। छात्रों के डेटा का उपयोग किसी भी प्रकार के व्यावसायिक विज्ञापनों, ट्रैकिंग अथवा तृतीय-पक्ष प्रोफाइलिंग के लिए कदापि नहीं किया जाता।',
+        securityTitle: 'आईटी अधिनियम 2000 एवं सूचना सुरक्षा (IT Act 2000)',
+        security: 'सभी पासवर्ड एवं सत्र टोकन उद्योग-मानक एन्क्रिप्शन (JWT) द्वारा सुरक्षित हैं। अनुचित पहुंच की रोकथाम हेतु ऑडिट लॉग्स और सुरक्षा दर सीमाएं (Rate Limits) सक्रिय हैं।',
+        termsTitle: 'उपयोग की शर्तें एवं बौद्धिक संपदा (Terms of Use & IP)',
+        terms: 'यह सॉफ्टवेयर init65.co.in द्वारा स्वतंत्र रूप से निर्मित एवं संचालित है। प्रत्येक विद्यालय शाखा अपने द्वारा दर्ज छात्र एवं वित्तीय अभिलेखों की सत्यता हेतु उत्तरदायी है। विद्या भारती एवं सरस्वती शिशु मंदिर के नाम एवं ध्येय वाक्यों का उल्लेख केवल शैक्षणिक व सांस्कृतिक संदर्भ हेतु निष्पक्ष उपयोग (Fair Use) के तहत किया गया है।',
+        developerNote: 'सॉफ्टवेयर अधिकार © 2026 init65.co.in। सर्वाधिकार सुरक्षित।'
       }
     : {
-        privacy: 'This platform collects student and contact information submitted by a parent or authorised guardian only to route an admission enquiry to the selected branch and provide school-management services. Information is shared with that branch and its authorised staff.',
-        rights: 'You may request access, correction, withdrawal of consent, or deletion where legally permitted by contacting the selected branch. Student information is not used for advertising or unrelated profiling.',
-        terms: 'Branch administrators are responsible for the accuracy, lawful use, protection, and retention of records entered for their school. Credentials and admission details must not be shared.',
-        review: 'This is draft product wording and must be reviewed and approved by the school organisation and qualified legal counsel before production use.'
+        dpdpTitle: 'Digital Personal Data Protection Act (DPDPA 2023) Compliance',
+        privacy: 'This platform operates in strict compliance with the Indian Digital Personal Data Protection Act, 2023 (DPDPA 2023). Student personal data is processed strictly under verifiable parental or legal guardian consent for school administration and academic tracking.',
+        rights: 'Parents/guardians retain the statutory right to access, correct, withdraw consent, or request erasure of their children\'s records. Student data is never sold, used for commercial advertisements, or shared for third-party profiling.',
+        securityTitle: 'Information Technology Act (IT Act 2000) & Security Safeguards',
+        security: 'All authentication sessions are cryptographically signed with JWT tokens. Multi-tenant isolation and administrative audit logs are maintained to prevent unauthorized data access.',
+        termsTitle: 'Terms of Use & Intellectual Property (IP)',
+        terms: 'This software is independently engineered and owned by init65.co.in. Each school branch is solely responsible for the accuracy and lawful retention of records entered. Traditional educational terms associated with Vidya Bharati are referenced under fair use for educational context.',
+        developerNote: 'Software Copyright © 2026 init65.co.in. All rights reserved.'
       };
 
   return (
-    <section id="privacy" className="bg-stone-100 border-t border-stone-200 py-10 text-sm text-stone-700">
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      <div>
-        <h2 className="text-xl font-bold text-stone-900">{t('privacyNotice')}</h2>
-        <p className="mt-2 leading-relaxed">{content.privacy}</p>
-        <p className="mt-2 leading-relaxed">{content.rights}</p>
+    <section id="privacy" className="bg-stone-100 border-t border-stone-200 py-12 text-xs sm:text-sm text-stone-700">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
+            <span>🛡️</span>
+            <span>{content.dpdpTitle}</span>
+          </h2>
+          <p className="mt-2.5 leading-relaxed">{content.privacy}</p>
+          <p className="mt-2 leading-relaxed">{content.rights}</p>
+        </div>
+
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
+            <span>🔒</span>
+            <span>{content.securityTitle}</span>
+          </h2>
+          <p className="mt-2.5 leading-relaxed">{content.security}</p>
+        </div>
+
+        <div id="terms">
+          <h2 className="text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
+            <span>📜</span>
+            <span>{content.termsTitle}</span>
+          </h2>
+          <p className="mt-2.5 leading-relaxed">{content.terms}</p>
+        </div>
+
+        <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-center text-xs text-stone-500 gap-2">
+          <span>{content.developerNote}</span>
+          <a href="https://www.init65.co.in" target="_blank" rel="noopener noreferrer" className="text-orange-700 font-bold hover:underline">
+            init65.co.in
+          </a>
+        </div>
       </div>
-      <div id="terms">
-        <h2 className="text-xl font-bold text-stone-900">{t('termsOfUse')}</h2>
-        <p className="mt-2 leading-relaxed">{content.terms}</p>
-      </div>
-      <p className="text-xs text-stone-500">{content.review}</p>
-    </div>
-  </section>
+    </section>
   );
 };
