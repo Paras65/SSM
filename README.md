@@ -59,6 +59,7 @@ Comprehensive scalability testing, benchmarks, and architectural safeguards are 
 - **High Concurrency**: Tested to support 50 simultaneous parallel read requests with 100% success rate in under 280ms.
 - **Bulk Ingestion**: Supports batch inserting 200 student records in ~31ms.
 - **Automated Test Suite**: 28 automated unit, integration, security, and scalability tests running in ~2s (`npm test`).
+- **Multi-Device E2E Testing**: 24 automated Playwright browser tests across Desktop Chrome, Pixel 7, and iPhone 14 viewports (`npm run test:e2e`).
 
 ## Deploy to Vercel + Render
 

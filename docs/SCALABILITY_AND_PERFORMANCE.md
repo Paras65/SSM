@@ -143,3 +143,32 @@ npm run build
 npx oxlint
 ```
 *Analyzes 85+ source files in < 100ms.*
+
+### 4. Run End-to-End (E2E) Multi-Device Browser Tests
+```bash
+npm run test:e2e
+```
+*Executes all 24 Playwright automated browser tests across Desktop Chrome, Mobile Pixel 7, and Mobile iPhone 14 viewports (asserting zero horizontal overflow, 2-tier headers, and portal flows).*
+
+---
+
+## 📱 4. End-to-End (E2E) Multi-Device Browser Suite
+
+Using **Playwright**, the ERP features an automated browser testing matrix across 3 distinct viewport profiles:
+1. **Desktop Chrome** (1280x720)
+2. **Mobile Pixel 7** (412x915, mobile user-agent)
+3. **Mobile iPhone 14** (390x844, iOS viewport emulation)
+
+### Automated Test Specifications (`e2e/`)
+- **`e2e/mobile-viewport.spec.ts`**:
+  - Automatically asserts `document.documentElement.scrollWidth <= window.innerWidth` across the public landing page and the Admin Dashboard.
+  - Verifies that the mobile header cleanly renders the 2-tier structure with truncated Hindi titles without breaking line bounds.
+- **`e2e/auth-and-portals.spec.ts`**:
+  - Simulates Admin authentication with passcode dialogs.
+  - Tests Acharya (Teacher) portal modal opening and direct portal navigation.
+- **`e2e/admin-workflows.spec.ts`**:
+  - Tests seamless switching between Overview, Student Directory, and Fees management tabs.
+  - Validates dynamic full-text search filtering and interactive timetable rendering.
+
+**Test Matrix Results**: **24 passed in ~33s** (100% pass rate across all device configurations).
+
