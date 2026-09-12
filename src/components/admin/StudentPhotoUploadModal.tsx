@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Camera, Image, Check, Trash2 } from 'lucide-react';
+import { X, Upload, Camera, Image, Check, Trash2, Sparkles } from 'lucide-react';
 import type { Student } from '../../types';
+import { compressPassportPhoto, type CompressionResult } from '../../utils/imageCompressor';
 
 interface StudentPhotoUploadModalProps {
   student: Student;
@@ -15,23 +16,31 @@ export const StudentPhotoUploadModal: React.FC<StudentPhotoUploadModalProps> = (
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string>(student.photoUrl || '');
   const [saving, setSaving] = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [compressionStats, setCompressionStats] = useState<CompressionResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size limit (e.g. 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('कृपया 2MB से कम आकार की फोटो चुनें।');
+    // Check size limit (max 10MB input from phone camera)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('कृपया 10MB से कम आकार की फ़ाइल चुनें।');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      setCompressing(true);
+      // Automatically compress client-side to standard passport 300x380 (~20-30 KB)
+      const result = await compressPassportPhoto(file, 300, 380, 0.8);
+      setPreviewUrl(result.dataUrl);
+      setCompressionStats(result);
+    } catch (err: any) {
+      alert('फोटो कंप्रेस करने में त्रुटि: ' + (err.message || 'अमान्य फ़ाइल'));
+    } finally {
+      setCompressing(false);
+    }
   };
 
   const handleSave = async () => {
@@ -125,12 +134,22 @@ export const StudentPhotoUploadModal: React.FC<StudentPhotoUploadModalProps> = (
 
             <button
               type="button"
+              disabled={compressing}
               onClick={() => fileInputRef.current?.click()}
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-saffron-50 hover:bg-saffron-100 text-saffron-800 border border-saffron-300 rounded-lg text-xs font-bold transition"
+              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-saffron-50 hover:bg-saffron-100 text-saffron-800 border border-saffron-300 rounded-lg text-xs font-bold transition disabled:opacity-50 cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5" />
-              डिवाइस से फोटो अपलोड करें
+              <span>{compressing ? 'कंप्रेस हो रही है...' : 'डिवाइस से फोटो अपलोड करें'}</span>
             </button>
+
+            {compressionStats && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-medium border border-emerald-200">
+                <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" />
+                <span>
+                  ऑप्टिमाइज्ड: <strong>{compressionStats.sizeInKb} KB</strong> ({compressionStats.originalSizeKb} KB से कंप्रेस — डेटाबेस सुरक्षित)
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-left text-xs text-amber-900 leading-relaxed">
