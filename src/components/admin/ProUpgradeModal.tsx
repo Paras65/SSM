@@ -95,10 +95,10 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/25 text-yellow-100 text-xs font-bold tracking-wide uppercase mb-1">
                 <Sparkles className="w-3.5 h-3.5" />
-                Vidya Bharati ERP Pro
+                Vidya Bharati ERP — Seva & Technical Support
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                प्रो संस्करण में अपग्रेड करें
+                तकनीकी सहयोग व प्रो ईआरपी (Technical Support & AMC)
               </h2>
               <p className="text-white/90 text-xs sm:text-sm mt-0.5">
                 शाखा: <span className="font-semibold text-yellow-100">{currentSchool?.hindiName || currentSchool?.name}</span>
@@ -125,7 +125,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
                 लॉक्ड फीचर: {featureName}
               </span>
               <p className="text-amber-700 dark:text-amber-300/80 text-[11px] sm:text-xs">
-                {featureDescription || 'यह सुविधा केवल विद्या भारती प्रो संस्करण (Pro Plan) में सक्रिय शाखाओं के लिए उपलब्ध है।'}
+                {featureDescription || 'यह सुविधा समर्पित सर्वर एवं तकनीकी सहयोग (AMC Support) में सक्रिय शाखाओं के लिए उपलब्ध है।'}
               </p>
             </div>
           </div>
@@ -144,7 +144,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              प्रो प्लान में मिलने वाली उन्नत सुविधाएं:
+              तकनीकी सहयोग के अंतर्गत मिलने वाली उन्नत सुविधाएं:
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {PRO_BENEFITS.map((item, idx) => (
@@ -172,14 +172,14 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
           <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border border-amber-300 dark:border-amber-600/40 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-bold mb-1">
-                विशेष संस्थागत छूट (Institutional Plan)
+                न्यूनतम तकनीकी अनुरक्षण सहयोग (AMC Support)
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-slate-900 dark:text-white">₹999</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">/ प्रति माह (असीमित छात्र व आचार्य)</span>
+                <span className="text-3xl font-black text-slate-900 dark:text-white">₹799</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">/ प्रति माह (अथवा ₹8,000 / वार्षिक न्यूनतम सहयोग)</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                बिना किसी सेटअप शुल्क के तुरंत सक्रियण। 1-क्लिक टेस्ट सक्रियण भी उपलब्ध है।
+                बिना किसी व्यावसायिक लाभ के, केवल समर्पित सर्वर, 360° NEP रिपोर्ट कार्ड व दैनिक बैकअप रखरखाव हेतु।
               </p>
             </div>
             <div className="shrink-0 w-full sm:w-auto">
@@ -189,11 +189,11 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
                   setError('');
                   setContactStep('contact');
                 }}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-75"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-75 cursor-pointer"
               >
                 <>
                   <ShieldCheck className="w-5 h-5 text-yellow-200" />
-                  Admin से संपर्क करें
+                  तकनीकी सहयोग डेस्क से संपर्क करें
                   <ArrowRight className="w-4 h-4" />
                 </>
               </button>
@@ -203,21 +203,21 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
           ) : (
             <div className="text-center space-y-5">
               <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">Pro Upgrade के लिए Admin से संपर्क करें</h3>
-                <p className="text-xs text-slate-500 mt-1">Admin भुगतान और शाखा सत्यापन के बाद Pro plan सक्रिय करेगा।</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">तकनीकी सहयोग (AMC) सक्रियण हेतु संपर्क करें</h3>
+                <p className="text-xs text-slate-500 mt-1">शाखा सत्यापन और समर्पित सर्वर आवंटन के बाद तकनीकी सहयोग प्रो सक्रिय किया जाएगा।</p>
               </div>
               <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-sm text-amber-950">
-                <p className="font-bold">Administrator contact</p>
+                <p className="font-bold">तकनीकी सहायता एवं सर्वर अनुरक्षण डेस्क</p>
                 <p className="font-mono mt-2 break-all">{upgradeContact}</p>
-                <p className="text-xs mt-3">शाखा का नाम और आवश्यक Pro features साझा करें।</p>
+                <p className="text-xs mt-3">शाखा का नाम और आवश्यक तकनीकी सहयोग (AMC) आवश्यकताएं साझा करें।</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                <button type="button" onClick={() => setContactStep('details')} className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                <button type="button" onClick={() => setContactStep('details')} className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer">
                   वापस जाएं
                 </button>
-                <a href={contactHref} className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">Contact Admin</a>
+                <a href={contactHref} className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">Contact Support</a>
               </div>
-              <p className="text-[11px] text-slate-500">Admin approval के बिना plan अपने-आप सक्रिय नहीं होगा।</p>
+              <p className="text-[11px] text-slate-500">समर्पित सर्वर आवंटन के बाद तुरंत प्रभाव से सेवाएं सक्रिय कर दी जाती हैं।</p>
             </div>
           )}
         </div>

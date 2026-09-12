@@ -518,9 +518,9 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                       </div>
                       <div>
                         <h4 className="text-sm sm:text-base font-bold text-stone-900">
-                          4. सदस्यता योजना (Subscription Plan)
+                          4. सेवा एवं तकनीकी सहयोग मॉडल (Seva & Technical Support)
                         </h4>
-                        <p className="text-xs text-stone-500">आवश्यकतानुसार निःशुल्क अथवा प्रो योजना का चयन करें (बाद में कभी भी बदला जा सकता है)</p>
+                        <p className="text-xs text-stone-500">ग्रामीण व लघु शाखाओं हेतु निःशुल्क सेवा अथवा समर्पित सर्वर अनुरक्षण सहयोग का चयन करें</p>
                       </div>
                     </div>
 
@@ -538,19 +538,19 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm sm:text-base font-bold text-emerald-950 flex items-center gap-2">
                               <span className="w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
-                              निःशुल्क योजना (Free Plan)
+                              निःशुल्क सेवा (Free Seva Tier)
                             </span>
                             <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
                               ₹0 / आजीवन
                             </span>
                           </div>
                           <p className="text-xs text-stone-600 leading-relaxed mb-3">
-                            छात्र प्रवेश, व्यक्तिगत उपस्थिति, शुल्क रसीदें, गृहकार्य डायरी एवं दैनिक सूचनाएं।
+                            ग्रामीण व लघु शाखाओं हेतु 100% निःशुल्क। छात्र प्रवेश, दैनिक उपस्थिति, शुल्क रसीदें एवं सूचनाएं।
                           </p>
                         </div>
                         <div className="flex items-center text-xs font-bold text-emerald-700 gap-1.5 pt-2 border-t border-emerald-200/60">
                           {plan === 'free' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <div className="w-4 h-4 rounded-full border border-stone-300" />}
-                          <span>{plan === 'free' ? 'वर्तमान में चयनित' : 'निःशुल्क चुनें'}</span>
+                          <span>{plan === 'free' ? 'वर्तमान में चयनित' : 'निःशुल्क सेवा चुनें'}</span>
                         </div>
                       </div>
 
@@ -567,19 +567,19 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
                               <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
-                              प्रो ईआरपी (Pro ERP Plan)
+                              तकनीकी सहयोग प्रो (Tech Support & AMC)
                             </span>
                             <span className="text-xs font-black text-amber-900 bg-amber-200/90 px-3 py-1 rounded-full border border-amber-300">
-                              ₹999 / माह
+                              ₹799 / माह
                             </span>
                           </div>
                           <p className="text-xs text-stone-600 leading-relaxed mb-3">
-                            व्हाट्सएप अलर्ट, आचार्य वेतन पर्ची, 360° समग्र प्रगति पत्र, आईडी कार्ड व एक्सेल बैकअप।
+                            समर्पित सर्वर अनुरक्षण, NEP 360° समग्र प्रगति पत्र, आचार्य पेरोल, व्हाट्सएप व दैनिक क्लाउड बैकअप।
                           </p>
                         </div>
                         <div className="flex items-center text-xs font-bold text-amber-800 gap-1.5 pt-2 border-t border-amber-200/60">
                           {plan === 'pro' ? <CheckCircle2 className="w-4 h-4 text-amber-600" /> : <div className="w-4 h-4 rounded-full border border-stone-300" />}
-                          <span>{plan === 'pro' ? 'वर्तमान में चयनित' : 'प्रो चुनें'}</span>
+                          <span>{plan === 'pro' ? 'वर्तमान में चयनित' : 'तकनीकी सहयोग चुनें'}</span>
                         </div>
                       </div>
                     </div>
@@ -661,11 +661,11 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             {(sch.plan === 'pro' || (sch.id === 'ssm-gorakhpur' && !sch.plan)) ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold shadow-2xs">
                                 <Crown className="w-3 h-3 text-amber-600 fill-amber-500" />
-                                <span>प्रो (PRO)</span>
+                                <span>तकनीकी सहयोग (Tech Support)</span>
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[11px] font-semibold shadow-2xs">
-                                <span>निःशुल्क (FREE)</span>
+                                <span>निःशुल्क सेवा (Free Seva)</span>
                               </span>
                             )}
 

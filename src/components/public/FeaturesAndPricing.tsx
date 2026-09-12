@@ -7,7 +7,10 @@ import {
   ArrowRight,
   ShieldCheck,
   LogIn,
-  Plus
+  Plus,
+  HeartHandshake,
+  Server,
+  Lock
 } from 'lucide-react';
 
 interface FeaturesAndPricingProps {
@@ -26,7 +29,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
     { text: 'दैनिक वैदिक पंचांग, सुविचार एवं श्लोक', highlight: false },
     { text: 'छात्र एवं अभिभावक ऑनलाइन पोर्टल', highlight: false },
     { text: 'छात्र पंजिका एवं नवीन प्रवेश (Student Directory)', highlight: false },
-    { text: 'व्यक्तिगत दैनिक उपस्थिति अंकन (Daily Attendance)', highlight: false },
+    { text: 'दैनिक उपस्थिति अंकन (Daily Attendance)', highlight: false },
     { text: 'शुल्क चालान, ऑनलाइन भुगतान व रसीद निर्गमन', highlight: false },
     { text: 'दैनिक गृहकार्य व अभ्यास डायरी (Homework)', highlight: false },
     { text: 'दैनिक परिपत्र एवं सूचना पटल (Notices & Circulars)', highlight: false },
@@ -35,15 +38,15 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
   ];
 
   const PRO_FEATURES = [
-    { text: 'समस्त निःशुल्क (Free) योजना की सुविधाएं', highlight: false },
+    { text: 'समस्त निःशुल्क सेवा योजना की सुविधाएं', highlight: false },
     { text: '360° समग्र प्रगति पत्र (Holistic Report Cards) — NEP 2020 अनुरूप', highlight: true },
     { text: 'आचार्य एवं वेतन पर्ची (Staff Payroll & Salary Slip PDF)', highlight: true },
     { text: 'व्हाट्सएप त्वरित अनुपस्थिति व शुल्क अलर्ट (WhatsApp Alerts)', highlight: true },
     { text: 'बारकोड युक्त डिजिटल छात्र परिचय पत्र (ID Cards)', highlight: true },
     { text: 'आधिकारिक स्थानांतरण प्रमाण पत्र (Transfer Certificate / TC)', highlight: true },
     { text: '1-क्लिक थोक उपस्थिति अंकन (Bulk Attendance Marking)', highlight: true },
-    { text: 'एक्सेल / CSV संपूर्ण डेटा बैकअप एवं निर्यात', highlight: true },
-    { text: 'प्राथमिकता संस्थागत तकनीकी सहायता', highlight: true },
+    { text: 'दैनिक समर्पित क्लाउड बैकअप एवं एक्सेल/CSV निर्यात', highlight: true },
+    { text: 'प्राथमिकता संस्थागत तकनीकी सहयोग व ऑन-कॉल सहायता', highlight: true },
   ];
 
   return (
@@ -57,34 +60,35 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-14 sm:mb-18">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100 border border-orange-300 text-orange-900 text-xs font-bold shadow-2xs">
-            <Sparkles className="w-4 h-4 text-orange-600" />
-            <span>विद्या भारती अखिल भारतीय शिक्षा संस्थान ईआरपी</span>
+            <HeartHandshake className="w-4 h-4 text-orange-700" />
+            <span>विद्या भारती संस्कार अनुरूप — सेवा एवं तकनीकी सहयोग मॉडल</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-stone-900 tracking-tight leading-tight">
             सरस्वती शिशु मंदिर{' '}
             <span className="bg-gradient-to-r from-orange-700 via-amber-600 to-red-600 bg-clip-text text-transparent">
-              सुविधाएं एवं सदस्यता योजनाएं
+              सेवा एवं तकनीकी सहयोग योजनाएं
             </span>
           </h2>
 
           <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
-            प्रत्येक सरस्वती शिशु एवं विद्या मंदिर शाखा के लिए संपूर्ण डिजिटल समाधान। अपनी शाखा को तुरंत निःशुल्क पंजीकृत करें अथवा प्रो ईआरपी के साथ उन्नत सुविधाएं अनलॉक करें।
+            विद्या भारती के आदर्शों के अनुरूप प्रत्येक सरस्वती शिशु एवं विद्या मंदिर के लिए पारदर्शी डिजिटल व्यवस्था। 
+            ग्रामीण व लघु शाखाओं के लिए <strong>आजीवन निःशुल्क सेवा</strong>, एवं वृहद शाखाओं के लिए <strong>न्यूनतम सर्वर अनुरक्षण सहयोग (AMC)</strong>।
           </p>
 
           {/* Quick Stats / Highlights */}
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-2 text-xs font-semibold text-stone-600">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              बिना किसी क्रेडिट कार्ड के तुरंत शुरू करें
+              100% गैर-व्यावसायिक सेवा भाव
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              {schools.length} शाखाएं पहले से पंजीकृत
+              {schools.length} शाखाएं सक्रिय
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              क्लाउड आधारित सुरक्षित डेटाबेस
+              शून्य डेटा मुद्रीकरण (Zero Data Selling)
             </span>
           </div>
         </div>
@@ -92,28 +96,28 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-8 items-stretch max-w-5xl mx-auto">
           
-          {/* Card 1: Free Plan */}
+          {/* Card 1: Seva Community Tier */}
           <div className="bg-white rounded-3xl border-2 border-stone-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all p-7 sm:p-9 flex flex-col justify-between relative">
             <div>
               <div className="flex items-center justify-between gap-4 mb-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  आजीवन निःशुल्क (Free Forever)
+                  <HeartHandshake className="w-3.5 h-3.5 text-emerald-700" />
+                  सेवा भाव: ग्रामीण व लघु शाखाएं
                 </span>
-                <span className="text-xs font-semibold text-stone-500">बुनियादी प्रबंधन</span>
+                <span className="text-xs font-semibold text-stone-500">आजीवन निःशुल्क</span>
               </div>
 
               <h3 className="text-2xl font-black text-stone-900">
-                निःशुल्क योजना (Free Plan)
+                निःशुल्क सेवा योजना (Seva Tier)
               </h3>
               <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-6 leading-relaxed">
-                दैनिक उपस्थिति, प्रवेश पंजिका, शुल्क रसीदें एवं छात्र पोर्टल सहित सभी अनिवार्य सुविधाएं।
+                दैनिक उपस्थिति, प्रवेश पंजिका, शुल्क रसीदें, गृहकार्य डायरी एवं छात्र पोर्टल सहित बुनियादी प्रबंधन।
               </p>
 
               {/* Price */}
               <div className="flex items-baseline gap-2 pb-6 mb-6 border-b border-stone-200">
                 <span className="text-4xl sm:text-5xl font-black text-stone-900">₹0</span>
-                <span className="text-stone-500 text-xs sm:text-sm font-medium">/ आजीवन (कोई छिपा शुल्क नहीं)</span>
+                <span className="text-stone-500 text-xs sm:text-sm font-medium">/ आजीवन (100% निःशुल्क सेवा)</span>
               </div>
 
               {/* Features List */}
@@ -138,50 +142,50 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
                 className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-stone-900 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group"
               >
                 <Plus className="w-4 h-4" />
-                <span>निःशुल्क शाखा पंजीकृत करें (Sign Up Free)</span>
+                <span>निःशुल्क सेवा से जुड़ें (Start Free Seva)</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <p className="text-[11px] text-center text-stone-500">
-                तुरंत सक्रियण • किसी पूर्व स्वीकृति की आवश्यकता नहीं
+                तुरंत सक्रियण • किसी पूर्व स्वीकृति अथवा क्रेडिट कार्ड की आवश्यकता नहीं
               </p>
             </div>
           </div>
 
-          {/* Card 2: Pro ERP Plan */}
+          {/* Card 2: Technical Support & Pro ERP AMC */}
           <div className="bg-gradient-to-b from-amber-50/80 via-white to-orange-50/50 rounded-3xl border-2 border-amber-400 shadow-xl hover:shadow-2xl transition-all p-7 sm:p-9 flex flex-col justify-between relative ring-4 ring-amber-400/20">
             {/* Best value banner */}
             <div className="absolute -top-3.5 right-6 sm:right-10 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[11px] font-black uppercase px-3.5 py-1 rounded-full shadow-md flex items-center gap-1">
               <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-300" />
-              <span>सर्वाधिक अनुशंसित (Recommended)</span>
+              <span>न्यूनतम संस्थागत अनुरक्षण सहयोग</span>
             </div>
 
             <div>
               <div className="flex items-center justify-between gap-4 mb-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200/90 text-amber-950 text-xs font-bold border border-amber-400 shadow-2xs">
-                  <Crown className="w-3.5 h-3.5 text-amber-700 fill-amber-600" />
-                  विद्या भारती प्रो ईआरपी
+                  <Server className="w-3.5 h-3.5 text-amber-700" />
+                  समर्पित क्लाउड सर्वर एवं बैकअप
                 </span>
                 <span className="text-xs font-bold text-orange-700">असीमित छात्र व आचार्य</span>
               </div>
 
               <h3 className="text-2xl font-black text-stone-900">
-                प्रो ईआरपी योजना (Pro Plan)
+                तकनीकी सहयोग व प्रो ईआरपी (Technical Support & AMC)
               </h3>
               <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-6 leading-relaxed">
-                360° समग्र प्रगति पत्र, आचार्य पेरोल, वेतन पर्ची, व्हाट्सएप अलर्ट व परिचय पत्र सहित सम्पूर्ण प्रबंधन।
+                360° समग्र प्रगति पत्र, आचार्य पेरोल, व्हाट्सएप अलर्ट, डिजिटल आईडी कार्ड एवं समर्पित क्लाउड बैकअप अनुरक्षण।
               </p>
 
               {/* Price */}
               <div className="flex items-baseline gap-2 pb-6 mb-6 border-b border-amber-200">
-                <span className="text-4xl sm:text-5xl font-black text-orange-950">₹999</span>
-                <span className="text-stone-600 text-xs sm:text-sm font-medium">/ प्रति माह (वार्षिक भुगतान पर छूट)</span>
+                <span className="text-4xl sm:text-5xl font-black text-orange-950">₹799</span>
+                <span className="text-stone-600 text-xs sm:text-sm font-medium">/ प्रति माह (अथवा ₹8,000 / वार्षिक न्यूनतम सहयोग)</span>
               </div>
 
               {/* Features List */}
               <div className="space-y-3 mb-8">
                 <span className="text-xs font-bold text-orange-950 uppercase tracking-wider block flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  प्रो योजना के विशेष लाभ:
+                  तकनीकी सहयोग के अंतर्गत सुविधाएं:
                 </span>
                 {PRO_FEATURES.map((item, idx) => (
                   <div
@@ -209,19 +213,52 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
                 className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg shadow-orange-600/25 hover:shadow-orange-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
               >
                 <Crown className="w-4 h-4 text-yellow-200 fill-yellow-300" />
-                <span>प्रो शाखा पंजीकृत करें (Sign Up Pro)</span>
+                <span>तकनीकी सहयोग प्रो चुनें (Get Pro AMC)</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <p className="text-[11px] text-center text-stone-500">
-                1-क्लिक परीक्षण उपलब्ध • कभी भी फ्री में स्विच करने की सुविधा
+                संस्थागत सहयोग राशि केवल सर्वर एवं तकनीकी टीम के भरण-पोषण हेतु है
               </p>
             </div>
           </div>
 
         </div>
 
+        {/* Our Ethical Pledge Banner */}
+        <div className="mt-12 max-w-5xl mx-auto p-6 sm:p-8 bg-gradient-to-r from-amber-50 via-orange-50/70 to-stone-50 rounded-3xl border-2 border-orange-200 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-200/80 text-orange-900 text-xs font-bold">
+                <Lock className="w-3.5 h-3.5 text-orange-700" />
+                <span>हमारा संकल्प (Our Pledge to Vidya Bharati)</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-stone-900">
+                संस्कार, सेवा एवं पूर्ण डेटा शुचिता का अटूट विश्वास
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs sm:text-sm text-stone-700">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span><strong>कोई विज्ञापन नहीं:</strong> पोर्टल 100% विज्ञापन-मुक्त है।</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span><strong>शून्य डेटा बिक्री:</strong> किसी छात्र या विद्यालय का डेटा कभी नहीं बेचा जाता (DPDPA 2023 अनुपालन)।</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span><strong>पारदर्शी अनुरक्षण:</strong> सहयोग राशि केवल क्लाउड सर्वर, दैनिक बैकअप एवं सुरक्षा खर्चों हेतु है।</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span><strong>ग्रामीण उत्थान:</strong> छोटे व ग्रामीण विद्यालयों के लिए सेवा सदैव निःशुल्क उपलब्ध रहेगी।</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Existing School Login Banner */}
-        <div className="mt-12 max-w-4xl mx-auto p-5 sm:p-6 bg-white rounded-2xl border border-stone-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-8 max-w-5xl mx-auto p-5 sm:p-6 bg-white rounded-2xl border border-stone-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 text-center sm:text-left">
             <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center shrink-0">
               <LogIn className="w-6 h-6" />

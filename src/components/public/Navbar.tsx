@@ -124,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <nav className="hidden lg:flex items-center space-x-3 xl:space-x-4 text-sm font-medium text-stone-700">
             <a href="#plans" className="text-orange-700 font-bold hover:text-orange-800 transition-colors flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>योजनाएं व सुविधाएं</span>
+              <span>सेवा एवं सुविधाएं</span>
             </a>
             <a href="#about" className="hover:text-orange-600 transition-colors">परिचय</a>
             <a href="#panchmukhi" className="hover:text-orange-600 transition-colors">पंचमुखी</a>
@@ -282,7 +282,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-100/90 hover:bg-amber-100 text-orange-950 font-bold border border-orange-200"
           >
             <Sparkles className="w-4 h-4 text-orange-600" />
-            <span>ईआरपी विशेषताएं व योजनाएं</span>
+            <span>सेवा एवं सुविधाएं</span>
           </a>
           <a
             href="#about"

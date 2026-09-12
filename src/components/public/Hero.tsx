@@ -59,7 +59,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
                 className="px-5 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 group"
               >
                 <Sparkles className="w-4 h-4 text-yellow-200" />
-                <span>ईआरपी विशेषताएं व योजनाएं</span>
+                <span>सेवा एवं सुविधाएं</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </a>
 
