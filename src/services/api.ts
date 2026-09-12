@@ -30,25 +30,60 @@ function getAuthHeaders(): Record<string, string> {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
+/**
+ * Resilient fetch wrapper:
+ * 1. Automatically injects Bearer auth headers if available
+ * 2. Catches network failures / offline states with a clean bilingual error
+ */
+async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(),
+    ...(options.headers as Record<string, string> || {})
+  };
+
+  try {
+    return await fetch(url, { ...options, headers });
+  } catch (err: any) {
+    console.warn(`[API Offline/Network Error] ${options.method || 'GET'} ${url}:`, err.message);
+    throw new Error('सर्वर अथवा नेटवर्क से संपर्क नहीं हो सका। कृपया कनेक्शन जांचें। (Network/Server connection failed)');
+  }
+}
+
+/**
+ * Safely parse JSON responses and reject with server error message if !res.ok
+ */
+async function handleJsonResponse<T>(res: Response, defaultError = 'अनपेक्षित त्रुटि हुई'): Promise<T> {
+  let data: any = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const message = data?.error || data?.message || defaultError;
+    throw new Error(message);
+  }
+
+  return data as T;
+}
+
 export const api = {
   // Status check
   async getStatus(): Promise<{ status: string; database: string; databaseHost?: string }> {
-    const res = await fetch(`${API_BASE}/status`);
-    if (!res.ok) throw new Error('Failed to fetch status');
-    return res.json();
+    const res = await apiFetch('/status');
+    return handleJsonResponse(res, 'Failed to fetch status');
   },
 
   // ================= AUTHENTICATION =================
   async loginAdmin(schoolId: string, passcode: string): Promise<{ success: boolean; token: string; school?: Partial<School> }> {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await apiFetch('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ schoolId, passcode })
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'प्रमाणीकरण विफल रहा');
-    }
+    const data = await handleJsonResponse<any>(res, 'प्रमाणीकरण विफल रहा');
     if (data.token) {
       sessionStorage.removeItem('ssm_student_token');
       sessionStorage.removeItem('ssm_student_id');
@@ -60,13 +95,12 @@ export const api = {
   },
 
   async loginStudent(schoolId: string, rollNo: string, contact: string): Promise<{ success: boolean; token: string; student: Student }> {
-    const res = await fetch(`${API_BASE}/auth/student-login`, {
+    const res = await apiFetch('/auth/student-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ schoolId, rollNo, contact })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'छात्र प्रमाणीकरण विफल रहा');
+    const data = await handleJsonResponse<any>(res, 'छात्र प्रमाणीकरण विफल रहा');
     sessionStorage.removeItem('ssm_admin_token');
     sessionStorage.removeItem('ssm_admin_authenticated');
     sessionStorage.removeItem('ssm_admin_role');
@@ -76,13 +110,12 @@ export const api = {
   },
 
   async loginTeacher(schoolId: string, phone: string, pin: string): Promise<{ success: boolean; token: string; teacher: Partial<Staff> }> {
-    const res = await fetch(`${API_BASE}/auth/teacher-login`, {
+    const res = await apiFetch('/auth/teacher-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ schoolId, phone, pin })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'आचार्य प्रमाणीकरण विफल रहा');
+    const data = await handleJsonResponse<any>(res, 'आचार्य प्रमाणीकरण विफल रहा');
     sessionStorage.removeItem('ssm_admin_token');
     sessionStorage.removeItem('ssm_student_token');
     sessionStorage.setItem('ssm_teacher_token', data.token);
@@ -110,117 +143,72 @@ export const api = {
 
   // ================= SCHOOLS =================
   async getSchools(): Promise<School[]> {
-    const res = await fetch(`${API_BASE}/schools`);
-    if (!res.ok) throw new Error('Failed to fetch schools');
-    return res.json();
+    const res = await apiFetch('/schools');
+    return handleJsonResponse<School[]>(res, 'Failed to fetch schools');
   },
 
   async getSchool(id: string): Promise<School> {
-    const res = await fetch(`${API_BASE}/schools/${id}`);
-    if (!res.ok) throw new Error('Failed to fetch school details');
-    return res.json();
+    const res = await apiFetch(`/schools/${id}`);
+    return handleJsonResponse<School>(res, 'Failed to fetch school details');
   },
 
   async createSchool(school: Omit<School, 'id'> & { id?: string }): Promise<School> {
-    const res = await fetch(`${API_BASE}/schools`, {
+    const res = await apiFetch('/schools', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(school)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create school');
-    }
-    return res.json();
+    return handleJsonResponse<School>(res, 'Failed to create school');
   },
 
   async updateSchool(id: string, updates: Partial<School>): Promise<School> {
-    const res = await fetch(`${API_BASE}/schools/${id}`, {
+    const res = await apiFetch(`/schools/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to update school');
-    }
-    return res.json();
+    return handleJsonResponse<School>(res, 'Failed to update school');
   },
 
   // ================= STUDENTS =================
   async getStudents(schoolId?: string): Promise<Student[]> {
-    const url = schoolId ? `${API_BASE}/students?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/students`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch students');
-    return res.json();
+    const url = schoolId ? `/students?schoolId=${encodeURIComponent(schoolId)}` : '/students';
+    const res = await apiFetch(url);
+    return handleJsonResponse<Student[]>(res, 'Failed to fetch students');
   },
 
   async createStudent(student: Omit<Student, 'id'>): Promise<Student> {
-    const res = await fetch(`${API_BASE}/students`, {
+    const res = await apiFetch('/students', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(student)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create student');
-    }
-    return res.json();
+    return handleJsonResponse<Student>(res, 'Failed to create student');
   },
 
   async bulkCreateStudents(students: Partial<Student>[], schoolId?: string): Promise<{ count: number; students: Student[] }> {
-    const res = await fetch(`${API_BASE}/students/bulk`, {
+    const res = await apiFetch('/students/bulk', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ students, schoolId })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to bulk import students');
-    }
-    return res.json();
+    return handleJsonResponse<{ count: number; students: Student[] }>(res, 'Failed to bulk import students');
   },
 
   async updateStudent(id: string, student: Partial<Student>): Promise<Student> {
-    const res = await fetch(`${API_BASE}/students/${id}`, {
+    const res = await apiFetch(`/students/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(student)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to update student');
-    }
-    return res.json();
+    return handleJsonResponse<Student>(res, 'Failed to update student');
   },
 
   async deleteStudent(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/students/${id}`, {
-      method: 'DELETE',
-      headers: {
-        ...getAuthHeaders()
-      }
+    const res = await apiFetch(`/students/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to delete student');
-    }
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete student');
   },
 
   // ================= ATTENDANCE =================
@@ -252,157 +240,97 @@ export const api = {
   },
 
   async setBulkAttendance(updates: { studentId: string; date: string; status: AttendanceStatus; schoolId?: string }[], schoolId?: string): Promise<AttendanceRecord[]> {
-    const res = await fetch(`${API_BASE}/attendance/bulk`, {
+    const res = await apiFetch('/attendance/bulk', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates, schoolId })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to save bulk attendance');
-    }
-    return res.json();
+    return handleJsonResponse<AttendanceRecord[]>(res, 'Failed to save bulk attendance');
   },
 
   // ================= FEES =================
   async getFees(schoolId?: string): Promise<FeeRecord[]> {
-    const url = schoolId ? `${API_BASE}/fees?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/fees`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch fees');
-    return res.json();
+    const url = schoolId ? `/fees?schoolId=${encodeURIComponent(schoolId)}` : '/fees';
+    const res = await apiFetch(url);
+    return handleJsonResponse<FeeRecord[]>(res, 'Failed to fetch fees');
   },
 
   async payFee(feeId: string, paymentMode: string): Promise<FeeRecord> {
-    const res = await fetch(`${API_BASE}/fees/${feeId}/pay`, {
+    const res = await apiFetch(`/fees/${feeId}/pay`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paymentMode })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to process fee payment');
-    }
-    return res.json();
+    return handleJsonResponse<FeeRecord>(res, 'Failed to process fee payment');
   },
 
   async createFee(fee: Omit<FeeRecord, 'id'>): Promise<FeeRecord> {
-    const res = await fetch(`${API_BASE}/fees`, {
+    const res = await apiFetch('/fees', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fee)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create fee record');
-    }
-    return res.json();
+    return handleJsonResponse<FeeRecord>(res, 'Failed to create fee record');
   },
 
   // ================= REPORT CARDS =================
   async getReports(schoolId?: string): Promise<ReportCard[]> {
-    const url = schoolId ? `${API_BASE}/reports?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/reports`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch report cards');
-    return res.json();
+    const url = schoolId ? `/reports?schoolId=${encodeURIComponent(schoolId)}` : '/reports';
+    const res = await apiFetch(url);
+    return handleJsonResponse<ReportCard[]>(res, 'Failed to fetch report cards');
   },
 
   async saveReport(report: ReportCard): Promise<ReportCard> {
-    const res = await fetch(`${API_BASE}/reports`, {
+    const res = await apiFetch('/reports', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(report)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to save report card');
-    }
-    return res.json();
+    return handleJsonResponse<ReportCard>(res, 'Failed to save report card');
   },
 
   // ================= NOTICES =================
   async getNotices(schoolId?: string): Promise<Notice[]> {
-    const url = schoolId ? `${API_BASE}/notices?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/notices`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch notices');
-    return res.json();
+    const url = schoolId ? `/notices?schoolId=${encodeURIComponent(schoolId)}` : '/notices';
+    const res = await apiFetch(url);
+    return handleJsonResponse<Notice[]>(res, 'Failed to fetch notices');
   },
 
   async createNotice(notice: Omit<Notice, 'id'>): Promise<Notice> {
-    const res = await fetch(`${API_BASE}/notices`, {
+    const res = await apiFetch('/notices', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(notice)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create notice');
-    }
-    return res.json();
+    return handleJsonResponse<Notice>(res, 'Failed to create notice');
   },
 
   async deleteNotice(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/notices/${id}`, {
-      method: 'DELETE',
-      headers: {
-        ...getAuthHeaders()
-      }
+    const res = await apiFetch(`/notices/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to delete notice');
-    }
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete notice');
   },
 
   // ================= ADMISSIONS =================
   async getAdmissions(schoolId?: string): Promise<any[]> {
-    const url = schoolId ? `${API_BASE}/admissions?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/admissions`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch admissions');
-    return res.json();
+    const url = schoolId ? `/admissions?schoolId=${encodeURIComponent(schoolId)}` : '/admissions';
+    const res = await apiFetch(url);
+    return handleJsonResponse<any[]>(res, 'Failed to fetch admissions');
   },
 
   async approveAdmission(id: string): Promise<{ success: boolean; admission: any; student: any }> {
-    const res = await fetch(`${API_BASE}/admissions/${id}/approve`, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders()
-      }
+    const res = await apiFetch(`/admissions/${id}/approve`, {
+      method: 'PUT'
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to approve admission');
-    }
-    return res.json();
+    return handleJsonResponse<{ success: boolean; admission: any; student: any }>(res, 'Failed to approve admission');
   },
 
   async deleteAdmission(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/admissions/${id}`, {
-      method: 'DELETE',
-      headers: {
-        ...getAuthHeaders()
-      }
+    const res = await apiFetch(`/admissions/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to delete admission');
-    }
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete admission');
   },
 
   // Public admission submission (no auth needed)
@@ -417,112 +345,71 @@ export const api = {
     phone: string;
     address: string;
   }): Promise<{ id: string; regNo: string; studentName: string }> {
-    const res = await fetch(`${API_BASE}/admissions`, {
+    const res = await apiFetch('/admissions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to submit admission inquiry');
-    }
-    return res.json();
+    return handleJsonResponse<{ id: string; regNo: string; studentName: string }>(res, 'Failed to submit admission inquiry');
   },
 
   // ================= HOMEWORK =================
   async getHomework(schoolId?: string, className?: string): Promise<Homework[]> {
-    let url = `${API_BASE}/homework`;
+    let url = '/homework';
     const params = new URLSearchParams();
     if (schoolId) params.append('schoolId', schoolId);
     if (className) params.append('class', className);
     if (params.toString()) url += `?${params.toString()}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch homework');
-    return res.json();
+    const res = await apiFetch(url);
+    return handleJsonResponse<Homework[]>(res, 'Failed to fetch homework');
   },
 
   async createHomework(hw: Omit<Homework, 'id'> & { id?: string }): Promise<Homework> {
-    const res = await fetch(`${API_BASE}/homework`, {
+    const res = await apiFetch('/homework', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(hw)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create homework');
-    }
-    return res.json();
+    return handleJsonResponse<Homework>(res, 'Failed to create homework');
   },
 
   async deleteHomework(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/homework/${id}`, {
-      method: 'DELETE',
-      headers: {
-        ...getAuthHeaders()
-      }
+    const res = await apiFetch(`/homework/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to delete homework');
-    }
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete homework');
   },
 
   // ================= STAFF & PAYROLL =================
   async getStaff(schoolId?: string): Promise<Staff[]> {
-    const url = schoolId ? `${API_BASE}/staff?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/staff`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch staff');
-    return res.json();
+    const url = schoolId ? `/staff?schoolId=${encodeURIComponent(schoolId)}` : '/staff';
+    const res = await apiFetch(url);
+    return handleJsonResponse<Staff[]>(res, 'Failed to fetch staff');
   },
 
   async createStaff(staff: Omit<Staff, 'id'> & { id?: string }): Promise<Staff> {
-    const res = await fetch(`${API_BASE}/staff`, {
+    const res = await apiFetch('/staff', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(staff)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create staff member');
-    }
-    return res.json();
+    return handleJsonResponse<Staff>(res, 'Failed to create staff member');
   },
 
   async updateStaff(id: string, updates: Partial<Staff>): Promise<Staff> {
-    const res = await fetch(`${API_BASE}/staff/${id}`, {
+    const res = await apiFetch(`/staff/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to update staff member');
-    }
-    return res.json();
+    return handleJsonResponse<Staff>(res, 'Failed to update staff member');
   },
 
   async deleteStaff(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/staff/${id}`, {
-      method: 'DELETE',
-      headers: {
-        ...getAuthHeaders()
-      }
+    const res = await apiFetch(`/staff/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to delete staff member');
-    }
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete staff member');
   },
 
   // ================= EXAMS & MARKS =================
@@ -531,44 +418,34 @@ export const api = {
     if (schoolId) params.append('schoolId', schoolId);
     if (term) params.append('term', term);
     if (academicYear) params.append('academicYear', academicYear);
-    const res = await fetch(`${API_BASE}/exams?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch exams');
-    return res.json();
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/exams${qs}`);
+    return handleJsonResponse<Exam[]>(res, 'Failed to fetch exams');
   },
 
   async createExam(exam: Partial<Exam>): Promise<Exam> {
-    const res = await fetch(`${API_BASE}/exams`, {
+    const res = await apiFetch('/exams', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(exam)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to create exam');
-    }
-    return res.json();
+    return handleJsonResponse<Exam>(res, 'Failed to create exam');
   },
 
   async updateExam(id: string, exam: Partial<Exam>): Promise<Exam> {
-    const res = await fetch(`${API_BASE}/exams/${id}`, {
+    const res = await apiFetch(`/exams/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(exam)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to update exam');
-    }
-    return res.json();
+    return handleJsonResponse<Exam>(res, 'Failed to update exam');
   },
 
   async deleteExam(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/exams/${id}`, {
-      method: 'DELETE',
-      headers: { ...getAuthHeaders() }
+    const res = await apiFetch(`/exams/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) throw new Error('Failed to delete exam');
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete exam');
   },
 
   async submitBulkMarks(payload: {
@@ -578,16 +455,12 @@ export const api = {
     subject: string;
     marksList: Array<{ studentId: string; marksObtained: number; maxMarks?: number }>;
   }): Promise<{ success: boolean; count: number }> {
-    const res = await fetch(`${API_BASE}/exams/marks-bulk`, {
+    const res = await apiFetch('/exams/marks-bulk', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to submit marks');
-    }
-    return res.json();
+    return handleJsonResponse<{ success: boolean; count: number }>(res, 'Failed to submit marks');
   },
 
   // ================= TIMETABLE =================
@@ -595,9 +468,8 @@ export const api = {
     const params = new URLSearchParams({ schoolId });
     if (className) params.append('class', className);
     if (section) params.append('section', section);
-    const res = await fetch(`${API_BASE}/timetable?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch timetable');
-    return res.json();
+    const res = await apiFetch(`/timetable?${params.toString()}`);
+    return handleJsonResponse<Timetable[]>(res, 'Failed to fetch timetable');
   },
 
   async saveTimetable(payload: {
@@ -606,16 +478,12 @@ export const api = {
     section?: string;
     schedule: any[];
   }): Promise<Timetable> {
-    const res = await fetch(`${API_BASE}/timetable`, {
+    const res = await apiFetch('/timetable', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to save timetable');
-    }
-    return res.json();
+    return handleJsonResponse<Timetable>(res, 'Failed to save timetable');
   },
 
   // ================= LEAVES =================
@@ -624,74 +492,59 @@ export const api = {
     if (schoolId) params.append('schoolId', schoolId);
     if (applicantType) params.append('applicantType', applicantType);
     if (applicantId) params.append('applicantId', applicantId);
-    const res = await fetch(`${API_BASE}/leaves?${params.toString()}`, {
-      headers: { ...getAuthHeaders() }
-    });
-    if (!res.ok) throw new Error('Failed to fetch leaves');
-    return res.json();
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/leaves${qs}`);
+    return handleJsonResponse<LeaveRequest[]>(res, 'Failed to fetch leaves');
   },
 
   async createLeave(leave: Partial<LeaveRequest>): Promise<LeaveRequest> {
-    const res = await fetch(`${API_BASE}/leaves`, {
+    const res = await apiFetch('/leaves', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(leave)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to submit leave request');
-    }
-    return res.json();
+    return handleJsonResponse<LeaveRequest>(res, 'Failed to submit leave request');
   },
 
   async updateLeaveStatus(id: string, status: 'Approved' | 'Rejected', reviewerRemarks?: string, reviewedBy?: string): Promise<LeaveRequest> {
-    const res = await fetch(`${API_BASE}/leaves/${id}/status`, {
+    const res = await apiFetch(`/leaves/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, reviewerRemarks, reviewedBy })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to update leave status');
-    }
-    return res.json();
+    return handleJsonResponse<LeaveRequest>(res, 'Failed to update leave status');
   },
 
   // ================= TRANSPORT =================
   async getTransportRoutes(schoolId?: string): Promise<TransportRoute[]> {
-    const url = schoolId ? `${API_BASE}/transport/routes?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/transport/routes`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch transport routes');
-    return res.json();
+    const url = schoolId ? `/transport/routes?schoolId=${encodeURIComponent(schoolId)}` : '/transport/routes';
+    const res = await apiFetch(url);
+    return handleJsonResponse<TransportRoute[]>(res, 'Failed to fetch transport routes');
   },
 
   async createTransportRoute(route: Partial<TransportRoute>): Promise<TransportRoute> {
-    const res = await fetch(`${API_BASE}/transport/routes`, {
+    const res = await apiFetch('/transport/routes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(route)
     });
-    if (!res.ok) throw new Error('Failed to create route');
-    return res.json();
+    return handleJsonResponse<TransportRoute>(res, 'Failed to create route');
   },
 
   async updateTransportRoute(id: string, route: Partial<TransportRoute>): Promise<TransportRoute> {
-    const res = await fetch(`${API_BASE}/transport/routes/${id}`, {
+    const res = await apiFetch(`/transport/routes/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(route)
     });
-    if (!res.ok) throw new Error('Failed to update route');
-    return res.json();
+    return handleJsonResponse<TransportRoute>(res, 'Failed to update route');
   },
 
   async deleteTransportRoute(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/transport/routes/${id}`, {
-      method: 'DELETE',
-      headers: { ...getAuthHeaders() }
+    const res = await apiFetch(`/transport/routes/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) throw new Error('Failed to delete route');
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete route');
   },
 
   // ================= LIBRARY =================
@@ -700,71 +553,58 @@ export const api = {
     if (schoolId) params.append('schoolId', schoolId);
     if (category) params.append('category', category);
     if (search) params.append('search', search);
-    const res = await fetch(`${API_BASE}/library/books?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch books');
-    return res.json();
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/library/books${qs}`);
+    return handleJsonResponse<LibraryBook[]>(res, 'Failed to fetch books');
   },
 
   async createBook(book: Partial<LibraryBook>): Promise<LibraryBook> {
-    const res = await fetch(`${API_BASE}/library/books`, {
+    const res = await apiFetch('/library/books', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(book)
     });
-    if (!res.ok) throw new Error('Failed to create book');
-    return res.json();
+    return handleJsonResponse<LibraryBook>(res, 'Failed to create book');
   },
 
   async updateBook(id: string, book: Partial<LibraryBook>): Promise<LibraryBook> {
-    const res = await fetch(`${API_BASE}/library/books/${id}`, {
+    const res = await apiFetch(`/library/books/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(book)
     });
-    if (!res.ok) throw new Error('Failed to update book');
-    return res.json();
+    return handleJsonResponse<LibraryBook>(res, 'Failed to update book');
   },
 
   async deleteBook(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/library/books/${id}`, {
-      method: 'DELETE',
-      headers: { ...getAuthHeaders() }
+    const res = await apiFetch(`/library/books/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) throw new Error('Failed to delete book');
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete book');
   },
 
   async getBookIssues(schoolId?: string): Promise<BookIssueRecord[]> {
-    const url = schoolId ? `${API_BASE}/library/issues?schoolId=${encodeURIComponent(schoolId)}` : `${API_BASE}/library/issues`;
-    const res = await fetch(url, { headers: { ...getAuthHeaders() } });
-    if (!res.ok) throw new Error('Failed to fetch book issues');
-    return res.json();
+    const url = schoolId ? `/library/issues?schoolId=${encodeURIComponent(schoolId)}` : '/library/issues';
+    const res = await apiFetch(url);
+    return handleJsonResponse<BookIssueRecord[]>(res, 'Failed to fetch book issues');
   },
 
   async issueBook(issue: Partial<BookIssueRecord>): Promise<BookIssueRecord> {
-    const res = await fetch(`${API_BASE}/library/issue`, {
+    const res = await apiFetch('/library/issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(issue)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to issue book');
-    }
-    return res.json();
+    return handleJsonResponse<BookIssueRecord>(res, 'Failed to issue book');
   },
 
   async returnBook(issueId: string, fineAmount: number = 0): Promise<BookIssueRecord> {
-    const res = await fetch(`${API_BASE}/library/return`, {
+    const res = await apiFetch('/library/return', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ issueId, fineAmount })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to return book');
-    }
-    return res.json();
+    return handleJsonResponse<BookIssueRecord>(res, 'Failed to return book');
   },
 
   // ================= INVENTORY =================
@@ -772,48 +612,43 @@ export const api = {
     const params = new URLSearchParams();
     if (schoolId) params.append('schoolId', schoolId);
     if (category) params.append('category', category);
-    const res = await fetch(`${API_BASE}/inventory?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch inventory');
-    return res.json();
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/inventory${qs}`);
+    return handleJsonResponse<InventoryItem[]>(res, 'Failed to fetch inventory');
   },
 
   async createInventoryItem(item: Partial<InventoryItem>): Promise<InventoryItem> {
-    const res = await fetch(`${API_BASE}/inventory`, {
+    const res = await apiFetch('/inventory', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item)
     });
-    if (!res.ok) throw new Error('Failed to create inventory item');
-    return res.json();
+    return handleJsonResponse<InventoryItem>(res, 'Failed to create inventory item');
   },
 
   async updateInventoryItem(id: string, item: Partial<InventoryItem>): Promise<InventoryItem> {
-    const res = await fetch(`${API_BASE}/inventory/${id}`, {
+    const res = await apiFetch(`/inventory/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item)
     });
-    if (!res.ok) throw new Error('Failed to update inventory item');
-    return res.json();
+    return handleJsonResponse<InventoryItem>(res, 'Failed to update inventory item');
   },
 
   async deleteInventoryItem(id: string): Promise<{ success: boolean; id: string }> {
-    const res = await fetch(`${API_BASE}/inventory/${id}`, {
-      method: 'DELETE',
-      headers: { ...getAuthHeaders() }
+    const res = await apiFetch(`/inventory/${id}`, {
+      method: 'DELETE'
     });
-    if (!res.ok) throw new Error('Failed to delete inventory item');
-    return res.json();
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete inventory item');
   },
 
   async adjustInventoryStock(id: string, delta: number): Promise<InventoryItem> {
-    const res = await fetch(`${API_BASE}/inventory/${id}/stock`, {
+    const res = await apiFetch(`/inventory/${id}/stock`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ delta })
     });
-    if (!res.ok) throw new Error('Failed to adjust stock');
-    return res.json();
+    return handleJsonResponse<InventoryItem>(res, 'Failed to adjust stock');
   },
 
   // ================= AUDIT LOGS =================
@@ -822,10 +657,8 @@ export const api = {
     if (schoolId) params.append('schoolId', schoolId);
     if (action) params.append('action', action);
     if (actorType) params.append('actorType', actorType);
-    const res = await fetch(`${API_BASE}/audit-logs?${params.toString()}`, {
-      headers: { ...getAuthHeaders() }
-    });
-    if (!res.ok) throw new Error('Failed to fetch audit logs');
-    return res.json();
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/audit-logs${qs}`);
+    return handleJsonResponse<AuditLogEntry[]>(res, 'Failed to fetch audit logs');
   }
 };

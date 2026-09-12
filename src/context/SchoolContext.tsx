@@ -223,38 +223,51 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const refreshFromDb = async (schoolIdToFetch = currentSchoolId) => {
     try {
       setDbStatus('connecting');
-      const statusRes = await api.getStatus();
-      if (statusRes.database === 'connected') {
+      const statusRes = await api.getStatus().catch(() => null);
+      if (statusRes && statusRes.database === 'connected') {
         setDbStatus('connected');
         if (statusRes.databaseHost) {
           setDbHost(statusRes.databaseHost.split('-')[0] || 'MongoDB Atlas');
         }
 
-        // Fetch schools list first
+        // Fetch schools list first (publicly accessible)
         const dbSchools = await api.getSchools().catch(() => []);
         if (dbSchools.length > 0) {
           setSchools(dbSchools);
         }
 
-        // Fetch records filtered by active school
-        const [dbStudents, dbAttendance, dbFees, dbReports, dbNotices] = await Promise.all([
-          api.getStudents(schoolIdToFetch),
-          api.getAttendance(undefined, schoolIdToFetch),
-          api.getFees(schoolIdToFetch),
-          api.getReports(schoolIdToFetch),
-          api.getNotices(schoolIdToFetch)
-        ]);
+        // Check if user has admin or teacher token before querying protected collections
+        const hasAuth = Boolean(
+          sessionStorage.getItem('ssm_admin_token') ||
+          sessionStorage.getItem('ssm_teacher_token')
+        );
 
-        setStudents(dbStudents);
-        setAttendanceRecords(dbAttendance);
-        setFeeRecords(dbFees);
-        setReportCards(dbReports);
-        setNotices(dbNotices);
+        if (hasAuth) {
+          // Fetch records filtered by active school safely using allSettled
+          const [studentsRes, attRes, feesRes, repRes, notRes] = await Promise.allSettled([
+            api.getStudents(schoolIdToFetch),
+            api.getAttendance(undefined, schoolIdToFetch),
+            api.getFees(schoolIdToFetch),
+            api.getReports(schoolIdToFetch),
+            api.getNotices(schoolIdToFetch)
+          ]);
 
-        if (dbStudents.length > 0) {
-          setSelectedStudentId(prev => (prev && dbStudents.some(s => s.id === prev) ? prev : dbStudents[0].id));
-        } else {
-          setSelectedStudentId(null);
+          if (studentsRes.status === 'fulfilled' && Array.isArray(studentsRes.value) && studentsRes.value.length > 0) {
+            setStudents(studentsRes.value);
+            setSelectedStudentId(prev => (prev && studentsRes.value.some(s => s.id === prev) ? prev : studentsRes.value[0].id));
+          }
+          if (attRes.status === 'fulfilled' && Array.isArray(attRes.value)) {
+            setAttendanceRecords(attRes.value);
+          }
+          if (feesRes.status === 'fulfilled' && Array.isArray(feesRes.value)) {
+            setFeeRecords(feesRes.value);
+          }
+          if (repRes.status === 'fulfilled' && Array.isArray(repRes.value)) {
+            setReportCards(repRes.value);
+          }
+          if (notRes.status === 'fulfilled' && Array.isArray(notRes.value)) {
+            setNotices(notRes.value);
+          }
         }
       } else {
         setDbStatus('offline');

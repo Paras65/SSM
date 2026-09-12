@@ -152,12 +152,33 @@ app.use('/api/admissions', rateLimitEndpoint('admission-submit', 20));
 // API Routes
 app.use('/api', apiRoutes);
 
+// JSON 404 Handler for unmatched API routes
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    error: `अमान्य API पाथ: ${req.method} ${req.originalUrl} नहीं मिला। (API endpoint not found)`,
+    code: 'NOT_FOUND'
+  });
+});
+
 // Root route
 app.get('/', (req, res) => {
   res.json({
     message: 'सरस्वती शिशु मंदिर (SSM) API Server',
     database: mongoose.connection.readyState === 1 ? 'Connected to MongoDB' : 'Connecting...',
     docs: '/api/status'
+  });
+});
+
+// Centralized Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('💥 Unhandled Server Error:', err);
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.status(err.status || 500).json({
+    error: isProduction 
+      ? 'सर्वर पर अप्रत्याशित समस्या उत्पन्न हुई। कृपया पुनः प्रयास करें।' 
+      : (err.message || 'Internal Server Error'),
+    code: err.code || 'INTERNAL_SERVER_ERROR',
+    ...(isProduction ? {} : { stack: err.stack })
   });
 });
 
