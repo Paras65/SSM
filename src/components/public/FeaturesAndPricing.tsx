@@ -309,7 +309,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
               <h3 className="text-xl sm:text-2xl font-black text-stone-900">
                 संस्कार, सेवा एवं पूर्ण डेटा शुचिता का अटूट विश्वास
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs sm:text-sm text-stone-700">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs sm:text-sm text-stone-700">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span><strong>कोई विज्ञापन नहीं:</strong> पोर्टल 100% विज्ञापन-मुक्त है।</span>
@@ -320,11 +320,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>पारदर्शी अनुरक्षण:</strong> सहयोग राशि केवल क्लाउड सर्वर, दैनिक बैकअप एवं सुरक्षा खर्चों हेतु है।</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>ग्रामीण उत्थान:</strong> छोटे व ग्रामीण विद्यालयों के लिए सेवा सदैव निःशुल्क उपलब्ध रहेगी।</span>
+                  <span><strong>ग्रामीण उत्थान:</strong> छोटे व ग्रामीण विद्यालयों के लिए बुनियादी सेवा सदैव निःशुल्क रहेगी।</span>
                 </div>
               </div>
             </div>
