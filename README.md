@@ -39,17 +39,26 @@ Create a local .env file based on .env.example:
 
 ```env
 VITE_API_BASE=http://localhost:5000/api
-VITE_UPGRADE_CONTACT=admin@example.com
+VITE_UPGRADE_CONTACT=support@init65.co.in
 PORT=5000
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/ssm_school
 JWT_SECRET=change_this_to_a_secure_secret
 DEVELOPER_ADMIN_PASSCODE=change_this_to_a_private_developer_passcode
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=https://ssm.init65.co.in,http://localhost:5173
 ```
 
 The developer-admin passcode is used by the `डेवलपर: सभी शाखाएं प्रबंधित करें` option in the admin login. It creates a developer session that can switch between and manage all school branches from the dashboard. Keep this value private and configure it in the backend environment only.
 
-`VITE_UPGRADE_CONTACT` is the email address or phone number shown when a branch requests a Pro upgrade. The administrator should verify payment and activate the plan manually.
+`VITE_UPGRADE_CONTACT` is the support email address (`support@init65.co.in`) shown when a branch requests a Pro upgrade.
+
+## 🚀 Performance & Scalability Architecture
+
+Comprehensive scalability testing, benchmarks, and architectural safeguards are documented in [docs/SCALABILITY_AND_PERFORMANCE.md](docs/SCALABILITY_AND_PERFORMANCE.md).
+
+- **Bundle Optimization**: Initial JavaScript bundle reduced by **64.6%** (from 584 kB to 206 kB) via route-level code splitting (`React.lazy`).
+- **High Concurrency**: Tested to support 50 simultaneous parallel read requests with 100% success rate in under 280ms.
+- **Bulk Ingestion**: Supports batch inserting 200 student records in ~31ms.
+- **Automated Test Suite**: 28 automated unit, integration, security, and scalability tests running in ~2s (`npm test`).
 
 ## Deploy to Vercel + Render
 
