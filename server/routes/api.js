@@ -21,6 +21,10 @@ const InventoryItem = require('../models/InventoryItem');
 const AuditLog = require('../models/AuditLog');
 const { requireAdminAuth, requireStudentAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope, generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode } = require('../middleware/auth');
 
+function generateUniqueId(prefix = 'item') {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+}
+
 async function recordAuditLog({ schoolId, actorType, actorId, actorName, action, description, req }) {
   try {
     const ip = req?.ip || req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '';
@@ -286,7 +290,7 @@ router.post('/schools', requireAdminAuth, requireSchoolScope, async (req, res) =
     if (!data.id) {
       const rawSlug = (data.name || data.city || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const citySlug = rawSlug.length > 0 ? rawSlug.slice(0, 15) : 'branch';
-      data.id = `ssm-${citySlug}-${Date.now().toString().slice(-4)}`;
+      data.id = generateUniqueId(`ssm-${citySlug}`);
     }
     const school = new School(data);
     await school.save();
@@ -326,7 +330,7 @@ router.post('/students', requireAdminAuth, requireSchoolScope, async (req, res) 
   try {
     const studentData = req.body;
     if (!studentData.id) {
-      studentData.id = `ssm-${Date.now().toString().slice(-4)}`;
+      studentData.id = generateUniqueId('ssm');
     }
     if (!studentData.schoolId) {
       studentData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
@@ -346,11 +350,12 @@ router.post('/students/bulk', requireAdminAuth, requireSchoolScope, async (req, 
       return res.status(400).json({ error: 'छात्र सूची (Students array) आवश्यक है।' });
     }
     const targetSchoolId = schoolId || req.userSchoolId || 'ssm-gorakhpur';
-    const timestamp = Date.now().toString().slice(-4);
+    const timestamp = Date.now().toString(36);
+    const randomSuffix = Math.random().toString(36).substring(2, 6);
 
     const docs = rawStudents.map((s, idx) => ({
       ...s,
-      id: s.id || `ssm-${timestamp}-${idx + 1}`,
+      id: s.id || `ssm-${timestamp}-${randomSuffix}-${idx + 1}`,
       schoolId: targetSchoolId,
       rollNo: s.rollNo ? s.rollNo.toString() : (101 + idx).toString(),
       name: s.name || `छात्र ${idx + 1}`,
@@ -413,11 +418,12 @@ router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res)
 router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { studentId, date, status, schoolId } = req.body;
-    const id = `att-${date}-${studentId}`;
+    const targetSchoolId = schoolId || req.userSchoolId || 'ssm-gorakhpur';
+    const id = `att-${targetSchoolId}-${date}-${studentId}`;
     const record = await Attendance.findOneAndUpdate(
-      { studentId, date, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
-      { id, studentId, date, status, schoolId: schoolId || req.userSchoolId || 'ssm-gorakhpur' },
-      { upsert: true, new: true }
+      { schoolId: targetSchoolId, studentId, date },
+      { id, studentId, date, status, schoolId: targetSchoolId },
+      { upsert: true, returnDocument: 'after' }
     );
     res.json(record);
   } catch (err) {
@@ -432,21 +438,24 @@ router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req
       return res.status(400).json({ error: 'updates array is required' });
     }
 
-    const operations = updates.map(u => ({
-      updateOne: {
-        filter: { studentId: u.studentId, date: u.date },
-        update: {
-          $set: {
-            id: `att-${u.date}-${u.studentId}`,
-            studentId: u.studentId,
-            date: u.date,
-            status: u.status,
-            schoolId: u.schoolId || schoolId || req.userSchoolId || 'ssm-gorakhpur'
-          }
-        },
-        upsert: true
-      }
-    }));
+    const operations = updates.map(u => {
+      const targetSchoolId = u.schoolId || schoolId || req.userSchoolId || 'ssm-gorakhpur';
+      return {
+        updateOne: {
+          filter: { schoolId: targetSchoolId, studentId: u.studentId, date: u.date },
+          update: {
+            $set: {
+              id: `att-${targetSchoolId}-${u.date}-${u.studentId}`,
+              studentId: u.studentId,
+              date: u.date,
+              status: u.status,
+              schoolId: targetSchoolId
+            }
+          },
+          upsert: true
+        }
+      };
+    });
 
     await Attendance.bulkWrite(operations);
     const filter = { date: updates[0]?.date };
@@ -475,7 +484,7 @@ router.post('/fees', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const feeData = req.body;
     if (!feeData.id) {
-      feeData.id = `fee-${Date.now().toString().slice(-4)}`;
+      feeData.id = generateUniqueId('fee');
     }
     if (!feeData.schoolId) {
       feeData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
@@ -497,7 +506,8 @@ router.put('/fees/:id/pay', requireAdminAuth, requireSchoolScope, async (req, re
     fee.paidAmount = fee.totalAmount;
     fee.status = 'Paid';
     fee.paidDate = new Date().toISOString().split('T')[0];
-    fee.receiptNo = `SSM-REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const schoolSuffix = (fee.schoolId || 'SSM').slice(-4).toUpperCase();
+    fee.receiptNo = `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`;
     fee.paymentMode = paymentMode || 'Online UPI';
 
     await fee.save();
@@ -522,7 +532,7 @@ router.post('/reports', requireAdminAuth, requireSchoolScope, async (req, res) =
   try {
     const reportData = req.body;
     if (!reportData.id) {
-      reportData.id = `rep-${Date.now().toString().slice(-4)}`;
+      reportData.id = generateUniqueId('rep');
     }
     if (!reportData.schoolId) {
       reportData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
@@ -530,7 +540,7 @@ router.post('/reports', requireAdminAuth, requireSchoolScope, async (req, res) =
     const report = await ReportCard.findOneAndUpdate(
       { studentId: reportData.studentId, examTerm: reportData.examTerm, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       reportData,
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
     res.json(report);
   } catch (err) {
@@ -553,7 +563,7 @@ router.post('/notices', requireAdminAuth, requireSchoolScope, async (req, res) =
   try {
     const noticeData = req.body;
     if (!noticeData.id) {
-      noticeData.id = `not-${Date.now().toString().slice(-4)}`;
+      noticeData.id = generateUniqueId('not');
     }
     if (!noticeData.schoolId) {
       noticeData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
@@ -603,8 +613,8 @@ router.post('/admissions', async (req, res) => {
     if (data.guardianConsent !== true) {
       return res.status(400).json({ error: 'अभिभावक/अधिकृत संरक्षक की सहमति आवश्यक है।' });
     }
-    const regNo = `SSM-ADM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const id = `adm-${Date.now().toString().slice(-4)}`;
+    const regNo = `SSM-ADM-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+    const id = generateUniqueId('adm');
     const admission = new Admission({
       ...data,
       id,
@@ -632,7 +642,7 @@ router.put('/admissions/:id/approve', requireAdminAuth, requireSchoolScope, asyn
     const targetSchoolId = admission.schoolId || 'ssm-gorakhpur';
     const studentCount = await Student.countDocuments({ schoolId: targetSchoolId });
     const nextRoll = (studentCount + 101).toString();
-    const studentId = `ssm-${Date.now().toString().slice(-4)}`;
+    const studentId = generateUniqueId('ssm');
 
     const newStudent = new Student({
       id: studentId,
@@ -691,7 +701,7 @@ router.post('/homework', requireAdminAuth, requireSchoolScope, async (req, res) 
   try {
     const data = req.body;
     if (!data.id) {
-      data.id = `hw-${Date.now().toString().slice(-4)}`;
+      data.id = generateUniqueId('hw');
     }
     if (!data.schoolId) {
       data.schoolId = req.userSchoolId || 'ssm-gorakhpur';
@@ -730,7 +740,7 @@ router.post('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => 
   try {
     const data = req.body;
     if (!data.id) {
-      data.id = `stf-${Date.now().toString().slice(-4)}`;
+      data.id = generateUniqueId('stf');
     }
     if (!data.schoolId) {
       data.schoolId = req.userSchoolId || 'ssm-gorakhpur';

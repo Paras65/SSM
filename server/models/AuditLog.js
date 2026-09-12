@@ -16,6 +16,8 @@ const auditLogSchema = new mongoose.Schema({
 
 auditLogSchema.index({ schoolId: 1, createdAt: -1 });
 auditLogSchema.index({ schoolId: 1, action: 1 });
+// TTL index: automatically remove logs older than 180 days to stay within Atlas M0 512MB limit
+auditLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 180 * 24 * 60 * 60 });
 
 module.exports = mongoose.model('AuditLog', auditLogSchema);
 

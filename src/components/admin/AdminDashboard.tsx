@@ -1690,7 +1690,7 @@ export const AdminDashboard: React.FC = () => {
                                         paidAmount: fee.totalAmount,
                                         status: 'Paid',
                                         paidDate: new Date().toISOString().split('T')[0],
-                                        receiptNo: `SSM-REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+                                        receiptNo: fee.receiptNo || `SSM-REC-${new Date().getFullYear()}-${(currentSchool.id || 'SSM').slice(-4).toUpperCase()}-${Date.now().toString().slice(-6)}`
                                       },
                                       student: updatedStudent
                                     });

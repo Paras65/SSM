@@ -63,3 +63,4 @@ describe('Image Compressor Utility', () => {
     vi.restoreAllMocks();
   });
 });
+

@@ -270,6 +270,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     refreshFromDb(currentSchoolId);
   }, [currentSchoolId]);
 
+  // Centralized collision-proof client ID generator
+  const generateClientId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+
   // Register new school
   const registerSchool = async (schoolData: Omit<School, 'id'> & { id?: string }): Promise<School> => {
     try {
@@ -279,7 +282,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return created;
     } catch (err) {
       console.error('Error creating school in MongoDB:', err);
-      const fallbackId = schoolData.id || `ssm-branch-${Date.now().toString().slice(-4)}`;
+      const fallbackId = schoolData.id || generateClientId('ssm-branch');
       const newSchool: School = { ...schoolData, id: fallbackId };
       setSchools(prev => [...prev, newSchool]);
       setCurrentSchoolId(newSchool.id);
@@ -310,7 +313,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Student actions (MongoDB + Optimistic)
   const addStudent = async (studentData: Omit<Student, 'id'>) => {
-    const tempId = `ssm-${Date.now().toString().slice(-4)}`;
+    const tempId = generateClientId('ssm');
     const newStudent: Student = {
       ...studentData,
       id: tempId,
@@ -350,9 +353,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bulkAddStudents = async (studentsList: Partial<Student>[]): Promise<number> => {
     if (!studentsList.length) return 0;
     const targetSchoolId = currentSchool.id;
-    const timestamp = Date.now().toString().slice(-4);
+    const timestamp = Date.now().toString(36);
+    const randomSuffix = Math.random().toString(36).substring(2, 6);
     const preparedList: Student[] = studentsList.map((s, idx) => ({
-      id: s.id || `ssm-${timestamp}-${idx + 1}`,
+      id: s.id || `ssm-${timestamp}-${randomSuffix}-${idx + 1}`,
       schoolId: targetSchoolId,
       rollNo: s.rollNo ? s.rollNo.toString() : (101 + idx).toString(),
       name: s.name || `छात्र ${idx + 1}`,
@@ -438,6 +442,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Fee actions (MongoDB + Optimistic)
   const markFeePaid = async (feeId: string, paymentMode: string) => {
+    const schoolSuffix = (currentSchool.id || 'SSM').slice(-4).toUpperCase();
     setFeeRecords(prev => prev.map(fee => {
       if (fee.id === feeId) {
         return {
@@ -445,7 +450,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           paidAmount: fee.totalAmount,
           status: 'Paid',
           paidDate: new Date().toISOString().split('T')[0],
-          receiptNo: `SSM-REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+          receiptNo: fee.receiptNo || `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`,
           paymentMode
         };
       }
@@ -460,7 +465,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const addFeeRecord = async (record: Omit<FeeRecord, 'id'>) => {
-    const tempId = `fee-${Date.now().toString().slice(-4)}`;
+    const tempId = generateClientId('fee');
     const newRecord: FeeRecord = { ...record, id: tempId, schoolId: currentSchool.id };
     setFeeRecords(prev => [newRecord, ...prev]);
 
@@ -493,7 +498,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Notices actions (MongoDB + Optimistic)
   const addNotice = async (notice: Omit<Notice, 'id'>) => {
-    const tempId = `not-${Date.now().toString().slice(-4)}`;
+    const tempId = generateClientId('not');
     const newNotice: Notice = { ...notice, id: tempId, schoolId: currentSchool.id };
     setNotices(prev => [newNotice, ...prev]);
 

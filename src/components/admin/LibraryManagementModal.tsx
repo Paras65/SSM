@@ -71,7 +71,7 @@ export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ 
       setShowAddBook(false);
       setTitle('');
       setAuthor('');
-      setAccNo(`BK-${Date.now().toString().slice(-4)}`);
+      setAccNo(`BK-${Date.now().toString().slice(-6)}`);
     } catch (err: any) {
       alert(err.message || 'पुस्तक जोड़ने में त्रुटि।');
     }

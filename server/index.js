@@ -106,26 +106,41 @@ app.use((req, res, next) => {
 
 // In-memory rate limiter for public/authentication endpoints
 const endpointAttempts = new Map();
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+// Periodic memory leak prevention: sweep expired IP entries every 10 minutes
+const cleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamps] of endpointAttempts.entries()) {
+    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (valid.length === 0) {
+      endpointAttempts.delete(key);
+    } else {
+      endpointAttempts.set(key, valid);
+    }
+  }
+}, 10 * 60 * 1000);
+if (cleanupTimer.unref) cleanupTimer.unref();
+
 function rateLimitEndpoint(keyPrefix, maxAttempts = 10) {
   return (req, res, next) => {
-  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const key = `${keyPrefix}:${ip}`;
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const key = `${keyPrefix}:${ip}`;
+    const now = Date.now();
 
-  const userAttempts = endpointAttempts.get(key) || [];
-  const recentAttempts = userAttempts.filter(t => now - t < windowMs);
+    const userAttempts = endpointAttempts.get(key) || [];
+    const recentAttempts = userAttempts.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
 
-  if (recentAttempts.length >= maxAttempts) {
-    return res.status(429).json({
-      error: 'सुरक्षा चेतावनी: बहुत अधिक प्रयास! कृपया 15 मिनट पश्चात पुनः प्रयास करें। (Too many attempts, rate limit exceeded)',
-      code: 'RATE_LIMIT_EXCEEDED'
-    });
-  }
+    if (recentAttempts.length >= maxAttempts) {
+      return res.status(429).json({
+        error: 'सुरक्षा चेतावनी: बहुत अधिक प्रयास! कृपया 15 मिनट पश्चात पुनः प्रयास करें। (Too many attempts, rate limit exceeded)',
+        code: 'RATE_LIMIT_EXCEEDED'
+      });
+    }
 
-  recentAttempts.push(now);
-  endpointAttempts.set(key, recentAttempts);
-  next();
+    recentAttempts.push(now);
+    endpointAttempts.set(key, recentAttempts);
+    next();
   };
 }
 
@@ -146,12 +161,22 @@ app.get('/', (req, res) => {
   });
 });
 
+// Database connection lifecycle logging
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected! Attempting reconnect...');
+});
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err.message);
+});
+
 // Connect to MongoDB
 async function startServer() {
   try {
     console.log('🔄 Connecting to MongoDB...');
     await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 8000
+      serverSelectionTimeoutMS: 8000,
+      maxPoolSize: 10, // Optimizes free tier Atlas M0 connection limit (500 max across cluster)
+      minPoolSize: 2
     });
     console.log('✅ Connected successfully to MongoDB!');
     console.log(`📡 Database Host: ${mongoose.connection.host}`);

@@ -10,9 +10,8 @@ const attendanceSchema = new mongoose.Schema({
   timestamps: true
 });
 
-attendanceSchema.index({ studentId: 1, date: 1 }, { unique: true });
+attendanceSchema.index({ schoolId: 1, studentId: 1, date: 1 }, { unique: true });
 attendanceSchema.index({ schoolId: 1, date: 1 });
-attendanceSchema.index({ schoolId: 1, studentId: 1, date: 1 });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);
 

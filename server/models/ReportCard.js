@@ -53,5 +53,8 @@ const reportCardSchema = new mongoose.Schema({
   timestamps: true
 });
 
+reportCardSchema.index({ schoolId: 1, studentId: 1 });
+reportCardSchema.index({ schoolId: 1, examTerm: 1, academicYear: 1 });
+
 module.exports = mongoose.model('ReportCard', reportCardSchema);
 

@@ -91,7 +91,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       // Clean fallback slug generation for email and affiliation
       const cleanCitySlug = city.toLowerCase().replace(/[^a-z0-9]/g, '');
       const cleanNameSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const fallbackPrefix = cleanCitySlug || cleanNameSlug || `branch-${Date.now().toString().slice(-4)}`;
+      const fallbackPrefix = cleanCitySlug || cleanNameSlug || `branch-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
       
       const newSchool = await registerSchool({
         name: name.trim() || hindiName.trim(),
