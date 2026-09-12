@@ -262,7 +262,7 @@ router.post('/auth/teacher-login', async (req, res) => {
 router.get('/schools', async (req, res) => {
   try {
     // Exclude adminPasscode from public listing
-    const schools = await School.find().select('-adminPasscode').sort({ established: 1, createdAt: 1 });
+    const schools = await School.find().select('-adminPasscode').sort({ established: 1, createdAt: 1 }).lean();
     res.json(schools);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -272,7 +272,7 @@ router.get('/schools', async (req, res) => {
 router.get('/schools/:id', async (req, res) => {
   try {
     // Exclude adminPasscode from public detail
-    const school = await School.findOne({ id: req.params.id }).select('-adminPasscode');
+    const school = await School.findOne({ id: req.params.id }).select('-adminPasscode').lean();
     if (!school) return res.status(404).json({ error: 'School not found' });
     res.json(school);
   } catch (err) {

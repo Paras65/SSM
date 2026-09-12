@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { AddStudentModal } from './AddStudentModal';
 import { FeeReceiptModal } from './FeeReceiptModal';
@@ -374,28 +374,54 @@ export const AdminDashboard: React.FC = () => {
   const [newNoticeContent, setNewNoticeContent] = useState('');
   const [newNoticeUrgent, setNewNoticeUrgent] = useState(false);
 
-  // Calculations for overview
+  // Calculations for overview (memoized for performance)
   const totalStudents = students.length;
-  const totalBhaiya = students.filter(s => s.gender === 'Bhaiya').length;
-  const totalBahin = students.filter(s => s.gender === 'Bahin').length;
+  const { totalBhaiya, totalBahin } = useMemo(() => {
+    let bhaiya = 0;
+    let bahin = 0;
+    for (let i = 0; i < students.length; i++) {
+      if (students[i].gender === 'Bhaiya') bhaiya++;
+      else if (students[i].gender === 'Bahin') bahin++;
+    }
+    return { totalBhaiya: bhaiya, totalBahin: bahin };
+  }, [students]);
   
-  const todayAttendance = getAttendanceForDate(attendanceDate);
-  const presentCount = Object.values(todayAttendance).filter(s => s === 'Present').length;
-  const totalMarked = Object.values(todayAttendance).length;
-  const attendanceRate = totalStudents > 0 ? Math.round((presentCount / (totalMarked || totalStudents)) * 100) : 0;
+  const todayAttendance = useMemo(() => getAttendanceForDate(attendanceDate), [getAttendanceForDate, attendanceDate, attendanceRecords]);
+  const { presentCount, totalMarked, attendanceRate } = useMemo(() => {
+    const vals = Object.values(todayAttendance);
+    let present = 0;
+    for (let i = 0; i < vals.length; i++) {
+      if (vals[i] === 'Present') present++;
+    }
+    const marked = vals.length;
+    const rate = totalStudents > 0 ? Math.round((present / (marked || totalStudents)) * 100) : 0;
+    return { presentCount: present, totalMarked: marked, attendanceRate: rate };
+  }, [todayAttendance, totalStudents]);
 
-  const totalFeeCollected = feeRecords.filter(f => f.status === 'Paid').reduce((acc, curr) => acc + curr.paidAmount, 0);
-  const totalFeePending = feeRecords.reduce((acc, curr) => acc + (curr.totalAmount - curr.paidAmount), 0);
+  const { totalFeeCollected, totalFeePending } = useMemo(() => {
+    let collected = 0;
+    let pending = 0;
+    for (let i = 0; i < feeRecords.length; i++) {
+      const f = feeRecords[i];
+      if (f.status === 'Paid') collected += f.paidAmount;
+      pending += (f.totalAmount - f.paidAmount);
+    }
+    return { totalFeeCollected: collected, totalFeePending: pending };
+  }, [feeRecords]);
 
-  // Filtered students
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.rollNo.includes(searchQuery) ||
-      student.fatherName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = selectedClass === 'ALL' || student.class.includes(selectedClass);
-    const matchesGender = selectedGender === 'ALL' || student.gender === selectedGender;
-    return matchesSearch && matchesClass && matchesGender;
-  });
+  // Filtered students (memoized search & filter)
+  const filteredStudents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return students.filter(student => {
+      const matchesSearch = !q ||
+        student.name.toLowerCase().includes(q) ||
+        student.rollNo.toLowerCase().includes(q) ||
+        student.fatherName.toLowerCase().includes(q);
+      const matchesClass = selectedClass === 'ALL' || student.class.includes(selectedClass);
+      const matchesGender = selectedGender === 'ALL' || student.gender === selectedGender;
+      return matchesSearch && matchesClass && matchesGender;
+    });
+  }, [students, searchQuery, selectedClass, selectedGender]);
 
   const handleCreateNotice = (e: React.FormEvent) => {
     e.preventDefault();

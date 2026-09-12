@@ -12,15 +12,24 @@ import { AdmissionInquiry } from './components/public/AdmissionInquiry';
 import { Gallery } from './components/public/Gallery';
 import { Footer } from './components/public/Footer';
 import { LegalInformation } from './components/public/LegalInformation';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { StudentPortal } from './components/student/StudentPortal';
-import { TeacherPortal } from './components/teacher/TeacherPortal';
 import { OfflineBadge } from './components/common/OfflineBadge';
 import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 import { AdminAuthModal } from './components/admin/AdminAuthModal';
 import { TeacherAuthModal } from './components/teacher/TeacherAuthModal';
 import { SchoolManagementModal } from './components/admin/SchoolManagementModal';
 import { LanguageProvider } from './context/LanguageContext';
+
+const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const TeacherPortal = React.lazy(() => import('./components/teacher/TeacherPortal').then(m => ({ default: m.TeacherPortal })));
+const StudentPortal = React.lazy(() => import('./components/student/StudentPortal').then(m => ({ default: m.StudentPortal })));
+
+const PortalLoadingFallback: React.FC<{ label: string }> = ({ label }) => (
+  <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
+    <div className="w-10 h-10 rounded-full border-4 border-orange-200 border-t-orange-600 animate-spin mb-3" />
+    <p className="text-sm font-bold text-orange-950">{label}</p>
+    <p className="text-xs text-stone-500 mt-1">सरस्वती शिशु मंदिर ईआरपी पोर्टल</p>
+  </div>
+);
 
 const SchoolApp: React.FC = () => {
   const { viewMode, setViewMode } = useSchool();
@@ -70,11 +79,17 @@ const SchoolApp: React.FC = () => {
     <>
       <OfflineBadge />
       {viewMode === 'admin' ? (
-        <AdminDashboard />
+        <React.Suspense fallback={<PortalLoadingFallback label="व्यवस्थापक नियंत्रण पटल लोड हो रहा है..." />}>
+          <AdminDashboard />
+        </React.Suspense>
       ) : viewMode === 'teacher' ? (
-        <TeacherPortal />
+        <React.Suspense fallback={<PortalLoadingFallback label="आचार्य पोर्टल लोड हो रहा है..." />}>
+          <TeacherPortal />
+        </React.Suspense>
       ) : viewMode === 'student' ? (
-        <StudentPortal />
+        <React.Suspense fallback={<PortalLoadingFallback label="छात्र एवं अभिभावक पोर्टल लोड हो रहा है..." />}>
+          <StudentPortal />
+        </React.Suspense>
       ) : (
         <div className="min-h-screen bg-stone-50 flex flex-col w-full max-w-full overflow-x-hidden">
           <Navbar
