@@ -177,42 +177,44 @@ export const TeacherPortal: React.FC = () => {
   const activeAttendanceMap = getAttendanceForDate(attendanceDate);
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-stone-100 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <header className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white shadow-lg sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      <header className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white shadow-lg sticky top-0 z-30 w-full max-w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-16 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setViewMode('public')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition shrink-0"
+              title="मुख्य वेबसाइट पर लौटें"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">मुख्य वेबसाइट</span>
             </button>
-            <div className="h-6 w-px bg-orange-700" />
-            <div className="flex items-center space-x-2">
-              <span className="text-xl">🪷</span>
-              <div>
-                <h1 className="text-sm font-bold text-amber-100 flex items-center gap-2">
-                  <span>{currentSchool.hindiName}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-[10px] text-yellow-300 font-bold border border-yellow-400/40">
-                    आचार्य पटल
+            <div className="h-5 w-px bg-orange-700 hidden sm:block shrink-0" />
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-lg sm:text-xl shrink-0">🪷</span>
+              <div className="min-w-0">
+                <h1 className="text-xs sm:text-sm font-bold text-amber-100 flex items-center gap-1.5 truncate">
+                  <span className="truncate max-w-[130px] xs:max-w-[200px] sm:max-w-none">{currentSchool.hindiName}</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[9px] text-yellow-300 font-bold border border-yellow-400/40 shrink-0">
+                    आचार्य
                   </span>
                 </h1>
-                <p className="text-[10px] text-orange-200">
+                <p className="text-[10px] text-orange-200 truncate hidden xs:block">
                   {teacherProfile ? `${teacherProfile.gender === 'Acharya' ? 'आचार्य' : 'दीदी'} ${teacherProfile.name}` : teacherName} • {teacherProfile?.designation || 'शिक्षक'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 text-xs">
+          <div className="flex items-center gap-2 text-xs shrink-0">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-800 hover:bg-red-700 text-white font-bold transition shadow-xs"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-800 hover:bg-red-700 text-white font-bold transition shadow-xs text-xs shrink-0"
+              title="लॉगआउट"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>लॉगआउट</span>
+              <span className="hidden sm:inline">लॉगआउट</span>
             </button>
           </div>
         </div>
@@ -289,7 +291,7 @@ export const TeacherPortal: React.FC = () => {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-5 sm:space-y-6 overflow-x-hidden">
 
         {/* ================= TAB 1: ATTENDANCE ================= */}
         {currentTab === 'attendance' && (

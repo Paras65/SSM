@@ -413,36 +413,61 @@ export const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col">
+    <div className="min-h-screen bg-stone-100 flex flex-col w-full max-w-full overflow-x-hidden">
       
       {/* Top Bar for Admin */}
-      <header className="bg-orange-900 text-white sticky top-0 z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-800/80 hover:bg-orange-800 text-xs font-semibold text-amber-200 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>वेबसाइट पर लौटें</span>
-            </button>
-            <div className="h-6 w-px bg-orange-700" />
-            <div className="flex items-center space-x-2">
-              <span className="text-xl">🪷</span>
-              <div>
-                <h2 className="text-sm font-bold text-amber-100 leading-tight">
-                  {currentSchool.hindiName}
-                </h2>
-                <span className="text-[10px] text-orange-300 font-medium">
-                  सत्र 2025-26 • {currentSchool.prant} • प्रशासकीय नियंत्रण पटल
-                </span>
+      <header className="bg-orange-900 text-white sticky top-0 z-30 shadow-md w-full max-w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
+          
+          {/* Brand & Left Actions */}
+          <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
+            <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-orange-800/80 hover:bg-orange-800 text-xs font-semibold text-amber-200 transition-colors shrink-0"
+                title="वेबसाइट पर लौटें"
+              >
+                <ArrowLeft className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">वेबसाइट पर लौटें</span>
+              </button>
+              <div className="h-6 w-px bg-orange-700 hidden sm:block shrink-0" />
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                <span className="text-lg sm:text-xl shrink-0">🪷</span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xs sm:text-sm font-bold text-amber-100 leading-tight truncate max-w-[140px] xs:max-w-[200px] sm:max-w-[240px] md:max-w-none">
+                    {currentSchool.hindiName}
+                  </h2>
+                  <span className="text-[10px] text-orange-300 font-medium hidden sm:block truncate">
+                    सत्र 2025-26 • {currentSchool.prant} • प्रशासकीय नियंत्रण पटल
+                  </span>
+                </div>
               </div>
+            </div>
+
+            {/* Mobile-only Quick Buttons */}
+            <div className="flex items-center gap-1.5 sm:hidden shrink-0">
+              <button
+                onClick={() => setShowAddStudent(true)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 font-bold text-white text-[11px] shadow-xs shrink-0"
+                title="नया छात्र प्रवेश"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>छात्र</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-lg bg-red-800/80 hover:bg-red-700 text-white text-xs font-bold shrink-0"
+                title="लॉगआउट"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-3 text-xs">
+          {/* Controls: Branch Switcher, Plan, Sync, Desktop Buttons */}
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 text-xs w-full sm:w-auto pb-0.5 sm:pb-0">
             {/* School / Branch Switcher */}
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950 border border-orange-800 text-[11px] font-bold text-amber-200">
+            <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-orange-950 border border-orange-800 text-[11px] font-bold text-amber-200 min-w-0 max-w-[55%] sm:max-w-none">
               <Building2 className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
               <select
                 value={currentSchool.id}
@@ -454,7 +479,7 @@ export const AdminDashboard: React.FC = () => {
                     setCurrentSchoolId(e.target.value);
                   }
                 }}
-                className="bg-transparent border-none text-[11px] font-bold text-amber-100 focus:outline-none cursor-pointer max-w-[150px] lg:max-w-[210px] truncate"
+                className="bg-transparent border-none text-[11px] font-bold text-amber-100 focus:outline-none cursor-pointer truncate w-full max-w-[110px] xs:max-w-[140px] sm:max-w-[170px] lg:max-w-[220px]"
                 title="Switch School Branch"
               >
                 {schools.map(s => (
@@ -466,67 +491,71 @@ export const AdminDashboard: React.FC = () => {
               </select>
             </div>
 
-            {/* Plan Badge & Switcher */}
-            {isPro ? (
-              <span
-                title="प्रो योजना सक्रिय है"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/50 text-amber-200 text-[11px] font-bold shadow-xs"
-              >
-                <Crown className="w-3.5 h-3.5 text-yellow-300 fill-yellow-400" />
-                <span className="hidden sm:inline">प्रो सक्रिय</span>
-                <span>(PRO 👑)</span>
-              </span>
-            ) : (
-              <button
-                onClick={() => setUpgradeModalFeature({
-                  name: 'विद्या भारती प्रो ईआरपी',
-                  desc: 'अपनी शाखा को प्रो योजना में अपग्रेड करें और 360° समग्र प्रगति पत्र, आचार्य पेरोल, व्हाट्सएप अलर्ट आदि अनलॉक करें।'
-                })}
-                title="निःशुल्क योजना सक्रिय है। प्रो में अपग्रेड करने हेतु क्लिक करें।"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[11px] font-bold hover:bg-emerald-900 transition cursor-pointer shadow-xs"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>निःशुल्क (FREE)</span>
-                <span className="text-[9px] px-1.5 py-0.5 bg-amber-400 text-stone-950 font-black rounded-md uppercase tracking-tight">
-                  अपग्रेड ⚡
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Plan Badge */}
+              {isPro ? (
+                <span
+                  title="प्रो योजना सक्रिय है"
+                  className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/50 text-amber-200 text-[10px] sm:text-[11px] font-bold shadow-xs shrink-0"
+                >
+                  <Crown className="w-3 h-3 text-yellow-300 fill-yellow-400 shrink-0" />
+                  <span className="hidden md:inline">प्रो सक्रिय</span>
+                  <span>PRO 👑</span>
                 </span>
-              </button>
-            )}
+              ) : (
+                <button
+                  onClick={() => setUpgradeModalFeature({
+                    name: 'विद्या भारती प्रो ईआरपी',
+                    desc: 'अपनी शाखा को प्रो योजना में अपग्रेड करें और 360° समग्र प्रगति पत्र, आचार्य पेरोल, व्हाट्सएप अलर्ट आदि अनलॉक करें।'
+                  })}
+                  title="निःशुल्क योजना सक्रिय है। प्रो में अपग्रेड करने हेतु क्लिक करें।"
+                  className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/60 text-emerald-300 text-[10px] sm:text-[11px] font-bold hover:bg-emerald-900 transition cursor-pointer shadow-xs shrink-0"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>FREE</span>
+                  <span className="text-[9px] px-1 py-0.2 bg-amber-400 text-stone-950 font-black rounded uppercase">
+                    अपग्रेड ⚡
+                  </span>
+                </button>
+              )}
+
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-orange-950 border border-orange-800 text-[11px] font-semibold shrink-0">
+                <span className={`w-2 h-2 rounded-full ${
+                  dbStatus === 'connected' ? 'bg-green-400 animate-pulse' : dbStatus === 'connecting' ? 'bg-yellow-400 animate-ping' : 'bg-stone-400'
+                }`} />
+                <span className="hidden md:inline text-amber-200">
+                  {dbStatus === 'connected' ? 'MongoDB' : 'Offline'}
+                </span>
+                <button
+                  onClick={() => refreshFromDb()}
+                  className="p-0.5 hover:text-white text-orange-300"
+                  title="Sync data with MongoDB"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
 
             <button
               onClick={() => {
                 setSchoolModalMode('list');
                 setShowSchoolModal(true);
               }}
-              className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-800 hover:bg-orange-700 text-amber-200 text-[11px] font-bold border border-orange-700 transition-colors"
+              className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-800 hover:bg-orange-700 text-amber-200 text-[11px] font-bold border border-orange-700 transition-colors shrink-0"
               title="Manage all school branches"
             >
               <Building2 className="w-3.5 h-3.5" />
-              <span>शाखा प्रबंधन ({schools.length})</span>
+              <span>शाखाएं ({schools.length})</span>
             </button>
 
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-950 border border-orange-800 text-[11px] font-semibold">
-              <span className={`w-2 h-2 rounded-full ${
-                dbStatus === 'connected' ? 'bg-green-400 animate-pulse' : dbStatus === 'connecting' ? 'bg-yellow-400 animate-ping' : 'bg-stone-400'
-              }`} />
-              <span className="hidden sm:inline text-amber-200">
-                {dbStatus === 'connected' ? 'MongoDB Atlas' : 'Offline'}
-              </span>
-              <button
-                onClick={() => refreshFromDb()}
-                className="ml-1 p-0.5 hover:text-white text-orange-300"
-                title="Sync data with MongoDB"
-              >
-                <RefreshCw className="w-3 h-3" />
-              </button>
-            </div>
-
-            <span className="hidden lg:inline-block px-2.5 py-1 bg-orange-950 rounded-full border border-orange-800 text-amber-200">
+            <span className="hidden lg:inline-block px-2.5 py-1 bg-orange-950 rounded-full border border-orange-800 text-amber-200 shrink-0">
               प्रधानाचार्य: {currentSchool.principalName}
             </span>
+
+            {/* Desktop Logout and Add Student */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-800/80 hover:bg-red-700 text-white text-xs font-bold transition-colors"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-800/80 hover:bg-red-700 text-white text-xs font-bold transition-colors shrink-0"
               title="व्यवस्थापक सत्र से लॉगआउट करें"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -535,7 +564,7 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={() => setShowAddStudent(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-bold text-white shadow-xs"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-bold text-white shadow-xs shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>नया छात्र</span>
@@ -544,7 +573,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto text-xs font-medium border-t border-orange-800/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto text-xs font-medium border-t border-orange-800/60 w-full max-w-full scrollbar-none">
           <button
             onClick={() => setCurrentTab('overview')}
             className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap ${
@@ -712,26 +741,26 @@ export const AdminDashboard: React.FC = () => {
       </header>
 
       {/* Main Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-5 sm:space-y-6 overflow-x-hidden">
         
         {/* ================= TAB 1: OVERVIEW ================= */}
         {currentTab === 'overview' && (
           <div className="space-y-6">
 
             {isDeveloper && (
-              <section className="bg-stone-900 text-white rounded-2xl border border-orange-700 p-4 sm:p-6 shadow-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+              <section className="bg-stone-900 text-white rounded-2xl border border-orange-700 p-3.5 sm:p-6 shadow-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-5">
                   <div>
-                    <h2 className="text-xl font-black text-amber-200">डेवलपर नेटवर्क अवलोकन</h2>
-                    <p className="text-xs text-stone-300 mt-1">सभी पंजीकृत शाखाओं का संयुक्त संचालन सारांश</p>
+                    <h2 className="text-lg sm:text-xl font-black text-amber-200">डेवलपर नेटवर्क अवलोकन</h2>
+                    <p className="text-xs text-stone-300 mt-0.5 sm:mt-1">सभी पंजीकृत शाखाओं का संयुक्त संचालन सारांश</p>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-200 border border-amber-400/40 text-[11px] font-bold self-start sm:self-auto">
                     {schools.length} शाखाएं
                   </span>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-                  <div className="bg-white/10 rounded-xl p-3"><Users className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-xl">{developerMetrics.students}</strong><span className="text-[11px] text-stone-300">कुल छात्र</span></div>
-                  <div className="bg-white/10 rounded-xl p-3"><Building2 className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-xl">{schools.length}</strong><span className="text-[11px] text-stone-300">कुल शाखाएं</span></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+                  <div className="bg-white/10 rounded-xl p-3"><Users className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-lg sm:text-xl">{developerMetrics.students}</strong><span className="text-[11px] text-stone-300">कुल छात्र</span></div>
+                  <div className="bg-white/10 rounded-xl p-3"><Building2 className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-lg sm:text-xl">{schools.length}</strong><span className="text-[11px] text-stone-300">कुल शाखाएं</span></div>
                   <div className="bg-white/10 rounded-xl p-3"><CheckCircle2 className="w-4 h-4 text-emerald-300 mb-2" /><strong className="block text-xl">{developerMetrics.attendanceRate}%</strong><span className="text-[11px] text-stone-300">उपस्थिति</span></div>
                   <div className="bg-white/10 rounded-xl p-3"><Receipt className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-lg">₹{developerMetrics.collected.toLocaleString()}</strong><span className="text-[11px] text-stone-300">प्राप्त शुल्क</span></div>
                   <div className="bg-white/10 rounded-xl p-3"><Receipt className="w-4 h-4 text-red-300 mb-2" /><strong className="block text-lg">₹{developerMetrics.pending.toLocaleString()}</strong><span className="text-[11px] text-stone-300">बकाया शुल्क</span></div>
@@ -740,7 +769,7 @@ export const AdminDashboard: React.FC = () => {
               </section>
             )}
 
-            <section className="bg-white rounded-2xl border border-orange-200 p-4 sm:p-6 shadow-xs">
+            <section className="bg-white rounded-2xl border border-orange-200 p-3 sm:p-6 shadow-xs w-full max-w-full overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                 <div>
                   <h2 className="text-xl font-black text-stone-900">दैनिक कक्षा समय-सारणी</h2>
@@ -750,7 +779,9 @@ export const AdminDashboard: React.FC = () => {
                   चयनित शाखा
                 </span>
               </div>
-              <TimetableSection />
+              <div className="w-full max-w-full overflow-x-auto">
+                <TimetableSection />
+              </div>
             </section>
             
             {/* KPI Cards Row */}

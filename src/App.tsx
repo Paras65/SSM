@@ -76,7 +76,7 @@ const SchoolApp: React.FC = () => {
       ) : viewMode === 'student' ? (
         <StudentPortal />
       ) : (
-        <div className="min-h-screen bg-stone-50 flex flex-col">
+        <div className="min-h-screen bg-stone-50 flex flex-col w-full max-w-full overflow-x-hidden">
           <Navbar
             onOpenSignUp={handleOpenSignUp}
             onOpenLogin={handleOpenLogin}

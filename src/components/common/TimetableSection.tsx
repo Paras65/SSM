@@ -215,8 +215,8 @@ export const TimetableSection: React.FC = () => {
   };
 
   return (
-    <section id="timetable" className="py-16 bg-stone-100 border-t border-stone-200 print:bg-white print:py-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="timetable" className="py-10 sm:py-16 bg-stone-100 border-t border-stone-200 print:bg-white print:py-0 w-full max-w-full overflow-hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full max-w-full">
         
         {/* Header (Hidden on print) */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 print:hidden">
@@ -250,7 +250,7 @@ export const TimetableSection: React.FC = () => {
         </div>
 
         {/* Filters: Class & Day (Hidden on print) */}
-        <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs mb-6 space-y-3 print:hidden">
+        <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs mb-6 space-y-3 print:hidden w-full max-w-full overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4">
             
             {/* Class Dropdown */}
@@ -288,7 +288,7 @@ export const TimetableSection: React.FC = () => {
         </div>
 
         {/* Timetable Card / Printable Sheet */}
-        <div className="bg-white rounded-3xl border-2 border-orange-200 shadow-md p-6 sm:p-8 overflow-hidden print:border-none print:shadow-none print:p-0">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border-2 border-orange-200 shadow-md p-3 sm:p-8 overflow-hidden print:border-none print:shadow-none print:p-0 w-full max-w-full">
           
           {/* Printable Header */}
           <div className="text-center pb-4 border-b-2 border-orange-200 mb-6">
@@ -304,8 +304,8 @@ export const TimetableSection: React.FC = () => {
           </div>
 
           {/* Timetable Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto w-full max-w-full">
+            <table className="w-full min-w-[520px] text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-orange-900 text-white font-bold border-b border-orange-950">
                   <th className="p-3 w-16 text-center">कालांश</th>
