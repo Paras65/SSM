@@ -36,7 +36,7 @@ const PUBLIC_PLATFORM_SCHOOL: School = {
   state: '',
   prant: 'SSM ERP',
   phone: 'सहायता केंद्र उपलब्ध',
-  email: 'support@ssm-erp.local',
+  email: 'support@init65.co.in',
   timings: 'ऑनलाइन 24x7',
   principalName: '',
   adminPasscode: '',

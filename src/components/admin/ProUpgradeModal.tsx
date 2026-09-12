@@ -32,7 +32,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
   const { currentSchool } = useSchool();
   const [error, setError] = useState('');
   const [contactStep, setContactStep] = useState<'details' | 'contact'>('details');
-  const upgradeContact = import.meta.env.VITE_UPGRADE_CONTACT || 'your-admin@example.com';
+  const upgradeContact = import.meta.env.VITE_UPGRADE_CONTACT || 'support@init65.co.in';
   const contactHref = upgradeContact.includes('@') ? `mailto:${upgradeContact}` : `tel:${upgradeContact}`;
 
   const handleClose = () => {
