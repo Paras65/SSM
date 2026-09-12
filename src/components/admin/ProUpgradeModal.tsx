@@ -178,31 +178,31 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {/* Tier 1: Rural */}
+              {/* Tier 1: Academic & Exam Pack */}
               <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700/50 shadow-2xs">
                 <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
-                  १. ग्रामीण शाखा (150 छात्रों तक)
+                  १. परीक्षा व प्रगति पत्र (Academic Pack)
                 </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-black text-emerald-950 dark:text-white">₹2,999</span>
+                  <span className="text-2xl font-black text-emerald-950 dark:text-white">₹3,999</span>
                   <span className="text-[11px] text-slate-500">/ प्रति वर्ष</span>
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                  NEP रिपोर्ट कार्ड, डिजिटल आईडी व पेरोल (~₹250/माह)
+                  NEP 360° समग्र प्रगति पत्र, डिजिटल आईडी व टीसी (~₹330/माह)
                 </p>
               </div>
 
-              {/* Tier 2: Town */}
+              {/* Tier 2: Full Smart ERP */}
               <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/50 shadow-2xs">
                 <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 block mb-1">
-                  २. नगर / वृहद शाखा (150+ छात्र)
+                  २. सम्पूर्ण स्मार्ट ईआरपी (Full Smart ERP)
                 </span>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-2xl font-black text-amber-950 dark:text-white">₹7,999</span>
                   <span className="text-[11px] text-slate-500">/ वर्ष (या ₹799/माह)</span>
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
-                  समर्पित सर्वर, व्हाट्सएप अलर्ट व थोक उपस्थिति
+                  आचार्य पेरोल, व्हाट्सएप अलर्ट, थोक उपस्थिति व समर्पित सर्वर
                 </p>
               </div>
             </div>

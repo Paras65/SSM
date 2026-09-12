@@ -37,16 +37,23 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
     { text: 'सरस्वती वंदना, एकात्मता स्तोत्र व ऑडियो प्लेयर', highlight: false },
   ];
 
-  const PRO_FEATURES = [
+  const ACADEMIC_FEATURES = [
     { text: 'समस्त निःशुल्क सेवा योजना की सुविधाएं', highlight: false },
     { text: '360° समग्र प्रगति पत्र (Holistic Report Cards) — NEP 2020 अनुरूप', highlight: true },
-    { text: 'आचार्य एवं वेतन पर्ची (Staff Payroll & Salary Slip PDF)', highlight: true },
-    { text: 'व्हाट्सएप त्वरित अनुपस्थिति व शुल्क अलर्ट (WhatsApp Alerts)', highlight: true },
     { text: 'बारकोड युक्त डिजिटल छात्र परिचय पत्र (ID Cards)', highlight: true },
     { text: 'आधिकारिक स्थानांतरण प्रमाण पत्र (Transfer Certificate / TC)', highlight: true },
+    { text: 'दैनिक क्लाउड डेटाबेस बैकअप एवं सुरक्षा', highlight: true },
+    { text: 'एक्सेल / CSV संपूर्ण डेटा निर्यात', highlight: true },
+    { text: 'संस्थागत तकनीकी सहायता एवं प्रशिक्षण', highlight: true },
+  ];
+
+  const SMART_ERP_FEATURES = [
+    { text: 'समस्त परीक्षा एवं प्रगति पत्र (Academic) सुविधाएं', highlight: false },
+    { text: 'आचार्य एवं वेतन पर्ची (Staff Payroll & Salary Slip PDF)', highlight: true },
+    { text: 'व्हाट्सएप त्वरित अनुपस्थिति व शुल्क अलर्ट (WhatsApp Alerts)', highlight: true },
     { text: '1-क्लिक थोक उपस्थिति अंकन (Bulk Attendance Marking)', highlight: true },
-    { text: 'दैनिक समर्पित क्लाउड बैकअप एवं एक्सेल/CSV निर्यात', highlight: true },
-    { text: 'प्राथमिकता संस्थागत तकनीकी सहयोग व ऑन-कॉल सहायता', highlight: true },
+    { text: 'समर्पित क्लाउड सर्वर एवं उच्च गति डेटाबेस', highlight: true },
+    { text: 'उच्च प्राथमिकता ऑन-कॉल तकनीकी सहायता', highlight: true },
   ];
 
   return (
@@ -61,26 +68,26 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-14 sm:mb-18">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100 border border-orange-300 text-orange-900 text-xs font-bold shadow-2xs">
             <HeartHandshake className="w-4 h-4 text-orange-700" />
-            <span>विद्या भारती संस्कार अनुरूप — सेवा एवं तकनीकी सहयोग मॉडल</span>
+            <span>विद्या भारती संस्कार अनुरूप — सुविधा-आधारित योजनाएं (Feature-Wise Plans)</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-stone-900 tracking-tight leading-tight">
             सरस्वती शिशु मंदिर{' '}
             <span className="bg-gradient-to-r from-orange-700 via-amber-600 to-red-600 bg-clip-text text-transparent">
-              सेवा एवं तकनीकी सहयोग योजनाएं
+              सुविधा-आधारित ईआरपी मॉडल
             </span>
           </h2>
 
           <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
-            विद्या भारती के आदर्शों के अनुरूप प्रत्येक सरस्वती शिशु एवं विद्या मंदिर के लिए पारदर्शी डिजिटल व्यवस्था। 
-            ग्रामीण व लघु शाखाओं के लिए <strong>आजीवन निःशुल्क सेवा</strong>, एवं वृहद शाखाओं के लिए <strong>न्यूनतम सर्वर अनुरक्षण सहयोग (AMC)</strong>।
+            विद्या भारती के आदर्शों के अनुरूप पारदर्शी सुविधा-वार व्यवस्था। किसी छात्र संख्या या स्थान के प्रतिबंध के बिना — 
+            विद्यालय को जो सुविधाएं चाहिए, वे केवल उन्हीं का चयन कर सकते हैं।
           </p>
 
           {/* Quick Stats / Highlights */}
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-2 text-xs font-semibold text-stone-600">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              100% गैर-व्यावसायिक सेवा भाव
+              100% सुविधा-आधारित पारदर्शिता
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -93,7 +100,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
           </div>
         </div>
 
-        {/* Pricing Cards Grid (3-Tier: Free Seva, Rural AMC, Town Pro AMC) */}
+        {/* Pricing Cards Grid (3-Tier: Free Seva, Academic Pack, Smart ERP Pack) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-6 items-stretch max-w-7xl mx-auto">
           
           {/* Card 1: Free Seva Tier */}
@@ -102,7 +109,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
               <div className="flex items-center justify-between gap-4 mb-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
                   <HeartHandshake className="w-3.5 h-3.5 text-emerald-700" />
-                  बुनियादी सेवा
+                  बुनियादी प्रबंधन
                 </span>
                 <span className="text-xs font-semibold text-stone-500">आजीवन निःशुल्क</span>
               </div>
@@ -117,7 +124,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
               {/* Price */}
               <div className="flex items-baseline gap-2 pb-5 mb-5 border-b border-stone-200">
                 <span className="text-3xl sm:text-4xl font-black text-stone-900">₹0</span>
-                <span className="text-stone-500 text-xs font-medium">/ आजीवन (100% निःशुल्क)</span>
+                <span className="text-stone-500 text-xs font-medium">/ आजीवन (100% निःशुल्क सेवा)</span>
               </div>
 
               {/* Features List */}
@@ -151,33 +158,33 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
             </div>
           </div>
 
-          {/* Card 2: Rural Branch AMC (Up to 150 students) */}
+          {/* Card 2: Academic & Examination Pack */}
           <div className="bg-gradient-to-b from-emerald-50/70 via-white to-amber-50/40 rounded-3xl border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all p-6 sm:p-7 flex flex-col justify-between relative ring-4 ring-emerald-400/20">
             {/* Top Ribbon */}
             <div className="absolute -top-3.5 right-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-              <HeartHandshake className="w-3.5 h-3.5 text-emerald-200" />
-              <span>ग्रामीण शाखाओं हेतु अनुशंसित</span>
+              <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+              <span>सर्वाधिक अनुशंसित (Academic Pack)</span>
             </div>
 
             <div>
               <div className="flex items-center justify-between gap-4 mb-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-200/90 text-emerald-950 text-xs font-bold border border-emerald-400 shadow-2xs">
                   <Server className="w-3.5 h-3.5 text-emerald-800" />
-                  150 छात्रों तक की शाखाएं
+                  परीक्षा एवं छात्र रिकॉर्ड्स
                 </span>
-                <span className="text-xs font-bold text-emerald-800">~₹250/माह मात्र</span>
+                <span className="text-xs font-bold text-emerald-800">~₹330/माह मात्र</span>
               </div>
 
               <h3 className="text-xl sm:text-2xl font-black text-stone-900">
-                ग्रामीण शाखा सहयोग (Rural AMC)
+                परीक्षा व प्रगति पत्र (Academic Pack)
               </h3>
               <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-5 leading-relaxed">
-                ग्रामीण व लघु शाखाओं हेतु सम्पूर्ण 360° NEP प्रगति पत्र, डिजिटल आईडी कार्ड एवं आचार्य पेरोल।
+                360° समग्र प्रगति पत्र (NEP 2020), बारकोड परिचय पत्र (ID Cards), स्थानांतरण प्रमाण पत्र एवं बैकअप।
               </p>
 
               {/* Price */}
               <div className="flex items-baseline gap-2 pb-5 mb-5 border-b border-emerald-200">
-                <span className="text-3xl sm:text-4xl font-black text-emerald-950">₹2,999</span>
+                <span className="text-3xl sm:text-4xl font-black text-emerald-950">₹3,999</span>
                 <span className="text-stone-600 text-xs font-medium">/ प्रति वर्ष (न्यूनतम संस्थागत सहयोग)</span>
               </div>
 
@@ -185,17 +192,9 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
               <div className="space-y-2.5 mb-6">
                 <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider block flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                  ग्रामीण सहयोग के अंतर्गत सुविधाएं:
+                  एकेडेमिक पैक सुविधाएं:
                 </span>
-                {[
-                  { text: 'समस्त निःशुल्क सेवा योजना की सुविधाएं', highlight: false },
-                  { text: '360° समग्र प्रगति पत्र (NEP 2020 अनुरूप)', highlight: true },
-                  { text: 'बारकोड युक्त डिजिटल छात्र परिचय पत्र (ID Cards)', highlight: true },
-                  { text: 'आचार्य एवं वेतन पर्ची (Payroll & Salary Slip PDF)', highlight: true },
-                  { text: 'आधिकारिक स्थानांतरण प्रमाण पत्र (TC)', highlight: true },
-                  { text: 'दैनिक क्लाउड डेटाबेस बैकअप एवं सुरक्षा', highlight: true },
-                  { text: 'प्राथमिकता ऑन-कॉल तकनीकी सहायता', highlight: true },
-                ].map((item, idx) => (
+                {ACADEMIC_FEATURES.map((item, idx) => (
                   <div
                     key={idx}
                     className={`flex items-start gap-2 text-xs ${
@@ -218,38 +217,38 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
                 onClick={() => onOpenSignUp?.('pro')}
                 className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-md shadow-emerald-600/25 hover:shadow-emerald-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
               >
-                <HeartHandshake className="w-4 h-4 text-emerald-200" />
-                <span>ग्रामीण सहयोग चुनें (Rural AMC)</span>
+                <Sparkles className="w-4 h-4 text-emerald-200" />
+                <span>एकेडेमिक पैक चुनें (Academic Pack)</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <p className="text-[11px] text-center text-stone-500">
-                छात्र प्रवेश के समय ₹25/वर्ष से आसानी से वहनीय
+                बिना किसी छात्र संख्या सीमा के • वार्षिक सक्रियण
               </p>
             </div>
           </div>
 
-          {/* Card 3: Town & City Pro AMC (150+ students) */}
+          {/* Card 3: Full Smart ERP Pack */}
           <div className="bg-gradient-to-b from-amber-50/80 via-white to-orange-50/50 rounded-3xl border-2 border-amber-400 shadow-xl hover:shadow-2xl transition-all p-6 sm:p-7 flex flex-col justify-between relative ring-4 ring-amber-400/20">
             {/* Top Ribbon */}
             <div className="absolute -top-3.5 right-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1">
               <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-300" />
-              <span>वृहद शाखाएं एवं इंटर कॉलेज</span>
+              <span>सम्पूर्ण प्रबंधन एवं पेरोल</span>
             </div>
 
             <div>
               <div className="flex items-center justify-between gap-4 mb-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200/90 text-amber-950 text-xs font-bold border border-amber-400 shadow-2xs">
                   <Crown className="w-3.5 h-3.5 text-amber-700 fill-amber-600" />
-                  150+ असीमित छात्र व आचार्य
+                  पेरोल, व्हाट्सएप व थोक उपस्थिति
                 </span>
                 <span className="text-xs font-bold text-orange-700">समर्पित सर्वर</span>
               </div>
 
               <h3 className="text-xl sm:text-2xl font-black text-stone-900">
-                नगर / वृहद शाखा (Town Pro AMC)
+                सम्पूर्ण स्मार्ट ईआरपी (Full Smart ERP)
               </h3>
               <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-5 leading-relaxed">
-                150+ छात्रों अथवा उच्चतर माध्यमिक विद्यालयों हेतु समर्पित सर्वर, व्हाट्सएप अलर्ट एवं थोक उपस्थिति।
+                आचार्य पेरोल व वेतन पर्ची, व्हाट्सएप त्वरित अलर्ट, थोक उपस्थिति एवं समर्पित क्लाउड सर्वर।
               </p>
 
               {/* Price */}
@@ -262,9 +261,9 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
               <div className="space-y-2.5 mb-6">
                 <span className="text-xs font-bold text-orange-950 uppercase tracking-wider block flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  वृहद शाखा विशेष लाभ:
+                  स्मार्ट ईआरपी विशेष लाभ:
                 </span>
-                {PRO_FEATURES.map((item, idx) => (
+                {SMART_ERP_FEATURES.map((item, idx) => (
                   <div
                     key={idx}
                     className={`flex items-start gap-2 text-xs ${
@@ -288,7 +287,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
                 className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg shadow-orange-600/25 hover:shadow-orange-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
               >
                 <Crown className="w-4 h-4 text-yellow-200 fill-yellow-300" />
-                <span>नगर प्रो सहयोग चुनें (Town AMC)</span>
+                <span>स्मार्ट ईआरपी चुनें (Get Smart ERP)</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <p className="text-[11px] text-center text-stone-500">

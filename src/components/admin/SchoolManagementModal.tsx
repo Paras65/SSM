@@ -518,9 +518,9 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                       </div>
                       <div>
                         <h4 className="text-sm sm:text-base font-bold text-stone-900">
-                          4. सेवा एवं तकनीकी सहयोग मॉडल (Seva & Technical Support)
+                          4. सुविधा-आधारित ईआरपी मॉडल (Feature-Based ERP Plans)
                         </h4>
-                        <p className="text-xs text-stone-500">ग्रामीण व लघु शाखाओं हेतु निःशुल्क सेवा अथवा समर्पित सर्वर अनुरक्षण सहयोग का चयन करें</p>
+                        <p className="text-xs text-stone-500">विद्यालय की आवश्यकतानुसार बुनियादी निःशुल्क सेवा अथवा उन्नत प्रो सुविधाओं का चयन करें</p>
                       </div>
                     </div>
 
@@ -545,7 +545,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             </span>
                           </div>
                           <p className="text-xs text-stone-600 leading-relaxed mb-3">
-                            ग्रामीण व लघु शाखाओं हेतु 100% निःशुल्क। छात्र प्रवेश, दैनिक उपस्थिति, शुल्क रसीदें एवं सूचनाएं।
+                            दैनिक छात्र उपस्थिति, प्रवेश पंजिका, शुल्क रसीदें, गृहकार्य डायरी एवं परिपत्र सूचनाएं।
                           </p>
                         </div>
                         <div className="flex items-center text-xs font-bold text-emerald-700 gap-1.5 pt-2 border-t border-emerald-200/60">
@@ -567,14 +567,14 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
                               <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
-                              तकनीकी सहयोग प्रो (Tech Support & AMC)
+                              उन्नत प्रो सुविधाएं (Pro Features AMC)
                             </span>
                             <div className="text-right">
                               <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 block">
-                                ग्रामीण: ₹2,999/वर्ष
+                                Academic: ₹3,999/वर्ष
                               </span>
                               <span className="text-[10px] text-amber-900 mt-0.5 block">
-                                नगर: ₹7,999/वर्ष
+                                Smart ERP: ₹7,999/वर्ष
                               </span>
                             </div>
                           </div>
@@ -584,7 +584,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                         </div>
                         <div className="flex items-center text-xs font-bold text-amber-800 gap-1.5 pt-2 border-t border-amber-200/60">
                           {plan === 'pro' ? <CheckCircle2 className="w-4 h-4 text-amber-600" /> : <div className="w-4 h-4 rounded-full border border-stone-300" />}
-                          <span>{plan === 'pro' ? 'वर्तमान में चयनित' : 'तकनीकी सहयोग चुनें'}</span>
+                          <span>{plan === 'pro' ? 'वर्तमान में चयनित' : 'प्रो सुविधाएं चुनें'}</span>
                         </div>
                       </div>
                     </div>
