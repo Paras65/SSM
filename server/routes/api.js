@@ -305,7 +305,7 @@ router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res
     const school = await School.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) },
       req.body,
-      { new: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!school) return res.status(404).json({ error: 'School not found' });
     res.json(school);
@@ -383,7 +383,7 @@ router.put('/students/:id', requireAdminAuth, requireSchoolScope, async (req, re
     const student = await Student.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       req.body,
-      { new: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!student) return res.status(404).json({ error: 'Student not found' });
     res.json(student);
@@ -417,13 +417,20 @@ router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res)
 
 router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const { studentId, date, status, schoolId } = req.body;
+    const { studentId, date, status = 'Present', schoolId } = req.body;
+    if (!studentId || !date) {
+      return res.status(400).json({ error: 'studentId और date अनिवार्य हैं।' });
+    }
+    const validStatuses = ['Present', 'Absent', 'Leave'];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ error: `अमान्य उपस्थिति स्थिति: ${status}` });
+    }
     const targetSchoolId = schoolId || req.userSchoolId || 'ssm-gorakhpur';
     const id = `att-${targetSchoolId}-${date}-${studentId}`;
     const record = await Attendance.findOneAndUpdate(
       { schoolId: targetSchoolId, studentId, date },
       { id, studentId, date, status, schoolId: targetSchoolId },
-      { upsert: true, returnDocument: 'after' }
+      { upsert: true, returnDocument: 'after', runValidators: true }
     );
     res.json(record);
   } catch (err) {
@@ -434,8 +441,18 @@ router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res
 router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { updates, schoolId } = req.body; // array of { studentId, date, status }
-    if (!Array.isArray(updates)) {
-      return res.status(400).json({ error: 'updates array is required' });
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ error: 'updates array is required and must not be empty' });
+    }
+
+    const validStatuses = ['Present', 'Absent', 'Leave'];
+    for (const u of updates) {
+      if (!u.studentId || !u.date) {
+        return res.status(400).json({ error: 'प्रत्येक प्रविष्टि में studentId और date अनिवार्य है।' });
+      }
+      if (u.status && !validStatuses.includes(u.status)) {
+        return res.status(400).json({ error: `अमान्य उपस्थिति स्थिति: ${u.status}` });
+      }
     }
 
     const operations = updates.map(u => {
@@ -448,7 +465,7 @@ router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req
               id: `att-${targetSchoolId}-${u.date}-${u.studentId}`,
               studentId: u.studentId,
               date: u.date,
-              status: u.status,
+              status: u.status || 'Present',
               schoolId: targetSchoolId
             }
           },
@@ -540,7 +557,7 @@ router.post('/reports', requireAdminAuth, requireSchoolScope, async (req, res) =
     const report = await ReportCard.findOneAndUpdate(
       { studentId: reportData.studentId, examTerm: reportData.examTerm, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       reportData,
-      { upsert: true, returnDocument: 'after' }
+      { upsert: true, returnDocument: 'after', runValidators: true }
     );
     res.json(report);
   } catch (err) {
@@ -758,7 +775,7 @@ router.put('/staff/:id', requireAdminAuth, requireSchoolScope, async (req, res) 
     const member = await Staff.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       req.body,
-      { new: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!member) return res.status(404).json({ error: 'Staff member not found' });
     res.json(member);
@@ -804,7 +821,7 @@ router.post('/exams', requirePortalAuth, async (req, res) => {
 
 router.put('/exams/:id', requirePortalAuth, async (req, res) => {
   try {
-    const updated = await Exam.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    const updated = await Exam.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Exam not found' });
     res.json(updated);
   } catch (err) {
@@ -960,10 +977,14 @@ router.post('/leaves', requirePortalAuth, async (req, res) => {
 router.patch('/leaves/:id/status', requirePortalAuth, async (req, res) => {
   try {
     const { status, reviewerRemarks, reviewedBy } = req.body;
+    const validStatuses = ['Pending', 'Approved', 'Rejected'];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'अमान्य अवकाश स्थिति (Invalid leave status)' });
+    }
     const leave = await Leave.findOneAndUpdate(
       { id: req.params.id },
       { status, reviewerRemarks: reviewerRemarks || '', reviewedBy: reviewedBy || 'प्रधानाचार्य' },
-      { new: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
     res.json(leave);
@@ -997,7 +1018,7 @@ router.post('/transport/routes', requirePortalAuth, async (req, res) => {
 
 router.put('/transport/routes/:id', requirePortalAuth, async (req, res) => {
   try {
-    const updated = await TransportRoute.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    const updated = await TransportRoute.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Route not found' });
     res.json(updated);
   } catch (err) {
@@ -1049,7 +1070,7 @@ router.post('/library/books', requirePortalAuth, async (req, res) => {
 
 router.put('/library/books/:id', requirePortalAuth, async (req, res) => {
   try {
-    const updated = await Book.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    const updated = await Book.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Book not found' });
     res.json(updated);
   } catch (err) {
@@ -1095,6 +1116,9 @@ router.post('/library/issue', requirePortalAuth, async (req, res) => {
 router.post('/library/return', requirePortalAuth, async (req, res) => {
   try {
     const { issueId, fineAmount = 0 } = req.body;
+    if (!issueId) {
+      return res.status(400).json({ error: 'issueId अनिवार्य है।' });
+    }
     const issue = await BookIssue.findOneAndUpdate(
       { id: issueId },
       { 
@@ -1102,7 +1126,7 @@ router.post('/library/return', requirePortalAuth, async (req, res) => {
         returnDate: new Date().toISOString().split('T')[0],
         fineAmount: Number(fineAmount) || 0 
       },
-      { new: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!issue) return res.status(404).json({ error: 'Issue record not found' });
     // Increase available copies
@@ -1139,7 +1163,7 @@ router.post('/inventory', requirePortalAuth, async (req, res) => {
 
 router.put('/inventory/:id', requirePortalAuth, async (req, res) => {
   try {
-    const updated = await InventoryItem.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    const updated = await InventoryItem.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Item not found' });
     res.json(updated);
   } catch (err) {
@@ -1163,7 +1187,7 @@ router.post('/inventory/:id/stock', requirePortalAuth, async (req, res) => {
     const item = await InventoryItem.findOneAndUpdate(
       { id: req.params.id },
       { $inc: { stockQuantity: Number(delta) || 0 } },
-      { new: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (!item) return res.status(404).json({ error: 'Item not found' });
     await recordAuditLog({

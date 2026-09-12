@@ -171,6 +171,14 @@ app.get('/', (req, res) => {
 
 // Centralized Global Error Handler
 app.use((err, req, res, next) => {
+  // Check for body-parser / express.json SyntaxError
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      error: 'अमान्य JSON डेटा प्रारूप! (Malformed JSON payload)',
+      code: 'INVALID_JSON_SYNTAX'
+    });
+  }
+
   console.error('💥 Unhandled Server Error:', err);
   const isProduction = process.env.NODE_ENV === 'production';
   res.status(err.status || 500).json({
