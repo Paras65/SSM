@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Sparkles, Phone, Mail, MapPin, Clock, Heart } from 'lucide-react';
+import { Sparkles, Phone, Mail, MapPin, Clock, Heart, ShieldCheck, Lock } from 'lucide-react';
+import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 
 export const Footer: React.FC = () => {
   const { publicSchool } = useSchool();
   const { t } = useLanguage();
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   return (
     <footer className="bg-gradient-to-b from-stone-900 via-stone-950 to-black text-white pt-14 pb-8 border-t-4 border-orange-600">
@@ -51,7 +53,16 @@ export const Footer: React.FC = () => {
               <li><a href="#notices" className="hover:text-orange-400 transition-colors">सूचनाएं एवं परीक्षा कार्यक्रम</a></li>
               <li><a href="#admissions" className="hover:text-orange-400 transition-colors">सत्र 2026-27 प्रवेश फॉर्म</a></li>
               <li><a href="#acharyas" className="hover:text-orange-400 transition-colors">आचार्य एवं दीदी जी परिचय</a></li>
-              <li><a href="#privacy" className="hover:text-orange-400 transition-colors">{t('privacyNotice')}</a></li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-medium"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
+                  <span>{t('privacyNotice')} (DPDP Act 2023)</span>
+                </button>
+              </li>
               <li><a href="#terms" className="hover:text-orange-400 transition-colors">{t('termsOfUse')}</a></li>
             </ul>
           </div>
@@ -101,8 +112,37 @@ export const Footer: React.FC = () => {
 
         </div>
 
+        {/* DPDP Act 2023 Trust & Compliance Bar */}
+        <div className="my-6 p-3.5 bg-stone-900/90 border border-orange-900/60 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-stone-300">
+            <span className="p-1.5 rounded-lg bg-orange-950 border border-orange-800 text-orange-400">
+              <Lock className="w-4 h-4" />
+            </span>
+            <span>
+              <strong className="text-amber-300">DPDP Act 2023 अनुपालित:</strong> छात्र डेटा 100% सुरक्षित, एन्क्रिप्टेड एवं विज्ञापन-मुक्त (No Ads & No Tracking) है।
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowPrivacyModal(true)}
+              className="text-orange-400 hover:text-orange-300 underline font-medium text-[11px]"
+            >
+              पूर्ण नीति पढ़ें
+            </button>
+            <span className="text-stone-700">•</span>
+            <a
+              href="mailto:support@init65.co.in"
+              className="text-stone-400 hover:text-amber-300 text-[11px] flex items-center gap-1"
+            >
+              <Mail className="w-3 h-3 text-orange-400" />
+              <span>शिकायत अधिकारी: support@init65.co.in</span>
+            </a>
+          </div>
+        </div>
+
         {/* Developer Vision & Portfolio Credit */}
-        <div className="pt-6 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center text-xs text-stone-400 gap-4">
+        <div className="pt-4 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center text-xs text-stone-400 gap-4">
           <div className="space-y-1 text-center md:text-left">
             <p>© {new Date().getFullYear()} {publicSchool.hindiName}। • सॉफ्टवेयर कॉपीराइट: <span className="text-amber-300 font-bold">init65.co.in</span></p>
             <p className="text-[11px] text-stone-500 max-w-xl">
@@ -123,6 +163,12 @@ export const Footer: React.FC = () => {
         </div>
 
       </div>
+
+      {/* DPDP Privacy Policy Modal */}
+      <PrivacyPolicyModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
     </footer>
   );
 };

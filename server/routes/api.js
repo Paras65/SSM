@@ -402,6 +402,47 @@ router.delete('/students/:id', requireAdminAuth, requireSchoolScope, async (req,
   }
 });
 
+/**
+ * DPDP Act 2023: Right to Erasure / Data Anonymization on TC Issuance
+ * Masks student personal identifiable contact and residential address
+ * while preserving academic identifiers (rollNo, name, class) required by state education boards.
+ */
+router.post('/students/:id/anonymize', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const student = await Student.findOne({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    student.contact = '+91 99*** *****';
+    student.address = '[DPDP Act 2023: गोपनीयता नीति के तहत अनामीकृत/संरक्षित]';
+    if (student.fatherName && student.fatherName.length > 3) {
+      student.fatherName = `${student.fatherName.slice(0, 3)}***`;
+    }
+    if (student.motherName && student.motherName.length > 3) {
+      student.motherName = `${student.motherName.slice(0, 3)}***`;
+    }
+    await student.save();
+
+    await recordAuditLog({
+      schoolId: student.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'DPDP_STUDENT_ANONYMIZED',
+      description: `छात्र #${student.id} (${student.name}) का व्यक्तिगत डेटा DPDP Act 2023 (TC/विलोपन अधिकार) के तहत अनामीकृत किया गया।`,
+      req
+    });
+
+    res.json({
+      success: true,
+      message: 'छात्र का व्यक्तिगत डेटा DPDP Act 2023 के अंतर्गत सफलतापूर्वक अनामीकृत किया गया।',
+      student
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ================= ATTENDANCE =================
 router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
@@ -637,7 +678,7 @@ router.post('/admissions', async (req, res) => {
       id,
       regNo,
       consentTimestamp: new Date(),
-      consentPolicyVersion: '2026-09-12',
+      consentPolicyVersion: data.consentPolicyVersion || '2026-09-12',
       schoolId: data.schoolId || 'ssm-gorakhpur'
     });
     await admission.save();

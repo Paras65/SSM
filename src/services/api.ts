@@ -211,6 +211,13 @@ export const api = {
     return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete student');
   },
 
+  async anonymizeStudent(id: string): Promise<{ success: boolean; message: string; student: Student }> {
+    const res = await apiFetch(`/students/${id}/anonymize`, {
+      method: 'POST'
+    });
+    return handleJsonResponse<{ success: boolean; message: string; student: Student }>(res, 'Failed to anonymize student data');
+  },
+
   // ================= ATTENDANCE =================
   async getAttendance(date?: string, schoolId?: string): Promise<AttendanceRecord[]> {
     const params = new URLSearchParams();
@@ -337,6 +344,7 @@ export const api = {
   async submitAdmission(data: {
     schoolId?: string;
     guardianConsent: boolean;
+    consentPolicyVersion?: string;
     studentName: string;
     gender: string;
     applyingClass: string;

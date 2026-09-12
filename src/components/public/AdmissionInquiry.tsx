@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Sparkles, CheckCircle2, UserPlus, FileText, Phone, Send } from 'lucide-react';
+import { Sparkles, CheckCircle2, UserPlus, FileText, Phone, Send, ShieldCheck } from 'lucide-react';
 import { api } from '../../services/api';
 import { useSchool } from '../../context/SchoolContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 
 export const AdmissionInquiry: React.FC = () => {
   const { schools } = useSchool();
@@ -22,6 +23,7 @@ export const AdmissionInquiry: React.FC = () => {
   const [inquiryId, setInquiryId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [guardianConsent, setGuardianConsent] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +44,12 @@ export const AdmissionInquiry: React.FC = () => {
     setIsSubmitting(true);
     setSubmitError('');
     try {
-      const res = await api.submitAdmission({ ...formData, schoolId: selectedSchoolId, guardianConsent: true });
+      const res = await api.submitAdmission({
+        ...formData,
+        schoolId: selectedSchoolId,
+        guardianConsent: true,
+        consentPolicyVersion: 'DPDP-2023-V1'
+      });
       setInquiryId(res.regNo);
       setSubmitted(true);
     } catch {
@@ -309,18 +316,32 @@ export const AdmissionInquiry: React.FC = () => {
                     />
                   </div>
 
-                  <label className="flex items-start gap-2 text-xs text-stone-600">
-                    <input
-                      type="checkbox"
-                      required
-                      checked={guardianConsent}
-                      onChange={event => setGuardianConsent(event.target.checked)}
-                      className="mt-0.5 accent-orange-700"
-                    />
-                    <span>
-                      {t('guardianConsent')} <a href="#privacy" className="font-semibold text-orange-700 hover:underline">{t('privacyNotice')}</a>
-                    </span>
-                  </label>
+                  {/* DPDP Act 2023 Compliant Verifiable Consent Box */}
+                  <div className="p-3 bg-amber-50/80 border border-amber-300 rounded-xl space-y-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900">
+                      <ShieldCheck className="w-4 h-4 text-orange-600 shrink-0" />
+                      <span>डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP Act 2023) अभिभावक सहमति:</span>
+                    </div>
+                    <label className="flex items-start gap-2.5 text-xs text-stone-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={guardianConsent}
+                        onChange={event => setGuardianConsent(event.target.checked)}
+                        className="mt-0.5 accent-orange-700 w-4 h-4 rounded"
+                      />
+                      <span className="leading-snug">
+                        {t('guardianConsent')}{' '}
+                        <button
+                          type="button"
+                          onClick={() => setShowPrivacyModal(true)}
+                          className="font-bold text-orange-700 hover:text-orange-900 underline inline-flex items-center gap-0.5"
+                        >
+                          {t('privacyNotice')} (DPDP Policy)
+                        </button>
+                      </span>
+                    </label>
+                  </div>
 
                   <button
                     type="submit"
@@ -339,6 +360,12 @@ export const AdmissionInquiry: React.FC = () => {
         </div>
 
       </div>
+
+      {/* DPDP Privacy Policy Modal */}
+      <PrivacyPolicyModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
     </section>
   );
 };
