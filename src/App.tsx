@@ -14,26 +14,35 @@ import { Footer } from './components/public/Footer';
 import { LegalInformation } from './components/public/LegalInformation';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { StudentPortal } from './components/student/StudentPortal';
+import { TeacherPortal } from './components/teacher/TeacherPortal';
 import { OfflineBadge } from './components/common/OfflineBadge';
 import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 import { AdminAuthModal } from './components/admin/AdminAuthModal';
+import { TeacherAuthModal } from './components/teacher/TeacherAuthModal';
 import { SchoolManagementModal } from './components/admin/SchoolManagementModal';
 import { LanguageProvider } from './context/LanguageContext';
 
 const SchoolApp: React.FC = () => {
   const { viewMode, setViewMode } = useSchool();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showTeacherAuthModal, setShowTeacherAuthModal] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
   const [schoolModalPlan, setSchoolModalPlan] = useState<'free' | 'pro'>('free');
 
   useEffect(() => {
-    if (window.location.pathname !== '/admin') return;
-
-    if (sessionStorage.getItem('ssm_admin_token')) {
-      setViewMode('admin');
-    } else {
-      setShowAuthModal(true);
+    if (window.location.pathname === '/admin') {
+      if (sessionStorage.getItem('ssm_admin_token')) {
+        setViewMode('admin');
+      } else {
+        setShowAuthModal(true);
+      }
+    } else if (window.location.pathname === '/teacher') {
+      if (sessionStorage.getItem('ssm_teacher_token')) {
+        setViewMode('teacher');
+      } else {
+        setShowTeacherAuthModal(true);
+      }
     }
   }, [setViewMode]);
 
@@ -62,6 +71,8 @@ const SchoolApp: React.FC = () => {
       <OfflineBadge />
       {viewMode === 'admin' ? (
         <AdminDashboard />
+      ) : viewMode === 'teacher' ? (
+        <TeacherPortal />
       ) : viewMode === 'student' ? (
         <StudentPortal />
       ) : (
@@ -70,6 +81,7 @@ const SchoolApp: React.FC = () => {
             onOpenSignUp={handleOpenSignUp}
             onOpenLogin={handleOpenLogin}
             onOpenBranchList={handleOpenBranchList}
+            onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
           />
           <main className="flex-1">
             <Hero
@@ -105,6 +117,16 @@ const SchoolApp: React.FC = () => {
         onOpenSignUp={() => {
           setShowAuthModal(false);
           handleOpenSignUp('free');
+        }}
+      />
+
+      {/* Teacher Auth Modal */}
+      <TeacherAuthModal
+        isOpen={showTeacherAuthModal}
+        onClose={() => setShowTeacherAuthModal(false)}
+        onSuccess={() => {
+          setShowTeacherAuthModal(false);
+          setViewMode('teacher');
         }}
       />
 

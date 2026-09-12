@@ -10,12 +10,14 @@ interface NavbarProps {
   onOpenSignUp?: (plan?: 'free' | 'pro') => void;
   onOpenLogin?: () => void;
   onOpenBranchList?: () => void;
+  onOpenTeacherLogin?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenSignUp,
   onOpenLogin,
-  onOpenBranchList
+  onOpenBranchList,
+  onOpenTeacherLogin
 }) => {
   const { viewMode, setViewMode, dbStatus, currentSchool, publicSchool } = useSchool();
   const { language, toggleLanguage, t } = useLanguage();
@@ -182,6 +184,28 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>{t('navPortal', 'छात्र पोर्टल')}</span>
             </button>
 
+            {/* Teacher / Acharya Portal */}
+            <button
+              onClick={() => {
+                if (viewMode === 'teacher') {
+                  setViewMode('public');
+                } else if (sessionStorage.getItem('ssm_teacher_token')) {
+                  setViewMode('teacher');
+                } else if (onOpenTeacherLogin) {
+                  onOpenTeacherLogin();
+                }
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                viewMode === 'teacher'
+                  ? 'bg-orange-700 text-white font-bold border-orange-800'
+                  : 'bg-white hover:bg-orange-50 border-stone-300 text-stone-700'
+              }`}
+              title="Open Teacher / Acharya Portal"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-orange-700" />
+              <span>आचार्य पटल</span>
+            </button>
+
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
@@ -339,6 +363,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <BookOpen className="w-4 h-4" />
               छात्र एवं अभिभावक पोर्टल (Student Portal)
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (sessionStorage.getItem('ssm_teacher_token')) {
+                  setViewMode('teacher');
+                } else if (onOpenTeacherLogin) {
+                  onOpenTeacherLogin();
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2 bg-orange-700 text-white rounded-md text-xs font-semibold"
+            >
+              <UserCheck className="w-4 h-4" />
+              आचार्य एवं शिक्षक पटल (Teacher Portal)
             </button>
           </div>
         </div>

@@ -43,6 +43,23 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
+// HTTP Request & Performance Logger
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'test') return next();
+  const start = Date.now();
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const status = res.statusCode;
+    const color = status >= 500 ? '\x1b[31m' : status >= 400 ? '\x1b[33m' : status >= 300 ? '\x1b[36m' : '\x1b[32m';
+    const reset = '\x1b[0m';
+    const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    console.log(`[${timestamp}] ${color}${req.method.padEnd(6)} ${req.originalUrl} ${status}${reset} (${duration}ms - ${ip})`);
+  });
+  next();
+});
+
 // In-memory rate limiter for public/authentication endpoints
 const endpointAttempts = new Map();
 function rateLimitEndpoint(keyPrefix, maxAttempts = 10) {
@@ -70,6 +87,7 @@ function rateLimitEndpoint(keyPrefix, maxAttempts = 10) {
 
 app.use('/api/auth/login', rateLimitEndpoint('admin-login'));
 app.use('/api/auth/student-login', rateLimitEndpoint('student-login', 8));
+app.use('/api/auth/teacher-login', rateLimitEndpoint('teacher-login', 8));
 app.use('/api/admissions', rateLimitEndpoint('admission-submit', 20));
 
 // API Routes

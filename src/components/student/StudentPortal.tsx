@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { api } from '../../services/api';
-import type { Homework } from '../../types';
 import { PragatiPatraModal } from '../admin/PragatiPatraModal';
 import { FeeReceiptModal } from '../admin/FeeReceiptModal';
 import { StudentIdCardModal } from '../admin/StudentIdCardModal';
 import { TransferCertificateModal } from '../admin/TransferCertificateModal';
+import { LeaveApplicationModal } from '../common/LeaveApplicationModal';
+import { AdmitCardModal } from '../admin/AdmitCardModal';
+import { CharacterCertificateModal } from '../admin/CharacterCertificateModal';
+import { BonafideCertificateModal } from '../admin/BonafideCertificateModal';
+import type { Homework, Exam } from '../../types';
 import {
   ArrowLeft,
   Calendar,
@@ -67,6 +71,22 @@ export const StudentPortal: React.FC = () => {
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [showIdCardModal, setShowIdCardModal] = useState(false);
   const [showTcModal, setShowTcModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showAdmitCardModal, setShowAdmitCardModal] = useState(false);
+  const [showCharacterModal, setShowCharacterModal] = useState(false);
+  const [showBonafideModal, setShowBonafideModal] = useState(false);
+  const [activeExam, setActiveExam] = useState<Exam | null>(null);
+
+  useEffect(() => {
+    if (!currentSchool.id) return;
+    api.getExams(currentSchool.id)
+      .then(exams => {
+        if (exams && exams.length > 0) {
+          setActiveExam(exams[0]);
+        }
+      })
+      .catch(() => {});
+  }, [currentSchool.id]);
 
   const handleStudentLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -260,11 +280,43 @@ export const StudentPortal: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => setShowTcModal(true)}
+                  onClick={() => setShowLeaveModal(true)}
                   className="px-3.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 border border-amber-300 transition-colors shadow-xs"
                 >
-                  <FileText className="w-4 h-4 text-orange-700" />
-                  <span>स्थानांतरण प्रमाण पत्र (TC देखें)</span>
+                  <Calendar className="w-4 h-4 text-orange-700" />
+                  <span>अवकाश आवेदन (Apply Leave)</span>
+                </button>
+
+                {activeExam && (
+                  <button
+                    onClick={() => setShowAdmitCardModal(true)}
+                    className="px-3.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 border border-emerald-300 transition-colors shadow-xs"
+                  >
+                    <Award className="w-4 h-4 text-emerald-700" />
+                    <span>परीक्षा प्रवेश पत्र (Admit Card)</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowTcModal(true)}
+                  className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 border border-stone-300 transition-colors shadow-xs"
+                >
+                  <FileText className="w-4 h-4 text-stone-600" />
+                  <span>स्थानांतरण प्रमाण पत्र (TC)</span>
+                </button>
+
+                <button
+                  onClick={() => setShowCharacterModal(true)}
+                  className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 border border-stone-300 transition-colors shadow-xs"
+                >
+                  <span>📜 चरित्र प्रमाण पत्र</span>
+                </button>
+
+                <button
+                  onClick={() => setShowBonafideModal(true)}
+                  className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 border border-stone-300 transition-colors shadow-xs"
+                >
+                  <span>📄 अध्ययनरत प्रमाण पत्र</span>
                 </button>
               </div>
             </div>
@@ -526,6 +578,36 @@ export const StudentPortal: React.FC = () => {
         <TransferCertificateModal
           student={currentStudent}
           onClose={() => setShowTcModal(false)}
+        />
+      )}
+
+      {showLeaveModal && currentStudent && (
+        <LeaveApplicationModal
+          student={currentStudent}
+          isOpen={showLeaveModal}
+          onClose={() => setShowLeaveModal(false)}
+        />
+      )}
+
+      {showAdmitCardModal && currentStudent && activeExam && (
+        <AdmitCardModal
+          student={currentStudent}
+          exam={activeExam}
+          onClose={() => setShowAdmitCardModal(false)}
+        />
+      )}
+
+      {showCharacterModal && currentStudent && (
+        <CharacterCertificateModal
+          student={currentStudent}
+          onClose={() => setShowCharacterModal(false)}
+        />
+      )}
+
+      {showBonafideModal && currentStudent && (
+        <BonafideCertificateModal
+          student={currentStudent}
+          onClose={() => setShowBonafideModal(false)}
         />
       )}
 

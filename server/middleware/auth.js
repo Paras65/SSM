@@ -57,6 +57,25 @@ function requireStudentAuth(req, res, next) {
   }
 }
 
+function requireTeacherAuth(req, res, next) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'आचार्य लॉगिन आवश्यक है। (Teacher login required)', code: 'AUTH_REQUIRED' });
+  }
+
+  try {
+    const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    if (!['teacher', 'admin', 'developer'].includes(decoded.role)) {
+      return res.status(403).json({ error: 'केवल आचार्य / शिक्षक प्रवेश की अनुमति है।', code: 'TEACHER_ROLE_REQUIRED' });
+    }
+    req.user = decoded;
+    req.userSchoolId = decoded.schoolId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'अमान्य शिक्षक सत्र। (Invalid teacher session)', code: 'TOKEN_INVALID' });
+  }
+}
+
 function requirePortalAuth(req, res, next) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -65,7 +84,7 @@ function requirePortalAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-    if (!['admin', 'developer', 'student'].includes(decoded.role)) {
+    if (!['admin', 'developer', 'student', 'teacher'].includes(decoded.role)) {
       return res.status(403).json({ error: 'अमान्य पोर्टल भूमिका। (Invalid portal role)', code: 'ROLE_FORBIDDEN' });
     }
     if (decoded.role === 'student') {
@@ -131,6 +150,7 @@ function generateAdminToken(payload) {
 module.exports = {
   requireAdminAuth,
   requireStudentAuth,
+  requireTeacherAuth,
   requirePortalAuth,
   requireSchoolScope,
   generateAdminToken,

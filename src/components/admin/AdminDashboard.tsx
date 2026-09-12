@@ -13,10 +13,21 @@ import { TimetableSection } from '../common/TimetableSection';
 import { StudentPhotoUploadModal } from './StudentPhotoUploadModal';
 import { ProUpgradeModal } from './ProUpgradeModal';
 import { BulkStudentImportModal } from './BulkStudentImportModal';
+import { ExamManagementModal } from './ExamManagementModal';
+import { AdmitCardModal } from './AdmitCardModal';
+import { TimetableManagerModal } from './TimetableManagerModal';
+import { LeaveManagementModal } from './LeaveManagementModal';
+import { TransportManagementModal } from './TransportManagementModal';
+import { LibraryManagementModal } from './LibraryManagementModal';
+import { InventoryManagementModal } from './InventoryManagementModal';
+import { CharacterCertificateModal } from './CharacterCertificateModal';
+import { BonafideCertificateModal } from './BonafideCertificateModal';
+import { BulkNotificationModal } from './BulkNotificationModal';
+import { AuditLogModal } from './AuditLogModal';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
 import { api } from '../../services/api';
-import type { Student, FeeRecord, ReportCard, Homework, Staff } from '../../types';
+import type { Student, FeeRecord, ReportCard, Homework, Staff, Exam } from '../../types';
 import {
   Users,
   CheckCircle2,
@@ -124,6 +135,20 @@ export const AdminDashboard: React.FC = () => {
     defaultMessage: string;
   } | null>(null);
   const [activePhotoStudent, setActivePhotoStudent] = useState<Student | null>(null);
+
+  // New Features Modal States
+  const [showExamModal, setShowExamModal] = useState(false);
+  const [showTimetableModal, setShowTimetableModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showTransportModal, setShowTransportModal] = useState(false);
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [showBulkNotificationModal, setShowBulkNotificationModal] = useState(false);
+  const [showAuditLogModal, setShowAuditLogModal] = useState(false);
+
+  const [activeAdmitCard, setActiveAdmitCard] = useState<{ student: Student; exam: Exam } | null>(null);
+  const [activeCharacterStudent, setActiveCharacterStudent] = useState<Student | null>(null);
+  const [activeBonafideStudent, setActiveBonafideStudent] = useState<Student | null>(null);
 
   // Homework creation form state
   const [showAddHomework, setShowAddHomework] = useState(false);
@@ -635,6 +660,55 @@ export const AdminDashboard: React.FC = () => {
           >
             सूचना प्रसारण (Notices)
           </button>
+          <div className="h-5 w-px bg-orange-700/60 self-center" />
+          <button
+            onClick={() => setShowExamModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>📝 परीक्षा व अंक</span>
+          </button>
+          <button
+            onClick={() => setShowTimetableModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>🕒 समय सारिणी</span>
+          </button>
+          <button
+            onClick={() => setShowLeaveModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>🌴 अवकाश समीक्षा</span>
+          </button>
+          <button
+            onClick={() => setShowTransportModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>🚌 बस परिवहन</span>
+          </button>
+          <button
+            onClick={() => setShowLibraryModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>📚 पुस्तकालय</span>
+          </button>
+          <button
+            onClick={() => setShowInventoryModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>🎒 भंडार स्टॉक</span>
+          </button>
+          <button
+            onClick={() => setShowBulkNotificationModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-emerald-300 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>📢 संदेश प्रसारण</span>
+          </button>
+          <button
+            onClick={() => setShowAuditLogModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-cyan-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>🛡️ ऑडिट लॉग</span>
+          </button>
         </div>
       </header>
 
@@ -822,6 +896,83 @@ export const AdminDashboard: React.FC = () => {
                     <span className="flex items-center gap-2">
                       <Briefcase className="w-4 h-4 text-emerald-600" />
                       आचार्य व वेतन (Payroll) प्रबंधन
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowExamModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-amber-50/60 hover:bg-amber-100/80 text-orange-950 text-xs font-bold transition-all border border-amber-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>📝</span>
+                      परीक्षा समय-सारिणी व मार्क्स एंट्री
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowTimetableModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-amber-50/60 hover:bg-amber-100/80 text-orange-950 text-xs font-bold transition-all border border-amber-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>🕒</span>
+                      साप्ताहिक कक्षा समय-सारिणी (Timetable)
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowLeaveModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold transition-all border border-stone-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>🌴</span>
+                      अवकाश आवेदन समीक्षा (Leaves)
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowTransportModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold transition-all border border-stone-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>🚌</span>
+                      विद्यालय वाहन व बस रूट (Transport)
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowLibraryModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold transition-all border border-stone-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>📚</span>
+                      पुस्तकालय व ग्रंथ सूची (Library)
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowInventoryModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-bold transition-all border border-stone-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>🎒</span>
+                      गणवेश व पुस्तक भंडार (Store Inventory)
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowBulkNotificationModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 text-xs font-bold transition-all border border-emerald-300"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>📢</span>
+                      अभिभावक संदेश प्रसारण (WhatsApp Broadcast)
                     </span>
                     <span>→</span>
                   </button>
@@ -1122,6 +1273,20 @@ export const AdminDashboard: React.FC = () => {
                           >
                             <span>प्रगति पत्र</span>
                             {!isPro && <Lock className="w-2.5 h-2.5 text-amber-700 ml-0.5" />}
+                          </button>
+                          <button
+                            onClick={() => setActiveCharacterStudent(student)}
+                            className="px-2 py-1 bg-stone-100 hover:bg-orange-100 text-stone-800 hover:text-orange-950 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer border border-stone-200"
+                            title="Print Character Certificate (चरित्र प्रमाण पत्र)"
+                          >
+                            <span>📜 चरित्र</span>
+                          </button>
+                          <button
+                            onClick={() => setActiveBonafideStudent(student)}
+                            className="px-2 py-1 bg-stone-100 hover:bg-orange-100 text-stone-800 hover:text-orange-950 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer border border-stone-200"
+                            title="Print Bonafide Certificate (अध्ययनरत प्रमाण पत्र)"
+                          >
+                            <span>📄 अध्ययनरत</span>
                           </button>
                           <button
                             onClick={() => {
@@ -2441,6 +2606,74 @@ export const AdminDashboard: React.FC = () => {
         featureDescription={upgradeModalFeature?.desc}
         onClose={() => setUpgradeModalFeature(null)}
       />
+
+      {/* New Module Modals */}
+      <ExamManagementModal
+        isOpen={showExamModal}
+        onClose={() => setShowExamModal(false)}
+        onOpenAdmitCard={(student, exam) => {
+          setShowExamModal(false);
+          setActiveAdmitCard({ student, exam });
+        }}
+      />
+
+      <TimetableManagerModal
+        isOpen={showTimetableModal}
+        onClose={() => setShowTimetableModal(false)}
+      />
+
+      <LeaveManagementModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+      />
+
+      <TransportManagementModal
+        isOpen={showTransportModal}
+        onClose={() => setShowTransportModal(false)}
+      />
+
+      <LibraryManagementModal
+        isOpen={showLibraryModal}
+        onClose={() => setShowLibraryModal(false)}
+      />
+
+      <InventoryManagementModal
+        isOpen={showInventoryModal}
+        onClose={() => setShowInventoryModal(false)}
+      />
+
+      <BulkNotificationModal
+        isOpen={showBulkNotificationModal}
+        onClose={() => setShowBulkNotificationModal(false)}
+      />
+
+      <AuditLogModal
+        isOpen={showAuditLogModal}
+        onClose={() => setShowAuditLogModal(false)}
+      />
+
+      {/* Single Item Document Modals */}
+      {activeAdmitCard && (
+        <AdmitCardModal
+          student={activeAdmitCard.student}
+          exam={activeAdmitCard.exam}
+          onClose={() => setActiveAdmitCard(null)}
+        />
+      )}
+
+      {activeCharacterStudent && (
+        <CharacterCertificateModal
+          student={activeCharacterStudent}
+          onClose={() => setActiveCharacterStudent(null)}
+        />
+      )}
+
+      {activeBonafideStudent && (
+        <BonafideCertificateModal
+          student={activeBonafideStudent}
+          onClose={() => setActiveBonafideStudent(null)}
+        />
+      )}
 
     </div>
   );

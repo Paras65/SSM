@@ -11,7 +11,34 @@ const Notice = require('../models/Notice');
 const Admission = require('../models/Admission');
 const Homework = require('../models/Homework');
 const Staff = require('../models/Staff');
-const { requireAdminAuth, requirePortalAuth, requireSchoolScope, generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode } = require('../middleware/auth');
+const Exam = require('../models/Exam');
+const Timetable = require('../models/Timetable');
+const Leave = require('../models/Leave');
+const TransportRoute = require('../models/Transport');
+const Book = require('../models/Book');
+const BookIssue = require('../models/BookIssue');
+const InventoryItem = require('../models/InventoryItem');
+const AuditLog = require('../models/AuditLog');
+const { requireAdminAuth, requireStudentAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope, generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode } = require('../middleware/auth');
+
+async function recordAuditLog({ schoolId, actorType, actorId, actorName, action, description, req }) {
+  try {
+    const ip = req?.ip || req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '';
+    const log = new AuditLog({
+      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      schoolId: schoolId || req?.user?.schoolId || 'ssm-gorakhpur',
+      actorType: actorType || req?.user?.role || 'admin',
+      actorId: actorId || req?.user?.studentId || req?.user?.teacherId || '',
+      actorName: actorName || req?.user?.schoolName || 'प्रशासक / आचार्य',
+      action,
+      description,
+      ip
+    });
+    await log.save();
+  } catch (err) {
+    // Non-blocking
+  }
+}
 
 // Healthcheck & Database status
 router.get('/status', (req, res) => {
@@ -148,8 +175,13 @@ router.post('/auth/student-login', async (req, res) => {
     if (String(schoolId).length > 100 || String(rollNo).length > 30 || String(contact).length > 30) {
       return res.status(400).json({ error: 'छात्र लॉगिन विवरण अमान्य हैं।' });
     }
-
-    const student = await Student.findOne({ schoolId, rollNo: String(rollNo).trim(), contact: String(contact).trim() }).lean();
+    const digitsOnly = String(contact).replace(/\D/g, '').slice(-10);
+    const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : String(contact).trim();
+    const student = await Student.findOne({
+      schoolId,
+      rollNo: String(rollNo).trim(),
+      contact: { $regex: pattern }
+    }).lean();
     if (!student) {
       return res.status(401).json({ error: 'छात्र विवरण सत्यापित नहीं हो सके। (Invalid student details)', code: 'INVALID_CREDENTIALS' });
     }
@@ -163,6 +195,66 @@ router.post('/auth/student-login', async (req, res) => {
     res.json({ success: true, token, student });
   } catch (err) {
     res.status(500).json({ error: 'छात्र प्रमाणीकरण त्रुटि: ' + err.message });
+  }
+});
+
+router.post('/auth/teacher-login', async (req, res) => {
+  try {
+    const { schoolId, phone, pin } = req.body;
+    if (!phone || !pin) {
+      return res.status(400).json({ error: 'मोबाइल नंबर और पिन आवश्यक हैं।' });
+    }
+    const digitsOnly = String(phone).replace(/\D/g, '').slice(-10);
+    const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : String(phone).trim();
+    const filter = {
+      phone: { $regex: pattern },
+      ...(schoolId ? { schoolId } : {})
+    };
+
+    const teacher = await Staff.findOne(filter).lean();
+    if (!teacher) {
+      return res.status(401).json({ error: 'आचार्य विवरण प्राप्त नहीं हुआ। कृपया सही मोबाइल दर्ज करें।', code: 'INVALID_CREDENTIALS' });
+    }
+
+    const expectedPin = teacher.pin || '1234';
+    if (String(pin).trim() !== String(expectedPin).trim()) {
+      return res.status(401).json({ error: 'अमान्य सुरक्षा पिन! (Invalid PIN)', code: 'INVALID_PIN' });
+    }
+
+    const token = generateAdminToken({
+      schoolId: teacher.schoolId,
+      role: 'teacher',
+      staffId: teacher.id,
+      name: teacher.name,
+      designation: teacher.designation
+    });
+
+    await recordAuditLog({
+      schoolId: teacher.schoolId,
+      actorType: 'teacher',
+      actorId: teacher.id,
+      actorName: teacher.name,
+      action: 'TEACHER_LOGIN',
+      description: `आचार्य ${teacher.name} द्वारा लॉगिन`,
+      req
+    });
+
+    res.json({
+      success: true,
+      token,
+      teacher: {
+        id: teacher.id,
+        schoolId: teacher.schoolId,
+        name: teacher.name,
+        gender: teacher.gender,
+        designation: teacher.designation,
+        subjects: teacher.subjects,
+        phone: teacher.phone,
+        email: teacher.email
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'आचार्य प्रमाणीकरण त्रुटि: ' + err.message });
   }
 });
 
@@ -670,6 +762,420 @@ router.delete('/staff/:id', requireAdminAuth, requireSchoolScope, async (req, re
     const deleted = await Staff.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Staff member not found' });
     res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ================= EXAMS & MARKS =================
+router.get('/exams', async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    if (req.query.term) filter.term = req.query.term;
+    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
+    await executeSafeQuery(Exam, filter, req, res, { startDate: 1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/exams', requirePortalAuth, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.id) data.id = `exam-${Date.now()}`;
+    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    const exam = new Exam(data);
+    await exam.save();
+    res.status(201).json(exam);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/exams/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const updated = await Exam.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Exam not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/exams/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const deleted = await Exam.findOneAndDelete({ id: req.params.id });
+    if (!deleted) return res.status(404).json({ error: 'Exam not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Bulk Marks Matrix submission (updates/creates ReportCard records)
+router.post('/exams/marks-bulk', requirePortalAuth, async (req, res) => {
+  try {
+    const { schoolId, examTerm, academicYear, subject, marksList } = req.body;
+    if (!marksList || !Array.isArray(marksList) || !subject) {
+      return res.status(400).json({ error: 'विषय और छात्रों के प्राप्तांक सूची आवश्यक है।' });
+    }
+
+    const targetSchoolId = schoolId || req.user?.schoolId || 'ssm-gorakhpur';
+    const year = academicYear || '2025-26';
+    const term = examTerm || 'अर्धवार्षिक परीक्षा';
+
+    const results = [];
+    for (const item of marksList) {
+      const { studentId, marksObtained, maxMarks = 100 } = item;
+      if (!studentId) continue;
+
+      let report = await ReportCard.findOne({ schoolId: targetSchoolId, studentId, examTerm: term });
+      const grade = marksObtained >= 90 ? 'A+' : marksObtained >= 75 ? 'A' : marksObtained >= 60 ? 'B' : marksObtained >= 45 ? 'C' : 'D';
+
+      if (report) {
+        const subIndex = report.marks.findIndex(m => m.subject === subject);
+        if (subIndex > -1) {
+          report.marks[subIndex].marksObtained = Number(marksObtained);
+          report.marks[subIndex].maxMarks = Number(maxMarks);
+          report.marks[subIndex].grade = grade;
+        } else {
+          report.marks.push({
+            subject,
+            code: subject.slice(0, 3).toUpperCase(),
+            maxMarks: Number(maxMarks),
+            marksObtained: Number(marksObtained),
+            grade
+          });
+        }
+        report.totalMax = report.marks.reduce((sum, m) => sum + (m.maxMarks || 100), 0);
+        report.totalObtained = report.marks.reduce((sum, m) => sum + (m.marksObtained || 0), 0);
+        report.percentage = report.totalMax > 0 ? (report.totalObtained / report.totalMax) * 100 : 0;
+        report.grade = report.percentage >= 90 ? 'A+' : report.percentage >= 75 ? 'A' : report.percentage >= 60 ? 'B' : report.percentage >= 45 ? 'C' : 'D';
+        await report.save();
+        results.push(report);
+      } else {
+        const newReport = new ReportCard({
+          id: `rc-${Date.now()}-${studentId}`,
+          schoolId: targetSchoolId,
+          studentId,
+          examTerm: term,
+          academicYear: year,
+          marks: [{
+            subject,
+            code: subject.slice(0, 3).toUpperCase(),
+            maxMarks: Number(maxMarks),
+            marksObtained: Number(marksObtained),
+            grade
+          }],
+          totalMax: Number(maxMarks),
+          totalObtained: Number(marksObtained),
+          percentage: Number(maxMarks) > 0 ? (Number(marksObtained) / Number(maxMarks)) * 100 : 0,
+          grade,
+          acharyaRemarks: 'संतोषजनक प्रदर्शन। निरंतर अभ्यास करें।'
+        });
+        await newReport.save();
+        results.push(newReport);
+      }
+    }
+
+    res.json({ success: true, count: results.length, updated: results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ================= TIMETABLE =================
+router.get('/timetable', async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    if (req.query.class) filter.class = req.query.class;
+    if (req.query.section) filter.section = req.query.section;
+    const timetables = await Timetable.find(filter).lean();
+    res.json(timetables);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/timetable', requirePortalAuth, async (req, res) => {
+  try {
+    const { schoolId, class: className, section = 'A', schedule } = req.body;
+    const targetSchoolId = schoolId || req.user?.schoolId || 'ssm-gorakhpur';
+    let entry = await Timetable.findOne({ schoolId: targetSchoolId, class: className, section });
+    if (entry) {
+      entry.schedule = schedule;
+      await entry.save();
+    } else {
+      entry = new Timetable({
+        id: `tt-${Date.now()}`,
+        schoolId: targetSchoolId,
+        class: className,
+        section,
+        schedule
+      });
+      await entry.save();
+    }
+    res.json(entry);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ================= LEAVES =================
+router.get('/leaves', requirePortalAuth, async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    if (req.query.applicantType) filter.applicantType = req.query.applicantType;
+    if (req.query.applicantId) filter.applicantId = req.query.applicantId;
+    if (req.query.status) filter.status = req.query.status;
+    await executeSafeQuery(Leave, filter, req, res, { appliedDate: -1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/leaves', requirePortalAuth, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.id) data.id = `lv-${Date.now()}`;
+    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    const leave = new Leave(data);
+    await leave.save();
+    res.status(201).json(leave);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.patch('/leaves/:id/status', requirePortalAuth, async (req, res) => {
+  try {
+    const { status, reviewerRemarks, reviewedBy } = req.body;
+    const leave = await Leave.findOneAndUpdate(
+      { id: req.params.id },
+      { status, reviewerRemarks: reviewerRemarks || '', reviewedBy: reviewedBy || 'प्रधानाचार्य' },
+      { new: true }
+    );
+    if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+    res.json(leave);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ================= TRANSPORT =================
+router.get('/transport/routes', async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    await executeSafeQuery(TransportRoute, filter, req, res, { routeName: 1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/transport/routes', requirePortalAuth, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.id) data.id = `tr-${Date.now()}`;
+    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    const route = new TransportRoute(data);
+    await route.save();
+    res.status(201).json(route);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/transport/routes/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const updated = await TransportRoute.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Route not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/transport/routes/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const deleted = await TransportRoute.findOneAndDelete({ id: req.params.id });
+    if (!deleted) return res.status(404).json({ error: 'Route not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ================= LIBRARY (PUSTAKALAYA) =================
+router.get('/library/books', async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    if (req.query.category) filter.category = req.query.category;
+    if (req.query.search) {
+      filter.$or = [
+        { title: { $regex: req.query.search, $options: 'i' } },
+        { author: { $regex: req.query.search, $options: 'i' } },
+        { accessionNo: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+    await executeSafeQuery(Book, filter, req, res, { title: 1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/library/books', requirePortalAuth, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.id) data.id = `bk-${Date.now()}`;
+    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    if (!data.availableCopies && data.totalCopies) data.availableCopies = data.totalCopies;
+    const book = new Book(data);
+    await book.save();
+    res.status(201).json(book);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/library/books/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const updated = await Book.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Book not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/library/books/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const deleted = await Book.findOneAndDelete({ id: req.params.id });
+    if (!deleted) return res.status(404).json({ error: 'Book not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/library/issues', requirePortalAuth, async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    if (req.query.status) filter.status = req.query.status;
+    await executeSafeQuery(BookIssue, filter, req, res, { issueDate: -1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/library/issue', requirePortalAuth, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.id) data.id = `iss-${Date.now()}`;
+    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    const issue = new BookIssue(data);
+    await issue.save();
+    // Decrease available copies
+    await Book.findOneAndUpdate({ id: data.bookId }, { $inc: { availableCopies: -1 } });
+    res.status(201).json(issue);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/library/return', requirePortalAuth, async (req, res) => {
+  try {
+    const { issueId, fineAmount = 0 } = req.body;
+    const issue = await BookIssue.findOneAndUpdate(
+      { id: issueId },
+      { 
+        status: 'Returned', 
+        returnDate: new Date().toISOString().split('T')[0],
+        fineAmount: Number(fineAmount) || 0 
+      },
+      { new: true }
+    );
+    if (!issue) return res.status(404).json({ error: 'Issue record not found' });
+    // Increase available copies
+    await Book.findOneAndUpdate({ id: issue.bookId }, { $inc: { availableCopies: 1 } });
+    res.json(issue);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ================= INVENTORY & STORE =================
+router.get('/inventory', async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    if (req.query.category) filter.category = req.query.category;
+    await executeSafeQuery(InventoryItem, filter, req, res, { itemName: 1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/inventory', requirePortalAuth, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.id) data.id = `inv-${Date.now()}`;
+    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    const item = new InventoryItem(data);
+    await item.save();
+    res.status(201).json(item);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/inventory/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const updated = await InventoryItem.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Item not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/inventory/:id', requirePortalAuth, async (req, res) => {
+  try {
+    const deleted = await InventoryItem.findOneAndDelete({ id: req.params.id });
+    if (!deleted) return res.status(404).json({ error: 'Item not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/inventory/:id/stock', requirePortalAuth, async (req, res) => {
+  try {
+    const { delta } = req.body; // e.g. +10 or -2
+    const item = await InventoryItem.findOneAndUpdate(
+      { id: req.params.id },
+      { $inc: { stockQuantity: Number(delta) || 0 } },
+      { new: true }
+    );
+    if (!item) return res.status(404).json({ error: 'Item not found' });
+    await recordAuditLog({
+      schoolId: item.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'STOCK_ADJUSTED',
+      description: `सामग्री #${item.id} (${item.itemName}) स्टॉक समायोजन: ${Number(delta) >= 0 ? '+' : ''}${delta}`,
+      req
+    });
+    res.json(item);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ================= AUDIT LOGS =================
+router.get('/audit-logs', requirePortalAuth, async (req, res) => {
+  try {
+    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    if (req.query.action) filter.action = req.query.action;
+    if (req.query.actorType) filter.actorType = req.query.actorType;
+    await executeSafeQuery(AuditLog, filter, req, res, { createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

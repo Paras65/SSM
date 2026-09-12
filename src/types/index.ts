@@ -151,7 +151,7 @@ export interface PanchmukhiPillar {
   color: string;
 }
 
-export type ViewMode = 'public' | 'admin' | 'student';
+export type ViewMode = 'public' | 'admin' | 'student' | 'teacher';
 
 export interface Homework {
   id: string;
@@ -184,6 +184,142 @@ export interface Staff {
   pfDeduction?: number;
   samitiDeduction?: number;
   joiningDate: string;
+  pin?: string;
   status: 'Active' | 'OnLeave' | 'Resigned';
+}
+
+export interface ExamScheduleItem {
+  subject: string;
+  class: string;
+  date: string;
+  timing: string;
+  maxMarks: number;
+  roomNo?: string;
+}
+
+export interface Exam {
+  id: string;
+  schoolId?: string;
+  title: string;
+  academicYear: string;
+  term: string;
+  classes: string[];
+  startDate: string;
+  endDate: string;
+  dateSheet: ExamScheduleItem[];
+  status: 'Scheduled' | 'Ongoing' | 'Completed';
+}
+
+export interface TimetableSlot {
+  period: number;
+  startTime: string;
+  endTime: string;
+  subject: string;
+  teacherName: string;
+  teacherId?: string;
+  room?: string;
+}
+
+export interface DaySchedule {
+  day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+  slots: TimetableSlot[];
+}
+
+export interface Timetable {
+  id: string;
+  schoolId?: string;
+  class: string;
+  section: string;
+  schedule: DaySchedule[];
+}
+
+export interface LeaveRequest {
+  id: string;
+  schoolId?: string;
+  applicantType: 'student' | 'staff';
+  applicantId: string;
+  applicantName: string;
+  classOrDesignation?: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  appliedDate: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  reviewedBy?: string;
+  reviewerRemarks?: string;
+}
+
+export interface TransportStop {
+  stopName: string;
+  pickupTime: string;
+  dropTime: string;
+  monthlyFare: number;
+}
+
+export interface TransportRoute {
+  id: string;
+  schoolId?: string;
+  routeName: string;
+  vehicleNumber: string;
+  driverName: string;
+  driverPhone: string;
+  helperName?: string;
+  capacity: number;
+  stops: TransportStop[];
+  status: 'Active' | 'Maintenance' | 'Inactive';
+}
+
+export interface LibraryBook {
+  id: string;
+  schoolId?: string;
+  accessionNo: string;
+  title: string;
+  author: string;
+  publisher?: string;
+  category: string;
+  totalCopies: number;
+  availableCopies: number;
+  shelfLocation: string;
+}
+
+export interface BookIssueRecord {
+  id: string;
+  schoolId?: string;
+  bookId: string;
+  bookTitle: string;
+  accessionNo: string;
+  borrowerType: 'student' | 'staff';
+  borrowerId: string;
+  borrowerName: string;
+  borrowerContact?: string;
+  issueDate: string;
+  dueDate: string;
+  returnDate?: string | null;
+  fineAmount: number;
+  status: 'Issued' | 'Returned' | 'Lost';
+}
+
+export interface InventoryItem {
+  id: string;
+  schoolId?: string;
+  itemName: string;
+  category: string;
+  sizeOrStandard?: string;
+  unitPrice: number;
+  stockQuantity: number;
+  minimumAlertStock: number;
+  unit: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  schoolId?: string;
+  actorType: 'admin' | 'teacher' | 'student' | 'system';
+  actorId?: string;
+  actorName: string;
+  action: string;
+  description: string;
+  ip?: string;
+  createdAt: string;
 }
 
