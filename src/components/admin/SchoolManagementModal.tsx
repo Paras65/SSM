@@ -569,12 +569,17 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                               <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
                               तकनीकी सहयोग प्रो (Tech Support & AMC)
                             </span>
-                            <span className="text-xs font-black text-amber-900 bg-amber-200/90 px-3 py-1 rounded-full border border-amber-300">
-                              ₹799 / माह
-                            </span>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 block">
+                                ग्रामीण: ₹2,999/वर्ष
+                              </span>
+                              <span className="text-[10px] text-amber-900 mt-0.5 block">
+                                नगर: ₹7,999/वर्ष
+                              </span>
+                            </div>
                           </div>
                           <p className="text-xs text-stone-600 leading-relaxed mb-3">
-                            समर्पित सर्वर अनुरक्षण, NEP 360° समग्र प्रगति पत्र, आचार्य पेरोल, व्हाट्सएप व दैनिक क्लाउड बैकअप।
+                            NEP 360° समग्र प्रगति पत्र, डिजिटल आईडी कार्ड, आचार्य पेरोल, व्हाट्सएप व दैनिक बैकअप।
                           </p>
                         </div>
                         <div className="flex items-center text-xs font-bold text-amber-800 gap-1.5 pt-2 border-t border-amber-200/60">

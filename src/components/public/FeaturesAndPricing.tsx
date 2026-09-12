@@ -93,111 +93,117 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
           </div>
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-8 items-stretch max-w-5xl mx-auto">
+        {/* Pricing Cards Grid (3-Tier: Free Seva, Rural AMC, Town Pro AMC) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-6 items-stretch max-w-7xl mx-auto">
           
-          {/* Card 1: Seva Community Tier */}
-          <div className="bg-white rounded-3xl border-2 border-stone-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all p-7 sm:p-9 flex flex-col justify-between relative">
+          {/* Card 1: Free Seva Tier */}
+          <div className="bg-white rounded-3xl border-2 border-stone-200/90 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all p-6 sm:p-7 flex flex-col justify-between relative">
             <div>
               <div className="flex items-center justify-between gap-4 mb-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
                   <HeartHandshake className="w-3.5 h-3.5 text-emerald-700" />
-                  सेवा भाव: ग्रामीण व लघु शाखाएं
+                  बुनियादी सेवा
                 </span>
                 <span className="text-xs font-semibold text-stone-500">आजीवन निःशुल्क</span>
               </div>
 
-              <h3 className="text-2xl font-black text-stone-900">
-                निःशुल्क सेवा योजना (Seva Tier)
+              <h3 className="text-xl sm:text-2xl font-black text-stone-900">
+                निःशुल्क सेवा (Free Seva)
               </h3>
-              <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-6 leading-relaxed">
-                दैनिक उपस्थिति, प्रवेश पंजिका, शुल्क रसीदें, गृहकार्य डायरी एवं छात्र पोर्टल सहित बुनियादी प्रबंधन।
+              <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-5 leading-relaxed">
+                दैनिक उपस्थिति, छात्र पंजिका, शुल्क रसीदें, गृहकार्य डायरी एवं सार्वजनिक पोर्टल।
               </p>
 
               {/* Price */}
-              <div className="flex items-baseline gap-2 pb-6 mb-6 border-b border-stone-200">
-                <span className="text-4xl sm:text-5xl font-black text-stone-900">₹0</span>
-                <span className="text-stone-500 text-xs sm:text-sm font-medium">/ आजीवन (100% निःशुल्क सेवा)</span>
+              <div className="flex items-baseline gap-2 pb-5 mb-5 border-b border-stone-200">
+                <span className="text-3xl sm:text-4xl font-black text-stone-900">₹0</span>
+                <span className="text-stone-500 text-xs font-medium">/ आजीवन (100% निःशुल्क)</span>
               </div>
 
               {/* Features List */}
-              <div className="space-y-3 mb-8">
+              <div className="space-y-2.5 mb-6">
                 <span className="text-xs font-bold text-stone-700 uppercase tracking-wider block">
                   शामिल प्रमुख सुविधाएं:
                 </span>
                 {FREE_FEATURES.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-stone-700">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div key={idx} className="flex items-start gap-2 text-xs text-stone-700">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>{item.text}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="pt-4 border-t border-stone-100 space-y-2.5">
+            {/* Action Button */}
+            <div className="pt-4 border-t border-stone-100 space-y-2">
               <button
                 type="button"
                 onClick={() => onOpenSignUp?.('free')}
-                className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-stone-900 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-stone-900 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group"
               >
                 <Plus className="w-4 h-4" />
-                <span>निःशुल्क सेवा से जुड़ें (Start Free Seva)</span>
+                <span>निःशुल्क शुरू करें (Start Free)</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <p className="text-[11px] text-center text-stone-500">
-                तुरंत सक्रियण • किसी पूर्व स्वीकृति अथवा क्रेडिट कार्ड की आवश्यकता नहीं
+                बिना किसी क्रेडिट कार्ड के तुरंत शुरू करें
               </p>
             </div>
           </div>
 
-          {/* Card 2: Technical Support & Pro ERP AMC */}
-          <div className="bg-gradient-to-b from-amber-50/80 via-white to-orange-50/50 rounded-3xl border-2 border-amber-400 shadow-xl hover:shadow-2xl transition-all p-7 sm:p-9 flex flex-col justify-between relative ring-4 ring-amber-400/20">
-            {/* Best value banner */}
-            <div className="absolute -top-3.5 right-6 sm:right-10 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[11px] font-black uppercase px-3.5 py-1 rounded-full shadow-md flex items-center gap-1">
-              <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-300" />
-              <span>न्यूनतम संस्थागत अनुरक्षण सहयोग</span>
+          {/* Card 2: Rural Branch AMC (Up to 150 students) */}
+          <div className="bg-gradient-to-b from-emerald-50/70 via-white to-amber-50/40 rounded-3xl border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all p-6 sm:p-7 flex flex-col justify-between relative ring-4 ring-emerald-400/20">
+            {/* Top Ribbon */}
+            <div className="absolute -top-3.5 right-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+              <HeartHandshake className="w-3.5 h-3.5 text-emerald-200" />
+              <span>ग्रामीण शाखाओं हेतु अनुशंसित</span>
             </div>
 
             <div>
               <div className="flex items-center justify-between gap-4 mb-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200/90 text-amber-950 text-xs font-bold border border-amber-400 shadow-2xs">
-                  <Server className="w-3.5 h-3.5 text-amber-700" />
-                  समर्पित क्लाउड सर्वर एवं बैकअप
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-200/90 text-emerald-950 text-xs font-bold border border-emerald-400 shadow-2xs">
+                  <Server className="w-3.5 h-3.5 text-emerald-800" />
+                  150 छात्रों तक की शाखाएं
                 </span>
-                <span className="text-xs font-bold text-orange-700">असीमित छात्र व आचार्य</span>
+                <span className="text-xs font-bold text-emerald-800">~₹250/माह मात्र</span>
               </div>
 
-              <h3 className="text-2xl font-black text-stone-900">
-                तकनीकी सहयोग व प्रो ईआरपी (Technical Support & AMC)
+              <h3 className="text-xl sm:text-2xl font-black text-stone-900">
+                ग्रामीण शाखा सहयोग (Rural AMC)
               </h3>
-              <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-6 leading-relaxed">
-                360° समग्र प्रगति पत्र, आचार्य पेरोल, व्हाट्सएप अलर्ट, डिजिटल आईडी कार्ड एवं समर्पित क्लाउड बैकअप अनुरक्षण।
+              <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-5 leading-relaxed">
+                ग्रामीण व लघु शाखाओं हेतु सम्पूर्ण 360° NEP प्रगति पत्र, डिजिटल आईडी कार्ड एवं आचार्य पेरोल।
               </p>
 
               {/* Price */}
-              <div className="flex items-baseline gap-2 pb-6 mb-6 border-b border-amber-200">
-                <span className="text-4xl sm:text-5xl font-black text-orange-950">₹799</span>
-                <span className="text-stone-600 text-xs sm:text-sm font-medium">/ प्रति माह (अथवा ₹8,000 / वार्षिक न्यूनतम सहयोग)</span>
+              <div className="flex items-baseline gap-2 pb-5 mb-5 border-b border-emerald-200">
+                <span className="text-3xl sm:text-4xl font-black text-emerald-950">₹2,999</span>
+                <span className="text-stone-600 text-xs font-medium">/ प्रति वर्ष (न्यूनतम संस्थागत सहयोग)</span>
               </div>
 
               {/* Features List */}
-              <div className="space-y-3 mb-8">
-                <span className="text-xs font-bold text-orange-950 uppercase tracking-wider block flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  तकनीकी सहयोग के अंतर्गत सुविधाएं:
+              <div className="space-y-2.5 mb-6">
+                <span className="text-xs font-bold text-emerald-950 uppercase tracking-wider block flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  ग्रामीण सहयोग के अंतर्गत सुविधाएं:
                 </span>
-                {PRO_FEATURES.map((item, idx) => (
+                {[
+                  { text: 'समस्त निःशुल्क सेवा योजना की सुविधाएं', highlight: false },
+                  { text: '360° समग्र प्रगति पत्र (NEP 2020 अनुरूप)', highlight: true },
+                  { text: 'बारकोड युक्त डिजिटल छात्र परिचय पत्र (ID Cards)', highlight: true },
+                  { text: 'आचार्य एवं वेतन पर्ची (Payroll & Salary Slip PDF)', highlight: true },
+                  { text: 'आधिकारिक स्थानांतरण प्रमाण पत्र (TC)', highlight: true },
+                  { text: 'दैनिक क्लाउड डेटाबेस बैकअप एवं सुरक्षा', highlight: true },
+                  { text: 'प्राथमिकता ऑन-कॉल तकनीकी सहायता', highlight: true },
+                ].map((item, idx) => (
                   <div
                     key={idx}
-                    className={`flex items-start gap-2.5 text-xs sm:text-sm ${
-                      item.highlight
-                        ? 'text-stone-900 font-semibold'
-                        : 'text-stone-600'
+                    className={`flex items-start gap-2 text-xs ${
+                      item.highlight ? 'text-stone-900 font-semibold' : 'text-stone-600'
                     }`}
                   >
-                    <div className="p-0.5 rounded bg-amber-500 text-white shrink-0 mt-0.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    <div className="p-0.5 rounded bg-emerald-600 text-white shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-3 h-3" />
                     </div>
                     <span>{item.text}</span>
                   </div>
@@ -205,19 +211,88 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="pt-4 border-t border-amber-200/80 space-y-2.5">
+            {/* Action Button */}
+            <div className="pt-4 border-t border-emerald-200/80 space-y-2">
               <button
                 type="button"
                 onClick={() => onOpenSignUp?.('pro')}
-                className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg shadow-orange-600/25 hover:shadow-orange-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-md shadow-emerald-600/25 hover:shadow-emerald-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
               >
-                <Crown className="w-4 h-4 text-yellow-200 fill-yellow-300" />
-                <span>तकनीकी सहयोग प्रो चुनें (Get Pro AMC)</span>
+                <HeartHandshake className="w-4 h-4 text-emerald-200" />
+                <span>ग्रामीण सहयोग चुनें (Rural AMC)</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <p className="text-[11px] text-center text-stone-500">
-                संस्थागत सहयोग राशि केवल सर्वर एवं तकनीकी टीम के भरण-पोषण हेतु है
+                छात्र प्रवेश के समय ₹25/वर्ष से आसानी से वहनीय
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Town & City Pro AMC (150+ students) */}
+          <div className="bg-gradient-to-b from-amber-50/80 via-white to-orange-50/50 rounded-3xl border-2 border-amber-400 shadow-xl hover:shadow-2xl transition-all p-6 sm:p-7 flex flex-col justify-between relative ring-4 ring-amber-400/20">
+            {/* Top Ribbon */}
+            <div className="absolute -top-3.5 right-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+              <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-300" />
+              <span>वृहद शाखाएं एवं इंटर कॉलेज</span>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200/90 text-amber-950 text-xs font-bold border border-amber-400 shadow-2xs">
+                  <Crown className="w-3.5 h-3.5 text-amber-700 fill-amber-600" />
+                  150+ असीमित छात्र व आचार्य
+                </span>
+                <span className="text-xs font-bold text-orange-700">समर्पित सर्वर</span>
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-black text-stone-900">
+                नगर / वृहद शाखा (Town Pro AMC)
+              </h3>
+              <p className="text-stone-600 text-xs sm:text-sm mt-1 mb-5 leading-relaxed">
+                150+ छात्रों अथवा उच्चतर माध्यमिक विद्यालयों हेतु समर्पित सर्वर, व्हाट्सएप अलर्ट एवं थोक उपस्थिति।
+              </p>
+
+              {/* Price */}
+              <div className="flex items-baseline gap-2 pb-5 mb-5 border-b border-amber-200">
+                <span className="text-3xl sm:text-4xl font-black text-orange-950">₹7,999</span>
+                <span className="text-stone-600 text-xs font-medium">/ वर्ष (अथवा ₹799/माह)</span>
+              </div>
+
+              {/* Features List */}
+              <div className="space-y-2.5 mb-6">
+                <span className="text-xs font-bold text-orange-950 uppercase tracking-wider block flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  वृहद शाखा विशेष लाभ:
+                </span>
+                {PRO_FEATURES.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-start gap-2 text-xs ${
+                      item.highlight ? 'text-stone-900 font-semibold' : 'text-stone-600'
+                    }`}
+                  >
+                    <div className="p-0.5 rounded bg-amber-500 text-white shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-3 h-3" />
+                    </div>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <div className="pt-4 border-t border-amber-200/80 space-y-2">
+              <button
+                type="button"
+                onClick={() => onOpenSignUp?.('pro')}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg shadow-orange-600/25 hover:shadow-orange-600/40 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+              >
+                <Crown className="w-4 h-4 text-yellow-200 fill-yellow-300" />
+                <span>नगर प्रो सहयोग चुनें (Town AMC)</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <p className="text-[11px] text-center text-stone-500">
+                समर्पित क्लाउड बैकअप व प्राथमिकता तकनीकी सहायता
               </p>
             </div>
           </div>

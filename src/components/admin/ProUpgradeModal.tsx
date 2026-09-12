@@ -168,34 +168,57 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             </div>
           </div>
 
-          {/* Pricing Highlight Card */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border border-amber-300 dark:border-amber-600/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-bold mb-1">
-                न्यूनतम तकनीकी अनुरक्षण सहयोग (AMC Support)
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-slate-900 dark:text-white">₹799</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">/ प्रति माह (अथवा ₹8,000 / वार्षिक न्यूनतम सहयोग)</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                बिना किसी व्यावसायिक लाभ के, केवल समर्पित सर्वर, 360° NEP रिपोर्ट कार्ड व दैनिक बैकअप रखरखाव हेतु।
-              </p>
+          {/* Pricing Highlight Card with 2 Tiers */}
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border border-amber-300 dark:border-amber-600/40 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-bold">
+                संस्थागत तकनीकी अनुरक्षण सहयोग (Institutional AMC)
+              </span>
+              <span className="text-[11px] text-slate-500">बिना किसी व्यावसायिक लाभ के, केवल सर्वर अनुरक्षण हेतु</span>
             </div>
-            <div className="shrink-0 w-full sm:w-auto">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Tier 1: Rural */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700/50 shadow-2xs">
+                <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
+                  १. ग्रामीण शाखा (150 छात्रों तक)
+                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-black text-emerald-950 dark:text-white">₹2,999</span>
+                  <span className="text-[11px] text-slate-500">/ प्रति वर्ष</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+                  NEP रिपोर्ट कार्ड, डिजिटल आईडी व पेरोल (~₹250/माह)
+                </p>
+              </div>
+
+              {/* Tier 2: Town */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/50 shadow-2xs">
+                <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 block mb-1">
+                  २. नगर / वृहद शाखा (150+ छात्र)
+                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-black text-amber-950 dark:text-white">₹7,999</span>
+                  <span className="text-[11px] text-slate-500">/ वर्ष (या ₹799/माह)</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+                  समर्पित सर्वर, व्हाट्सएप अलर्ट व थोक उपस्थिति
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
               <button
                 type="button"
                 onClick={() => {
                   setError('');
                   setContactStep('contact');
                 }}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-75 cursor-pointer"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md shadow-orange-500/25 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-75 cursor-pointer"
               >
-                <>
-                  <ShieldCheck className="w-5 h-5 text-yellow-200" />
-                  तकनीकी सहयोग डेस्क से संपर्क करें
-                  <ArrowRight className="w-4 h-4" />
-                </>
+                <ShieldCheck className="w-5 h-5 text-yellow-200" />
+                <span>तकनीकी सहयोग डेस्क से संपर्क करें</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
