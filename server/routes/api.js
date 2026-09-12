@@ -847,11 +847,11 @@ router.get('/exams', async (req, res) => {
   }
 });
 
-router.post('/exams', requirePortalAuth, async (req, res) => {
+router.post('/exams', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `exam-${Date.now()}`;
-    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    data.schoolId = req.user?.role === 'developer' && data.schoolId ? data.schoolId : req.userSchoolId;
     const exam = new Exam(data);
     await exam.save();
     res.status(201).json(exam);
@@ -860,9 +860,13 @@ router.post('/exams', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.put('/exams/:id', requirePortalAuth, async (req, res) => {
+router.put('/exams/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const updated = await Exam.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
+    const updated = await Exam.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      req.body,
+      { returnDocument: 'after', runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Exam not found' });
     res.json(updated);
   } catch (err) {
@@ -870,9 +874,12 @@ router.put('/exams/:id', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.delete('/exams/:id', requirePortalAuth, async (req, res) => {
+router.delete('/exams/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await Exam.findOneAndDelete({ id: req.params.id });
+    const deleted = await Exam.findOneAndDelete({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
     if (!deleted) return res.status(404).json({ error: 'Exam not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
@@ -881,7 +888,7 @@ router.delete('/exams/:id', requirePortalAuth, async (req, res) => {
 });
 
 // Bulk Marks Matrix submission (updates/creates ReportCard records)
-router.post('/exams/marks-bulk', requirePortalAuth, async (req, res) => {
+router.post('/exams/marks-bulk', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const { schoolId, examTerm, academicYear, subject, marksList } = req.body;
     if (!marksList || !Array.isArray(marksList) || !subject) {
@@ -965,10 +972,10 @@ router.get('/timetable', async (req, res) => {
   }
 });
 
-router.post('/timetable', requirePortalAuth, async (req, res) => {
+router.post('/timetable', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const { schoolId, class: className, section = 'A', schedule } = req.body;
-    const targetSchoolId = schoolId || req.user?.schoolId || 'ssm-gorakhpur';
+    const targetSchoolId = req.user.role === 'developer' && schoolId ? schoolId : req.userSchoolId;
     let entry = await Timetable.findOne({ schoolId: targetSchoolId, class: className, section });
     if (entry) {
       entry.schedule = schedule;
@@ -990,7 +997,7 @@ router.post('/timetable', requirePortalAuth, async (req, res) => {
 });
 
 // ================= LEAVES =================
-router.get('/leaves', requirePortalAuth, async (req, res) => {
+router.get('/leaves', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.applicantType) filter.applicantType = req.query.applicantType;
@@ -1002,11 +1009,11 @@ router.get('/leaves', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.post('/leaves', requirePortalAuth, async (req, res) => {
+router.post('/leaves', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `lv-${Date.now()}`;
-    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    data.schoolId = req.user.role === 'developer' && data.schoolId ? data.schoolId : req.userSchoolId;
     const leave = new Leave(data);
     await leave.save();
     res.status(201).json(leave);
@@ -1015,7 +1022,7 @@ router.post('/leaves', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.patch('/leaves/:id/status', requirePortalAuth, async (req, res) => {
+router.patch('/leaves/:id/status', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const { status, reviewerRemarks, reviewedBy } = req.body;
     const validStatuses = ['Pending', 'Approved', 'Rejected'];
@@ -1023,7 +1030,7 @@ router.patch('/leaves/:id/status', requirePortalAuth, async (req, res) => {
       return res.status(400).json({ error: 'अमान्य अवकाश स्थिति (Invalid leave status)' });
     }
     const leave = await Leave.findOneAndUpdate(
-      { id: req.params.id },
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       { status, reviewerRemarks: reviewerRemarks || '', reviewedBy: reviewedBy || 'प्रधानाचार्य' },
       { returnDocument: 'after', runValidators: true }
     );
@@ -1044,11 +1051,11 @@ router.get('/transport/routes', async (req, res) => {
   }
 });
 
-router.post('/transport/routes', requirePortalAuth, async (req, res) => {
+router.post('/transport/routes', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `tr-${Date.now()}`;
-    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    data.schoolId = req.user.role === 'developer' && data.schoolId ? data.schoolId : req.userSchoolId;
     const route = new TransportRoute(data);
     await route.save();
     res.status(201).json(route);
@@ -1057,9 +1064,13 @@ router.post('/transport/routes', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.put('/transport/routes/:id', requirePortalAuth, async (req, res) => {
+router.put('/transport/routes/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const updated = await TransportRoute.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
+    const updated = await TransportRoute.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      req.body,
+      { returnDocument: 'after', runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Route not found' });
     res.json(updated);
   } catch (err) {
@@ -1067,9 +1078,12 @@ router.put('/transport/routes/:id', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.delete('/transport/routes/:id', requirePortalAuth, async (req, res) => {
+router.delete('/transport/routes/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await TransportRoute.findOneAndDelete({ id: req.params.id });
+    const deleted = await TransportRoute.findOneAndDelete({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
     if (!deleted) return res.status(404).json({ error: 'Route not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
@@ -1095,11 +1109,11 @@ router.get('/library/books', async (req, res) => {
   }
 });
 
-router.post('/library/books', requirePortalAuth, async (req, res) => {
+router.post('/library/books', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `bk-${Date.now()}`;
-    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    data.schoolId = req.user.role === 'developer' && data.schoolId ? data.schoolId : req.userSchoolId;
     if (!data.availableCopies && data.totalCopies) data.availableCopies = data.totalCopies;
     const book = new Book(data);
     await book.save();
@@ -1109,9 +1123,13 @@ router.post('/library/books', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.put('/library/books/:id', requirePortalAuth, async (req, res) => {
+router.put('/library/books/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const updated = await Book.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
+    const updated = await Book.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      req.body,
+      { returnDocument: 'after', runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Book not found' });
     res.json(updated);
   } catch (err) {
@@ -1119,9 +1137,12 @@ router.put('/library/books/:id', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.delete('/library/books/:id', requirePortalAuth, async (req, res) => {
+router.delete('/library/books/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await Book.findOneAndDelete({ id: req.params.id });
+    const deleted = await Book.findOneAndDelete({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
     if (!deleted) return res.status(404).json({ error: 'Book not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
@@ -1129,7 +1150,7 @@ router.delete('/library/books/:id', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.get('/library/issues', requirePortalAuth, async (req, res) => {
+router.get('/library/issues', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.status) filter.status = req.query.status;
@@ -1139,29 +1160,32 @@ router.get('/library/issues', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.post('/library/issue', requirePortalAuth, async (req, res) => {
+router.post('/library/issue', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `iss-${Date.now()}`;
-    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    data.schoolId = req.user.role === 'developer' && data.schoolId ? data.schoolId : req.userSchoolId;
     const issue = new BookIssue(data);
     await issue.save();
     // Decrease available copies
-    await Book.findOneAndUpdate({ id: data.bookId }, { $inc: { availableCopies: -1 } });
+    await Book.findOneAndUpdate(
+      { id: data.bookId, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      { $inc: { availableCopies: -1 } }
+    );
     res.status(201).json(issue);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.post('/library/return', requirePortalAuth, async (req, res) => {
+router.post('/library/return', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const { issueId, fineAmount = 0 } = req.body;
     if (!issueId) {
       return res.status(400).json({ error: 'issueId अनिवार्य है।' });
     }
     const issue = await BookIssue.findOneAndUpdate(
-      { id: issueId },
+      { id: issueId, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       { 
         status: 'Returned', 
         returnDate: new Date().toISOString().split('T')[0],
@@ -1171,7 +1195,10 @@ router.post('/library/return', requirePortalAuth, async (req, res) => {
     );
     if (!issue) return res.status(404).json({ error: 'Issue record not found' });
     // Increase available copies
-    await Book.findOneAndUpdate({ id: issue.bookId }, { $inc: { availableCopies: 1 } });
+    await Book.findOneAndUpdate(
+      { id: issue.bookId, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      { $inc: { availableCopies: 1 } }
+    );
     res.json(issue);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -1189,11 +1216,11 @@ router.get('/inventory', async (req, res) => {
   }
 });
 
-router.post('/inventory', requirePortalAuth, async (req, res) => {
+router.post('/inventory', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `inv-${Date.now()}`;
-    if (!data.schoolId) data.schoolId = req.user?.schoolId || 'ssm-gorakhpur';
+    data.schoolId = req.user.role === 'developer' && data.schoolId ? data.schoolId : req.userSchoolId;
     const item = new InventoryItem(data);
     await item.save();
     res.status(201).json(item);
@@ -1202,9 +1229,13 @@ router.post('/inventory', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.put('/inventory/:id', requirePortalAuth, async (req, res) => {
+router.put('/inventory/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const updated = await InventoryItem.findOneAndUpdate({ id: req.params.id }, req.body, { returnDocument: 'after', runValidators: true });
+    const updated = await InventoryItem.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      req.body,
+      { returnDocument: 'after', runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Item not found' });
     res.json(updated);
   } catch (err) {
@@ -1212,9 +1243,12 @@ router.put('/inventory/:id', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.delete('/inventory/:id', requirePortalAuth, async (req, res) => {
+router.delete('/inventory/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await InventoryItem.findOneAndDelete({ id: req.params.id });
+    const deleted = await InventoryItem.findOneAndDelete({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
     if (!deleted) return res.status(404).json({ error: 'Item not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
@@ -1222,11 +1256,11 @@ router.delete('/inventory/:id', requirePortalAuth, async (req, res) => {
   }
 });
 
-router.post('/inventory/:id/stock', requirePortalAuth, async (req, res) => {
+router.post('/inventory/:id/stock', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const { delta } = req.body; // e.g. +10 or -2
     const item = await InventoryItem.findOneAndUpdate(
-      { id: req.params.id },
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       { $inc: { stockQuantity: Number(delta) || 0 } },
       { returnDocument: 'after', runValidators: true }
     );
@@ -1245,9 +1279,10 @@ router.post('/inventory/:id/stock', requirePortalAuth, async (req, res) => {
 });
 
 // ================= AUDIT LOGS =================
-router.get('/audit-logs', requirePortalAuth, async (req, res) => {
+router.get('/audit-logs', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    const targetSchoolId = req.user?.role === 'developer' ? req.query.schoolId : req.userSchoolId;
+    const filter = targetSchoolId ? { schoolId: targetSchoolId } : {};
     if (req.query.action) filter.action = req.query.action;
     if (req.query.actorType) filter.actorType = req.query.actorType;
     await executeSafeQuery(AuditLog, filter, req, res, { createdAt: -1 });

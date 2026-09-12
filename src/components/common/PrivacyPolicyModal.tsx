@@ -305,3 +305,4 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
 };
 
 export default PrivacyPolicyModal;
+
