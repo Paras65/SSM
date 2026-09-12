@@ -10,13 +10,50 @@ const seedDatabase = require('./seed');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ssm_school';
-const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+// Default trusted origins for production (init65.co.in domains) and development
+const DEFAULT_TRUSTED_ORIGINS = [
+  'https://ssm.init65.co.in',
+  'https://www.init65.co.in',
+  'https://init65.co.in',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000'
+];
+
+const customOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
 
-if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
-  throw new Error('CORS_ORIGIN must be configured in production');
+const allowedOriginsList = Array.from(new Set([...DEFAULT_TRUSTED_ORIGINS, ...customOrigins]));
+
+function isOriginAllowed(origin) {
+  if (!origin) return true; // allow non-browser requests (curl, server-to-server, mobile app webviews)
+
+  if (process.env.CORS_ORIGIN === '*' || customOrigins.includes('*')) {
+    return true;
+  }
+
+  if (allowedOriginsList.includes(origin)) {
+    return true;
+  }
+
+  // Allow all init65.co.in subdomains (e.g., https://ssm.init65.co.in, https://*.init65.co.in)
+  if (/^https?:\/\/([a-z0-9-]+\.)*init65\.co\.in(:\d+)?$/i.test(origin)) {
+    return true;
+  }
+
+  // Allow Render internal and preview URLs (*.onrender.com)
+  if (/^https?:\/\/([a-z0-9-]+\.)*onrender\.com(:\d+)?$/i.test(origin)) {
+    return true;
+  }
+
+  // Allow localhost on any port for local development
+  if (/^https?:\/\/localhost(:\d+)?$/i.test(origin)) {
+    return true;
+  }
+
+  return false;
 }
 
 if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
@@ -33,14 +70,21 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
   contentSecurityPolicy: false
 }));
-app.use(cors({
+
+const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || corsOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       return callback(null, true);
     }
-    return callback(new Error('Origin not allowed by CORS'));
-  }
-}));
+    // Return callback(null, false) instead of throwing an unhandled Error
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 
 // HTTP Request & Performance Logger

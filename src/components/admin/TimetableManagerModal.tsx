@@ -180,7 +180,7 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
 
         {/* Slots Table */}
         <div className="flex-1 overflow-y-auto py-4 text-xs">
-          <div className="border border-stone-200 rounded-2xl overflow-hidden bg-white">
+          <div className="border border-stone-200 rounded-2xl overflow-x-auto bg-white">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold text-[11px] uppercase">

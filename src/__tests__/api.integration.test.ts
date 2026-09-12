@@ -138,4 +138,35 @@ describe('API security integration', () => {
       .set('Authorization', `Bearer ${login.body.token}`);
     expect(response.status).toBe(403);
   });
+
+  it('allows CORS requests and preflights from https://ssm.init65.co.in', async () => {
+    // Test preflight OPTIONS request
+    const preflight = await request(app)
+      .options('/api/auth/login')
+      .set('Origin', 'https://ssm.init65.co.in')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'Content-Type, Authorization');
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers['access-control-allow-origin']).toBe('https://ssm.init65.co.in');
+    expect(preflight.headers['access-control-allow-credentials']).toBe('true');
+
+    // Test POST request with Origin
+    const postResponse = await request(app)
+      .post('/api/auth/login')
+      .set('Origin', 'https://ssm.init65.co.in')
+      .send({ schoolId: 'school-a', passcode: 'school-a-secret' });
+
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.headers['access-control-allow-origin']).toBe('https://ssm.init65.co.in');
+  });
+
+  it('rejects CORS requests from untrusted external origins', async () => {
+    const response = await request(app)
+      .options('/api/auth/login')
+      .set('Origin', 'https://malicious-site.com')
+      .set('Access-Control-Request-Method', 'POST');
+
+    expect(response.headers['access-control-allow-origin']).toBeUndefined();
+  });
 });

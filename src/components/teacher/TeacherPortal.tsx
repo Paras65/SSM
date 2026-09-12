@@ -340,7 +340,7 @@ export const TeacherPortal: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider text-[11px]">
@@ -609,7 +609,7 @@ export const TeacherPortal: React.FC = () => {
               </div>
             )}
 
-            <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider text-[11px]">

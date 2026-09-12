@@ -132,7 +132,7 @@ export const AdmitCardModal: React.FC<AdmitCardModalProps> = ({ student, exam, o
               <span>परीक्षा कार्यक्रम एवं विषय सूची (Examination Schedule)</span>
             </h4>
 
-            <div className="border border-stone-300 rounded-xl overflow-hidden bg-white text-xs">
+            <div className="border border-stone-300 rounded-xl overflow-x-auto bg-white text-xs">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-stone-100 border-b border-stone-300 text-stone-700 font-bold text-[10px] uppercase">

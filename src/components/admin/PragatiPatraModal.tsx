@@ -211,42 +211,44 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
               </div>
             </div>
 
-            {/* Section A: Marks Evaluation Table */}
+            {/* Section A: Scholastic Evaluation */}
             <div className="mb-6">
               <div className="text-xs font-bold text-orange-950 mb-1.5 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-orange-600" />
                 <span>भाग-क: विषयवार शैक्षणिक मूल्यांकन (Scholastic Evaluation)</span>
               </div>
-              <table className="w-full text-xs text-left border border-stone-300">
-                <thead className="bg-orange-800 text-white font-bold">
-                  <tr>
-                    <th className="p-2 border border-stone-300">क्र.</th>
-                    <th className="p-2 border border-stone-300">विषय (Subjects)</th>
-                    <th className="p-2 border border-stone-300 text-center">पूर्णांक (Max)</th>
-                    <th className="p-2 border border-stone-300 text-center">प्राप्तांक (Obtained)</th>
-                    <th className="p-2 border border-stone-300 text-center">श्रेणी (Grade)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-200">
-                  {reportCard.marks.map((m, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-stone-50'}>
-                      <td className="p-2 text-center border border-stone-200">{idx + 1}</td>
-                      <td className="p-2 font-medium text-stone-800 border border-stone-200">{m.subject}</td>
-                      <td className="p-2 text-center text-stone-600 border border-stone-200">{m.maxMarks}</td>
-                      <td className="p-2 text-center font-bold text-stone-900 border border-stone-200">{m.marksObtained}</td>
-                      <td className="p-2 text-center font-bold text-orange-700 border border-stone-200">{m.grade}</td>
+              <div className="overflow-x-auto border border-stone-300 rounded-xl">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-orange-800 text-white font-bold">
+                    <tr>
+                      <th className="p-2 border border-stone-300">क्र.</th>
+                      <th className="p-2 border border-stone-300">विषय (Subjects)</th>
+                      <th className="p-2 border border-stone-300 text-center">पूर्णांक (Max)</th>
+                      <th className="p-2 border border-stone-300 text-center">प्राप्तांक (Obtained)</th>
+                      <th className="p-2 border border-stone-300 text-center">श्रेणी (Grade)</th>
                     </tr>
-                  ))}
-                  
-                  {/* Total Row */}
-                  <tr className="bg-amber-100/80 font-bold text-stone-950 border-t-2 border-stone-400">
-                    <td className="p-2.5 text-center border border-stone-300" colSpan={2}>योग (Grand Total)</td>
-                    <td className="p-2.5 text-center border border-stone-300">{reportCard.totalMax}</td>
-                    <td className="p-2.5 text-center text-orange-900 text-sm border border-stone-300">{reportCard.totalObtained}</td>
-                    <td className="p-2.5 text-center text-orange-900 border border-stone-300">{reportCard.percentage.toFixed(1)}%</td>
-                  </tr>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-stone-200">
+                    {reportCard.marks.map((m, idx) => (
+                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-stone-50'}>
+                        <td className="p-2 text-center border border-stone-200">{idx + 1}</td>
+                        <td className="p-2 font-medium text-stone-800 border border-stone-200">{m.subject}</td>
+                        <td className="p-2 text-center text-stone-600 border border-stone-200">{m.maxMarks}</td>
+                        <td className="p-2 text-center font-bold text-stone-900 border border-stone-200">{m.marksObtained}</td>
+                        <td className="p-2 text-center font-bold text-orange-700 border border-stone-200">{m.grade}</td>
+                      </tr>
+                    ))}
+                    
+                    {/* Total Row */}
+                    <tr className="bg-amber-100/80 font-bold text-stone-950 border-t-2 border-stone-400">
+                      <td className="p-2.5 text-center border border-stone-300" colSpan={2}>योग (Grand Total)</td>
+                      <td className="p-2.5 text-center border border-stone-300">{reportCard.totalMax}</td>
+                      <td className="p-2.5 text-center text-orange-900 text-sm border border-stone-300">{reportCard.totalObtained}</td>
+                      <td className="p-2.5 text-center text-orange-900 border border-stone-300">{reportCard.percentage.toFixed(1)}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Section B: Panchmukhi 360 Holistic Assessment Section (NEP 2020 HPC) */}
@@ -263,16 +265,17 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
                 </span>
               </div>
 
-              <table className="w-full text-xs text-left">
-                <thead className="bg-amber-50/80 text-stone-800 border-b border-orange-200 font-semibold">
-                  <tr>
-                    <th className="p-2 border-r border-orange-200 w-8 text-center">क्र.</th>
-                    <th className="p-2 border-r border-orange-200 w-44">आयाम (Dimension)</th>
-                    <th className="p-2 border-r border-orange-200 w-24 text-center">मूल्यांकन (Grade)</th>
-                    <th className="p-2 border-r border-orange-200">कौशल एवं सहभागिता (Skills & Activities)</th>
-                    <th className="p-2">आचार्य सम्मति (Observations)</th>
-                  </tr>
-                </thead>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-amber-50/80 text-stone-800 border-b border-orange-200 font-semibold">
+                    <tr>
+                      <th className="p-2 border-r border-orange-200 w-8 text-center">क्र.</th>
+                      <th className="p-2 border-r border-orange-200 w-44">आयाम (Dimension)</th>
+                      <th className="p-2 border-r border-orange-200 w-24 text-center">मूल्यांकन (Grade)</th>
+                      <th className="p-2 border-r border-orange-200">कौशल एवं सहभागिता (Skills & Activities)</th>
+                      <th className="p-2">आचार्य सम्मति (Observations)</th>
+                    </tr>
+                  </thead>
                 <tbody className="divide-y divide-orange-100 text-[11px]">
                   {panchmukhiList.map((item, idx) => (
                     <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-amber-50/30'}>
@@ -298,6 +301,7 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Performance Summary & Panchmukhi Value Appraisal */}

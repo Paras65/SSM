@@ -304,7 +304,7 @@ export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ 
               )}
 
               {/* Books Table */}
-              <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+              <div className="bg-white rounded-2xl border border-stone-200 overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold text-[11px] uppercase">
@@ -365,7 +365,7 @@ export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ 
           )}
 
           {activeTab === 'issues' && (
-            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold text-[11px] uppercase">
