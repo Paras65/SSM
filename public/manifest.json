@@ -1,0 +1,71 @@
+{
+  "name": "सरस्वती शिशु मंदिर - Saraswati Shishu Mandir",
+  "short_name": "SSM ERP",
+  "description": "सरस्वती शिशु मंदिर विद्यालयी वेब पोर्टल एवं प्रबंधन ERP",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fffbeb",
+  "theme_color": "#ea580c",
+  "lang": "hi-IN",
+  "dir": "ltr",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "दैनिक वंदना व मंत्र",
+      "short_name": "वंदना",
+      "description": "दैनिक सरस्वती वंदना, भोजन मंत्र व शांति पाठ",
+      "url": "/#vandana",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "प्रशासन ERP",
+      "short_name": "Admin ERP",
+      "description": "आचार्य एवं प्रशासनिक नियंत्रण पटल",
+      "url": "/#admin",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "छात्र पोर्टल",
+      "short_name": "Student",
+      "description": "छात्र प्रगति पत्र, उपस्थिति एवं शुल्क रसीद",
+      "url": "/#student",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "सत्र 2026-27 प्रवेश आवेदन",
+      "short_name": "प्रवेश",
+      "description": "ऑनलाइन विद्यालय प्रवेश पंजीकरण फॉर्म",
+      "url": "/#admissions",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ]
+}
+
