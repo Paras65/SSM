@@ -27,14 +27,21 @@ export const StudentPortal: React.FC = () => {
     setViewMode,
     currentSchool,
     students,
-    selectedStudentId,
     setSelectedStudentId,
     feeRecords,
     reportCards,
     notices
   } = useSchool();
 
-  const currentStudent = students.find(s => s.id === selectedStudentId) || students[0];
+  const [isStudentAuthenticated, setIsStudentAuthenticated] = useState(
+    () => Boolean(sessionStorage.getItem('ssm_student_token'))
+  );
+  const [rollNo, setRollNo] = useState('');
+  const [contact, setContact] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const authenticatedStudentId = sessionStorage.getItem('ssm_student_id');
+  const currentStudent = students.find(s => s.id === authenticatedStudentId);
   const studentFee = currentStudent ? feeRecords.find(f => f.studentId === currentStudent.id) : undefined;
   const studentReport = currentStudent ? reportCards.find(r => r.studentId === currentStudent.id) : undefined;
 
@@ -42,12 +49,12 @@ export const StudentPortal: React.FC = () => {
   const [completedHw, setCompletedHw] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (currentStudent) {
-      api.getHomework(currentSchool.id, currentStudent.class)
-        .then(data => setHomeworkList(data))
-        .catch(() => {});
-    }
-  }, [currentSchool.id, currentStudent?.class]);
+    if (!currentStudent) return;
+
+    api.getHomework(currentSchool.id, currentStudent.class)
+      .then(data => setHomeworkList(data))
+      .catch(() => {});
+  }, [currentSchool.id, currentStudent?.class, currentStudent?.id]);
 
   const toggleHwCompleted = (hwId: string) => {
     setCompletedHw(prev => ({
@@ -61,6 +68,57 @@ export const StudentPortal: React.FC = () => {
   const [showIdCardModal, setShowIdCardModal] = useState(false);
   const [showTcModal, setShowTcModal] = useState(false);
 
+  const handleStudentLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError('');
+    try {
+      const result = await api.loginStudent(currentSchool.id, rollNo, contact);
+      setSelectedStudentId(result.student.id);
+      setIsStudentAuthenticated(true);
+    } catch (error: any) {
+      setLoginError(error.message || 'छात्र विवरण गलत हैं।');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleStudentLogout = () => {
+    sessionStorage.removeItem('ssm_student_token');
+    sessionStorage.removeItem('ssm_student_id');
+    setIsStudentAuthenticated(false);
+    setViewMode('public');
+  };
+
+  if (!isStudentAuthenticated) {
+    return (
+      <div className="min-h-screen bg-amber-50/40 flex items-center justify-center p-4">
+        <form onSubmit={handleStudentLogin} className="bg-white w-full max-w-md rounded-3xl border-2 border-orange-200 shadow-xl p-6 sm:p-8 space-y-5">
+          <div className="text-center">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center text-3xl">🪷</div>
+            <h1 className="text-xl font-black text-stone-900 mt-3">छात्र एवं अभिभावक पोर्टल</h1>
+            <p className="text-xs text-stone-500 mt-1">अपनी शाखा, अनुक्रमांक और पंजीकृत मोबाइल से प्रवेश करें</p>
+          </div>
+          {loginError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{loginError}</div>}
+          <div>
+            <label className="block text-xs font-bold text-stone-700 mb-1">विद्यालय शाखा</label>
+            <div className="px-3 py-2.5 rounded-xl border border-stone-300 bg-stone-50 text-sm font-semibold text-stone-800">{currentSchool.hindiName} ({currentSchool.city})</div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-stone-700 mb-1">अनुक्रमांक (Roll Number)</label>
+            <input required value={rollNo} onChange={event => setRollNo(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="उदा. 101" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-stone-700 mb-1">पंजीकृत मोबाइल नंबर</label>
+            <input required type="tel" value={contact} onChange={event => setContact(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="+91 98765 43210" />
+          </div>
+          <button type="submit" disabled={isLoggingIn} className="w-full py-3 rounded-xl bg-orange-700 hover:bg-orange-800 disabled:opacity-60 text-white text-sm font-bold">{isLoggingIn ? 'सत्यापन हो रहा है...' : 'सुरक्षित प्रवेश करें'}</button>
+          <button type="button" onClick={() => setViewMode('public')} className="w-full py-2 text-xs font-semibold text-stone-600 hover:text-orange-700">वेबसाइट पर लौटें</button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-amber-50/40 text-stone-900 flex flex-col">
       
@@ -69,11 +127,11 @@ export const StudentPortal: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => setViewMode('public')}
+              onClick={handleStudentLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>वेबसाइट पर लौटें</span>
+              <span>लॉगआउट</span>
             </button>
             <div className="h-6 w-px bg-orange-700" />
             <div className="flex items-center space-x-2">
@@ -89,21 +147,12 @@ export const StudentPortal: React.FC = () => {
             </div>
           </div>
 
-          {/* Student Switcher dropdown */}
+          {/* Authenticated student identity */}
           {currentStudent && (
             <div className="flex items-center space-x-2 text-xs">
-              <span className="hidden sm:inline-block text-orange-200 font-medium">छात्र चुनें:</span>
-              <select
-                value={currentStudent.id}
-                onChange={e => setSelectedStudentId(e.target.value)}
-                className="px-3 py-1.5 rounded-lg bg-orange-950 border border-orange-700 text-amber-100 text-xs font-semibold focus:outline-none"
-              >
-                {students.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.class})
-                  </option>
-                ))}
-              </select>
+              <span className="px-3 py-1.5 rounded-lg bg-orange-950 border border-orange-700 text-amber-100 text-xs font-semibold">
+                {currentStudent.name} ({currentStudent.class})
+              </span>
             </div>
           )}
         </div>

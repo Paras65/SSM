@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { Sparkles, Phone, Mail, MapPin, Clock, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { currentSchool } = useSchool();
+  const { publicSchool } = useSchool();
 
   return (
     <footer className="bg-gradient-to-b from-stone-900 via-stone-950 to-black text-white pt-14 pb-8 border-t-4 border-orange-600">
@@ -20,19 +20,19 @@ export const Footer: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-base font-bold text-orange-400 leading-tight">
-                  {currentSchool.hindiName}
+                  {publicSchool.hindiName}
                 </h4>
                 <span className="text-[10px] text-amber-200 uppercase tracking-wider block">
-                  {currentSchool.prant} • विद्या भारती
+                  {publicSchool.prant} • विद्या भारती
                 </span>
               </div>
             </div>
             <p className="text-xs text-stone-400 leading-relaxed">
-              सन् 1952 में गोरखपुर की पावन धरा से प्रस्फुटित हुई यह शिक्षा धारा आज संपूर्ण भारतवर्ष में चरित्रवान, संस्कारित और राष्ट्रभक्त पीढ़ी तैयार कर रही है।
+              एक सरल डिजिटल मंच, जो प्रत्येक शाखा को छात्र प्रबंधन, उपस्थिति, शुल्क, गृहकार्य और संचार की सामान्य सुविधाएं देता है।
             </p>
             <div className="pt-1">
               <span className="inline-block px-2.5 py-1 bg-orange-950 border border-orange-800 rounded-md text-[11px] font-mono text-orange-300">
-                ध्येय: "{currentSchool.tagline}"
+                ध्येय: "{publicSchool.tagline}"
               </span>
             </div>
           </div>
@@ -49,6 +49,8 @@ export const Footer: React.FC = () => {
               <li><a href="#notices" className="hover:text-orange-400 transition-colors">सूचनाएं एवं परीक्षा कार्यक्रम</a></li>
               <li><a href="#admissions" className="hover:text-orange-400 transition-colors">सत्र 2026-27 प्रवेश फॉर्म</a></li>
               <li><a href="#acharyas" className="hover:text-orange-400 transition-colors">आचार्य एवं दीदी जी परिचय</a></li>
+              <li><a href="#privacy" className="hover:text-orange-400 transition-colors">Privacy Notice</a></li>
+              <li><a href="#terms" className="hover:text-orange-400 transition-colors">Terms of Use</a></li>
             </ul>
           </div>
 
@@ -60,19 +62,19 @@ export const Footer: React.FC = () => {
             <div className="space-y-2.5 text-xs text-stone-300">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                <span>{currentSchool.address}</span>
+                <span>{publicSchool.address}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-orange-500 shrink-0" />
-                <span>{currentSchool.phone}</span>
+                <span>{publicSchool.phone}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-orange-500 shrink-0" />
-                <span>{currentSchool.email}</span>
+                <span>{publicSchool.email}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-orange-500 shrink-0" />
-                <span>{currentSchool.timings}</span>
+                <span>{publicSchool.timings}</span>
               </div>
             </div>
           </div>
@@ -99,7 +101,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright */}
         <div className="pt-6 flex flex-col sm:flex-row justify-between items-center text-xs text-stone-500 gap-3">
-          <p>© {new Date().getFullYear()} {currentSchool.hindiName}. सर्वाधिकार सुरक्षित।</p>
+          <p>© {new Date().getFullYear()} {publicSchool.hindiName}. सर्वाधिकार सुरक्षित।</p>
           <p className="flex items-center gap-1">
             <span>विद्या भारती अखिल भारतीय शिक्षा संस्थान के मार्गदर्शन में समर्पित</span>
             <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />

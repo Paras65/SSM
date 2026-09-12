@@ -10,6 +10,18 @@ const seedDatabase = require('./seed');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ssm_school';
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+  throw new Error('CORS_ORIGIN must be configured in production');
+}
+
+if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
+  throw new Error('MONGODB_URI must be configured in production');
+}
 
 // Performance & Network Compression
 app.use(compression({
@@ -21,18 +33,26 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
   contentSecurityPolicy: false
 }));
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin not allowed by CORS'));
+  }
+}));
 app.use(express.json({ limit: '1mb' }));
 
-// In-memory rate limiter for auth
-const loginAttempts = new Map();
-app.use('/api/auth/login', (req, res, next) => {
+// In-memory rate limiter for public/authentication endpoints
+const endpointAttempts = new Map();
+function rateLimitEndpoint(keyPrefix, maxAttempts = 10) {
+  return (req, res, next) => {
   const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const key = `${keyPrefix}:${ip}`;
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxAttempts = 10;
 
-  const userAttempts = loginAttempts.get(ip) || [];
+  const userAttempts = endpointAttempts.get(key) || [];
   const recentAttempts = userAttempts.filter(t => now - t < windowMs);
 
   if (recentAttempts.length >= maxAttempts) {
@@ -43,9 +63,14 @@ app.use('/api/auth/login', (req, res, next) => {
   }
 
   recentAttempts.push(now);
-  loginAttempts.set(ip, recentAttempts);
+  endpointAttempts.set(key, recentAttempts);
   next();
-});
+  };
+}
+
+app.use('/api/auth/login', rateLimitEndpoint('admin-login'));
+app.use('/api/auth/student-login', rateLimitEndpoint('student-login', 8));
+app.use('/api/admissions', rateLimitEndpoint('admission-submit', 20));
 
 // API Routes
 app.use('/api', apiRoutes);
@@ -85,5 +110,9 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };
 

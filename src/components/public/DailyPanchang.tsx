@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Sun, Moon, Sparkles, Volume2, VolumeX, BookOpen, Quote } from 'lucide-react';
+import { Calendar, Sun, Moon, Sparkles, Volume2, VolumeX } from 'lucide-react';
 
 export const DailyPanchang: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);

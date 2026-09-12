@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { INITIAL_ACHARYAS } from '../../data/mockData';
 import { AddStudentModal } from './AddStudentModal';
@@ -9,6 +9,7 @@ import { TransferCertificateModal } from './TransferCertificateModal';
 import { SchoolManagementModal } from './SchoolManagementModal';
 import { StaffSalarySlipModal } from './StaffSalarySlipModal';
 import { WhatsAppAlertModal } from '../common/WhatsAppAlertModal';
+import { TimetableSection } from '../common/TimetableSection';
 import { StudentPhotoUploadModal } from './StudentPhotoUploadModal';
 import { ProUpgradeModal } from './ProUpgradeModal';
 import { BulkStudentImportModal } from './BulkStudentImportModal';
@@ -32,7 +33,6 @@ import {
   Trash2,
   RefreshCw,
   IdCard,
-  UserCheck,
   Check,
   Download,
   FileText,
@@ -45,6 +45,7 @@ import {
   Crown,
   Lock,
   FileSpreadsheet
+  ,LogOut
 } from 'lucide-react';
 
 type AdminTab = 'overview' | 'students' | 'attendance' | 'fees' | 'reports' | 'homework' | 'staff' | 'admissions' | 'notices';
@@ -58,7 +59,6 @@ export const AdminDashboard: React.FC = () => {
     currentSchool,
     setCurrentSchoolId,
     upgradeCurrentSchoolPlan,
-    isFeatureAllowed,
     students,
     deleteStudent,
     attendanceRecords,
@@ -72,6 +72,11 @@ export const AdminDashboard: React.FC = () => {
     addNotice,
     deleteNotice
   } = useSchool();
+
+  const handleLogout = () => {
+    api.logoutAdmin();
+    setViewMode('public');
+  };
 
   const isPro = currentSchool.plan === 'pro' || (currentSchool.id === 'ssm-gorakhpur' && !currentSchool.plan);
   const [upgradeModalFeature, setUpgradeModalFeature] = useState<{ name: string; desc?: string } | null>(null);
@@ -99,7 +104,15 @@ export const AdminDashboard: React.FC = () => {
   // Homework & Staff State
   const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [loadingHwStaff, setLoadingHwStaff] = useState(false);
+  const [developerMetrics, setDeveloperMetrics] = useState({
+    students: 0,
+    present: 0,
+    attendanceRate: 0,
+    collected: 0,
+    pending: 0,
+    admissions: 0
+  });
+  const isDeveloper = sessionStorage.getItem('ssm_admin_role') === 'developer';
 
   // New Modals State
   const [activeSalarySlipStaff, setActiveSalarySlipStaff] = useState<Staff | null>(null);
@@ -131,9 +144,8 @@ export const AdminDashboard: React.FC = () => {
   const [stfPhone, setStfPhone] = useState('');
   const [stfMonthlySalary, setStfMonthlySalary] = useState(25000);
 
-  const fetchHomeworkAndStaff = async () => {
+  const fetchHomeworkAndStaff = useCallback(async () => {
     try {
-      setLoadingHwStaff(true);
       const [hwRes, staffRes] = await Promise.all([
         api.getHomework(currentSchool.id),
         api.getStaff(currentSchool.id)
@@ -142,14 +154,12 @@ export const AdminDashboard: React.FC = () => {
       setStaffList(staffRes);
     } catch (err) {
       console.error('Error fetching homework and staff:', err);
-    } finally {
-      setLoadingHwStaff(false);
     }
-  };
+  }, [currentSchool.id]);
 
   useEffect(() => {
     fetchHomeworkAndStaff();
-  }, [currentSchool.id]);
+  }, [fetchHomeworkAndStaff]);
 
   const handleCreateHomework = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,6 +256,61 @@ export const AdminDashboard: React.FC = () => {
     api.getAdmissions().then(res => setAdmissions(res)).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!isDeveloper || schools.length === 0) return;
+
+    const loadDeveloperMetrics = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const branchResults = await Promise.allSettled(schools.map(async school => {
+        const [branchStudents, branchAttendance, branchFees, branchAdmissions] = await Promise.all([
+          api.getStudents(school.id),
+          api.getAttendance(today, school.id),
+          api.getFees(school.id),
+          api.getAdmissions(school.id)
+        ]);
+        return {
+          students: branchStudents.length,
+          present: branchAttendance.filter(record => record.status === 'Present').length,
+          marked: branchAttendance.length,
+          collected: branchFees.filter(fee => fee.status === 'Paid').reduce((sum, fee) => sum + fee.paidAmount, 0),
+          pending: branchFees.reduce((sum, fee) => sum + (fee.totalAmount - fee.paidAmount), 0),
+          admissions: branchAdmissions.filter(admission => admission.status !== 'Admitted').length
+        };
+      }));
+
+      const branchMetrics = branchResults
+        .filter((result): result is PromiseFulfilledResult<{
+          students: number;
+          present: number;
+          marked: number;
+          collected: number;
+          pending: number;
+          admissions: number;
+        }> => result.status === 'fulfilled')
+        .map(result => result.value);
+
+      const totals = branchMetrics.reduce((sum, branch) => ({
+        students: sum.students + branch.students,
+        present: sum.present + branch.present,
+        marked: sum.marked + branch.marked,
+        collected: sum.collected + branch.collected,
+        pending: sum.pending + branch.pending,
+        admissions: sum.admissions + branch.admissions
+      }), { students: 0, present: 0, marked: 0, collected: 0, pending: 0, admissions: 0 });
+
+      setDeveloperMetrics({
+        students: totals.students,
+        present: totals.present,
+        attendanceRate: totals.students > 0 ? Math.round((totals.present / Math.max(totals.marked, totals.students)) * 100) : 0,
+        collected: totals.collected,
+        pending: totals.pending,
+        admissions: totals.admissions
+      });
+    };
+
+    loadDeveloperMetrics().catch(error => console.error('Error loading developer metrics:', error));
+  }, [isDeveloper, schools]);
+
   const handleApproveAdmission = async (id: string) => {
     try {
       const res = await api.approveAdmission(id);
@@ -331,7 +396,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => setViewMode('public')}
+              onClick={handleLogout}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-800/80 hover:bg-orange-800 text-xs font-semibold text-amber-200 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -436,6 +501,15 @@ export const AdminDashboard: React.FC = () => {
             <span className="hidden lg:inline-block px-2.5 py-1 bg-orange-950 rounded-full border border-orange-800 text-amber-200">
               प्रधानाचार्य: {currentSchool.principalName}
             </span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-800/80 hover:bg-red-700 text-white text-xs font-bold transition-colors"
+              title="व्यवस्थापक सत्र से लॉगआउट करें"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>लॉगआउट</span>
+            </button>
+
             <button
               onClick={() => setShowAddStudent(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-bold text-white shadow-xs"
@@ -571,6 +645,41 @@ export const AdminDashboard: React.FC = () => {
         {/* ================= TAB 1: OVERVIEW ================= */}
         {currentTab === 'overview' && (
           <div className="space-y-6">
+
+            {isDeveloper && (
+              <section className="bg-stone-900 text-white rounded-2xl border border-orange-700 p-4 sm:p-6 shadow-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+                  <div>
+                    <h2 className="text-xl font-black text-amber-200">डेवलपर नेटवर्क अवलोकन</h2>
+                    <p className="text-xs text-stone-300 mt-1">सभी पंजीकृत शाखाओं का संयुक्त संचालन सारांश</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-200 border border-amber-400/40 text-[11px] font-bold self-start sm:self-auto">
+                    {schools.length} शाखाएं
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+                  <div className="bg-white/10 rounded-xl p-3"><Users className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-xl">{developerMetrics.students}</strong><span className="text-[11px] text-stone-300">कुल छात्र</span></div>
+                  <div className="bg-white/10 rounded-xl p-3"><Building2 className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-xl">{schools.length}</strong><span className="text-[11px] text-stone-300">कुल शाखाएं</span></div>
+                  <div className="bg-white/10 rounded-xl p-3"><CheckCircle2 className="w-4 h-4 text-emerald-300 mb-2" /><strong className="block text-xl">{developerMetrics.attendanceRate}%</strong><span className="text-[11px] text-stone-300">उपस्थिति</span></div>
+                  <div className="bg-white/10 rounded-xl p-3"><Receipt className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-lg">₹{developerMetrics.collected.toLocaleString()}</strong><span className="text-[11px] text-stone-300">प्राप्त शुल्क</span></div>
+                  <div className="bg-white/10 rounded-xl p-3"><Receipt className="w-4 h-4 text-red-300 mb-2" /><strong className="block text-lg">₹{developerMetrics.pending.toLocaleString()}</strong><span className="text-[11px] text-stone-300">बकाया शुल्क</span></div>
+                  <div className="bg-white/10 rounded-xl p-3"><FileText className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-xl">{developerMetrics.admissions}</strong><span className="text-[11px] text-stone-300">लंबित आवेदन</span></div>
+                </div>
+              </section>
+            )}
+
+            <section className="bg-white rounded-2xl border border-orange-200 p-4 sm:p-6 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                <div>
+                  <h2 className="text-xl font-black text-stone-900">दैनिक कक्षा समय-सारणी</h2>
+                  <p className="text-xs text-stone-500 mt-1">{currentSchool.hindiName} • {currentSchool.city}</p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold self-start sm:self-auto">
+                  चयनित शाखा
+                </span>
+              </div>
+              <TimetableSection />
+            </section>
             
             {/* KPI Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

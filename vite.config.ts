@@ -13,4 +13,19 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'react-vendor';
+            if (id.includes('lucide-react')) return 'icons';
+            if (id.includes('tailwindcss') || id.includes('@tailwindcss')) return 'styles';
+          }
+        }
+      }
+    }
+  }
 })

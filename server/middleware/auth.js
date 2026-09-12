@@ -1,10 +1,12 @@
 const jwt = require('jsonwebtoken');
+const { isValidAdminPasscode, isValidDeveloperPasscode } = require('../utils/authValidation');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ssm_vidyabharati_secure_jwt_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
 
-/**
- * Middleware to require valid JWT token for administrative actions
- */
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be configured in production');
+}
+
 function requireAdminAuth(req, res, next) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
@@ -19,7 +21,11 @@ function requireAdminAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    if (!['admin', 'developer'].includes(decoded.role)) {
+      return res.status(403).json({ error: 'केवल व्यवस्थापक प्रवेश की अनुमति है। (Admin role required)', code: 'ADMIN_ROLE_REQUIRED' });
+    }
     req.user = decoded;
+    req.userSchoolId = decoded.schoolId;
     next();
   } catch (err) {
     const isExpired = err.name === 'TokenExpiredError';
@@ -30,6 +36,87 @@ function requireAdminAuth(req, res, next) {
       code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID'
     });
   }
+}
+
+function requireStudentAuth(req, res, next) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'छात्र लॉगिन आवश्यक है। (Student login required)', code: 'AUTH_REQUIRED' });
+  }
+
+  try {
+    const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    if (decoded.role !== 'student') {
+      return res.status(403).json({ error: 'केवल छात्र पोर्टल प्रवेश की अनुमति है।', code: 'STUDENT_ROLE_REQUIRED' });
+    }
+    req.user = decoded;
+    req.userSchoolId = decoded.schoolId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'अमान्य छात्र सत्र। (Invalid student session)', code: 'TOKEN_INVALID' });
+  }
+}
+
+function requirePortalAuth(req, res, next) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'पोर्टल लॉगिन आवश्यक है। (Portal login required)', code: 'AUTH_REQUIRED' });
+  }
+
+  try {
+    const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    if (!['admin', 'developer', 'student'].includes(decoded.role)) {
+      return res.status(403).json({ error: 'अमान्य पोर्टल भूमिका। (Invalid portal role)', code: 'ROLE_FORBIDDEN' });
+    }
+    if (decoded.role === 'student') {
+      if (!decoded.studentClass) {
+        return res.status(401).json({ error: 'छात्र सत्र पुराना है, कृपया पुनः लॉगिन करें।', code: 'STUDENT_SESSION_REFRESH_REQUIRED' });
+      }
+      if (req.query.schoolId && req.query.schoolId !== decoded.schoolId) {
+        return res.status(403).json({ error: 'छात्र केवल अपनी शाखा का डेटा देख सकता है।', code: 'SCHOOL_SCOPE_FORBIDDEN' });
+      }
+      if (req.query.class && req.query.class !== decoded.studentClass) {
+        return res.status(403).json({ error: 'छात्र केवल अपनी कक्षा का गृहकार्य देख सकता है।', code: 'CLASS_SCOPE_FORBIDDEN' });
+      }
+      req.query.schoolId = decoded.schoolId;
+      req.query.class = decoded.studentClass;
+    }
+    req.user = decoded;
+    req.userSchoolId = decoded.schoolId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'अमान्य पोर्टल सत्र। (Invalid portal session)', code: 'TOKEN_INVALID' });
+  }
+}
+
+function requireSchoolScope(req, res, next) {
+  if (req.user?.role === 'developer') return next();
+
+  if (!req.userSchoolId) {
+    return res.status(403).json({
+      error: 'व्यवस्थापक शाखा निर्धारित नहीं है। (Admin school scope missing)',
+      code: 'SCHOOL_SCOPE_MISSING'
+    });
+  }
+
+  const requestedSchoolIds = [
+    req.body?.schoolId,
+    req.query?.schoolId,
+    ...(Array.isArray(req.body?.updates) ? req.body.updates.map(update => update.schoolId) : [])
+  ].filter(Boolean);
+
+  if (requestedSchoolIds.some(schoolId => schoolId !== req.userSchoolId)) {
+    return res.status(403).json({
+      error: 'इस शाखा के डेटा तक पहुंच की अनुमति नहीं है। (School scope violation)',
+      code: 'SCHOOL_SCOPE_FORBIDDEN'
+    });
+  }
+
+  if (req.method === 'GET' && !req.query.schoolId) {
+    req.query.schoolId = req.userSchoolId;
+  }
+
+  next();
 }
 
 /**
@@ -43,7 +130,12 @@ function generateAdminToken(payload) {
 
 module.exports = {
   requireAdminAuth,
+  requireStudentAuth,
+  requirePortalAuth,
+  requireSchoolScope,
   generateAdminToken,
-  JWT_SECRET
+  JWT_SECRET,
+  isValidAdminPasscode,
+  isValidDeveloperPasscode
 };
 

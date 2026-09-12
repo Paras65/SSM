@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { AdminAuthModal } from '../admin/AdminAuthModal';
 import { SchoolManagementModal } from '../admin/SchoolManagementModal';
 import { subscribePwaInstall, promptPwaInstall } from '../../services/pwa';
-import { Sparkles, Phone, Mail, Clock, LayoutDashboard, UserCheck, Menu, X, BookOpen, Smartphone, Building2, Globe, LogIn, Plus } from 'lucide-react';
+import { Sparkles, Phone, Mail, Clock, UserCheck, Menu, X, Smartphone, Globe, LogIn, Plus, BookOpen } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface NavbarProps {
@@ -17,10 +17,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onOpenBranchList
 }) => {
-  const { viewMode, setViewMode, dbStatus, currentSchool, schools, setCurrentSchoolId } = useSchool();
+  const { viewMode, setViewMode, dbStatus, currentSchool, publicSchool } = useSchool();
   const { language, toggleLanguage, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const isAdminAuthenticated = Boolean(sessionStorage.getItem('ssm_admin_token'));
   const [showSchoolModal, setShowSchoolModal] = useState(false);
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
   const [schoolModalPlan, setSchoolModalPlan] = useState<'free' | 'pro'>('free');
@@ -73,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="bg-gradient-to-r from-orange-700 via-amber-600 to-orange-700 text-white text-xs px-4 py-1.5 flex flex-wrap justify-between items-center">
         <div className="flex items-center space-x-2 font-medium tracking-wide">
           <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-          <span>{currentSchool.tagline}</span>
+          <span>{publicSchool.tagline}</span>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/25 text-[11px] font-semibold">
@@ -83,9 +84,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>{dbStatus === 'connected' ? 'MongoDB Atlas: Connected' : dbStatus === 'connecting' ? 'Connecting DB...' : 'Offline Cache'}</span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-orange-200" /> {currentSchool.timings}</span>
-            <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-orange-200" /> {currentSchool.phone.split('/')[0]}</span>
-            <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-orange-200" /> {currentSchool.email}</span>
+            <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-orange-200" /> {publicSchool.timings}</span>
+            <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-orange-200" /> {publicSchool.phone}</span>
+            <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-orange-200" /> {publicSchool.email}</span>
           </div>
         </div>
       </div>
@@ -105,14 +106,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base sm:text-lg font-bold text-orange-950 tracking-tight leading-tight line-clamp-1">
-                  {currentSchool.hindiName}
+                  {publicSchool.hindiName}
                 </h1>
                 <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-orange-800 rounded-full border border-amber-300 whitespace-nowrap">
-                  {currentSchool.prant}
+                  {publicSchool.prant}
                 </span>
               </div>
               <p className="text-[11px] text-stone-600 font-medium hidden sm:block truncate max-w-md">
-                {currentSchool.name} • Estd. {currentSchool.established}
+                {publicSchool.name}
               </p>
             </div>
           </div>
@@ -148,10 +149,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={handleOpenAdmin}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-amber-200 border border-stone-800 shadow-xs transition-all cursor-pointer shrink-0"
-              title="शाखा प्रशासक लॉगिन (Login)"
+              title={isAdminAuthenticated ? 'प्रशासक डैशबोर्ड खोलें' : 'शाखा प्रशासक लॉगिन (Login)'}
             >
               <LogIn className="w-3.5 h-3.5 text-amber-400" />
-              <span>लॉगिन</span>
+              <span>{isAdminAuthenticated ? 'Admin Dashboard' : 'लॉगिन'}</span>
             </button>
 
             {/* Active Branch Chip with quick switch trigger */}
@@ -161,13 +162,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="वर्तमान सक्रिय शाखा • क्लिक करके अन्य शाखाएं देखें"
             >
               <span className="text-sm">🏫</span>
-              <span className="max-w-[70px] lg:max-w-[100px] truncate">{currentSchool.city}</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded font-black uppercase ${
-                currentSchool.plan === 'pro' || currentSchool.id === 'ssm-gorakhpur'
-                  ? 'bg-amber-200 text-amber-900 border border-amber-300'
-                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-              }`}>
-                {currentSchool.plan === 'pro' || currentSchool.id === 'ssm-gorakhpur' ? 'PRO' : 'FREE'}
+              <span className="max-w-[70px] lg:max-w-[100px] truncate">सभी शाखाएं</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                FREE
               </span>
             </button>
 
@@ -221,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="p-1.5 bg-amber-100 text-orange-950 border border-orange-300 rounded-md text-xs font-bold"
               title="Switch School Branch"
             >
-              🏫 {currentSchool.city}
+              🏫 सभी शाखाएं
             </button>
             <button
               onClick={handleOpenAdmin}

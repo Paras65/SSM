@@ -1,12 +1,12 @@
 import type { School, Student, AttendanceRecord, FeeRecord, ReportCard, Notice, AttendanceStatus, Homework, Staff } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 /**
  * Returns Bearer token header if admin is authenticated
  */
 function getAuthHeaders(): Record<string, string> {
-  const token = sessionStorage.getItem('ssm_admin_token');
+  const token = sessionStorage.getItem('ssm_admin_token') || sessionStorage.getItem('ssm_student_token');
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
@@ -30,15 +30,37 @@ export const api = {
       throw new Error(data.error || 'प्रमाणीकरण विफल रहा');
     }
     if (data.token) {
+      sessionStorage.removeItem('ssm_student_token');
+      sessionStorage.removeItem('ssm_student_id');
       sessionStorage.setItem('ssm_admin_token', data.token);
       sessionStorage.setItem('ssm_admin_authenticated', 'true');
+      sessionStorage.setItem('ssm_admin_role', data.role || 'admin');
     }
+    return data;
+  },
+
+  async loginStudent(schoolId: string, rollNo: string, contact: string): Promise<{ success: boolean; token: string; student: Student }> {
+    const res = await fetch(`${API_BASE}/auth/student-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schoolId, rollNo, contact })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'छात्र प्रमाणीकरण विफल रहा');
+    sessionStorage.removeItem('ssm_admin_token');
+    sessionStorage.removeItem('ssm_admin_authenticated');
+    sessionStorage.removeItem('ssm_admin_role');
+    sessionStorage.setItem('ssm_student_token', data.token);
+    sessionStorage.setItem('ssm_student_id', data.student.id);
     return data;
   },
 
   logoutAdmin(): void {
     sessionStorage.removeItem('ssm_admin_token');
     sessionStorage.removeItem('ssm_admin_authenticated');
+    sessionStorage.removeItem('ssm_admin_role');
+    sessionStorage.removeItem('ssm_student_token');
+    sessionStorage.removeItem('ssm_student_id');
   },
 
   // ================= SCHOOLS =================
@@ -341,6 +363,7 @@ export const api = {
   // Public admission submission (no auth needed)
   async submitAdmission(data: {
     schoolId?: string;
+    guardianConsent: boolean;
     studentName: string;
     gender: string;
     applyingClass: string;

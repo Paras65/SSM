@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { subscribePwaInstall, promptPwaInstall } from '../../services/pwa';
-import { Download, X, Smartphone, Sparkles } from 'lucide-react';
+import { Download, X, Sparkles } from 'lucide-react';
 
 export const PwaInstallBanner: React.FC = () => {
   const [canInstall, setCanInstall] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem('ssm_pwa_dismissed') === 'true');
 
   useEffect(() => {
-    // Check if dismissed in this session
-    const isDismissed = sessionStorage.getItem('ssm_pwa_dismissed') === 'true';
-    if (isDismissed) {
-      setDismissed(true);
-    }
     return subscribePwaInstall(available => setCanInstall(available));
   }, []);
 

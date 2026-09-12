@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Sparkles, CheckCircle2, UserPlus, FileText, Phone, Send } from 'lucide-react';
 import { api } from '../../services/api';
+import { useSchool } from '../../context/SchoolContext';
 
 export const AdmissionInquiry: React.FC = () => {
+  const { schools } = useSchool();
+  const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [formData, setFormData] = useState({
     studentName: '',
     gender: 'Bhaiya',
@@ -16,23 +19,32 @@ export const AdmissionInquiry: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [inquiryId, setInquiryId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [guardianConsent, setGuardianConsent] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedSchoolId) {
+      alert('कृपया प्रवेश के लिए विद्यालय शाखा चुनें।');
+      return;
+    }
     if (!formData.studentName || !formData.phone) {
       alert('कृपया छात्र का नाम एवं संपर्क नंबर भरें।');
       return;
     }
+    if (!guardianConsent) {
+      alert('कृपया अभिभावक/अधिकृत संरक्षक की सहमति दें।');
+      return;
+    }
 
     setIsSubmitting(true);
+    setSubmitError('');
     try {
-      const res = await api.submitAdmission(formData);
+      const res = await api.submitAdmission({ ...formData, schoolId: selectedSchoolId, guardianConsent: true });
       setInquiryId(res.regNo);
       setSubmitted(true);
     } catch {
-      const fallbackRegNo = `SSM-ADM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-      setInquiryId(fallbackRegNo);
-      setSubmitted(true);
+      setSubmitError('आवेदन जमा नहीं हो सका। कृपया पुनः प्रयास करें या सीधे चुनी गई शाखा से संपर्क करें।');
     } finally {
       setIsSubmitting(false);
     }
@@ -115,6 +127,8 @@ export const AdmissionInquiry: React.FC = () => {
                         phone: '',
                         address: '',
                       });
+                      setGuardianConsent(false);
+                      setSubmitError('');
                     }}
                     className="px-5 py-2 text-xs font-semibold bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
                   >
@@ -129,6 +143,34 @@ export const AdmissionInquiry: React.FC = () => {
                       ऑनलाइन प्रवेश पूछताछ / पंजीकरण फॉर्म (2026-27)
                     </h3>
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      प्रवेश हेतु विद्यालय शाखा चुनें *
+                    </label>
+                    <select
+                      required
+                      value={selectedSchoolId}
+                      onChange={e => setSelectedSchoolId(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                    >
+                      <option value="">शाखा चुनें...</option>
+                      {schools.filter(school => school.id !== 'ssm-platform').map(school => (
+                        <option key={school.id} value={school.id}>
+                          {school.hindiName || school.name} ({school.city})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-stone-500 mt-1">
+                      आवेदन सीधे चुनी गई शाखा को भेजा जाएगा।
+                    </p>
+                  </div>
+
+                  {submitError && (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
+                      {submitError}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Student Name */}
@@ -264,6 +306,19 @@ export const AdmissionInquiry: React.FC = () => {
                       className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                     />
                   </div>
+
+                  <label className="flex items-start gap-2 text-xs text-stone-600">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={guardianConsent}
+                      onChange={event => setGuardianConsent(event.target.checked)}
+                      className="mt-0.5 accent-orange-700"
+                    />
+                    <span>
+                      मैं छात्र का अभिभावक/अधिकृत संरक्षक हूं और चुनी गई शाखा द्वारा इस प्रवेश पूछताछ के लिए दिए गए विवरण के उपयोग और संपर्क की सहमति देता/देती हूं। <a href="#privacy" className="font-semibold text-orange-700 hover:underline">Privacy Notice</a>
+                    </span>
+                  </label>
 
                   <button
                     type="submit"

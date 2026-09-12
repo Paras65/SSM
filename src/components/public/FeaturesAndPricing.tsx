@@ -6,18 +6,8 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  Building2,
-  Users,
-  Award,
-  Zap,
-  FileSpreadsheet,
-  IdCard,
-  MessageSquare,
   LogIn,
-  Plus,
-  BookOpen,
-  Receipt,
-  CalendarCheck
+  Plus
 } from 'lucide-react';
 
 interface FeaturesAndPricingProps {
@@ -29,7 +19,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
   onOpenSignUp,
   onOpenLogin
 }) => {
-  const { currentSchool, schools } = useSchool();
+  const { schools } = useSchool();
 
   const FREE_FEATURES = [
     { text: 'सार्वजनिक विद्यालय पोर्टल एवं होमपेज', highlight: false },
@@ -241,7 +231,7 @@ export const FeaturesAndPricing: React.FC<FeaturesAndPricingProps> = ({
                 क्या आपकी शाखा पहले से पंजीकृत है?
               </h4>
               <p className="text-xs text-stone-500 mt-0.5">
-                वर्तमान चयनित शाखा: <strong>{currentSchool.hindiName} ({currentSchool.city})</strong>
+                अपनी शाखा चुनें या नई शाखा निःशुल्क पंजीकृत करें।
               </p>
             </div>
           </div>

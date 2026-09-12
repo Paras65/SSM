@@ -11,7 +11,7 @@ const Notice = require('../models/Notice');
 const Admission = require('../models/Admission');
 const Homework = require('../models/Homework');
 const Staff = require('../models/Staff');
-const { requireAdminAuth, generateAdminToken } = require('../middleware/auth');
+const { requireAdminAuth, requirePortalAuth, requireSchoolScope, generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode } = require('../middleware/auth');
 
 // Healthcheck & Database status
 router.get('/status', (req, res) => {
@@ -78,15 +78,36 @@ router.post('/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'पासकोड दर्ज करना अनिवार्य है। (Passcode is required)' });
     }
 
+    if (schoolId === '__developer__') {
+      if (!isValidDeveloperPasscode(passcode)) {
+        return res.status(401).json({
+          error: 'अमान्य डेवलपर सुरक्षा पासकोड! (Invalid developer admin passcode)',
+          code: 'INVALID_DEVELOPER_CREDENTIALS'
+        });
+      }
+
+      const token = generateAdminToken({
+        schoolId: '*',
+        role: 'developer',
+        schoolName: 'SSM Developer Administration'
+      });
+
+      return res.json({
+        success: true,
+        message: 'डेवलपर प्रशासन सफलतापूर्वक प्रमाणित हुआ।',
+        token,
+        role: 'developer'
+      });
+    }
+
     // Find school to compare passcode
     let school = null;
     if (schoolId) {
       school = await School.findOne({ id: schoolId });
     }
 
-    // Check against school passcode or universal fallback ('1952', 'admin')
-    const expectedPasscode = school?.adminPasscode || '1952';
-    const isMatch = passcode === expectedPasscode || passcode === '1952' || passcode === 'admin';
+    // Only allow the configured school passcode; no universal fallback avoids weak admin access.
+    const isMatch = isValidAdminPasscode(school?.adminPasscode, passcode);
 
     if (!isMatch) {
       return res.status(401).json({
@@ -118,6 +139,33 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
+router.post('/auth/student-login', async (req, res) => {
+  try {
+    const { schoolId, rollNo, contact } = req.body;
+    if (!schoolId || !rollNo || !contact) {
+      return res.status(400).json({ error: 'शाखा, अनुक्रमांक और मोबाइल नंबर आवश्यक हैं।' });
+    }
+    if (String(schoolId).length > 100 || String(rollNo).length > 30 || String(contact).length > 30) {
+      return res.status(400).json({ error: 'छात्र लॉगिन विवरण अमान्य हैं।' });
+    }
+
+    const student = await Student.findOne({ schoolId, rollNo: String(rollNo).trim(), contact: String(contact).trim() }).lean();
+    if (!student) {
+      return res.status(401).json({ error: 'छात्र विवरण सत्यापित नहीं हो सके। (Invalid student details)', code: 'INVALID_CREDENTIALS' });
+    }
+
+    const token = generateAdminToken({
+      schoolId: student.schoolId,
+      role: 'student',
+      studentId: student.id,
+      studentClass: student.class
+    });
+    res.json({ success: true, token, student });
+  } catch (err) {
+    res.status(500).json({ error: 'छात्र प्रमाणीकरण त्रुटि: ' + err.message });
+  }
+});
+
 // ================= SCHOOLS (BRANCHES) =================
 router.get('/schools', async (req, res) => {
   try {
@@ -140,7 +188,7 @@ router.get('/schools/:id', async (req, res) => {
   }
 });
 
-router.post('/schools', requireAdminAuth, async (req, res) => {
+router.post('/schools', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) {
@@ -156,10 +204,10 @@ router.post('/schools', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.put('/schools/:id', requireAdminAuth, async (req, res) => {
+router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const school = await School.findOneAndUpdate(
-      { id: req.params.id },
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) },
       req.body,
       { new: true }
     );
@@ -171,7 +219,7 @@ router.put('/schools/:id', requireAdminAuth, async (req, res) => {
 });
 
 // ================= STUDENTS =================
-router.get('/students', async (req, res) => {
+router.get('/students', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.class) filter.class = req.query.class;
@@ -182,14 +230,14 @@ router.get('/students', async (req, res) => {
   }
 });
 
-router.post('/students', requireAdminAuth, async (req, res) => {
+router.post('/students', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const studentData = req.body;
     if (!studentData.id) {
       studentData.id = `ssm-${Date.now().toString().slice(-4)}`;
     }
     if (!studentData.schoolId) {
-      studentData.schoolId = 'ssm-gorakhpur';
+      studentData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
     const student = new Student(studentData);
     await student.save();
@@ -199,7 +247,7 @@ router.post('/students', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.post('/students/bulk', requireAdminAuth, async (req, res) => {
+router.post('/students/bulk', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { students: rawStudents, schoolId } = req.body;
     if (!Array.isArray(rawStudents) || rawStudents.length === 0) {
@@ -233,10 +281,10 @@ router.post('/students/bulk', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.put('/students/:id', requireAdminAuth, async (req, res) => {
+router.put('/students/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const student = await Student.findOneAndUpdate(
-      { id: req.params.id },
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       req.body,
       { new: true }
     );
@@ -247,9 +295,9 @@ router.put('/students/:id', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.delete('/students/:id', requireAdminAuth, async (req, res) => {
+router.delete('/students/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await Student.findOneAndDelete({ id: req.params.id });
+    const deleted = await Student.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Student not found' });
     res.json({ success: true, message: 'Student deleted', id: req.params.id });
   } catch (err) {
@@ -258,7 +306,7 @@ router.delete('/students/:id', requireAdminAuth, async (req, res) => {
 });
 
 // ================= ATTENDANCE =================
-router.get('/attendance', async (req, res) => {
+router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = {};
     if (req.query.date) filter.date = req.query.date;
@@ -270,13 +318,13 @@ router.get('/attendance', async (req, res) => {
   }
 });
 
-router.post('/attendance', requireAdminAuth, async (req, res) => {
+router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { studentId, date, status, schoolId } = req.body;
     const id = `att-${date}-${studentId}`;
     const record = await Attendance.findOneAndUpdate(
-      { studentId, date },
-      { id, studentId, date, status, schoolId: schoolId || 'ssm-gorakhpur' },
+      { studentId, date, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      { id, studentId, date, status, schoolId: schoolId || req.userSchoolId || 'ssm-gorakhpur' },
       { upsert: true, new: true }
     );
     res.json(record);
@@ -285,7 +333,7 @@ router.post('/attendance', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.post('/attendance/bulk', requireAdminAuth, async (req, res) => {
+router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { updates, schoolId } = req.body; // array of { studentId, date, status }
     if (!Array.isArray(updates)) {
@@ -301,7 +349,7 @@ router.post('/attendance/bulk', requireAdminAuth, async (req, res) => {
             studentId: u.studentId,
             date: u.date,
             status: u.status,
-            schoolId: u.schoolId || schoolId || 'ssm-gorakhpur'
+            schoolId: u.schoolId || schoolId || req.userSchoolId || 'ssm-gorakhpur'
           }
         },
         upsert: true
@@ -311,6 +359,7 @@ router.post('/attendance/bulk', requireAdminAuth, async (req, res) => {
     await Attendance.bulkWrite(operations);
     const filter = { date: updates[0]?.date };
     if (schoolId) filter.schoolId = schoolId;
+    if (req.user.role !== 'developer' && !filter.schoolId) filter.schoolId = req.userSchoolId;
     const records = await Attendance.find(filter);
     res.json(records);
   } catch (err) {
@@ -319,7 +368,7 @@ router.post('/attendance/bulk', requireAdminAuth, async (req, res) => {
 });
 
 // ================= FEES =================
-router.get('/fees', async (req, res) => {
+router.get('/fees', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.studentId) filter.studentId = req.query.studentId;
@@ -330,14 +379,14 @@ router.get('/fees', async (req, res) => {
   }
 });
 
-router.post('/fees', requireAdminAuth, async (req, res) => {
+router.post('/fees', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const feeData = req.body;
     if (!feeData.id) {
       feeData.id = `fee-${Date.now().toString().slice(-4)}`;
     }
     if (!feeData.schoolId) {
-      feeData.schoolId = 'ssm-gorakhpur';
+      feeData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
     const fee = new Fee(feeData);
     await fee.save();
@@ -347,10 +396,10 @@ router.post('/fees', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.put('/fees/:id/pay', requireAdminAuth, async (req, res) => {
+router.put('/fees/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { paymentMode } = req.body;
-    const fee = await Fee.findOne({ id: req.params.id });
+    const fee = await Fee.findOne({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!fee) return res.status(404).json({ error: 'Fee record not found' });
 
     fee.paidAmount = fee.totalAmount;
@@ -367,7 +416,7 @@ router.put('/fees/:id/pay', requireAdminAuth, async (req, res) => {
 });
 
 // ================= REPORT CARDS =================
-router.get('/reports', async (req, res) => {
+router.get('/reports', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     const reports = await ReportCard.find(filter);
@@ -377,17 +426,17 @@ router.get('/reports', async (req, res) => {
   }
 });
 
-router.post('/reports', requireAdminAuth, async (req, res) => {
+router.post('/reports', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const reportData = req.body;
     if (!reportData.id) {
       reportData.id = `rep-${Date.now().toString().slice(-4)}`;
     }
     if (!reportData.schoolId) {
-      reportData.schoolId = 'ssm-gorakhpur';
+      reportData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
     const report = await ReportCard.findOneAndUpdate(
-      { studentId: reportData.studentId, examTerm: reportData.examTerm },
+      { studentId: reportData.studentId, examTerm: reportData.examTerm, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       reportData,
       { upsert: true, new: true }
     );
@@ -398,7 +447,7 @@ router.post('/reports', requireAdminAuth, async (req, res) => {
 });
 
 // ================= NOTICES =================
-router.get('/notices', async (req, res) => {
+router.get('/notices', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.category) filter.category = req.query.category;
@@ -408,14 +457,14 @@ router.get('/notices', async (req, res) => {
   }
 });
 
-router.post('/notices', requireAdminAuth, async (req, res) => {
+router.post('/notices', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const noticeData = req.body;
     if (!noticeData.id) {
       noticeData.id = `not-${Date.now().toString().slice(-4)}`;
     }
     if (!noticeData.schoolId) {
-      noticeData.schoolId = 'ssm-gorakhpur';
+      noticeData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
     const notice = new Notice(noticeData);
     await notice.save();
@@ -425,9 +474,9 @@ router.post('/notices', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.delete('/notices/:id', requireAdminAuth, async (req, res) => {
+router.delete('/notices/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await Notice.findOneAndDelete({ id: req.params.id });
+    const deleted = await Notice.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Notice not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
@@ -436,7 +485,7 @@ router.delete('/notices/:id', requireAdminAuth, async (req, res) => {
 });
 
 // ================= ADMISSIONS =================
-router.get('/admissions', async (req, res) => {
+router.get('/admissions', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.status) filter.status = req.query.status;
@@ -449,12 +498,27 @@ router.get('/admissions', async (req, res) => {
 router.post('/admissions', async (req, res) => {
   try {
     const data = req.body;
+    const requiredTextFields = ['schoolId', 'studentName', 'gender', 'applyingClass', 'phone'];
+    if (requiredTextFields.some(field => typeof data[field] !== 'string' || !data[field].trim())) {
+      return res.status(400).json({ error: 'प्रवेश आवेदन के आवश्यक विवरण भरना अनिवार्य है।' });
+    }
+    if (Object.entries(data).some(([key, value]) => typeof value === 'string' && value.length > (key === 'address' ? 500 : 120))) {
+      return res.status(400).json({ error: 'प्रवेश आवेदन में कोई विवरण बहुत लंबा है।' });
+    }
+    if (!/^\+?[0-9\s()-]{7,20}$/.test(data.phone)) {
+      return res.status(400).json({ error: 'कृपया वैध मोबाइल नंबर दर्ज करें।' });
+    }
+    if (data.guardianConsent !== true) {
+      return res.status(400).json({ error: 'अभिभावक/अधिकृत संरक्षक की सहमति आवश्यक है।' });
+    }
     const regNo = `SSM-ADM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const id = `adm-${Date.now().toString().slice(-4)}`;
     const admission = new Admission({
       ...data,
       id,
       regNo,
+      consentTimestamp: new Date(),
+      consentPolicyVersion: '2026-09-12',
       schoolId: data.schoolId || 'ssm-gorakhpur'
     });
     await admission.save();
@@ -464,9 +528,9 @@ router.post('/admissions', async (req, res) => {
   }
 });
 
-router.put('/admissions/:id/approve', requireAdminAuth, async (req, res) => {
+router.put('/admissions/:id/approve', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const admission = await Admission.findOne({ id: req.params.id });
+    const admission = await Admission.findOne({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!admission) return res.status(404).json({ error: 'Admission not found' });
 
     admission.status = 'Admitted';
@@ -508,9 +572,9 @@ router.put('/admissions/:id/approve', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.delete('/admissions/:id', requireAdminAuth, async (req, res) => {
+router.delete('/admissions/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await Admission.findOneAndDelete({ id: req.params.id });
+    const deleted = await Admission.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Admission inquiry not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
@@ -519,7 +583,7 @@ router.delete('/admissions/:id', requireAdminAuth, async (req, res) => {
 });
 
 // ================= HOMEWORK =================
-router.get('/homework', async (req, res) => {
+router.get('/homework', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = {};
     if (req.query.schoolId) filter.schoolId = req.query.schoolId;
@@ -531,14 +595,14 @@ router.get('/homework', async (req, res) => {
   }
 });
 
-router.post('/homework', requireAdminAuth, async (req, res) => {
+router.post('/homework', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) {
       data.id = `hw-${Date.now().toString().slice(-4)}`;
     }
     if (!data.schoolId) {
-      data.schoolId = 'ssm-gorakhpur';
+      data.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
     const homework = new Homework(data);
     await homework.save();
@@ -548,9 +612,9 @@ router.post('/homework', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.delete('/homework/:id', requireAdminAuth, async (req, res) => {
+router.delete('/homework/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await Homework.findOneAndDelete({ id: req.params.id });
+    const deleted = await Homework.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Homework not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
@@ -559,7 +623,7 @@ router.delete('/homework/:id', requireAdminAuth, async (req, res) => {
 });
 
 // ================= STAFF & ACHARYA =================
-router.get('/staff', async (req, res) => {
+router.get('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.status) filter.status = req.query.status;
@@ -570,14 +634,14 @@ router.get('/staff', async (req, res) => {
   }
 });
 
-router.post('/staff', requireAdminAuth, async (req, res) => {
+router.post('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) {
       data.id = `stf-${Date.now().toString().slice(-4)}`;
     }
     if (!data.schoolId) {
-      data.schoolId = 'ssm-gorakhpur';
+      data.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
     const member = new Staff(data);
     await member.save();
@@ -587,10 +651,10 @@ router.post('/staff', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.put('/staff/:id', requireAdminAuth, async (req, res) => {
+router.put('/staff/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const member = await Staff.findOneAndUpdate(
-      { id: req.params.id },
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       req.body,
       { new: true }
     );
@@ -601,9 +665,9 @@ router.put('/staff/:id', requireAdminAuth, async (req, res) => {
   }
 });
 
-router.delete('/staff/:id', requireAdminAuth, async (req, res) => {
+router.delete('/staff/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const deleted = await Staff.findOneAndDelete({ id: req.params.id });
+    const deleted = await Staff.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Staff member not found' });
     res.json({ success: true, id: req.params.id });
   } catch (err) {

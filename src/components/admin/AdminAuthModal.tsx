@@ -16,6 +16,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isDeveloperLogin, setIsDeveloperLogin] = useState(false);
 
   if (!isOpen) return null;
 
@@ -29,7 +30,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
     setIsAuthenticating(true);
     setError('');
     try {
-      await api.loginAdmin(currentSchool.id, passcode.trim());
+      await api.loginAdmin(isDeveloperLogin ? '__developer__' : currentSchool.id, passcode.trim());
       setPasscode('');
       onSuccess();
     } catch (err: any) {
@@ -40,17 +41,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
   };
 
   const handleDemoUnlock = async () => {
-    setIsAuthenticating(true);
-    setError('');
-    try {
-      await api.loginAdmin(currentSchool.id, '1952');
-      setPasscode('');
-      onSuccess();
-    } catch (err: any) {
-      setError(err.message || 'डेमो लॉगिन विफल रहा');
-    } finally {
-      setIsAuthenticating(false);
-    }
+    setError('सुरक्षित प्रवेश के लिए अपने विद्यालय का पासकोड दर्ज करें।');
   };
 
   return createPortal(
@@ -88,23 +79,27 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
           )}
 
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">
-              विद्यालय शाखा चुनें (Select School Branch)
-            </label>
-            <div className="relative">
-              <select
-                value={currentSchool.id}
-                onChange={(e) => setCurrentSchoolId(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 bg-stone-50/70 focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer truncate"
-              >
-                {schools.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.hindiName || s.name} ({s.city})
-                  </option>
-                ))}
-              </select>
-              <Building2 className="w-4 h-4 text-orange-600 absolute left-3 top-3 pointer-events-none" />
-            </div>
+            {!isDeveloperLogin && (
+              <>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  विद्यालय शाखा चुनें (Select School Branch)
+                </label>
+                <div className="relative">
+                  <select
+                    value={currentSchool.id}
+                    onChange={(e) => setCurrentSchoolId(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 bg-stone-50/70 focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer truncate"
+                  >
+                    {schools.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.hindiName || s.name} ({s.city})
+                      </option>
+                    ))}
+                  </select>
+                  <Building2 className="w-4 h-4 text-orange-600 absolute left-3 top-3 pointer-events-none" />
+                </div>
+              </>
+            )}
           </div>
 
           <div>
@@ -124,7 +119,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
               <KeyRound className="w-5 h-5 text-stone-400 absolute left-3 top-3" />
             </div>
             <p className="text-[11px] text-stone-500 mt-1 text-center">
-              डिफ़ॉल्ट पासकोड: <strong>{currentSchool.adminPasscode || '1952'}</strong>
+              {isDeveloperLogin ? 'सभी शाखाओं के डेवलपर प्रशासन के लिए कॉन्फ़िगर किया गया पासकोड दर्ज करें' : 'विद्यालय शाखा का पासकोड दर्ज करें'}
             </p>
           </div>
 
@@ -147,18 +142,25 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
             )}
           </button>
 
-          {/* Quick Demo Assist */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsDeveloperLogin(!isDeveloperLogin);
+              setPasscode('');
+              setError('');
+            }}
+            className="w-full text-xs font-bold text-orange-700 hover:text-orange-900 hover:underline cursor-pointer"
+          >
+            {isDeveloperLogin ? 'शाखा व्यवस्थापक प्रवेश पर जाएं' : 'डेवलपर: सभी शाखाएं प्रबंधित करें'}
+          </button>
+
+          {/* Secure access hint */}
           <div className="pt-3 border-t border-stone-100 text-center space-y-2">
-            <button
-              type="button"
-              onClick={handleDemoUnlock}
-              disabled={isAuthenticating}
-              className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-orange-950 rounded-xl text-xs font-bold border border-orange-200 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60 cursor-pointer"
-            >
+            <div className="w-full py-2 px-3 bg-amber-50 text-orange-950 rounded-xl text-xs font-bold border border-orange-200 flex items-center justify-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>1-क्लिक डेमो लॉगिन (Demo Login)</span>
-            </button>
-            
+              <span>सुरक्षित प्रवेश के लिए विद्यालय पासकोड का उपयोग करें</span>
+            </div>
+
             {onOpenSignUp && (
               <div className="pt-1">
                 <span className="text-[11px] text-stone-500">

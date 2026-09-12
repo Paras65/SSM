@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import { BookOpen, ShieldCheck, HeartHandshake, ArrowRight, Music, Sparkles, Plus, LogIn } from 'lucide-react';
+import { BookOpen, ShieldCheck, HeartHandshake, ArrowRight, Sparkles, Plus, LogIn } from 'lucide-react';
 
 interface HeroProps {
   onOpenSignUp?: () => void;
@@ -8,7 +8,7 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
-  const { setViewMode, currentSchool } = useSchool();
+  const { setViewMode, publicSchool } = useSchool();
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-white pt-10 pb-16 border-b border-orange-200">
@@ -24,7 +24,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
             
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100 border border-orange-300 text-orange-800 text-xs font-semibold shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>{currentSchool.affiliate} • {currentSchool.prant}</span>
+              <span>{publicSchool.affiliate} • {publicSchool.prant}</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tight leading-tight">
@@ -35,7 +35,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
             </h1>
 
             <p className="text-base sm:text-lg text-stone-700 max-w-2xl leading-relaxed">
-              <strong>{currentSchool.hindiName}</strong> में हम आधुनिक विज्ञान, गणित व तकनीकी शिक्षा के साथ-साथ
+              <strong>{publicSchool.hindiName}</strong> में हम आधुनिक विज्ञान, गणित व तकनीकी शिक्षा के साथ-साथ
               भारतीय सनातन संस्कृति, पंचमुखी शिक्षा और श्रेष्ठ नैतिक मूल्यों का सिंचन करते हैं।
             </p>
 
@@ -47,7 +47,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
               <div className="text-left">
                 <span className="block text-xs uppercase tracking-wider text-orange-900 font-bold">धैर्य एवं प्रेरणा वाक्य</span>
                 <span className="text-sm sm:text-base font-bold text-orange-950 font-serif">
-                  "{currentSchool.tagline}"
+                  "{publicSchool.tagline}"
                 </span>
               </div>
             </div>
@@ -78,7 +78,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
                 className="px-5 py-3 bg-stone-900 hover:bg-stone-800 text-amber-200 font-bold rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
               >
                 <LogIn className="w-4 h-4 text-amber-400" />
-                <span>शाखा लॉगिन (Login)</span>
+                <span>{sessionStorage.getItem('ssm_admin_token') ? 'Admin Dashboard' : 'शाखा लॉगिन (Login)'}</span>
               </button>
 
               <a
@@ -92,8 +92,8 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
             {/* Highlights row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-orange-200/80">
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
-                <span className="block text-2xl font-black text-orange-700">{currentSchool.established || '1952'}</span>
-                <span className="text-xs text-stone-600 font-medium">स्थापना वर्ष</span>
+                <span className="block text-2xl font-black text-orange-700">100%</span>
+                <span className="text-xs text-stone-600 font-medium">डिजिटल तैयार</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
                 <span className="block text-2xl font-black text-orange-700">100%</span>

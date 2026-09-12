@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SchoolProvider, useSchool } from './context/SchoolContext';
 import { Navbar } from './components/public/Navbar';
 import { Hero } from './components/public/Hero';
@@ -8,12 +8,10 @@ import { AboutSection } from './components/public/AboutSection';
 import { PanchmukhiShiksha } from './components/public/PanchmukhiShiksha';
 import { VandanaCorner } from './components/public/VandanaCorner';
 import { SongPlayer } from './components/public/SongPlayer';
-import { TimetableSection } from './components/common/TimetableSection';
-import { NoticeBoard } from './components/public/NoticeBoard';
 import { AdmissionInquiry } from './components/public/AdmissionInquiry';
-import { AcharyaSection } from './components/public/AcharyaSection';
 import { Gallery } from './components/public/Gallery';
 import { Footer } from './components/public/Footer';
+import { LegalInformation } from './components/public/LegalInformation';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { StudentPortal } from './components/student/StudentPortal';
 import { OfflineBadge } from './components/common/OfflineBadge';
@@ -28,6 +26,16 @@ const SchoolApp: React.FC = () => {
   const [showSchoolModal, setShowSchoolModal] = useState(false);
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
   const [schoolModalPlan, setSchoolModalPlan] = useState<'free' | 'pro'>('free');
+
+  useEffect(() => {
+    if (window.location.pathname !== '/admin') return;
+
+    if (sessionStorage.getItem('ssm_admin_token')) {
+      setViewMode('admin');
+    } else {
+      setShowAuthModal(true);
+    }
+  }, [setViewMode]);
 
   const handleOpenSignUp = (plan: 'free' | 'pro' = 'free') => {
     setSchoolModalPlan(plan);
@@ -77,12 +85,10 @@ const SchoolApp: React.FC = () => {
             <PanchmukhiShiksha />
             <VandanaCorner />
             <SongPlayer />
-            <TimetableSection />
-            <NoticeBoard />
             <AdmissionInquiry />
-            <AcharyaSection />
             <Gallery />
           </main>
+          <LegalInformation />
           <Footer />
         </div>
       )}

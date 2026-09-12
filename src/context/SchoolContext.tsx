@@ -23,6 +23,26 @@ const DEFAULT_FALLBACK_SCHOOL: School = {
   plan: 'pro'
 };
 
+const PUBLIC_PLATFORM_SCHOOL: School = {
+  id: 'ssm-platform',
+  name: 'Saraswati Shishu Mandir Digital ERP',
+  hindiName: 'सरस्वती शिशु मंदिर डिजिटल ईआरपी',
+  tagline: 'संस्कारयुक्त शिक्षा का सरल डिजिटल प्रबंधन',
+  affiliate: 'विद्या भारती विद्यालयों के लिए डिजिटल समाधान',
+  affiliationNo: '',
+  established: '',
+  address: 'सभी पंजीकृत शाखाओं के लिए',
+  city: 'सभी शाखाएं',
+  state: '',
+  prant: 'SSM ERP',
+  phone: 'सहायता केंद्र उपलब्ध',
+  email: 'support@ssm-erp.local',
+  timings: 'ऑनलाइन 24x7',
+  principalName: '',
+  adminPasscode: '',
+  plan: 'free'
+};
+
 interface SchoolContextType {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
@@ -32,6 +52,7 @@ interface SchoolContextType {
   // Multi-School Management
   schools: School[];
   currentSchool: School;
+  publicSchool: School;
   setCurrentSchoolId: (id: string) => void;
   registerSchool: (school: Omit<School, 'id'> & { id?: string }) => Promise<School>;
   updateSchoolInfo: (id: string, updates: Partial<School>) => Promise<School>;
@@ -79,12 +100,33 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>('ssm-001');
 
   // Multi-School state
+  const readStorage = (key: string): string | null => {
+    try {
+      if (typeof window === 'undefined') return null;
+      if (/^ssm_(students|attendance|fees|report_cards|notices)(_|$)/.test(key)) return null;
+      return window.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    try {
+      Object.keys(localStorage)
+        .filter(key => /^ssm_(students|attendance|fees|report_cards|notices)(_|$)/.test(key))
+        .forEach(key => localStorage.removeItem(key));
+    } catch {
+      // Storage may be unavailable or restricted by the browser.
+    }
+  }, []);
+
   const [schools, setSchools] = useState<School[]>([DEFAULT_FALLBACK_SCHOOL]);
   const [currentSchoolId, setCurrentSchoolIdState] = useState<string>(() => {
-    return localStorage.getItem('ssm_current_school_id') || 'ssm-gorakhpur';
+    return readStorage('ssm_current_school_id') || 'ssm-gorakhpur';
   });
 
   const currentSchool = schools.find(s => s.id === currentSchoolId) || schools[0] || DEFAULT_FALLBACK_SCHOOL;
+  const publicSchool = PUBLIC_PLATFORM_SCHOOL;
 
   // DB connection status
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting');
@@ -92,17 +134,35 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // States initialized with local fallback or empty
   const [students, setStudents] = useState<Student[]>(() => {
-    const saved = localStorage.getItem(`ssm_students_${currentSchoolId}`);
-    if (saved) return JSON.parse(saved);
-    const legacy = localStorage.getItem('ssm_students');
+    const saved = readStorage(`ssm_students_${currentSchoolId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore corrupted cache and continue with defaults
+      }
+    }
+    const legacy = readStorage('ssm_students');
     return legacy ? JSON.parse(legacy) : INITIAL_STUDENTS;
   });
 
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
-    const saved = localStorage.getItem(`ssm_attendance_${currentSchoolId}`);
-    if (saved) return JSON.parse(saved);
-    const legacy = localStorage.getItem('ssm_attendance');
-    if (legacy) return JSON.parse(legacy);
+    const saved = readStorage(`ssm_attendance_${currentSchoolId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore corrupted cache and continue with defaults
+      }
+    }
+    const legacy = readStorage('ssm_attendance');
+    if (legacy) {
+      try {
+        return JSON.parse(legacy);
+      } catch {
+        // ignore corrupted cache and continue with defaults
+      }
+    }
     const today = new Date().toISOString().split('T')[0];
     return INITIAL_STUDENTS.map((s, idx) => ({
       id: `att-${idx}`,
@@ -113,23 +173,41 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
 
   const [feeRecords, setFeeRecords] = useState<FeeRecord[]>(() => {
-    const saved = localStorage.getItem(`ssm_fees_${currentSchoolId}`);
-    if (saved) return JSON.parse(saved);
-    const legacy = localStorage.getItem('ssm_fees');
+    const saved = readStorage(`ssm_fees_${currentSchoolId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore corrupted cache and continue with defaults
+      }
+    }
+    const legacy = readStorage('ssm_fees');
     return legacy ? JSON.parse(legacy) : INITIAL_FEES;
   });
 
   const [reportCards, setReportCards] = useState<ReportCard[]>(() => {
-    const saved = localStorage.getItem(`ssm_report_cards_${currentSchoolId}`);
-    if (saved) return JSON.parse(saved);
-    const legacy = localStorage.getItem('ssm_report_cards');
+    const saved = readStorage(`ssm_report_cards_${currentSchoolId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore corrupted cache and continue with defaults
+      }
+    }
+    const legacy = readStorage('ssm_report_cards');
     return legacy ? JSON.parse(legacy) : INITIAL_REPORT_CARDS;
   });
 
   const [notices, setNotices] = useState<Notice[]>(() => {
-    const saved = localStorage.getItem(`ssm_notices_${currentSchoolId}`);
-    if (saved) return JSON.parse(saved);
-    const legacy = localStorage.getItem('ssm_notices');
+    const saved = readStorage(`ssm_notices_${currentSchoolId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore corrupted cache and continue with defaults
+      }
+    }
+    const legacy = readStorage('ssm_notices');
     return legacy ? JSON.parse(legacy) : INITIAL_NOTICES;
   });
 
@@ -191,27 +269,6 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     refreshFromDb(currentSchoolId);
   }, [currentSchoolId]);
-
-  // Save active school records to localStorage as backup
-  useEffect(() => {
-    localStorage.setItem(`ssm_students_${currentSchoolId}`, JSON.stringify(students));
-  }, [students, currentSchoolId]);
-
-  useEffect(() => {
-    localStorage.setItem(`ssm_attendance_${currentSchoolId}`, JSON.stringify(attendanceRecords));
-  }, [attendanceRecords, currentSchoolId]);
-
-  useEffect(() => {
-    localStorage.setItem(`ssm_fees_${currentSchoolId}`, JSON.stringify(feeRecords));
-  }, [feeRecords, currentSchoolId]);
-
-  useEffect(() => {
-    localStorage.setItem(`ssm_report_cards_${currentSchoolId}`, JSON.stringify(reportCards));
-  }, [reportCards, currentSchoolId]);
-
-  useEffect(() => {
-    localStorage.setItem(`ssm_notices_${currentSchoolId}`, JSON.stringify(notices));
-  }, [notices, currentSchoolId]);
 
   // Register new school
   const registerSchool = async (schoolData: Omit<School, 'id'> & { id?: string }): Promise<School> => {
@@ -467,6 +524,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setSelectedStudentId,
         schools,
         currentSchool,
+        publicSchool,
         setCurrentSchoolId,
         registerSchool,
         updateSchoolInfo,

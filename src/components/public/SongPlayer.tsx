@@ -12,8 +12,7 @@ import {
   Check,
   Sparkles,
   Drum,
-  BookOpen,
-  Share2
+  BookOpen
 } from 'lucide-react';
 
 export const SongPlayer: React.FC = () => {
@@ -34,21 +33,7 @@ export const SongPlayer: React.FC = () => {
     ? SCHOOL_SONGS
     : SCHOOL_SONGS.filter(s => s.category === selectedCategory);
 
-  // When selected song changes, reset audio
-  useEffect(() => {
-    stopPlayback();
-    setTempo(selectedSong.bpm);
-  }, [selectedSong]);
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      stopPlayback();
-    };
-  }, []);
-
-  // Playback engine
-  const stopPlayback = () => {
+  const stopPlayback = React.useCallback(() => {
     setIsPlaying(false);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -60,10 +45,25 @@ export const SongPlayer: React.FC = () => {
     if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
       try {
         audioCtxRef.current.close();
-      } catch (e) {}
+      } catch (error) {
+        console.warn('Audio context cleanup failed', error);
+      }
       audioCtxRef.current = null;
     }
-  };
+  }, []);
+
+  // When selected song changes, reset audio
+  useEffect(() => {
+    stopPlayback();
+    setTempo(selectedSong.bpm);
+  }, [selectedSong, stopPlayback]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      stopPlayback();
+    };
+  }, [stopPlayback]);
 
   // Play Ghosh Drum Cadence (Web Audio API synth)
   const playGhoshDrums = () => {

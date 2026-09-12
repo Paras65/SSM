@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSchool } from '../../context/SchoolContext';
 import type { School } from '../../types';
@@ -68,14 +68,6 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [plan, setPlan] = useState<'free' | 'pro'>(initialPlan);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdSchool, setCreatedSchool] = useState<School | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setActiveTab(initialMode);
-      setCreatedSchool(null);
-      setPlan(initialPlan || 'free');
-    }
-  }, [isOpen, initialMode, initialPlan]);
 
   // Sync state with prant automatically
   const handlePrantChange = (selectedPrant: string) => {
