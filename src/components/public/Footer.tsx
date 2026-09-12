@@ -1,9 +1,11 @@
 import React from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Sparkles, Phone, Mail, MapPin, Clock, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const { publicSchool } = useSchool();
+  const { t } = useLanguage();
 
   return (
     <footer className="bg-gradient-to-b from-stone-900 via-stone-950 to-black text-white pt-14 pb-8 border-t-4 border-orange-600">
@@ -49,8 +51,8 @@ export const Footer: React.FC = () => {
               <li><a href="#notices" className="hover:text-orange-400 transition-colors">सूचनाएं एवं परीक्षा कार्यक्रम</a></li>
               <li><a href="#admissions" className="hover:text-orange-400 transition-colors">सत्र 2026-27 प्रवेश फॉर्म</a></li>
               <li><a href="#acharyas" className="hover:text-orange-400 transition-colors">आचार्य एवं दीदी जी परिचय</a></li>
-              <li><a href="#privacy" className="hover:text-orange-400 transition-colors">Privacy Notice</a></li>
-              <li><a href="#terms" className="hover:text-orange-400 transition-colors">Terms of Use</a></li>
+              <li><a href="#privacy" className="hover:text-orange-400 transition-colors">{t('privacyNotice')}</a></li>
+              <li><a href="#terms" className="hover:text-orange-400 transition-colors">{t('termsOfUse')}</a></li>
             </ul>
           </div>
 

@@ -33,6 +33,7 @@ Create a local .env file based on .env.example:
 
 ```env
 VITE_API_BASE=http://localhost:5000/api
+VITE_UPGRADE_CONTACT=admin@example.com
 PORT=5000
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/ssm_school
 JWT_SECRET=change_this_to_a_secure_secret
@@ -41,6 +42,8 @@ CORS_ORIGIN=http://localhost:5173
 ```
 
 The developer-admin passcode is used by the `डेवलपर: सभी शाखाएं प्रबंधित करें` option in the admin login. It creates a developer session that can switch between and manage all school branches from the dashboard. Keep this value private and configure it in the backend environment only.
+
+`VITE_UPGRADE_CONTACT` is the email address or phone number shown when a branch requests a Pro upgrade. The administrator should verify payment and activate the plan manually.
 
 ## Deploy to Vercel + Render
 

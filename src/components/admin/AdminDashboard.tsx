@@ -78,7 +78,7 @@ export const AdminDashboard: React.FC = () => {
     setViewMode('public');
   };
 
-  const isPro = currentSchool.plan === 'pro' || (currentSchool.id === 'ssm-gorakhpur' && !currentSchool.plan);
+  const isPro = currentSchool.plan === 'pro';
   const [upgradeModalFeature, setUpgradeModalFeature] = useState<{ name: string; desc?: string } | null>(null);
 
   const requirePro = (featureName: string, featureDesc: string, onAllowed: () => void) => {
@@ -444,15 +444,14 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Plan Badge & Switcher */}
             {isPro ? (
-              <button
-                onClick={() => upgradeCurrentSchoolPlan('free')}
-                title="प्रो योजना सक्रिय है। क्लिक करके फ्री मोड टेस्ट करें।"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/50 text-amber-200 text-[11px] font-bold hover:bg-amber-500/30 transition cursor-pointer shadow-xs"
+              <span
+                title="प्रो योजना सक्रिय है"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/50 text-amber-200 text-[11px] font-bold shadow-xs"
               >
                 <Crown className="w-3.5 h-3.5 text-yellow-300 fill-yellow-400" />
                 <span className="hidden sm:inline">प्रो सक्रिय</span>
                 <span>(PRO 👑)</span>
-              </button>
+              </span>
             ) : (
               <button
                 onClick={() => setUpgradeModalFeature({

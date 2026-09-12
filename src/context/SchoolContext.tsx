@@ -20,7 +20,7 @@ const DEFAULT_FALLBACK_SCHOOL: School = {
   timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
   principalName: 'आचार्य राम नारायण शुक्ला',
   adminPasscode: '1952',
-  plan: 'pro'
+  plan: 'free'
 };
 
 const PUBLIC_PLATFORM_SCHOOL: School = {
@@ -305,8 +305,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const isFeatureAllowed = (_feature: ProFeatureKey): boolean => {
-    const plan = currentSchool?.plan || (currentSchool?.id === 'ssm-gorakhpur' ? 'pro' : 'free');
-    return plan === 'pro';
+    return currentSchool?.plan === 'pro';
   };
 
   // Student actions (MongoDB + Optimistic)

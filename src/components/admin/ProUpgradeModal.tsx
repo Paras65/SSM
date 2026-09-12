@@ -29,27 +29,19 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
   featureName,
   featureDescription
 }) => {
-  const { currentSchool, upgradeCurrentSchoolPlan } = useSchool();
-  const [upgrading, setUpgrading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const { currentSchool } = useSchool();
+  const [error, setError] = useState('');
+  const [contactStep, setContactStep] = useState<'details' | 'contact'>('details');
+  const upgradeContact = import.meta.env.VITE_UPGRADE_CONTACT || 'your-admin@example.com';
+  const contactHref = upgradeContact.includes('@') ? `mailto:${upgradeContact}` : `tel:${upgradeContact}`;
+
+  const handleClose = () => {
+    setContactStep('details');
+    setError('');
+    onClose();
+  };
 
   if (!isOpen) return null;
-
-  const handleUpgrade = async () => {
-    setUpgrading(true);
-    try {
-      await upgradeCurrentSchoolPlan('pro');
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-      }, 1200);
-    } catch (err) {
-      console.error('Error upgrading school plan:', err);
-    } finally {
-      setUpgrading(false);
-    }
-  };
 
   const PRO_BENEFITS = [
     {
@@ -114,7 +106,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/20 transition-colors"
             title="बंद करें"
           >
@@ -141,6 +133,13 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
 
         {/* Body content with scroll */}
         <div className="relative z-10 p-6 sm:p-8 overflow-y-auto space-y-6">
+          {error && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
+              {error}
+            </div>
+          )}
+          {contactStep === 'details' ? (
+          <>
           {/* Pro Benefits Grid */}
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
@@ -186,30 +185,41 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             <div className="shrink-0 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={handleUpgrade}
-                disabled={upgrading || success}
+                onClick={() => {
+                  setError('');
+                  setContactStep('contact');
+                }}
                 className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-75"
               >
-                {success ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 text-white animate-bounce" />
-                    प्रो सक्रिय हो गया!
-                  </>
-                ) : upgrading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    सक्रिय किया जा रहा है...
-                  </>
-                ) : (
-                  <>
-                    <Crown className="w-5 h-5 text-yellow-200 fill-yellow-300" />
-                    अभी प्रो सक्रिय करें (Unlock)
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                <>
+                  <ShieldCheck className="w-5 h-5 text-yellow-200" />
+                  Admin से संपर्क करें
+                  <ArrowRight className="w-4 h-4" />
+                </>
               </button>
             </div>
           </div>
+          </>
+          ) : (
+            <div className="text-center space-y-5">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Pro Upgrade के लिए Admin से संपर्क करें</h3>
+                <p className="text-xs text-slate-500 mt-1">Admin भुगतान और शाखा सत्यापन के बाद Pro plan सक्रिय करेगा।</p>
+              </div>
+              <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-sm text-amber-950">
+                <p className="font-bold">Administrator contact</p>
+                <p className="font-mono mt-2 break-all">{upgradeContact}</p>
+                <p className="text-xs mt-3">शाखा का नाम और आवश्यक Pro features साझा करें।</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <button type="button" onClick={() => setContactStep('details')} className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                  वापस जाएं
+                </button>
+                <a href={contactHref} className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">Contact Admin</a>
+              </div>
+              <p className="text-[11px] text-slate-500">Admin approval के बिना plan अपने-आप सक्रिय नहीं होगा।</p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -217,7 +227,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
           <span>* वर्तमान में आप निःशुल्क योजना (Free Plan) का उपयोग कर रहे हैं</span>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
           >
             निःशुल्क जारी रखें (Continue Free)

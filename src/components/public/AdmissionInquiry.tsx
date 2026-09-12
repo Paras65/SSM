@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Sparkles, CheckCircle2, UserPlus, FileText, Phone, Send } from 'lucide-react';
 import { api } from '../../services/api';
 import { useSchool } from '../../context/SchoolContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const AdmissionInquiry: React.FC = () => {
   const { schools } = useSchool();
+  const { t } = useLanguage();
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [formData, setFormData] = useState({
     studentName: '',
@@ -25,15 +27,15 @@ export const AdmissionInquiry: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSchoolId) {
-      alert('कृपया प्रवेश के लिए विद्यालय शाखा चुनें।');
+      alert(t('selectBranch'));
       return;
     }
     if (!formData.studentName || !formData.phone) {
-      alert('कृपया छात्र का नाम एवं संपर्क नंबर भरें।');
+      alert(t('enterRequiredDetails'));
       return;
     }
     if (!guardianConsent) {
-      alert('कृपया अभिभावक/अधिकृत संरक्षक की सहमति दें।');
+      alert(t('consentRequired'));
       return;
     }
 
@@ -44,7 +46,7 @@ export const AdmissionInquiry: React.FC = () => {
       setInquiryId(res.regNo);
       setSubmitted(true);
     } catch {
-      setSubmitError('आवेदन जमा नहीं हो सका। कृपया पुनः प्रयास करें या सीधे चुनी गई शाखा से संपर्क करें।');
+      setSubmitError(t('applicationFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -316,7 +318,7 @@ export const AdmissionInquiry: React.FC = () => {
                       className="mt-0.5 accent-orange-700"
                     />
                     <span>
-                      मैं छात्र का अभिभावक/अधिकृत संरक्षक हूं और चुनी गई शाखा द्वारा इस प्रवेश पूछताछ के लिए दिए गए विवरण के उपयोग और संपर्क की सहमति देता/देती हूं। <a href="#privacy" className="font-semibold text-orange-700 hover:underline">Privacy Notice</a>
+                      {t('guardianConsent')} <a href="#privacy" className="font-semibold text-orange-700 hover:underline">{t('privacyNotice')}</a>
                     </span>
                   </label>
 
