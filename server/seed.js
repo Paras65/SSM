@@ -497,11 +497,15 @@ const INITIAL_HOMEWORK = [
 async function seedDatabase() {
   try {
     const schoolCount = await School.countDocuments();
-    if (schoolCount === 0) {
-      console.log('🌱 Seeding initial Vidya Bharati schools into MongoDB...');
-      await School.insertMany(INITIAL_SCHOOLS);
-      console.log(`✅ Seeded ${INITIAL_SCHOOLS.length} school branches.`);
+    if (schoolCount > 0) {
+      // Database has already been initialized previously.
+      // Do not re-seed deleted collections so administrator UI deletions persist across restarts.
+      return;
     }
+
+    console.log('🌱 Seeding initial Vidya Bharati schools into MongoDB...');
+    await School.insertMany(INITIAL_SCHOOLS);
+    console.log(`✅ Seeded ${INITIAL_SCHOOLS.length} school branches.`);
 
     // Ensure all existing documents have schoolId: 'ssm-gorakhpur'
     await Student.updateMany({ schoolId: { $exists: false } }, { $set: { schoolId: 'ssm-gorakhpur' } });

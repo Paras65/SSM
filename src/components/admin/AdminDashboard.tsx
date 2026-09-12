@@ -1,6 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import { INITIAL_ACHARYAS } from '../../data/mockData';
 import { AddStudentModal } from './AddStudentModal';
 import { FeeReceiptModal } from './FeeReceiptModal';
 import { PragatiPatraModal } from './PragatiPatraModal';
@@ -816,7 +815,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-3">
-                  <span className="text-3xl font-black text-stone-900">{staffList.length > 0 ? staffList.length : INITIAL_ACHARYAS.length}</span>
+                  <span className="text-3xl font-black text-stone-900">{staffList.length}</span>
                   <p className="text-xs text-stone-500 mt-1">
                     समर्पित शिक्षक एवं प्रशिक्षक
                   </p>
