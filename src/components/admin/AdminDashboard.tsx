@@ -68,7 +68,6 @@ export const AdminDashboard: React.FC = () => {
     schools,
     currentSchool,
     setCurrentSchoolId,
-    upgradeCurrentSchoolPlan,
     students,
     deleteStudent,
     attendanceRecords,
@@ -386,8 +385,8 @@ export const AdminDashboard: React.FC = () => {
     return { totalBhaiya: bhaiya, totalBahin: bahin };
   }, [students]);
   
-  const todayAttendance = useMemo(() => getAttendanceForDate(attendanceDate), [getAttendanceForDate, attendanceDate, attendanceRecords]);
-  const { presentCount, totalMarked, attendanceRate } = useMemo(() => {
+  const todayAttendance = useMemo(() => getAttendanceForDate(attendanceDate), [getAttendanceForDate, attendanceDate]);
+  const { presentCount, attendanceRate } = useMemo(() => {
     const vals = Object.values(todayAttendance);
     let present = 0;
     for (let i = 0; i < vals.length; i++) {
@@ -395,7 +394,7 @@ export const AdminDashboard: React.FC = () => {
     }
     const marked = vals.length;
     const rate = totalStudents > 0 ? Math.round((present / (marked || totalStudents)) * 100) : 0;
-    return { presentCount: present, totalMarked: marked, attendanceRate: rate };
+    return { presentCount: present, attendanceRate: rate };
   }, [todayAttendance, totalStudents]);
 
   const { totalFeeCollected, totalFeePending } = useMemo(() => {
