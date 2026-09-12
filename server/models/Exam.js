@@ -19,7 +19,8 @@ const examSchema = new mongoose.Schema({
   startDate: { type: String, required: true },
   endDate: { type: String, required: true },
   dateSheet: [examScheduleItemSchema],
-  status: { type: String, enum: ['Scheduled', 'Ongoing', 'Completed'], default: 'Scheduled' }
+  status: { type: String, enum: ['Scheduled', 'Ongoing', 'Completed'], default: 'Scheduled' },
+  isLocked: { type: Boolean, default: false }
 }, {
   timestamps: true
 });

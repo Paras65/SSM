@@ -20,6 +20,7 @@ const BookIssue = require('../models/BookIssue');
 const InventoryItem = require('../models/InventoryItem');
 const AuditLog = require('../models/AuditLog');
 const { requireAdminAuth, requireStudentAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope, generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode } = require('../middleware/auth');
+const { calculateCurrentAcademicYear, isValidAcademicYearFormat } = require('../utils/sessionHelper');
 
 function generateUniqueId(prefix = 'item') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
@@ -150,7 +151,8 @@ router.post('/auth/login', async (req, res) => {
     const token = generateAdminToken({
       schoolId: school?.id || schoolId || 'ssm-gorakhpur',
       role: 'admin',
-      schoolName: school?.name || 'Saraswati Shishu Mandir'
+      schoolName: school?.name || 'Saraswati Shishu Mandir',
+      tokenVersion: school?.tokenVersion || 1
     });
 
     res.json({
@@ -162,7 +164,8 @@ router.post('/auth/login', async (req, res) => {
         name: school.name,
         hindiName: school.hindiName,
         city: school.city,
-        prant: school.prant
+        prant: school.prant,
+        currentAcademicYear: school.currentAcademicYear || '2025-26'
       } : null
     });
   } catch (err) {
@@ -172,7 +175,7 @@ router.post('/auth/login', async (req, res) => {
 
 router.post('/auth/student-login', async (req, res) => {
   try {
-    const { schoolId, rollNo, contact } = req.body;
+    const { schoolId, rollNo, contact, studentClass } = req.body;
     if (!schoolId || !rollNo || !contact) {
       return res.status(400).json({ error: 'शाखा, अनुक्रमांक और मोबाइल नंबर आवश्यक हैं।' });
     }
@@ -181,14 +184,33 @@ router.post('/auth/student-login', async (req, res) => {
     }
     const digitsOnly = String(contact).replace(/\D/g, '').slice(-10);
     const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : String(contact).trim();
-    const student = await Student.findOne({
+    
+    const queryFilter = {
       schoolId,
       rollNo: String(rollNo).trim(),
       contact: { $regex: pattern }
-    }).lean();
-    if (!student) {
+    };
+
+    if (studentClass) {
+      queryFilter.class = String(studentClass).trim();
+    }
+
+    const matchingStudents = await Student.find(queryFilter).lean();
+
+    if (!matchingStudents || matchingStudents.length === 0) {
       return res.status(401).json({ error: 'छात्र विवरण सत्यापित नहीं हो सके। (Invalid student details)', code: 'INVALID_CREDENTIALS' });
     }
+
+    // Sibling collision protection: if more than 1 student shares this roll number and contact, require class selection
+    if (matchingStudents.length > 1 && !studentClass) {
+      return res.status(422).json({
+        error: 'समान अनुक्रमांक व मोबाइल पर एक से अधिक छात्र मिले। कृपया कक्षा का भी चयन करें। (Multiple students found, please specify class)',
+        code: 'AMBIGUOUS_STUDENT_MATCH',
+        availableClasses: matchingStudents.map(s => s.class)
+      });
+    }
+
+    const student = matchingStudents[0];
 
     const token = generateAdminToken({
       schoolId: student.schoolId,
@@ -302,9 +324,20 @@ router.post('/schools', requireAdminAuth, requireSchoolScope, async (req, res) =
 
 router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
+    const updatePayload = { ...req.body };
+    const targetFilter = { id: req.params.id, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) };
+
+    // If adminPasscode is updated, increment tokenVersion to invalidate existing stale sessions
+    if (updatePayload.adminPasscode) {
+      const existing = await School.findOne(targetFilter).lean();
+      if (existing) {
+        updatePayload.tokenVersion = (existing.tokenVersion || 1) + 1;
+      }
+    }
+
     const school = await School.findOneAndUpdate(
-      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) },
-      req.body,
+      targetFilter,
+      updatePayload,
       { returnDocument: 'after', runValidators: true }
     );
     if (!school) return res.status(404).json({ error: 'School not found' });
@@ -320,6 +353,8 @@ router.get('/students', requireAdminAuth, requireSchoolScope, async (req, res) =
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.class) filter.class = req.query.class;
     if (req.query.section) filter.section = req.query.section;
+    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
+    if (req.query.status) filter.status = req.query.status;
     await executeSafeQuery(Student, filter, req, res, { createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -443,6 +478,85 @@ router.post('/students/:id/anonymize', requireAdminAuth, requireSchoolScope, asy
   }
 });
 
+/**
+ * Academic Session: Batch Student Promotion & Progression
+ * Moves students to next academic session, preserves past session in academicHistory,
+ * and handles alumni/passed_out students.
+ */
+router.post('/students/promote', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const { schoolId, fromAcademicYear, toAcademicYear, promotions } = req.body;
+    const targetSchoolId = req.user.role === 'developer' && schoolId ? schoolId : req.userSchoolId;
+
+    if (!toAcademicYear) {
+      return res.status(400).json({ error: 'नया शैक्षणिक सत्र (toAcademicYear) अनिवार्य है।' });
+    }
+    if (!Array.isArray(promotions) || promotions.length === 0) {
+      return res.status(400).json({ error: 'छात्र प्रोन्नति सूची (promotions array) अनिवार्य है।' });
+    }
+
+    const updatedStudents = [];
+    for (const item of promotions) {
+      const { studentId, nextClass, nextSection, nextRollNo, action = 'promote', remarks = '' } = item;
+      if (!studentId) continue;
+
+      const student = await Student.findOne({ id: studentId, schoolId: targetSchoolId });
+      if (!student) continue;
+
+      // Archive current session details into academicHistory
+      const historyEntry = {
+        academicYear: student.academicYear || fromAcademicYear || '2025-26',
+        class: student.class,
+        section: student.section || 'A',
+        rollNo: student.rollNo,
+        status: action,
+        promotedAt: new Date(),
+        remarks: remarks || (action === 'alumni' ? 'उत्तीर्ण (Alumni / Passed Out)' : action === 'detain' ? 'सत्र दोहराव (Detained)' : 'सफलतापूर्वक प्रोन्नत')
+      };
+
+      student.academicHistory.push(historyEntry);
+
+      if (action === 'alumni') {
+        student.status = 'alumni';
+        student.academicYear = toAcademicYear;
+      } else if (action === 'detain') {
+        student.academicYear = toAcademicYear;
+        if (nextRollNo) student.rollNo = String(nextRollNo);
+        if (nextSection) student.section = nextSection;
+        student.status = 'active';
+      } else {
+        // Normal promote
+        if (nextClass) student.class = nextClass;
+        if (nextSection) student.section = nextSection;
+        if (nextRollNo) student.rollNo = String(nextRollNo);
+        student.academicYear = toAcademicYear;
+        student.status = 'active';
+      }
+
+      await student.save();
+      updatedStudents.push(student);
+    }
+
+    await recordAuditLog({
+      schoolId: targetSchoolId,
+      actorType: req.user?.role || 'admin',
+      actorName: req.user?.schoolName || 'प्रशासक',
+      action: 'STUDENTS_PROMOTED',
+      description: `सत्र ${fromAcademicYear || 'पूर्व'} से ${toAcademicYear} में कुल ${updatedStudents.length} छात्रों की प्रोन्नति संपन्न।`,
+      req
+    });
+
+    res.json({
+      success: true,
+      message: `${updatedStudents.length} छात्रों की प्रोन्नति सफलतापूर्वक संपन्न हुई।`,
+      count: updatedStudents.length,
+      students: updatedStudents
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'प्रोन्नति त्रुटि: ' + err.message });
+  }
+});
+
 // ================= ATTENDANCE =================
 router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
@@ -450,6 +564,8 @@ router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res)
     if (req.query.date) filter.date = req.query.date;
     if (req.query.schoolId) filter.schoolId = req.query.schoolId;
     if (req.query.studentId) filter.studentId = req.query.studentId;
+    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
+    if (req.query.class) filter.class = req.query.class;
     await executeSafeQuery(Attendance, filter, req, res, { date: -1, createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -458,7 +574,7 @@ router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res)
 
 router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const { studentId, date, status = 'Present', schoolId } = req.body;
+    const { studentId, date, status = 'Present', schoolId, academicYear, class: studentClass } = req.body;
     if (!studentId || !date) {
       return res.status(400).json({ error: 'studentId और date अनिवार्य हैं।' });
     }
@@ -468,9 +584,18 @@ router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res
     }
     const targetSchoolId = schoolId || req.userSchoolId || 'ssm-gorakhpur';
     const id = `att-${targetSchoolId}-${date}-${studentId}`;
+    const year = academicYear || calculateCurrentAcademicYear(new Date(date));
     const record = await Attendance.findOneAndUpdate(
       { schoolId: targetSchoolId, studentId, date },
-      { id, studentId, date, status, schoolId: targetSchoolId },
+      { 
+        id, 
+        studentId, 
+        date, 
+        status, 
+        schoolId: targetSchoolId,
+        academicYear: year,
+        ...(studentClass ? { class: studentClass } : {})
+      },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
     res.json(record);
@@ -498,6 +623,7 @@ router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req
 
     const operations = updates.map(u => {
       const targetSchoolId = u.schoolId || schoolId || req.userSchoolId || 'ssm-gorakhpur';
+      const year = u.academicYear || calculateCurrentAcademicYear(new Date(u.date));
       return {
         updateOne: {
           filter: { schoolId: targetSchoolId, studentId: u.studentId, date: u.date },
@@ -507,7 +633,9 @@ router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req
               studentId: u.studentId,
               date: u.date,
               status: u.status || 'Present',
-              schoolId: targetSchoolId
+              schoolId: targetSchoolId,
+              academicYear: year,
+              ...(u.class ? { class: u.class } : {})
             }
           },
           upsert: true
@@ -532,6 +660,7 @@ router.get('/fees', requireAdminAuth, requireSchoolScope, async (req, res) => {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.studentId) filter.studentId = req.query.studentId;
     if (req.query.status) filter.status = req.query.status;
+    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
     await executeSafeQuery(Fee, filter, req, res, { createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -546,6 +675,9 @@ router.post('/fees', requireAdminAuth, requireSchoolScope, async (req, res) => {
     }
     if (!feeData.schoolId) {
       feeData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
+    }
+    if (!feeData.academicYear) {
+      feeData.academicYear = calculateCurrentAcademicYear();
     }
     const fee = new Fee(feeData);
     await fee.save();
@@ -572,6 +704,101 @@ router.put('/fees/:id/pay', requireAdminAuth, requireSchoolScope, async (req, re
     res.json(fee);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * Academic Session: Fee Arrears Rollover
+ * Aggregates all pending/partial fee dues for students in fromAcademicYear
+ * and rolls them forward into toAcademicYear as 'Past Session Arrears'
+ */
+router.post('/fees/rollover-arrears', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const { schoolId, fromAcademicYear, toAcademicYear } = req.body;
+    const targetSchoolId = req.user.role === 'developer' && schoolId ? schoolId : req.userSchoolId;
+
+    if (!fromAcademicYear || !toAcademicYear) {
+      return res.status(400).json({ error: 'fromAcademicYear और toAcademicYear दोनों अनिवार्य हैं।' });
+    }
+
+    // Find all pending / partial fees from the previous session
+    const pendingFees = await Fee.find({
+      schoolId: targetSchoolId,
+      academicYear: fromAcademicYear,
+      status: { $in: ['Pending', 'Partial'] }
+    }).lean();
+
+    if (pendingFees.length === 0) {
+      return res.json({
+        success: true,
+        message: `सत्र ${fromAcademicYear} में कोई बकाया शुल्क शेष नहीं है।`,
+        rolledOverCount: 0,
+        totalArrearsAmount: 0,
+        arrears: []
+      });
+    }
+
+    // Group pending amounts per student
+    const studentArrearsMap = new Map();
+    for (const fee of pendingFees) {
+      const unpaid = Math.max(0, (fee.totalAmount || 0) - (fee.paidAmount || 0));
+      if (unpaid > 0) {
+        studentArrearsMap.set(fee.studentId, (studentArrearsMap.get(fee.studentId) || 0) + unpaid);
+      }
+    }
+
+    let createdCount = 0;
+    let totalArrearsAmount = 0;
+    const createdArrearDocs = [];
+
+    for (const [studentId, arrears] of studentArrearsMap.entries()) {
+      if (arrears <= 0) continue;
+
+      // Check if an arrear entry already exists in target session to prevent double rollover
+      const existingArrear = await Fee.findOne({
+        schoolId: targetSchoolId,
+        studentId,
+        academicYear: toAcademicYear,
+        term: 'Past Session Arrears'
+      });
+
+      if (!existingArrear) {
+        const sanitizedYear = toAcademicYear.replace(/[^a-zA-Z0-9]/g, '');
+        const newFeeArrear = new Fee({
+          id: `fee-arrear-${studentId}-${sanitizedYear}`,
+          schoolId: targetSchoolId,
+          studentId,
+          term: 'Past Session Arrears',
+          academicYear: toAcademicYear,
+          totalAmount: arrears,
+          paidAmount: 0,
+          status: 'Pending'
+        });
+        await newFeeArrear.save();
+        createdCount++;
+        totalArrearsAmount += arrears;
+        createdArrearDocs.push(newFeeArrear);
+      }
+    }
+
+    await recordAuditLog({
+      schoolId: targetSchoolId,
+      actorType: req.user?.role || 'admin',
+      actorName: req.user?.schoolName || 'प्रशासक',
+      action: 'FEE_ARREARS_ROLLED_OVER',
+      description: `सत्र ${fromAcademicYear} से ${toAcademicYear} में ${createdCount} छात्रों के लिए कुल ₹${totalArrearsAmount} का बकाया शुल्क अग्रसारित (Rolled over) किया गया।`,
+      req
+    });
+
+    res.json({
+      success: true,
+      message: `सत्र ${fromAcademicYear} से ${toAcademicYear} में कुल ₹${totalArrearsAmount} का बकाया सफलतापूर्वक अग्रसारित हुआ।`,
+      rolledOverCount: createdCount,
+      totalArrearsAmount,
+      arrears: createdArrearDocs
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'शुल्क रोलओवर त्रुटि: ' + err.message });
   }
 });
 
@@ -852,6 +1079,9 @@ router.post('/exams', requirePortalAuth, requireSchoolScope, async (req, res) =>
     const data = req.body;
     if (!data.id) data.id = `exam-${Date.now()}`;
     data.schoolId = req.user?.role === 'developer' && data.schoolId ? data.schoolId : req.userSchoolId;
+    if (!data.academicYear) {
+      data.academicYear = calculateCurrentAcademicYear();
+    }
     const exam = new Exam(data);
     await exam.save();
     res.status(201).json(exam);
@@ -862,13 +1092,40 @@ router.post('/exams', requirePortalAuth, requireSchoolScope, async (req, res) =>
 
 router.put('/exams/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
+    const existing = await Exam.findOne({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
+    if (!existing) return res.status(404).json({ error: 'Exam not found' });
+    if (existing.isLocked && req.body.isLocked === undefined) {
+      return res.status(403).json({
+        error: 'यह परीक्षा लॉक (स्थिर) है। इसके विवरण में परिवर्तन वर्जित है। (Exam is locked)',
+        code: 'EXAM_LOCKED'
+      });
+    }
+
     const updated = await Exam.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       req.body,
       { returnDocument: 'after', runValidators: true }
     );
-    if (!updated) return res.status(404).json({ error: 'Exam not found' });
     res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.patch('/exams/:id/lock', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const { isLocked } = req.body;
+    const lockStatus = isLocked !== undefined ? Boolean(isLocked) : true;
+    const exam = await Exam.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      { isLocked: lockStatus },
+      { returnDocument: 'after', runValidators: true }
+    );
+    if (!exam) return res.status(404).json({ error: 'Exam not found' });
+    res.json({ success: true, isLocked: exam.isLocked, exam });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -896,8 +1153,22 @@ router.post('/exams/marks-bulk', requirePortalAuth, requireSchoolScope, async (r
     }
 
     const targetSchoolId = schoolId || req.user?.schoolId || 'ssm-gorakhpur';
-    const year = academicYear || '2025-26';
+    const year = academicYear || calculateCurrentAcademicYear();
     const term = examTerm || 'अर्धवार्षिक परीक्षा';
+
+    // Check if exam is locked to prevent tampering with historical or frozen marks
+    const lockedExam = await Exam.findOne({
+      schoolId: targetSchoolId,
+      term,
+      academicYear: year,
+      isLocked: true
+    });
+    if (lockedExam) {
+      return res.status(403).json({
+        error: `परीक्षा '${term}' (${year}) लॉक (स्थिर) कर दी गई है। इसके अंकों में परिवर्तन वर्जित है। (Exam is locked, marks entry forbidden)`,
+        code: 'EXAM_LOCKED'
+      });
+    }
 
     const results = [];
     for (const item of marksList) {

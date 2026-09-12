@@ -94,11 +94,11 @@ export const api = {
     return data;
   },
 
-  async loginStudent(schoolId: string, rollNo: string, contact: string): Promise<{ success: boolean; token: string; student: Student }> {
+  async loginStudent(schoolId: string, rollNo: string, contact: string, studentClass?: string): Promise<{ success: boolean; token: string; student: Student }> {
     const res = await apiFetch('/auth/student-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ schoolId, rollNo, contact })
+      body: JSON.stringify({ schoolId, rollNo, contact, ...(studentClass ? { studentClass } : {}) })
     });
     const data = await handleJsonResponse<any>(res, 'छात्र प्रमाणीकरण विफल रहा');
     sessionStorage.removeItem('ssm_admin_token');
@@ -668,5 +668,49 @@ export const api = {
     const qs = params.toString() ? `?${params.toString()}` : '';
     const res = await apiFetch(`/audit-logs${qs}`);
     return handleJsonResponse<AuditLogEntry[]>(res, 'Failed to fetch audit logs');
+  },
+
+  // ================= ACADEMIC SESSION MANAGEMENT =================
+  async promoteStudents(payload: {
+    schoolId?: string;
+    fromAcademicYear?: string;
+    toAcademicYear: string;
+    promotions: Array<{
+      studentId: string;
+      nextClass?: string;
+      nextSection?: string;
+      nextRollNo?: string | number;
+      action?: 'promote' | 'alumni' | 'detain';
+      remarks?: string;
+    }>;
+  }): Promise<{ success: boolean; message: string; count: number; students: Student[] }> {
+    const res = await apiFetch('/students/promote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleJsonResponse<any>(res, 'छात्र प्रोन्नति विफल रही');
+  },
+
+  async rolloverFeeArrears(payload: {
+    schoolId?: string;
+    fromAcademicYear: string;
+    toAcademicYear: string;
+  }): Promise<{ success: boolean; message: string; rolledOverCount: number; totalArrearsAmount: number; arrears: FeeRecord[] }> {
+    const res = await apiFetch('/fees/rollover-arrears', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleJsonResponse<any>(res, 'शुल्क रोलओवर विफल रहा');
+  },
+
+  async toggleExamLock(examId: string, isLocked: boolean): Promise<{ success: boolean; isLocked: boolean; exam: Exam }> {
+    const res = await apiFetch(`/exams/${examId}/lock`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isLocked })
+    });
+    return handleJsonResponse<any>(res, 'परीक्षा लॉक स्थिति बदलने में विफल');
   }
 };

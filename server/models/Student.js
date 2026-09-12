@@ -15,13 +15,26 @@ const studentSchema = new mongoose.Schema({
   dob: { type: String, default: '' },
   admissionDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
   bloodGroup: { type: String, default: 'B+' },
-  photoUrl: { type: String, default: '' }
+  photoUrl: { type: String, default: '' },
+  academicYear: { type: String, default: '2025-26', index: true },
+  status: { type: String, enum: ['active', 'promoted', 'alumni', 'transferred'], default: 'active', index: true },
+  academicHistory: [{
+    academicYear: { type: String, required: true },
+    class: { type: String, required: true },
+    section: { type: String, default: 'A' },
+    rollNo: { type: String, required: true },
+    status: { type: String, default: 'promoted' },
+    promotedAt: { type: Date, default: Date.now },
+    remarks: { type: String, default: '' }
+  }]
 }, {
   timestamps: true
 });
 
 studentSchema.index({ schoolId: 1, class: 1, section: 1 });
 studentSchema.index({ schoolId: 1, rollNo: 1 });
+studentSchema.index({ schoolId: 1, status: 1 });
+studentSchema.index({ schoolId: 1, academicYear: 1 });
 
 module.exports = mongoose.model('Student', studentSchema);
 

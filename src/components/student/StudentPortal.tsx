@@ -42,8 +42,16 @@ export const StudentPortal: React.FC = () => {
   );
   const [rollNo, setRollNo] = useState('');
   const [contact, setContact] = useState('');
+  const [studentClass, setStudentClass] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const classes = [
+    'Shishu Vatika', 'Nursery', 'LKG', 'UKG',
+    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
+    'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
+    'Class 11', 'Class 12'
+  ];
   const authenticatedStudentId = sessionStorage.getItem('ssm_student_id');
   const currentStudent = students.find(s => s.id === authenticatedStudentId);
   const studentFee = currentStudent ? feeRecords.find(f => f.studentId === currentStudent.id) : undefined;
@@ -93,7 +101,7 @@ export const StudentPortal: React.FC = () => {
     setIsLoggingIn(true);
     setLoginError('');
     try {
-      const result = await api.loginStudent(currentSchool.id, rollNo, contact);
+      const result = await api.loginStudent(currentSchool.id, rollNo, contact, studentClass || undefined);
       setSelectedStudentId(result.student.id);
       setIsStudentAuthenticated(true);
     } catch (error: any) {
@@ -124,9 +132,20 @@ export const StudentPortal: React.FC = () => {
             <label className="block text-xs font-bold text-stone-700 mb-1">विद्यालय शाखा</label>
             <div className="px-3 py-2.5 rounded-xl border border-stone-300 bg-stone-50 text-sm font-semibold text-stone-800">{currentSchool.hindiName} ({currentSchool.city})</div>
           </div>
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">अनुक्रमांक (Roll Number)</label>
-            <input required value={rollNo} onChange={event => setRollNo(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="उदा. 101" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1">अनुक्रमांक (Roll No)</label>
+              <input required value={rollNo} onChange={event => setRollNo(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" placeholder="उदा. 101" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1">कक्षा (ऐच्छिक / सहोदर हेतु)</label>
+              <select value={studentClass} onChange={event => setStudentClass(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white">
+                <option value="">सभी कक्षाएं</option>
+                {classes.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-bold text-stone-700 mb-1">पंजीकृत मोबाइल नंबर</label>

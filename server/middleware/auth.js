@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { isValidAdminPasscode, isValidDeveloperPasscode } = require('../utils/authValidation');
+const School = require('../models/School');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
 
@@ -7,7 +8,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET must be configured in production');
 }
 
-function requireAdminAuth(req, res, next) {
+async function requireAdminAuth(req, res, next) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -24,6 +25,22 @@ function requireAdminAuth(req, res, next) {
     if (!['admin', 'developer'].includes(decoded.role)) {
       return res.status(403).json({ error: 'केवल व्यवस्थापक प्रवेश की अनुमति है। (Admin role required)', code: 'ADMIN_ROLE_REQUIRED' });
     }
+
+    // Check token version to invalidate revoked sessions when admin passcode changes
+    if (decoded.role === 'admin' && decoded.schoolId && decoded.tokenVersion) {
+      try {
+        const school = await School.findOne({ id: decoded.schoolId }).select('tokenVersion').lean();
+        if (school && school.tokenVersion && decoded.tokenVersion < school.tokenVersion) {
+          return res.status(401).json({
+            error: 'पासकोड परिवर्तित हो चुका है! कृपया नए पासकोड से पुनः लॉगिन करें। (Passcode changed, session revoked)',
+            code: 'SESSION_REVOKED'
+          });
+        }
+      } catch (dbErr) {
+        // Non-blocking if DB query fails during disconnection
+      }
+    }
+
     req.user = decoded;
     req.userSchoolId = decoded.schoolId;
     next();
@@ -142,7 +159,11 @@ function requireSchoolScope(req, res, next) {
  * Generate signed JWT token
  */
 function generateAdminToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, {
+  const tokenPayload = {
+    ...(payload.tokenVersion !== undefined ? { tokenVersion: payload.tokenVersion } : {}),
+    ...payload
+  };
+  return jwt.sign(tokenPayload, JWT_SECRET, {
     expiresIn: '24h'
   });
 }

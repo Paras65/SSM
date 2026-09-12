@@ -17,6 +17,8 @@ const schoolSchema = new mongoose.Schema({
   timings: { type: String, default: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)' },
   principalName: { type: String, required: true },
   adminPasscode: { type: String, default: '1952' },
+  currentAcademicYear: { type: String, default: '2025-26' },
+  tokenVersion: { type: Number, default: 1 },
   plan: { type: String, enum: ['free', 'academic', 'pro'], default: 'free' }
 }, {
   timestamps: true

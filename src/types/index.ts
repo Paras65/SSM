@@ -28,7 +28,19 @@ export interface School {
   timings: string;
   principalName: string;
   adminPasscode: string;
+  currentAcademicYear?: string;
+  tokenVersion?: number;
   plan?: SchoolPlan;
+}
+
+export interface StudentAcademicHistory {
+  academicYear: string;
+  class: string;
+  section: string;
+  rollNo: string;
+  status: string;
+  promotedAt: string;
+  remarks?: string;
 }
 
 export interface Student {
@@ -47,6 +59,9 @@ export interface Student {
   admissionDate: string;
   bloodGroup: string;
   photoUrl?: string;
+  academicYear?: string;
+  status?: 'active' | 'promoted' | 'alumni' | 'transferred';
+  academicHistory?: StudentAcademicHistory[];
 }
 
 export type AttendanceStatus = 'Present' | 'Absent' | 'Leave';
@@ -57,6 +72,8 @@ export interface AttendanceRecord {
   studentId: string;
   date: string;
   status: AttendanceStatus;
+  academicYear?: string;
+  class?: string;
 }
 
 export interface FeeRecord {
@@ -208,6 +225,7 @@ export interface Exam {
   endDate: string;
   dateSheet: ExamScheduleItem[];
   status: 'Scheduled' | 'Ongoing' | 'Completed';
+  isLocked?: boolean;
 }
 
 export interface TimetableSlot {
