@@ -23,6 +23,7 @@ import { CharacterCertificateModal } from './CharacterCertificateModal';
 import { BonafideCertificateModal } from './BonafideCertificateModal';
 import { BulkNotificationModal } from './BulkNotificationModal';
 import { AuditLogModal } from './AuditLogModal';
+import { SessionManagementModal } from './SessionManagementModal';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
 import { api } from '../../services/api';
@@ -143,6 +144,7 @@ export const AdminDashboard: React.FC = () => {
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [showBulkNotificationModal, setShowBulkNotificationModal] = useState(false);
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
+  const [showSessionManagementModal, setShowSessionManagementModal] = useState(false);
 
   const [activeAdmitCard, setActiveAdmitCard] = useState<{ student: Student; exam: Exam } | null>(null);
   const [activeCharacterStudent, setActiveCharacterStudent] = useState<Student | null>(null);
@@ -573,6 +575,15 @@ export const AdminDashboard: React.FC = () => {
               <span>शाखाएं ({schools.length})</span>
             </button>
 
+            <button
+              onClick={() => setShowSessionManagementModal(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold border border-amber-400/40 transition-colors shrink-0"
+              title="सत्र प्रबंधन, छात्र प्रोन्नति एवं बकाया शुल्क अंतरण"
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span>सत्र: {currentSchool.currentAcademicYear || '2025-26'} 🔄</span>
+            </button>
+
             <span className="hidden lg:inline-block px-2.5 py-1 bg-orange-950 rounded-full border border-orange-800 text-amber-200 shrink-0">
               प्रधानाचार्य: {currentSchool.principalName}
             </span>
@@ -761,6 +772,12 @@ export const AdminDashboard: React.FC = () => {
             className="py-3 px-2.5 border-b-2 border-transparent text-cyan-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
           >
             <span>🛡️ ऑडिट लॉग</span>
+          </button>
+          <button
+            onClick={() => setShowSessionManagementModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-300 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+          >
+            <span>🎓 सत्र व प्रोन्नति</span>
           </button>
         </div>
       </header>
@@ -2705,6 +2722,11 @@ export const AdminDashboard: React.FC = () => {
       <AuditLogModal
         isOpen={showAuditLogModal}
         onClose={() => setShowAuditLogModal(false)}
+      />
+
+      <SessionManagementModal
+        isOpen={showSessionManagementModal}
+        onClose={() => setShowSessionManagementModal(false)}
       />
 
       {/* Single Item Document Modals */}
