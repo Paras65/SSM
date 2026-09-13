@@ -129,9 +129,9 @@ const SchoolApp: React.FC = () => {
           setShowAuthModal(false);
           setViewMode('admin');
         }}
-        onOpenSignUp={() => {
+        onOpenSignUp={(plan = 'free') => {
           setShowAuthModal(false);
-          handleOpenSignUp('free');
+          handleOpenSignUp(plan);
         }}
       />
 

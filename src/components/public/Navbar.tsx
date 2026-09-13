@@ -363,9 +363,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             setShowAuthModal(false);
             setViewMode('admin');
           }}
-          onOpenSignUp={() => {
+          onOpenSignUp={(plan = 'free') => {
             setShowAuthModal(false);
-            handleOpenSignUp('free');
+            handleOpenSignUp(plan);
           }}
         />
 

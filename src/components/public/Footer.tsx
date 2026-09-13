@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Sparkles, Phone, Mail, MapPin, Clock, Heart, ShieldCheck, Lock } from 'lucide-react';
+import { Sparkles, Phone, Mail, MapPin, Clock, Heart, ShieldCheck, Lock, Crown } from 'lucide-react';
 import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
+import { SchoolPlansModal } from './SchoolPlansModal';
 
 export const Footer: React.FC = () => {
   const { publicSchool } = useSchool();
   const { t } = useLanguage();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showPlansModal, setShowPlansModal] = useState(false);
 
   return (
     <footer className="bg-gradient-to-b from-stone-900 via-stone-950 to-black text-white pt-14 pb-8 border-t-4 border-orange-600">
@@ -56,8 +58,19 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   type="button"
+                  onClick={() => setShowPlansModal(true)}
+                  className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-medium cursor-pointer"
+                  title="अन्य विद्यालयों हेतु 15-दिवसीय निःशुल्क ट्रायल एवं ईआरपी योजनाएं देखें"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  <span>अन्य विद्यालयों हेतु ईआरपी (15-दिन ट्रायल)</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={() => setShowPrivacyModal(true)}
-                  className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-medium"
+                  className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-medium cursor-pointer"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
                   <span>{t('privacyNotice')} (DPDP Act 2023)</span>
@@ -168,6 +181,12 @@ export const Footer: React.FC = () => {
       <PrivacyPolicyModal
         isOpen={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
+      />
+
+      {/* School ERP Plans & 15-Day Free Trial Modal */}
+      <SchoolPlansModal
+        isOpen={showPlansModal}
+        onClose={() => setShowPlansModal(false)}
       />
     </footer>
   );

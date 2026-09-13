@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSchool } from '../../context/SchoolContext';
 import { api } from '../../services/api';
-import { Lock, KeyRound, X, Sparkles, ShieldCheck, ArrowRight, Loader2, Building2 } from 'lucide-react';
+import { Lock, KeyRound, X, Sparkles, ShieldCheck, ArrowRight, Loader2, Building2, Crown, Gift } from 'lucide-react';
+import { SchoolPlansModal } from '../public/SchoolPlansModal';
 
 interface AdminAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  onOpenSignUp?: () => void;
+  onOpenSignUp?: (plan?: 'free' | 'pro') => void;
 }
 
 export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose, onSuccess, onOpenSignUp }) => {
@@ -17,6 +18,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isDeveloperLogin, setIsDeveloperLogin] = useState(false);
+  const [showPlansModal, setShowPlansModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -162,26 +164,61 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
             </div>
 
             {onOpenSignUp && (
-              <div className="pt-1">
-                <span className="text-[11px] text-stone-500">
-                  नवीन शाखा पंजीकृत करना चाहते हैं?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onOpenSignUp();
-                    }}
-                    className="text-orange-700 font-bold hover:underline cursor-pointer"
-                  >
-                    यहाँ साइन-अप करें (Sign Up)
-                  </button>
-                </span>
+              <div className="pt-2">
+                <div className="p-3 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 rounded-2xl border border-amber-300 dark:border-amber-700/50 text-left space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-bold uppercase tracking-wide shadow-xs">
+                      <Gift className="w-3 h-3 text-yellow-200" />
+                      15-दिवसीय निःशुल्क ट्रायल
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                      बिना किसी अग्रिम शुल्क
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-700 dark:text-stone-300 font-medium leading-tight">
+                    क्या आप अन्य विद्यालय के प्रबंधक/प्रधानाचार्य हैं? 15 दिन अपने विद्यालय में निःशुल्क परीक्षण करें या ईआरपी योजनाएं देखें।
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenSignUp('pro');
+                      }}
+                      className="flex-1 py-2 px-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span>ट्रायल शुरू करें</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPlansModal(true)}
+                      className="py-2 px-3 bg-white hover:bg-amber-50 text-stone-800 border border-stone-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                      title="ईआरपी योजनाएं व मूल्य देखें"
+                    >
+                      <Crown className="w-3.5 h-3.5 text-amber-600" />
+                      <span>योजनाएं</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </form>
 
       </div>
+
+      {/* School ERP Plans & 15-Day Free Trial Modal */}
+      <SchoolPlansModal
+        isOpen={showPlansModal}
+        onClose={() => setShowPlansModal(false)}
+        onSelectPlan={(plan) => {
+          setShowPlansModal(false);
+          onClose();
+          onOpenSignUp?.(plan);
+        }}
+      />
     </div>,
     document.body
   );
