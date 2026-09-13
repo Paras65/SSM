@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Homework, Staff, Exam, Timetable, LeaveRequest } from '../../types';
 import { StaffSalarySlipModal } from '../admin/StaffSalarySlipModal';
@@ -23,6 +24,7 @@ type TeacherTab = 'attendance' | 'homework' | 'marks' | 'timetable' | 'leaves' |
 
 export const TeacherPortal: React.FC = () => {
   const { currentSchool, setViewMode, students, setStudentAttendance, getAttendanceForDate } = useSchool();
+  const { showSuccess, showError, showWarning } = useToast();
   const [currentTab, setCurrentTab] = useState<TeacherTab>('attendance');
   const teacherId = sessionStorage.getItem('ssm_teacher_id') || '';
   const teacherName = sessionStorage.getItem('ssm_teacher_name') || 'आचार्य जी';
@@ -112,15 +114,16 @@ export const TeacherPortal: React.FC = () => {
       setShowAddHw(false);
       setHwTitle('');
       setHwDesc('');
-    } catch (err) {
-      alert('गृहकार्य जोड़ने में त्रुटि आई।');
+      showSuccess('नया गृहकार्य सफलतापूर्वक जोड़ा गया!');
+    } catch (err: any) {
+      showError(err.message || 'गृहकार्य जोड़ने में त्रुटि आई।');
     }
   };
 
   const handleBulkMarksSave = async () => {
     const selectedExam = exams.find(e => e.id === selectedExamId);
     if (!selectedExam) {
-      alert('कृपया परीक्षा चुनें।');
+      showWarning('कृपया परीक्षा चुनें।');
       return;
     }
     setIsSavingMarks(true);
@@ -142,9 +145,10 @@ export const TeacherPortal: React.FC = () => {
       });
 
       setMarksSaveSuccess(true);
+      showSuccess('कक्षा के अंक सफलतापूर्वक सुरक्षित कर दिए गए!');
       setTimeout(() => setMarksSaveSuccess(false), 3000);
     } catch (err: any) {
-      alert(err.message || 'अंक सुरक्षित करने में त्रुटि।');
+      showError(err.message || 'अंक सुरक्षित करने में त्रुटि।');
     } finally {
       setIsSavingMarks(false);
     }
@@ -167,9 +171,10 @@ export const TeacherPortal: React.FC = () => {
       setLeaves(prev => [newLeave, ...prev]);
       setLeaveReason('');
       setLeaveSuccess(true);
+      showSuccess('अवकाश आवेदन सफलतापूर्वक प्रेषित किया गया!');
       setTimeout(() => setLeaveSuccess(false), 3000);
-    } catch (err) {
-      alert('अवकाश आवेदन भेजने में त्रुटि आई।');
+    } catch (err: any) {
+      showError(err.message || 'अवकाश आवेदन भेजने में त्रुटि आई।');
     }
   };
 

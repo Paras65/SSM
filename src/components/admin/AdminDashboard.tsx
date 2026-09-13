@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { AddStudentModal } from './AddStudentModal';
 import { FeeReceiptModal } from './FeeReceiptModal';
 import { PragatiPatraModal } from './PragatiPatraModal';
@@ -86,6 +87,8 @@ export const AdminDashboard: React.FC = () => {
     addNotice,
     deleteNotice
   } = useSchool();
+
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const handleLogout = () => {
     api.logoutAdmin();
@@ -195,7 +198,7 @@ export const AdminDashboard: React.FC = () => {
   const handleCreateHomework = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hwSubject || !hwTitle || !hwDescription) {
-      alert('कृपया विषय, शीर्षक और विवरण भरें।');
+      showWarning('कृपया विषय, शीर्षक और विवरण भरें।');
       return;
     }
     try {
@@ -210,14 +213,14 @@ export const AdminDashboard: React.FC = () => {
         date: new Date().toISOString().split('T')[0],
         status: 'Active'
       });
-      alert('गृहकार्य सफलतापूर्वक प्रेषित किया गया!');
+      showSuccess('गृहकार्य सफलतापूर्वक प्रेषित किया गया!');
       setHwSubject('');
       setHwTitle('');
       setHwDescription('');
       setShowAddHomework(false);
       fetchHomeworkAndStaff();
     } catch (err: any) {
-      alert('त्रुटि: ' + err.message);
+      showError('त्रुटि: ' + err.message);
     }
   };
 
@@ -225,16 +228,17 @@ export const AdminDashboard: React.FC = () => {
     if (!confirm('क्या आप इस गृहकार्य को हटाना चाहते हैं?')) return;
     try {
       await api.deleteHomework(id);
+      showSuccess('गृहकार्य सफलतापूर्वक हटा दिया गया!');
       setHomeworkList(prev => prev.filter(h => h.id !== id));
     } catch (err: any) {
-      alert('त्रुटि: ' + err.message);
+      showError('त्रुटि: ' + err.message);
     }
   };
 
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stfName || !stfDesignation || !stfPhone) {
-      alert('कृपया नाम, पद एवं संपर्क नंबर भरें।');
+      showWarning('कृपया नाम, पद एवं संपर्क नंबर भरें।');
       return;
     }
     try {
@@ -257,7 +261,7 @@ export const AdminDashboard: React.FC = () => {
         joiningDate: new Date().toISOString().split('T')[0],
         status: 'Active'
       });
-      alert('नए आचार्य / कर्मचारी सफलतापूर्वक जोड़े गए!');
+      showSuccess('नए आचार्य / कर्मचारी सफलतापूर्वक जोड़े गए!');
       setStfName('');
       setStfDesignation('');
       setStfQualification('');
@@ -266,7 +270,7 @@ export const AdminDashboard: React.FC = () => {
       setShowAddStaff(false);
       fetchHomeworkAndStaff();
     } catch (err: any) {
-      alert('त्रुटि: ' + err.message);
+      showError('त्रुटि: ' + err.message);
     }
   };
 
@@ -274,9 +278,10 @@ export const AdminDashboard: React.FC = () => {
     if (!confirm('क्या आप इस आचार्य/कर्मचारी का रिकॉर्ड हटाना चाहते हैं?')) return;
     try {
       await api.deleteStaff(id);
+      showSuccess('आचार्य/कर्मचारी का रिकॉर्ड सफलतापूर्वक हटाया गया!');
       setStaffList(prev => prev.filter(s => s.id !== id));
     } catch (err: any) {
-      alert('त्रुटि: ' + err.message);
+      showError('त्रुटि: ' + err.message);
     }
   };
 
@@ -346,13 +351,13 @@ export const AdminDashboard: React.FC = () => {
     try {
       const res = await api.approveAdmission(id);
       if (res.success) {
-        alert(`प्रवेश स्वीकृत हुआ! ${res.student.name} को छात्र पंजिका में जोड़ दिया गया है।`);
+        showSuccess(`प्रवेश स्वीकृत हुआ! ${res.student.name} को छात्र पंजिका में जोड़ दिया गया है।`);
         await refreshFromDb();
         const updatedAdmissions = await api.getAdmissions();
         setAdmissions(updatedAdmissions);
       }
     } catch (err: any) {
-      alert('त्रुटि: ' + err.message);
+      showError('त्रुटि: ' + err.message);
     }
   };
 
@@ -360,9 +365,10 @@ export const AdminDashboard: React.FC = () => {
     if (!confirm('क्या आप इस प्रवेश आवेदन को हटाना चाहते हैं?')) return;
     try {
       await api.deleteAdmission(id);
+      showSuccess('प्रवेश आवेदन सफलतापूर्वक हटाया गया!');
       setAdmissions(prev => prev.filter(a => a.id !== id));
     } catch (err: any) {
-      alert('त्रुटि: ' + err.message);
+      showError('त्रुटि: ' + err.message);
     }
   };
 
@@ -1162,7 +1168,7 @@ export const AdminDashboard: React.FC = () => {
                                     if (report) {
                                       setActiveReportModal({ report, student });
                                     } else {
-                                      alert('इस छात्र का प्रगति पत्र अभी तैयार नहीं हुआ है।');
+                                      showInfo(`'${student.name}' का प्रगति पत्र अभी जनरेट नहीं किया गया है।`);
                                     }
                                   }
                                 );
@@ -1377,7 +1383,7 @@ export const AdminDashboard: React.FC = () => {
                                   if (report) {
                                     setActiveReportModal({ report, student });
                                   } else {
-                                    alert(`'${student.name}' का प्रगति पत्र अभी जनरेट नहीं किया गया है।`);
+                                    showInfo(`'${student.name}' का प्रगति पत्र अभी जनरेट नहीं किया गया है।`);
                                   }
                                 }
                               );

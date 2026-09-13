@@ -18,6 +18,8 @@ import { AdminAuthModal } from './components/admin/AdminAuthModal';
 import { TeacherAuthModal } from './components/teacher/TeacherAuthModal';
 import { SchoolManagementModal } from './components/admin/SchoolManagementModal';
 import { LanguageProvider } from './context/LanguageContext';
+import { ToastProvider } from './context/ToastContext';
+import { ToastContainer } from './components/common/ToastContainer';
 
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const TeacherPortal = React.lazy(() => import('./components/teacher/TeacherPortal').then(m => ({ default: m.TeacherPortal })));
@@ -159,9 +161,12 @@ const SchoolApp: React.FC = () => {
 export default function App() {
   return (
     <LanguageProvider>
-      <SchoolProvider>
-        <SchoolApp />
-      </SchoolProvider>
+      <ToastProvider>
+        <SchoolProvider>
+          <ToastContainer />
+          <SchoolApp />
+        </SchoolProvider>
+      </ToastProvider>
     </LanguageProvider>
   );
 }
