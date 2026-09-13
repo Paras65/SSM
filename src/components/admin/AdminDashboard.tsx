@@ -55,6 +55,7 @@ import {
   IndianRupee,
   Crown,
   Lock,
+  Shield,
   FileSpreadsheet
   ,LogOut
 } from 'lucide-react';
@@ -1045,6 +1046,17 @@ export const AdminDashboard: React.FC = () => {
                     <span className="flex items-center gap-2">
                       <span>📢</span>
                       अभिभावक संदेश प्रसारण (WhatsApp Broadcast)
+                    </span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowAuditLogModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-cyan-50/70 hover:bg-cyan-100 text-cyan-950 text-xs font-bold transition-all border border-cyan-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-cyan-700" />
+                      सुरक्षा ऑडिट ट्रेल व लॉग्स (Security Audit Trail)
                     </span>
                     <span>→</span>
                   </button>

@@ -1697,6 +1697,20 @@ router.get('/audit-logs', requirePortalAuth, requireSchoolScope, async (req, res
     const filter = targetSchoolId ? { schoolId: targetSchoolId } : {};
     if (req.query.action) filter.action = req.query.action;
     if (req.query.actorType) filter.actorType = req.query.actorType;
+    if (req.query.search) {
+      const searchRegex = new RegExp(String(req.query.search).trim(), 'i');
+      filter.$or = [
+        { description: searchRegex },
+        { actorName: searchRegex },
+        { ip: searchRegex },
+        { action: searchRegex }
+      ];
+    }
+    if (req.query.startDate || req.query.endDate) {
+      filter.createdAt = {};
+      if (req.query.startDate) filter.createdAt.$gte = new Date(req.query.startDate);
+      if (req.query.endDate) filter.createdAt.$lte = new Date(req.query.endDate);
+    }
     await executeSafeQuery(AuditLog, filter, req, res, { createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -660,11 +660,21 @@ export const api = {
   },
 
   // ================= AUDIT LOGS =================
-  async getAuditLogs(schoolId?: string, action?: string, actorType?: string): Promise<AuditLogEntry[]> {
+  async getAuditLogs(
+    schoolId?: string,
+    action?: string,
+    actorType?: string,
+    search?: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<AuditLogEntry[]> {
     const params = new URLSearchParams();
     if (schoolId) params.append('schoolId', schoolId);
     if (action) params.append('action', action);
     if (actorType) params.append('actorType', actorType);
+    if (search) params.append('search', search);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
     const qs = params.toString() ? `?${params.toString()}` : '';
     const res = await apiFetch(`/audit-logs${qs}`);
     return handleJsonResponse<AuditLogEntry[]>(res, 'Failed to fetch audit logs');

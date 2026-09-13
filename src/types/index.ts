@@ -332,7 +332,7 @@ export interface InventoryItem {
 export interface AuditLogEntry {
   id: string;
   schoolId?: string;
-  actorType: 'admin' | 'teacher' | 'student' | 'system';
+  actorType: 'admin' | 'teacher' | 'student' | 'system' | 'developer';
   actorId?: string;
   actorName: string;
   action: string;

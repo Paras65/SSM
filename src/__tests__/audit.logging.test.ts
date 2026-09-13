@@ -316,4 +316,42 @@ describe('Security Audit Logging & Governance Verification Suite', () => {
     expect(staffLog).toBeTruthy();
     expect(staffLog.description).toContain('श्री श्याम सुंदर');
   });
+
+  it('10. filters and searches audit logs via GET /api/audit-logs', async () => {
+    await AuditLog.create([
+      {
+        id: 'log-test-1',
+        schoolId: 'ssm-audit-school',
+        actorType: 'admin',
+        actorName: 'प्रधानाचार्य',
+        action: 'PASSCODE_CHANGED',
+        description: 'सुरक्षा पासकोड संशोधित',
+        ip: '192.168.1.5'
+      },
+      {
+        id: 'log-test-2',
+        schoolId: 'ssm-audit-school',
+        actorType: 'teacher',
+        actorName: 'आचार्य सुरेश',
+        action: 'EXAM_MARKS_RECORDED',
+        description: 'विज्ञान विषय के अंक दर्ज',
+        ip: '192.168.1.6'
+      }
+    ]);
+
+    // Search by keyword
+    const searchRes = await request(app)
+      .get('/api/audit-logs?search=सुरेश')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(searchRes.status).toBe(200);
+    expect(searchRes.body.length).toBe(1);
+    expect(searchRes.body[0].action).toBe('EXAM_MARKS_RECORDED');
+
+    // Filter by actorType
+    const actorRes = await request(app)
+      .get('/api/audit-logs?actorType=admin')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(actorRes.status).toBe(200);
+    expect(actorRes.body.every((l: any) => l.actorType === 'admin')).toBe(true);
+  });
 });
