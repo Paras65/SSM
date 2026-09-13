@@ -5,9 +5,10 @@ import { BookOpen, ShieldCheck, HeartHandshake, ArrowRight, Sparkles, Plus, LogI
 interface HeroProps {
   onOpenSignUp?: () => void;
   onOpenLogin?: () => void;
+  onOpenTeacherLogin?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
+export const Hero: React.FC<HeroProps> = ({ onOpenLogin, onOpenTeacherLogin }) => {
   const { setViewMode, publicSchool } = useSchool();
 
   return (
@@ -52,41 +53,67 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin }) => {
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-2">
-              <a
-                href="#plans"
-                className="px-5 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 group"
-              >
-                <Sparkles className="w-4 h-4 text-yellow-200" />
-                <span>सेवा एवं सुविधाएं</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </a>
-
+            {/* Quick Access Portal Gateways for Parents & Teachers */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
+              {/* Student & Parent Portal Card */}
               <button
                 type="button"
-                onClick={onOpenSignUp}
-                className="px-5 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                onClick={() => setViewMode('student')}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-between group cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>नई शाखा जोड़ें (Sign Up)</span>
+                <div className="flex items-center gap-3">
+                  <span className="p-2 rounded-xl bg-white/20 text-white text-lg shadow-xs">
+                    🎓
+                  </span>
+                  <div>
+                    <span className="block font-black text-xs sm:text-sm tracking-wide">छात्र एवं अभिभावक पोर्टल</span>
+                    <span className="block text-[10px] text-emerald-100 font-medium">प्रगति पत्र, गृहकार्य, रसीदें</span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform shrink-0" />
               </button>
 
+              {/* Acharya (Teacher) Portal Card */}
+              <button
+                type="button"
+                onClick={onOpenTeacherLogin}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-between group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="p-2 rounded-xl bg-white/20 text-white text-lg shadow-xs">
+                    👨‍🏫
+                  </span>
+                  <div>
+                    <span className="block font-black text-xs sm:text-sm tracking-wide">आचार्य पोर्टल (Teacher)</span>
+                    <span className="block text-[10px] text-amber-100 font-medium">हाजिरी, गृहकार्य, परीक्षा अंक</span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-amber-200 group-hover:translate-x-1 transition-transform shrink-0" />
+              </button>
+            </div>
+
+            {/* Secondary Action Row: Admissions, Notices & Admin */}
+            <div className="flex flex-wrap gap-2.5 justify-center lg:justify-start pt-1 text-xs">
+              <a
+                href="#admissions"
+                className="px-4 py-2.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-950 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5"
+              >
+                <span>📝 नवीन प्रवेश आवेदन (2026-27)</span>
+              </a>
+              <a
+                href="#notices"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 font-bold border border-stone-300 shadow-2xs transition-all flex items-center gap-1.5"
+              >
+                <span>📢 सूचना पट्ट (Notices)</span>
+              </a>
               <button
                 type="button"
                 onClick={onOpenLogin}
-                className="px-5 py-3 bg-stone-900 hover:bg-stone-800 text-amber-200 font-bold rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-200 font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
               >
-                <LogIn className="w-4 h-4 text-amber-400" />
-                <span>{sessionStorage.getItem('ssm_admin_token') ? 'Admin Dashboard' : 'शाखा लॉगिन (Login)'}</span>
+                <LogIn className="w-3.5 h-3.5 text-amber-400" />
+                <span>कार्यालय प्रशासन (Admin)</span>
               </button>
-
-              <a
-                href="#admissions"
-                className="px-4 py-3 bg-white hover:bg-amber-50 text-stone-700 hover:text-orange-900 font-semibold rounded-xl border border-stone-300 hover:border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 text-xs"
-              >
-                <span>प्रवेश आवेदन</span>
-              </a>
             </div>
 
             {/* Highlights row */}

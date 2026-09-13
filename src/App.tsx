@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { SchoolProvider, useSchool } from './context/SchoolContext';
 import { Navbar } from './components/public/Navbar';
 import { Hero } from './components/public/Hero';
-import { FeaturesAndPricing } from './components/public/FeaturesAndPricing';
+import { NoticeBoard } from './components/public/NoticeBoard';
+import { TimetableSection } from './components/common/TimetableSection';
 import { DailyPanchang } from './components/public/DailyPanchang';
 import { AboutSection } from './components/public/AboutSection';
 import { PanchmukhiShiksha } from './components/public/PanchmukhiShiksha';
@@ -103,16 +104,15 @@ const SchoolApp: React.FC = () => {
             <Hero
               onOpenSignUp={() => handleOpenSignUp('free')}
               onOpenLogin={handleOpenLogin}
-            />
-            <FeaturesAndPricing
-              onOpenSignUp={handleOpenSignUp}
-              onOpenLogin={handleOpenLogin}
+              onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
             />
             <DailyPanchang />
+            <NoticeBoard />
+            <AdmissionInquiry />
             <AboutSection />
             <PanchmukhiShiksha />
             <VandanaCorner />
-            <AdmissionInquiry />
+            <TimetableSection />
             <Gallery />
           </main>
           <LegalInformation />

@@ -122,65 +122,32 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center space-x-3 xl:space-x-4 text-sm font-medium text-stone-700">
-            <a href="#plans" className="text-orange-700 font-bold hover:text-orange-800 transition-colors flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>सेवा एवं सुविधाएं</span>
+            <a href="#notices" className="hover:text-orange-600 transition-colors font-semibold flex items-center gap-1">
+              <span>सूचनाएं</span>
             </a>
+            <a href="#admissions" className="hover:text-orange-600 transition-colors text-orange-700 font-bold">
+              प्रवेश (Admissions)
+            </a>
+            <a href="#panchang" className="hover:text-orange-600 transition-colors">पंचांग</a>
             <a href="#about" className="hover:text-orange-600 transition-colors">परिचय</a>
             <a href="#panchmukhi" className="hover:text-orange-600 transition-colors">पंचमुखी</a>
             <a href="#vandana" className="hover:text-orange-600 transition-colors">वंदना</a>
             <a href="#timetable" className="hover:text-orange-600 transition-colors">समय-सारणी</a>
-            <a href="#notices" className="hover:text-orange-600 transition-colors">सूचनाएं</a>
-            <a href="#admissions" className="hover:text-orange-600 transition-colors text-orange-700 font-semibold">प्रवेश</a>
           </nav>
 
-          {/* School Selector + Portals (Desktop & Tablets) */}
+          {/* School Portals & Controls (Desktop & Tablets) */}
           <div className="hidden md:flex items-center space-x-2">
-            
-            {/* Direct Sign Up Button */}
-            <button
-              onClick={() => handleOpenSignUp('free')}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-xs hover:shadow-md transition-all cursor-pointer shrink-0"
-              title="नवीन शाखा पंजीकरण (Sign Up)"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>शाखा पंजीकरण</span>
-            </button>
-
-            {/* Direct Login Button */}
-            <button
-              onClick={handleOpenAdmin}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-amber-200 border border-stone-800 shadow-xs transition-all cursor-pointer shrink-0"
-              title={isAdminAuthenticated ? 'प्रशासक डैशबोर्ड खोलें' : 'शाखा प्रशासक लॉगिन (Login)'}
-            >
-              <LogIn className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isAdminAuthenticated ? 'Admin Dashboard' : 'लॉगिन'}</span>
-            </button>
-
-            {/* Active Branch Chip with quick switch trigger */}
-            <button
-              onClick={handleOpenBranchList}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-orange-200 rounded-xl text-xs font-bold text-stone-800 hover:text-orange-950 transition cursor-pointer shrink-0"
-              title="वर्तमान सक्रिय शाखा • क्लिक करके अन्य शाखाएं देखें"
-            >
-              <span className="text-sm">🏫</span>
-              <span className="max-w-[70px] lg:max-w-[100px] truncate">सभी शाखाएं</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                FREE
-              </span>
-            </button>
-
             {/* Student Portal */}
             <button
               onClick={() => setViewMode(viewMode === 'student' ? 'public' : 'student')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 viewMode === 'student'
-                  ? 'bg-amber-100 border-orange-500 text-orange-900 font-bold'
-                  : 'bg-white hover:bg-amber-50 border-stone-300 text-stone-700'
+                  ? 'bg-emerald-700 text-white border-emerald-800 shadow-xs'
+                  : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-900 shadow-xs'
               }`}
-              title="Open Student & Parent Portal"
+              title="छात्र एवं अभिभावक पोर्टल खोलें"
             >
-              <UserCheck className="w-3.5 h-3.5 text-orange-600" />
+              <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
               <span>{t('navPortal', 'छात्र पोर्टल')}</span>
             </button>
 
@@ -195,15 +162,35 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onOpenTeacherLogin();
                 }
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 viewMode === 'teacher'
-                  ? 'bg-orange-700 text-white font-bold border-orange-800'
-                  : 'bg-white hover:bg-orange-50 border-stone-300 text-stone-700'
+                  ? 'bg-orange-700 text-white border-orange-800 shadow-xs'
+                  : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-900 shadow-xs'
               }`}
-              title="Open Teacher / Acharya Portal"
+              title="आचार्य पोर्टल खोलें"
             >
               <BookOpen className="w-3.5 h-3.5 text-orange-700" />
               <span>आचार्य पटल</span>
+            </button>
+
+            {/* Admin Login Button */}
+            <button
+              onClick={handleOpenAdmin}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-amber-200 border border-stone-800 shadow-xs transition-all cursor-pointer shrink-0"
+              title={isAdminAuthenticated ? 'प्रशासक डैशबोर्ड खोलें' : 'कार्यालय प्रशासन लॉगिन (Login)'}
+            >
+              <LogIn className="w-3.5 h-3.5 text-amber-400" />
+              <span>{isAdminAuthenticated ? 'Admin Dashboard' : 'प्रशासन'}</span>
+            </button>
+
+            {/* Active Branch Chip with quick switch trigger */}
+            <button
+              onClick={handleOpenBranchList}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-orange-200 rounded-xl text-xs font-bold text-stone-800 hover:text-orange-950 transition cursor-pointer shrink-0"
+              title="वर्तमान सक्रिय शाखा • क्लिक करके अन्य शाखाएं देखें"
+            >
+              <span className="text-sm">🏫</span>
+              <span className="max-w-[70px] lg:max-w-[90px] truncate">{publicSchool.city || 'शाखाएं'}</span>
             </button>
 
             {/* Language Switcher */}
@@ -277,12 +264,25 @@ export const Navbar: React.FC<NavbarProps> = ({
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-orange-100 bg-amber-50/90 px-4 pt-2 pb-4 space-y-2 text-sm font-medium">
           <a
-            href="#plans"
+            href="#notices"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-100/90 hover:bg-amber-100 text-orange-950 font-bold border border-orange-200"
+            className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-900 font-bold"
           >
-            <Sparkles className="w-4 h-4 text-orange-600" />
-            <span>सेवा एवं सुविधाएं</span>
+            📢 सूचना पट्ट (Notices)
+          </a>
+          <a
+            href="#admissions"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md bg-orange-600 text-white font-bold"
+          >
+            📝 प्रवेश हेतु आवेदन (Admissions 2026-27)
+          </a>
+          <a
+            href="#panchang"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
+          >
+            🗓️ दैनिक पंचांग (Daily Panchang)
           </a>
           <a
             href="#about"
@@ -306,63 +306,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             वंदना व दैनिक प्रार्थना (Vandana)
           </a>
           <a
-            href="#songs"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
-          >
-            गीत एवं घोष वादक (Songs & Band)
-          </a>
-          <a
             href="#timetable"
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
           >
-            दैनिक समय-सारणी (Class Timetable)
+            समय-सारिणी (Class Timetable)
           </a>
-          <a
-            href="#notices"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
-          >
-            सूचना पट्ट (Notices)
-          </a>
-          <a
-            href="#admissions"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-md bg-orange-600 text-white font-semibold"
-          >
-            प्रवेश हेतु आवेदन (Admissions 2026)
-          </a>
+
           <div className="pt-2 border-t border-orange-200 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleOpenSignUp('free');
-              }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-lg text-xs font-bold shadow-xs"
-            >
-              <Plus className="w-4 h-4" />
-              शाखा पंजीकरण (Sign Up Free)
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleOpenAdmin();
-              }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-stone-900 text-amber-200 rounded-lg text-xs font-bold shadow-xs"
-            >
-              <LogIn className="w-4 h-4 text-amber-400" />
-              शाखा लॉगिन (Login)
-            </button>
             <button
               onClick={() => {
                 setViewMode('student');
                 setMobileMenuOpen(false);
               }}
-              className="w-full flex items-center justify-center gap-2 py-2 bg-amber-200 text-orange-950 rounded-md text-xs font-semibold"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs"
             >
-              <BookOpen className="w-4 h-4" />
-              छात्र एवं अभिभावक पोर्टल (Student Portal)
+              <UserCheck className="w-4 h-4" />
+              <span>छात्र एवं अभिभावक पोर्टल (Student Portal)</span>
             </button>
             <button
               onClick={() => {
@@ -373,10 +333,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onOpenTeacherLogin();
                 }
               }}
-              className="w-full flex items-center justify-center gap-2 py-2 bg-orange-700 text-white rounded-md text-xs font-semibold"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs"
             >
-              <UserCheck className="w-4 h-4" />
-              आचार्य एवं शिक्षक पटल (Teacher Portal)
+              <BookOpen className="w-4 h-4" />
+              <span>आचार्य पटल (Teacher Portal)</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleOpenAdmin();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-stone-900 text-amber-200 rounded-xl text-xs font-bold shadow-xs"
+            >
+              <LogIn className="w-4 h-4 text-amber-400" />
+              <span>कार्यालय प्रशासन (Admin Login)</span>
             </button>
           </div>
         </div>
