@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, CheckCircle2, UserPlus, FileText, Phone, Send, ShieldCheck } from 'lucide-react';
 import { api } from '../../services/api';
 import { useSchool } from '../../context/SchoolContext';
@@ -6,9 +6,15 @@ import { useLanguage } from '../../context/LanguageContext';
 import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 
 export const AdmissionInquiry: React.FC = () => {
-  const { schools } = useSchool();
+  const { schools, publicSchool } = useSchool();
   const { t } = useLanguage();
-  const [selectedSchoolId, setSelectedSchoolId] = useState('');
+  const [selectedSchoolId, setSelectedSchoolId] = useState(publicSchool?.id || '');
+
+  useEffect(() => {
+    if (publicSchool?.id) {
+      setSelectedSchoolId(publicSchool.id);
+    }
+  }, [publicSchool?.id]);
   const [formData, setFormData] = useState({
     studentName: '',
     gender: 'Bhaiya',
