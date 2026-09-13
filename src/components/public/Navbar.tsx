@@ -132,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <a href="#about" className="hover:text-orange-600 transition-colors">परिचय</a>
             <a href="#panchmukhi" className="hover:text-orange-600 transition-colors">पंचमुखी</a>
             <a href="#vandana" className="hover:text-orange-600 transition-colors">वंदना</a>
-            <a href="#timetable" className="hover:text-orange-600 transition-colors">समय-सारणी</a>
+            <a href="#gallery" className="hover:text-orange-600 transition-colors">चित्रदीर्घा</a>
           </nav>
 
           {/* School Portals & Controls (Desktop & Tablets) */}
@@ -306,11 +306,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             वंदना व दैनिक प्रार्थना (Vandana)
           </a>
           <a
-            href="#timetable"
+            href="#gallery"
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
           >
-            समय-सारिणी (Class Timetable)
+            चित्रदीर्घा (School Gallery)
           </a>
 
           <div className="pt-2 border-t border-orange-200 flex flex-col gap-2">

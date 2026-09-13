@@ -3,7 +3,6 @@ import { SchoolProvider, useSchool } from './context/SchoolContext';
 import { Navbar } from './components/public/Navbar';
 import { Hero } from './components/public/Hero';
 import { NoticeBoard } from './components/public/NoticeBoard';
-import { TimetableSection } from './components/common/TimetableSection';
 import { DailyPanchang } from './components/public/DailyPanchang';
 import { AboutSection } from './components/public/AboutSection';
 import { PanchmukhiShiksha } from './components/public/PanchmukhiShiksha';
@@ -112,7 +111,6 @@ const SchoolApp: React.FC = () => {
             <AboutSection />
             <PanchmukhiShiksha />
             <VandanaCorner />
-            <TimetableSection />
             <Gallery />
           </main>
           <LegalInformation />
