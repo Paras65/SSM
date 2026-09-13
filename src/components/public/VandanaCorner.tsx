@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { PRAYERS } from '../../data/mockData';
-import { Volume2, VolumeX, Copy, Check, BookOpen, Sparkles, Printer } from 'lucide-react';
+import { Copy, Check, BookOpen, Sparkles, Printer } from 'lucide-react';
 
 export const VandanaCorner: React.FC = () => {
   const [selectedPrayerId, setSelectedPrayerId] = useState(PRAYERS[0].id);
   const [copied, setCopied] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const selectedPrayer = PRAYERS.find(p => p.id === selectedPrayerId) || PRAYERS[0];
 
@@ -14,31 +13,6 @@ export const VandanaCorner: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSpeech = () => {
-    if (!('speechSynthesis' in window)) {
-      alert('Speech synthesis is not supported in your browser.');
-      return;
-    }
-
-    if (isPlaying) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(selectedPrayer.sanskrit);
-    utterance.lang = 'hi-IN';
-    utterance.rate = 0.85; // slightly slower for solemn Vedic chanting feel
-    utterance.pitch = 1.0;
-
-    utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = () => setIsPlaying(false);
-
-    window.speechSynthesis.speak(utterance);
-    setIsPlaying(true);
   };
 
   return (
@@ -67,13 +41,7 @@ export const VandanaCorner: React.FC = () => {
             return (
               <button
                 key={prayer.id}
-                onClick={() => {
-                  setSelectedPrayerId(prayer.id);
-                  if (isPlaying) {
-                    window.speechSynthesis.cancel();
-                    setIsPlaying(false);
-                  }
-                }}
+                onClick={() => setSelectedPrayerId(prayer.id)}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                   isSelected
                     ? 'bg-orange-700 text-white shadow-md'
@@ -101,17 +69,6 @@ export const VandanaCorner: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-2">
-              <button
-                onClick={handleSpeech}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all ${
-                  isPlaying ? 'bg-red-700 text-white animate-pulse' : 'bg-white/20 hover:bg-white/30 text-white'
-                }`}
-                title="Listen to chanting"
-              >
-                {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                <span>{isPlaying ? 'रोकें (Stop)' : 'श्रवण करें (Listen)'}</span>
-              </button>
-
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/20 hover:bg-white/30 text-white transition-all"

@@ -17,13 +17,22 @@ import {
   UserCheck,
   CheckSquare,
   FileSpreadsheet,
-  Award
+  Award,
+  Search,
+  Share2,
+  TrendingUp,
+  AlertTriangle,
+  Check,
+  CheckCheck,
+  XCircle,
+  Sun,
+  MessageSquare
 } from 'lucide-react';
 
 type TeacherTab = 'attendance' | 'homework' | 'marks' | 'timetable' | 'leaves' | 'salary';
 
 export const TeacherPortal: React.FC = () => {
-  const { currentSchool, setViewMode, students, setStudentAttendance, getAttendanceForDate } = useSchool();
+  const { currentSchool, setViewMode, students, setStudentAttendance, bulkSetAttendance, getAttendanceForDate, attendanceRecords } = useSchool();
   const { showSuccess, showError, showWarning } = useToast();
   const [currentTab, setCurrentTab] = useState<TeacherTab>('attendance');
   const teacherId = sessionStorage.getItem('ssm_teacher_id') || '';
@@ -36,6 +45,10 @@ export const TeacherPortal: React.FC = () => {
   const CLASSES = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
   const [selectedClass, setSelectedClass] = useState('Class 8');
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [attendanceSearch, setAttendanceSearch] = useState('');
+
+  // Quick subject chips
+  const QUICK_SUBJECTS = ['गणित', 'हिन्दी', 'विज्ञान', 'अंग्रेज़ी', 'संस्कृत', 'सामाजिक विज्ञान', 'कम्प्यूटर'];
 
   // Homework state
   const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
@@ -50,6 +63,8 @@ export const TeacherPortal: React.FC = () => {
   const [selectedExamId, setSelectedExamId] = useState('');
   const [examSubject, setExamSubject] = useState('गणित');
   const [marksState, setMarksState] = useState<Record<string, number>>({});
+  const [absentStudents, setAbsentStudents] = useState<Record<string, boolean>>({});
+  const [marksSearch, setMarksSearch] = useState('');
   const [maxMarks, setMaxMarks] = useState(100);
   const [marksSaveSuccess, setMarksSaveSuccess] = useState(false);
   const [isSavingMarks, setIsSavingMarks] = useState(false);
@@ -95,6 +110,37 @@ export const TeacherPortal: React.FC = () => {
     setViewMode('public');
   };
 
+  const handleShareHwWhatsApp = (hw: Homework) => {
+    const text = `📚 *${currentSchool.hindiName || currentSchool.name}*\n` +
+      `📝 *दैनिक गृहकार्य (Daily Homework)*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📌 *कक्षा:* ${hw.class}\n` +
+      `📖 *विषय:* ${hw.subject}\n` +
+      `🎯 *शीर्षक:* ${hw.title}\n` +
+      `📅 *अंतिम तिथि:* ${hw.dueDate}\n` +
+      `✍️ *निर्देश:*\n${hw.description}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `_शिक्षक: ${hw.assignedBy}_`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleMarkAllAttendance = async (status: 'Present' | 'Absent') => {
+    try {
+      await bulkSetAttendance(selectedClass, attendanceDate, status);
+      showSuccess(status === 'Present' ? `सभी ${filteredStudents.length} छात्र उपस्थित अंकित किए गए!` : `सभी छात्र अनुपस्थित अंकित किए गए!`);
+    } catch (err: any) {
+      showError(err.message || 'उपस्थिति दर्ज करने में त्रुटि आई।');
+    }
+  };
+
+  const getStudentOverallAttendancePct = (studentId: string): number | null => {
+    const recs = attendanceRecords.filter(r => r.studentId === studentId);
+    if (recs.length < 3) return null;
+    const present = recs.filter(r => r.status === 'Present').length;
+    return Math.round((present / recs.length) * 100);
+  };
+
   const handleCreateHomework = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hwTitle || !hwDesc) return;
@@ -132,7 +178,7 @@ export const TeacherPortal: React.FC = () => {
     try {
       const marksList = Object.entries(marksState).map(([studentId, marksObtained]) => ({
         studentId,
-        marksObtained: Number(marksObtained) || 0,
+        marksObtained: absentStudents[studentId] ? 0 : Number(marksObtained) || 0,
         maxMarks
       }));
 
@@ -180,6 +226,60 @@ export const TeacherPortal: React.FC = () => {
 
   const filteredStudents = students.filter(s => s.class === selectedClass);
   const activeAttendanceMap = getAttendanceForDate(attendanceDate);
+
+  // Derived Attendance Stats & Filter
+  const displayedAttendanceStudents = filteredStudents.filter(s => {
+    if (!attendanceSearch.trim()) return true;
+    const q = attendanceSearch.toLowerCase().trim();
+    return (s.name && s.name.toLowerCase().includes(q)) ||
+           (s.rollNo && s.rollNo.toString().toLowerCase().includes(q)) ||
+           (s.fatherName && s.fatherName.toLowerCase().includes(q));
+  });
+
+  const totalAttendanceStudents = filteredStudents.length;
+  const presentCount = filteredStudents.filter(s => (activeAttendanceMap[s.id] || 'Present') === 'Present').length;
+  const absentCount = filteredStudents.filter(s => activeAttendanceMap[s.id] === 'Absent').length;
+  const leaveCount = filteredStudents.filter(s => activeAttendanceMap[s.id] === 'Leave').length;
+  const attendanceRate = totalAttendanceStudents > 0 ? Math.round((presentCount / totalAttendanceStudents) * 100) : 0;
+
+  // Derived Marks Stats & Filter
+  const displayedMarksStudents = filteredStudents.filter(s => {
+    if (!marksSearch.trim()) return true;
+    const q = marksSearch.toLowerCase().trim();
+    return (s.name && s.name.toLowerCase().includes(q)) ||
+           (s.rollNo && s.rollNo.toString().toLowerCase().includes(q));
+  });
+
+  const enteredMarksCount = filteredStudents.filter(s => marksState[s.id] !== undefined && !absentStudents[s.id]).length;
+  const examAbsentCount = filteredStudents.filter(s => absentStudents[s.id]).length;
+  const validMarks = filteredStudents
+    .filter(s => marksState[s.id] !== undefined && !absentStudents[s.id])
+    .map(s => marksState[s.id] || 0);
+  const classAvgPct = validMarks.length > 0 && maxMarks > 0
+    ? Math.round((validMarks.reduce((a, b) => a + b, 0) / (validMarks.length * maxMarks)) * 100)
+    : 0;
+  const highestClassMarks = validMarks.length > 0 ? Math.max(...validMarks) : 0;
+  const passedStudentsCount = filteredStudents.filter(s => {
+    if (absentStudents[s.id]) return false;
+    const m = marksState[s.id];
+    return m !== undefined && maxMarks > 0 && (m / maxMarks) >= 0.33;
+  }).length;
+  const failedStudentsCount = Math.max(0, enteredMarksCount - passedStudentsCount);
+
+  // Timetable helper
+  const DAYS_MAP: Record<string, string> = {
+    Monday: 'सोमवार',
+    Tuesday: 'मंगलवार',
+    Wednesday: 'बुधवार',
+    Thursday: 'गुरुवार',
+    Friday: 'शुक्रवार',
+    Saturday: 'शनिवार'
+  };
+  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const currentDayName = DAY_NAMES[new Date().getDay()];
+  const isSunday = currentDayName === 'Sunday';
+  const classTimetable = timetables.find(t => t.class === selectedClass);
+  const todaySchedule = classTimetable?.schedule?.find(s => s.day === currentDayName);
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
@@ -301,10 +401,12 @@ export const TeacherPortal: React.FC = () => {
         {/* ================= TAB 1: ATTENDANCE ================= */}
         {currentTab === 'attendance' && (
           <div className="space-y-4">
+            {/* Top Control Header */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h3 className="text-base font-bold text-stone-900">
-                  कक्षा उपस्थिति पंजिका (Daily Classroom Attendance)
+                <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-orange-600" />
+                  <span>कक्षा उपस्थिति पंजिका (Daily Classroom Attendance)</span>
                 </h3>
                 <p className="text-xs text-stone-500">
                   कक्षा और दिनांक चुनकर भैया/बहिनों की उपस्थिति दर्ज करें
@@ -333,20 +435,76 @@ export const TeacherPortal: React.FC = () => {
                   />
                 </div>
 
-                <div className="self-end">
+                <div className="flex items-center gap-2 self-end">
                   <button
-                    onClick={() => {
-                      filteredStudents.forEach(s => setStudentAttendance(s.id, attendanceDate, 'Present'));
-                    }}
+                    onClick={() => handleMarkAllAttendance('Present')}
                     className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition"
+                    title="इस कक्षा के सभी विद्यार्थियों को उपस्थित अंकित करें"
                   >
-                    <CheckSquare className="w-4 h-4" />
-                    <span>सभी उपस्थित करें</span>
+                    <CheckCheck className="w-4 h-4" />
+                    <span>सभी उपस्थित</span>
+                  </button>
+                  <button
+                    onClick={() => handleMarkAllAttendance('Absent')}
+                    className="px-3.5 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-xs rounded-xl flex items-center gap-1.5 transition"
+                    title="इस कक्षा के सभी विद्यार्थियों को अनुपस्थित अंकित करें"
+                  >
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    <span>सभी अनुपस्थित</span>
                   </button>
                 </div>
               </div>
             </div>
 
+            {/* Live Attendance Stats Counter Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-xs">
+                <span className="text-[10px] font-bold text-stone-500 uppercase">कुल छात्र (Total)</span>
+                <p className="text-xl font-black text-stone-900">{totalAttendanceStudents}</p>
+              </div>
+              <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 shadow-xs">
+                <span className="text-[10px] font-bold text-emerald-700 uppercase">उपस्थित (Present)</span>
+                <p className="text-xl font-black text-emerald-800">
+                  {presentCount} <span className="text-xs font-bold text-emerald-600">({attendanceRate}%)</span>
+                </p>
+              </div>
+              <div className="bg-red-50 p-3.5 rounded-2xl border border-red-200 shadow-xs">
+                <span className="text-[10px] font-bold text-red-700 uppercase">अनुपस्थित (Absent)</span>
+                <p className="text-xl font-black text-red-800">{absentCount}</p>
+              </div>
+              <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 shadow-xs">
+                <span className="text-[10px] font-bold text-amber-700 uppercase">अवकाश (On Leave)</span>
+                <p className="text-xl font-black text-amber-800">{leaveCount}</p>
+              </div>
+              <div className="bg-orange-50 p-3.5 rounded-2xl border border-orange-200 shadow-xs col-span-2 sm:col-span-1">
+                <span className="text-[10px] font-bold text-orange-700 uppercase">उपस्थिति दर (Rate)</span>
+                <p className="text-xl font-black text-orange-900">{attendanceRate}%</p>
+              </div>
+            </div>
+
+            {/* Search Filter Bar */}
+            <div className="bg-white p-3 rounded-2xl border border-stone-200 shadow-xs flex items-center justify-between gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={attendanceSearch}
+                  onChange={(e) => setAttendanceSearch(e.target.value)}
+                  placeholder="विद्यार्थी का नाम, अनुक्रमांक (Roll No), या पिता के नाम से खोजें..."
+                  className="w-full pl-9 pr-4 py-1.5 text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                />
+              </div>
+              {attendanceSearch && (
+                <button
+                  onClick={() => setAttendanceSearch('')}
+                  className="text-xs font-bold text-stone-500 hover:text-stone-700 px-2 py-1"
+                >
+                  फ़िल्टर हटाएं
+                </button>
+              )}
+            </div>
+
+            {/* Attendance Table */}
             <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -358,21 +516,35 @@ export const TeacherPortal: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {filteredStudents.length === 0 ? (
+                  {displayedAttendanceStudents.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-8 text-center text-stone-400">
-                        इस कक्षा में अभी कोई छात्र पंजीकृत नहीं हैं।
+                        {attendanceSearch ? 'खोज के अनुरूप कोई विद्यार्थी नहीं मिला।' : 'इस कक्षा में अभी कोई छात्र पंजीकृत नहीं हैं।'}
                       </td>
                     </tr>
                   ) : (
-                    filteredStudents.map(student => {
+                    displayedAttendanceStudents.map(student => {
                       const status = activeAttendanceMap[student.id] || 'Present';
+                      const overallPct = getStudentOverallAttendancePct(student.id);
+                      const isLowAttendance = overallPct !== null && overallPct < 75;
+
                       return (
                         <tr key={student.id} className="hover:bg-amber-50/40 transition">
                           <td className="p-3.5 font-bold font-mono text-stone-800">{student.rollNo}</td>
-                          <td className="p-3.5 font-bold text-stone-900 flex items-center gap-2">
-                            <span>{student.gender === 'Bhaiya' ? '👦' : '👧'}</span>
-                            <span>{student.name}</span>
+                          <td className="p-3.5 font-bold text-stone-900">
+                            <div className="flex items-center gap-2">
+                              <span>{student.gender === 'Bhaiya' ? '👦' : '👧'}</span>
+                              <span>{student.name}</span>
+                              {isLowAttendance && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold border border-red-200"
+                                  title={`कुल उपस्थिति ${overallPct}% (75% से कम)`}
+                                >
+                                  <AlertTriangle className="w-3 h-3 text-red-600" />
+                                  <span>{overallPct}%</span>
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3.5 text-stone-600">{student.fatherName}</td>
                           <td className="p-3.5 text-center">
@@ -450,7 +622,7 @@ export const TeacherPortal: React.FC = () => {
                 <h4 className="font-bold text-stone-900 text-sm">नवीन गृहकार्य प्रविष्टि</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block font-bold text-stone-700 mb-1">विषय</label>
+                    <label className="block font-bold text-stone-700 mb-1">विषय (Subject)</label>
                     <input
                       required
                       value={hwSubject}
@@ -458,9 +630,25 @@ export const TeacherPortal: React.FC = () => {
                       placeholder="उदा. गणित, संस्कृत, विज्ञान"
                       className="w-full px-3 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-orange-500"
                     />
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {QUICK_SUBJECTS.map(subj => (
+                        <button
+                          key={subj}
+                          type="button"
+                          onClick={() => setHwSubject(subj)}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded-lg border transition ${
+                            hwSubject === subj
+                              ? 'bg-orange-700 text-white border-orange-700 shadow-xs'
+                              : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+                          }`}
+                        >
+                          {subj}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div>
-                    <label className="block font-bold text-stone-700 mb-1">शीर्षक</label>
+                    <label className="block font-bold text-stone-700 mb-1">शीर्षक (Title)</label>
                     <input
                       required
                       value={hwTitle}
@@ -488,7 +676,7 @@ export const TeacherPortal: React.FC = () => {
                     rows={3}
                     value={hwDesc}
                     onChange={(e) => setHwDesc(e.target.value)}
-                    placeholder="छात्रों के लिए स्पष्ट कार्य विवरण..."
+                    placeholder="छात्रों के लिए स्पष्ट कार्य विवरण एवं पृष्ठ संख्या आदि..."
                     className="w-full px-3 py-2 rounded-xl border border-stone-300 focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
@@ -512,26 +700,45 @@ export const TeacherPortal: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {homeworkList.map(hw => (
-                <div key={hw.id} className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-md bg-orange-100 text-orange-800 font-bold text-[11px]">
-                      {hw.subject} • {hw.class}
-                    </span>
-                    <span className="text-stone-500 text-[11px] font-semibold flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-orange-600" />
-                      अंतिम तिथि: {hw.dueDate}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-stone-900 text-sm">{hw.title}</h4>
-                  <p className="text-xs text-stone-600 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
-                    {hw.description}
-                  </p>
-                  <div className="pt-2 text-[11px] text-stone-400">
-                    प्रदत्त: {hw.assignedBy} ({hw.date})
-                  </div>
+              {homeworkList.length === 0 ? (
+                <div className="col-span-full p-8 text-center bg-white rounded-3xl border border-stone-200 text-stone-400">
+                  इस कक्षा के लिए अभी कोई गृहकार्य जारी नहीं किया गया है। ऊपर दिए गए बटन से नया गृहकार्य जोड़ें।
                 </div>
-              ))}
+              ) : (
+                homeworkList.map(hw => (
+                  <div key={hw.id} className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-2 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-md bg-orange-100 text-orange-800 font-bold text-[11px]">
+                          {hw.subject} • {hw.class}
+                        </span>
+                        <span className="text-stone-500 text-[11px] font-semibold flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-orange-600" />
+                          अंतिम तिथि: {hw.dueDate}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-stone-900 text-sm">{hw.title}</h4>
+                      <p className="text-xs text-stone-600 bg-stone-50 p-2.5 rounded-xl border border-stone-100 whitespace-pre-wrap">
+                        {hw.description}
+                      </p>
+                    </div>
+                    <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                      <div className="text-[11px] text-stone-400 truncate">
+                        प्रदत्त: {hw.assignedBy} ({hw.date})
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleShareHwWhatsApp(hw)}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition shrink-0"
+                        title="अभिभावक व्हाट्सएप ग्रुप पर साझा करें"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>व्हाट्सएप साझा</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -539,6 +746,7 @@ export const TeacherPortal: React.FC = () => {
         {/* ================= TAB 3: EXAM MARKS ENTRY ================= */}
         {currentTab === 'marks' && (
           <div className="space-y-4">
+            {/* Top Control Bar */}
             <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
@@ -546,7 +754,7 @@ export const TeacherPortal: React.FC = () => {
                   <span>परीक्षा अंक प्रविष्टि मैट्रिक्स (Tabular Marks Entry)</span>
                 </h3>
                 <p className="text-xs text-stone-500">
-                  परीक्षा, कक्षा एवं विषय चुनकर सभी छात्रों के अंक एक साथ दर्ज करें
+                  परीक्षा, कक्षा एवं विषय चुनकर तेजी से अंक दर्ज करें (Enter या Arrow keys दबाकर अगले छात्र पर जाएं)
                 </p>
               </div>
 
@@ -609,6 +817,56 @@ export const TeacherPortal: React.FC = () => {
               </div>
             </div>
 
+            {/* Live Class Statistics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+              <div className="bg-white p-3 rounded-2xl border border-stone-200 shadow-xs">
+                <span className="text-[10px] font-bold text-stone-500 uppercase">प्रविष्ट / कुल</span>
+                <p className="text-lg font-black text-stone-900">{enteredMarksCount} / {filteredStudents.length}</p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-2xl border border-blue-200 shadow-xs">
+                <span className="text-[10px] font-bold text-blue-700 uppercase">कक्षा औसत (Avg)</span>
+                <p className="text-lg font-black text-blue-900">{classAvgPct}%</p>
+              </div>
+              <div className="bg-purple-50 p-3 rounded-2xl border border-purple-200 shadow-xs">
+                <span className="text-[10px] font-bold text-purple-700 uppercase">उच्चतम (Highest)</span>
+                <p className="text-lg font-black text-purple-900">{highestClassMarks} <span className="text-xs text-purple-600 font-semibold">/{maxMarks}</span></p>
+              </div>
+              <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 shadow-xs">
+                <span className="text-[10px] font-bold text-emerald-700 uppercase">उत्तीर्ण (Passed)</span>
+                <p className="text-lg font-black text-emerald-900">{passedStudentsCount}</p>
+              </div>
+              <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 shadow-xs">
+                <span className="text-[10px] font-bold text-amber-700 uppercase">अनुत्तीर्ण (&lt;33%)</span>
+                <p className="text-lg font-black text-amber-900">{failedStudentsCount}</p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-2xl border border-red-200 shadow-xs">
+                <span className="text-[10px] font-bold text-red-700 uppercase">अनुपस्थित (AB)</span>
+                <p className="text-lg font-black text-red-900">{examAbsentCount}</p>
+              </div>
+            </div>
+
+            {/* Search Filter Bar */}
+            <div className="bg-white p-3 rounded-2xl border border-stone-200 shadow-xs flex items-center justify-between gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={marksSearch}
+                  onChange={(e) => setMarksSearch(e.target.value)}
+                  placeholder="विद्यार्थी का नाम या अनुक्रमांक से खोजें..."
+                  className="w-full pl-9 pr-4 py-1.5 text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                />
+              </div>
+              {marksSearch && (
+                <button
+                  onClick={() => setMarksSearch('')}
+                  className="text-xs font-bold text-stone-500 hover:text-stone-700 px-2 py-1"
+                >
+                  फ़िल्टर हटाएं
+                </button>
+              )}
+            </div>
+
             {marksSaveSuccess && (
               <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs rounded-2xl flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
@@ -616,6 +874,7 @@ export const TeacherPortal: React.FC = () => {
               </div>
             )}
 
+            {/* Marks Table */}
             <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -623,52 +882,123 @@ export const TeacherPortal: React.FC = () => {
                     <th className="p-3.5">अनुक्रमांक</th>
                     <th className="p-3.5">विद्यार्थी का नाम</th>
                     <th className="p-3.5">पूर्णांक</th>
-                    <th className="p-3.5">प्राप्तांक (Marks Obtained)</th>
+                    <th className="p-3.5">प्राप्तांक / अनुपस्थित</th>
                     <th className="p-3.5">प्रतिशत</th>
                     <th className="p-3.5">ग्रेड (Grade)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {filteredStudents.length === 0 ? (
+                  {displayedMarksStudents.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-stone-400">
-                        इस कक्षा में छात्र पंजीकृत नहीं हैं।
+                        {marksSearch ? 'खोज के अनुरूप कोई विद्यार्थी नहीं मिला।' : 'इस कक्षा में छात्र पंजीकृत नहीं हैं।'}
                       </td>
                     </tr>
                   ) : (
-                    filteredStudents.map(st => {
-                      const obtained = marksState[st.id] ?? 0;
-                      const pct = maxMarks > 0 ? (obtained / maxMarks) * 100 : 0;
-                      const grade = pct >= 90 ? 'A+' : pct >= 75 ? 'A' : pct >= 60 ? 'B' : pct >= 45 ? 'C' : 'D';
+                    displayedMarksStudents.map((st, idx) => {
+                      const isAbsent = !!absentStudents[st.id];
+                      const obtained = marksState[st.id] ?? '';
+                      const numObtained = Number(obtained) || 0;
+                      const pct = maxMarks > 0 && !isAbsent ? (numObtained / maxMarks) * 100 : 0;
+                      const grade = isAbsent
+                        ? 'AB'
+                        : pct >= 90
+                        ? 'A+'
+                        : pct >= 75
+                        ? 'A'
+                        : pct >= 60
+                        ? 'B'
+                        : pct >= 45
+                        ? 'C'
+                        : pct >= 33
+                        ? 'D'
+                        : 'E';
 
                       return (
-                        <tr key={st.id} className="hover:bg-amber-50/30">
+                        <tr key={st.id} className={`hover:bg-amber-50/30 transition ${isAbsent ? 'bg-red-50/30' : ''}`}>
                           <td className="p-3.5 font-bold font-mono text-stone-800">{st.rollNo}</td>
                           <td className="p-3.5 font-bold text-stone-900">{st.name}</td>
                           <td className="p-3.5 font-semibold text-stone-600">{maxMarks}</td>
                           <td className="p-3.5">
-                            <input
-                              type="number"
-                              min={0}
-                              max={maxMarks}
-                              value={marksState[st.id] ?? ''}
-                              onChange={(e) => {
-                                const val = Math.min(maxMarks, Math.max(0, Number(e.target.value) || 0));
-                                setMarksState(prev => ({ ...prev, [st.id]: val }));
-                              }}
-                              placeholder="0"
-                              className="w-24 px-3 py-1.5 rounded-xl border border-stone-300 font-bold focus:ring-2 focus:ring-orange-500"
-                            />
+                            <div className="flex items-center gap-2">
+                              <input
+                                id={`marks-input-${idx}`}
+                                type="number"
+                                min={0}
+                                max={maxMarks}
+                                disabled={isAbsent}
+                                value={isAbsent ? '' : (marksState[st.id] ?? '')}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  if (raw === '') {
+                                    const next = { ...marksState };
+                                    delete next[st.id];
+                                    setMarksState(next);
+                                  } else {
+                                    const val = Math.min(maxMarks, Math.max(0, Number(raw) || 0));
+                                    setMarksState(prev => ({ ...prev, [st.id]: val }));
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                    e.preventDefault();
+                                    const next = document.getElementById(`marks-input-${idx + 1}`);
+                                    if (next) (next as HTMLInputElement).focus();
+                                  } else if (e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    const prev = document.getElementById(`marks-input-${idx - 1}`);
+                                    if (prev) (prev as HTMLInputElement).focus();
+                                  }
+                                }}
+                                placeholder={isAbsent ? 'AB' : '0'}
+                                className={`w-20 px-3 py-1.5 rounded-xl border font-bold focus:ring-2 focus:ring-orange-500 ${
+                                  isAbsent
+                                    ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed text-center'
+                                    : 'border-stone-300 bg-white'
+                                }`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAbsentStudents(prev => {
+                                    const nextState = !prev[st.id];
+                                    if (nextState) {
+                                      setMarksState(m => ({ ...m, [st.id]: 0 }));
+                                    }
+                                    return { ...prev, [st.id]: nextState };
+                                  });
+                                }}
+                                className={`px-2.5 py-1 text-[10px] font-black rounded-lg border transition ${
+                                  isAbsent
+                                    ? 'bg-red-600 text-white border-red-700 shadow-xs'
+                                    : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200'
+                                }`}
+                                title={isAbsent ? 'अनुपस्थित हटाया जाएगा' : 'विद्यार्थी को अनुपस्थित (AB) अंकित करें'}
+                              >
+                                {isAbsent ? 'AB ✓' : 'AB'}
+                              </button>
+                            </div>
                           </td>
-                          <td className="p-3.5 font-bold text-orange-900">{pct.toFixed(1)}%</td>
+                          <td className="p-3.5 font-bold text-orange-900">
+                            {isAbsent ? <span className="text-stone-400">—</span> : `${pct.toFixed(1)}%`}
+                          </td>
                           <td className="p-3.5">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-black ${
-                              grade === 'A+' || grade === 'A' ? 'bg-green-100 text-green-800' :
-                              grade === 'B' ? 'bg-blue-100 text-blue-800' :
-                              'bg-amber-100 text-amber-800'
-                            }`}>
-                              {grade}
-                            </span>
+                            {isAbsent ? (
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
+                                अनुपस्थित (AB)
+                              </span>
+                            ) : (
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
+                                grade === 'A+' || grade === 'A' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                                grade === 'B' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                grade === 'C' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                                grade === 'D' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                                'bg-rose-100 text-rose-800 border border-rose-200'
+                              }`}>
+                                {grade}
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -683,11 +1013,11 @@ export const TeacherPortal: React.FC = () => {
         {/* ================= TAB 4: TIMETABLE ================= */}
         {currentTab === 'timetable' && (
           <div className="space-y-4">
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex items-center justify-between gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-orange-600" />
-                  <span>साप्ताहिक समय-सारिणी (Weekly Timetable — {selectedClass})</span>
+                  <span>समय-सारिणी (Weekly Timetable — {selectedClass})</span>
                 </h3>
                 <p className="text-xs text-stone-500">
                   कक्षावार एवं दिनवार घंटी (Periods 1-8) का विवरण
@@ -703,19 +1033,86 @@ export const TeacherPortal: React.FC = () => {
               </select>
             </div>
 
+            {/* Today's Priority Schedule Banner */}
+            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/50 p-5 rounded-3xl shadow-xs space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-orange-600 text-white font-bold text-xs shadow-xs">
+                    <Sun className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-black text-stone-900 flex items-center gap-2">
+                      <span>आज की कक्षाएं व घंटी (Today's Schedule)</span>
+                      <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[11px] font-bold">
+                        {DAYS_MAP[currentDayName] || currentDayName}
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-stone-500">
+                      {new Date().toLocaleDateString('hi-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-orange-800 bg-amber-100 px-3 py-1 rounded-xl">
+                  {selectedClass}
+                </span>
+              </div>
+
+              {isSunday ? (
+                <div className="p-4 bg-white rounded-2xl border border-amber-200 text-stone-600 text-xs font-medium text-center">
+                  🌸 आज रविवार (साप्ताहिक अवकाश) है। कल सोमवार के लिए नीचे दी गई समय-सारिणी देखें।
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {(todaySchedule?.slots || [
+                    { period: 1, subject: 'वंदना एवं संस्कृत', teacherName: 'आचार्य जी', startTime: '08:30', endTime: '09:15' },
+                    { period: 2, subject: 'गणित', teacherName: 'आचार्य जी', startTime: '09:15', endTime: '10:00' },
+                    { period: 3, subject: 'विज्ञान', teacherName: 'दीदी जी', startTime: '10:00', endTime: '10:45' },
+                    { period: 4, subject: 'शारीरिक व योग', teacherName: 'आचार्य जी', startTime: '11:00', endTime: '11:45' }
+                  ]).map((slot, idx) => (
+                    <div key={idx} className="p-3 rounded-2xl bg-white border border-amber-200 shadow-xs flex flex-col justify-between space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                          घंटी {slot.period || idx + 1}
+                        </span>
+                        <span className="text-[10px] font-bold text-stone-500">
+                          {slot.startTime} - {slot.endTime}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-bold text-stone-900 block text-xs">{slot.subject}</span>
+                        <span className="text-[10px] text-stone-500">{slot.teacherName}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Weekly Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
-                const dayHindiMap: Record<string, string> = {
-                  Monday: 'सोमवार', Tuesday: 'मंगलवार', Wednesday: 'बुधवार',
-                  Thursday: 'गुरुवार', Friday: 'शुक्रवार', Saturday: 'शनिवार'
-                };
+                const isCurrentDay = day === currentDayName;
                 const classTt = timetables.find(t => t.class === selectedClass);
                 const daySchedule = classTt?.schedule?.find(s => s.day === day);
 
                 return (
-                  <div key={day} className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
+                  <div
+                    key={day}
+                    className={`bg-white p-4 rounded-2xl border transition shadow-xs ${
+                      isCurrentDay
+                        ? 'border-orange-500 ring-2 ring-orange-400/40 bg-orange-50/10'
+                        : 'border-stone-200'
+                    }`}
+                  >
                     <h4 className="font-bold text-stone-900 text-sm border-b pb-2 mb-3 flex items-center justify-between">
-                      <span className="text-orange-900">{dayHindiMap[day]}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-orange-900">{DAYS_MAP[day]}</span>
+                        {isCurrentDay && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white">
+                            आज
+                          </span>
+                        )}
+                      </span>
                       <span className="text-[10px] text-stone-400 uppercase font-mono">{day}</span>
                     </h4>
 
