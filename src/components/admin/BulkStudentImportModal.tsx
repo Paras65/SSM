@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import type { Student, Gender } from '../../types';
+import { parseCsvLine } from '../../utils/csvExport';
 import {
   Upload,
   Download,
@@ -72,31 +73,6 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
     URL.revokeObjectURL(url);
   };
 
-  // Parse CSV line handling quotes and commas
-  const parseCsvLine = (line: string): string[] => {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    result.push(current.trim());
-    return result;
-  };
 
   // Handle uploaded CSV file
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

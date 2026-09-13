@@ -1,7 +1,128 @@
 import type { Student, FeeRecord, AttendanceRecord } from '../types';
 
+/**
+ * Sanitizes a CSV cell to prevent formula injection (OWASP CSV Injection)
+ * and properly escapes double-quotes.
+ */
+export function sanitizeCsvCell(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '""';
+  }
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  let str = String(value);
+  // Neutralize formula injection characters (=, +, -, @, tab, cr)
+  const formulaChars = ['=', '+', '-', '@', '\t', '\r'];
+  if (str.length > 0 && formulaChars.includes(str.charAt(0))) {
+    str = `'${str}`;
+  }
+  // Escape internal double quotes
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Parses a single line of CSV text respecting quotes and escaped quotes ("").
+ */
+export function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++; // skip next escaped quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+/**
+ * Parses a full CSV string into rows of string arrays, filtering out empty lines.
+ */
+export function parseCsvContent(content: string): string[][] {
+  if (!content || !content.trim()) return [];
+  const cleaned = content.replace(/^\uFEFF/, '');
+  const lines = cleaned.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
+  return lines.map(line => parseCsvLine(line));
+}
+
+// 1. Pure CSV Generator: Students
+export function generateStudentsCSV(students: Student[]): string {
+  const headers = ['Roll No', 'Name', 'Gender', 'Class', 'Section', 'Father Name', 'Mother Name', 'Contact Phone', 'Blood Group', 'Address', 'Admission Date'];
+  const rows = students.map(s => [
+    sanitizeCsvCell(s.rollNo),
+    sanitizeCsvCell(s.name),
+    sanitizeCsvCell(s.gender),
+    sanitizeCsvCell(s.class),
+    sanitizeCsvCell(s.section),
+    sanitizeCsvCell(s.fatherName),
+    sanitizeCsvCell(s.motherName || ''),
+    sanitizeCsvCell(s.contact),
+    sanitizeCsvCell(s.bloodGroup),
+    sanitizeCsvCell(s.address || ''),
+    sanitizeCsvCell(s.admissionDate)
+  ]);
+
+  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+}
+
+// 2. Pure CSV Generator: Fees
+export function generateFeesCSV(fees: FeeRecord[], students: Student[]): string {
+  const headers = ['Receipt No', 'Roll No', 'Student Name', 'Class', 'Term', 'Academic Year', 'Total Amount', 'Paid Amount', 'Status', 'Payment Mode', 'Paid Date'];
+  const rows = fees.map(f => {
+    const student = students.find(s => s.id === f.studentId);
+    return [
+      sanitizeCsvCell(f.receiptNo || 'N/A'),
+      sanitizeCsvCell(student ? student.rollNo : 'N/A'),
+      sanitizeCsvCell(student ? student.name : 'Unknown'),
+      sanitizeCsvCell(student ? student.class : 'N/A'),
+      sanitizeCsvCell(f.term),
+      sanitizeCsvCell(f.academicYear),
+      sanitizeCsvCell(f.totalAmount),
+      sanitizeCsvCell(f.paidAmount),
+      sanitizeCsvCell(f.status),
+      sanitizeCsvCell(f.paymentMode || ''),
+      sanitizeCsvCell(f.paidDate || '')
+    ];
+  });
+
+  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+}
+
+// 3. Pure CSV Generator: Attendance
+export function generateAttendanceCSV(attendance: AttendanceRecord[], students: Student[], date: string): string {
+  const headers = ['Date', 'Roll No', 'Student Name', 'Class', 'Section', 'Status'];
+  const filtered = attendance.filter(a => a.date === date);
+  const rows = (filtered.length > 0 ? filtered : students.map(s => ({ studentId: s.id, date, status: 'Present' as const }))).map(a => {
+    const student = students.find(s => s.id === a.studentId);
+    return [
+      sanitizeCsvCell(a.date),
+      sanitizeCsvCell(student ? student.rollNo : 'N/A'),
+      sanitizeCsvCell(student ? student.name : 'Unknown'),
+      sanitizeCsvCell(student ? student.class : 'N/A'),
+      sanitizeCsvCell(student ? student.section : 'A'),
+      sanitizeCsvCell(a.status)
+    ];
+  });
+
+  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+}
+
 // Helper to trigger browser CSV file download
-function downloadCSV(csvContent: string, filename: string) {
+export function downloadCSV(csvContent: string, filename: string) {
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
@@ -11,76 +132,24 @@ function downloadCSV(csvContent: string, filename: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
-// 1. Export Student Directory
+// Browser download wrappers
 export function exportStudentsToCSV(students: Student[]) {
-  const headers = ['Roll No', 'Name', 'Gender', 'Class', 'Section', 'Father Name', 'Mother Name', 'Contact Phone', 'Blood Group', 'Address', 'Admission Date'];
-  
-  const rows = students.map(s => [
-    s.rollNo,
-    `"${s.name}"`,
-    s.gender,
-    `"${s.class}"`,
-    s.section,
-    `"${s.fatherName}"`,
-    `"${s.motherName || ''}"`,
-    `"${s.contact}"`,
-    s.bloodGroup,
-    `"${s.address || ''}"`,
-    s.admissionDate
-  ]);
-
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const csv = generateStudentsCSV(students);
   const filename = `SSM_Students_List_${new Date().toISOString().split('T')[0]}.csv`;
   downloadCSV(csv, filename);
 }
 
-// 2. Export Fee Register
 export function exportFeesToCSV(fees: FeeRecord[], students: Student[]) {
-  const headers = ['Receipt No', 'Roll No', 'Student Name', 'Class', 'Term', 'Academic Year', 'Total Amount', 'Paid Amount', 'Status', 'Payment Mode', 'Paid Date'];
-  
-  const rows = fees.map(f => {
-    const student = students.find(s => s.id === f.studentId);
-    return [
-      f.receiptNo || 'N/A',
-      student ? student.rollNo : 'N/A',
-      student ? `"${student.name}"` : 'Unknown',
-      student ? `"${student.class}"` : 'N/A',
-      `"${f.term}"`,
-      f.academicYear,
-      f.totalAmount,
-      f.paidAmount,
-      f.status,
-      `"${f.paymentMode || ''}"`,
-      f.paidDate || ''
-    ];
-  });
-
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const csv = generateFeesCSV(fees, students);
   const filename = `SSM_Fee_Register_${new Date().toISOString().split('T')[0]}.csv`;
   downloadCSV(csv, filename);
 }
 
-// 3. Export Attendance Sheet
 export function exportAttendanceToCSV(attendance: AttendanceRecord[], students: Student[], date: string) {
-  const headers = ['Date', 'Roll No', 'Student Name', 'Class', 'Section', 'Status'];
-  
-  const filtered = attendance.filter(a => a.date === date);
-  const rows = (filtered.length > 0 ? filtered : students.map(s => ({ studentId: s.id, date, status: 'Present' }))).map(a => {
-    const student = students.find(s => s.id === a.studentId);
-    return [
-      a.date,
-      student ? student.rollNo : 'N/A',
-      student ? `"${student.name}"` : 'Unknown',
-      student ? `"${student.class}"` : 'N/A',
-      student ? student.section : 'A',
-      a.status
-    ];
-  });
-
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const csv = generateAttendanceCSV(attendance, students, date);
   const filename = `SSM_Attendance_${date}.csv`;
   downloadCSV(csv, filename);
 }
-
