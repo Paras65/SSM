@@ -112,6 +112,15 @@ router.post('/auth/login', async (req, res) => {
 
     if (schoolId === '__developer__') {
       if (!isValidDeveloperPasscode(passcode)) {
+        await recordAuditLog({
+          schoolId: 'ssm-developer',
+          actorType: 'developer',
+          actorId: 'developer',
+          actorName: 'Developer Console',
+          action: 'DEVELOPER_LOGIN_FAILED',
+          description: 'अमान्य डेवलपर पासकोड से लॉगिन का असफल प्रयास',
+          req
+        });
         return res.status(401).json({
           error: 'अमान्य डेवलपर सुरक्षा पासकोड! (Invalid developer admin passcode)',
           code: 'INVALID_DEVELOPER_CREDENTIALS'
@@ -122,6 +131,16 @@ router.post('/auth/login', async (req, res) => {
         schoolId: '*',
         role: 'developer',
         schoolName: 'SSM Developer Administration'
+      });
+
+      await recordAuditLog({
+        schoolId: 'ssm-developer',
+        actorType: 'developer',
+        actorId: 'developer',
+        actorName: 'Developer Console',
+        action: 'DEVELOPER_LOGIN_SUCCESS',
+        description: 'डेवलपर प्रशासन सफलतापूर्वक प्रमाणित हुआ।',
+        req
       });
 
       return res.json({
@@ -142,6 +161,15 @@ router.post('/auth/login', async (req, res) => {
     const isMatch = isValidAdminPasscode(school?.adminPasscode, passcode);
 
     if (!isMatch) {
+      await recordAuditLog({
+        schoolId: school?.id || schoolId || 'ssm-gorakhpur',
+        actorType: 'admin',
+        actorId: school?.id || schoolId || 'admin',
+        actorName: school?.name || 'प्रशासक',
+        action: 'ADMIN_LOGIN_FAILED',
+        description: `अमान्य एडमिन पासकोड से लॉगिन का असफल प्रयास (शाखा: ${schoolId || 'अज्ञात'})`,
+        req
+      });
       return res.status(401).json({
         error: 'अमान्य सुरक्षा पासकोड! कृपया सही कोड दर्ज करें। (Invalid admin passcode)',
         code: 'INVALID_CREDENTIALS'
@@ -153,6 +181,16 @@ router.post('/auth/login', async (req, res) => {
       role: 'admin',
       schoolName: school?.name || 'Saraswati Shishu Mandir',
       tokenVersion: school?.tokenVersion || 1
+    });
+
+    await recordAuditLog({
+      schoolId: school?.id || schoolId || 'ssm-gorakhpur',
+      actorType: 'admin',
+      actorId: school?.id || schoolId || 'admin',
+      actorName: school?.name || 'प्रशासक',
+      action: 'ADMIN_LOGIN_SUCCESS',
+      description: `प्रशासक सफलतापूर्वक प्रमाणित हुआ (${school?.name || schoolId})`,
+      req
     });
 
     res.json({
@@ -198,6 +236,15 @@ router.post('/auth/student-login', async (req, res) => {
     const matchingStudents = await Student.find(queryFilter).lean();
 
     if (!matchingStudents || matchingStudents.length === 0) {
+      await recordAuditLog({
+        schoolId: schoolId || 'ssm-gorakhpur',
+        actorType: 'student',
+        actorId: rollNo,
+        actorName: `अनुक्रमांक: ${rollNo}`,
+        action: 'STUDENT_LOGIN_FAILED',
+        description: `छात्र पोर्टल पर असफल लॉगिन प्रयास (अनुक्रमांक: ${rollNo}, शाखा: ${schoolId})`,
+        req
+      });
       return res.status(401).json({ error: 'छात्र विवरण सत्यापित नहीं हो सके। (Invalid student details)', code: 'INVALID_CREDENTIALS' });
     }
 
@@ -218,6 +265,17 @@ router.post('/auth/student-login', async (req, res) => {
       studentId: student.id,
       studentClass: student.class
     });
+
+    await recordAuditLog({
+      schoolId: student.schoolId,
+      actorType: 'student',
+      actorId: student.id,
+      actorName: student.name,
+      action: 'STUDENT_LOGIN_SUCCESS',
+      description: `छात्र ${student.name} (अनुक्रमांक: ${student.rollNo}, कक्षा: ${student.class}) द्वारा पोर्टल लॉगिन`,
+      req
+    });
+
     res.json({ success: true, token, student });
   } catch (err) {
     res.status(500).json({ error: 'छात्र प्रमाणीकरण त्रुटि: ' + err.message });
@@ -239,11 +297,29 @@ router.post('/auth/teacher-login', async (req, res) => {
 
     const teacher = await Staff.findOne(filter).lean();
     if (!teacher) {
+      await recordAuditLog({
+        schoolId: schoolId || 'ssm-gorakhpur',
+        actorType: 'teacher',
+        actorId: phone,
+        actorName: `मोबाइल: ${phone}`,
+        action: 'TEACHER_LOGIN_FAILED',
+        description: `आचार्य पोर्टल पर असफल लॉगिन प्रयास (मोबाइल नहीं मिला: ${phone})`,
+        req
+      });
       return res.status(401).json({ error: 'आचार्य विवरण प्राप्त नहीं हुआ। कृपया सही मोबाइल दर्ज करें।', code: 'INVALID_CREDENTIALS' });
     }
 
     const expectedPin = teacher.pin || '1234';
     if (String(pin).trim() !== String(expectedPin).trim()) {
+      await recordAuditLog({
+        schoolId: teacher.schoolId,
+        actorType: 'teacher',
+        actorId: teacher.id,
+        actorName: teacher.name,
+        action: 'TEACHER_LOGIN_FAILED',
+        description: `आचार्य ${teacher.name} द्वारा अमान्य पिन दर्ज किया गया`,
+        req
+      });
       return res.status(401).json({ error: 'अमान्य सुरक्षा पिन! (Invalid PIN)', code: 'INVALID_PIN' });
     }
 
@@ -341,6 +417,19 @@ router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res
       { returnDocument: 'after', runValidators: true }
     );
     if (!school) return res.status(404).json({ error: 'School not found' });
+
+    if (updatePayload.adminPasscode) {
+      await recordAuditLog({
+        schoolId: school.id,
+        actorType: req.user?.role || 'admin',
+        actorId: req.user?.schoolId || req.user?.role || 'admin',
+        actorName: req.user?.schoolName || school.name,
+        action: 'PASSCODE_CHANGED',
+        description: `प्रशासक सुरक्षा पासकोड बदला गया एवं सक्रिय सत्र अमान्य (invalidated) किए गए (संस्करण: ${school.tokenVersion})`,
+        req
+      });
+    }
+
     res.json(school);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -407,6 +496,13 @@ router.post('/students/bulk', requireAdminAuth, requireSchoolScope, async (req, 
     }));
 
     const inserted = await Student.insertMany(docs, { ordered: false });
+    await recordAuditLog({
+      schoolId: targetSchoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'STUDENTS_BULK_IMPORTED',
+      description: `${inserted.length} नए छात्रों का डेटा सफलतापूर्वक आयात (Bulk Import) किया गया।`,
+      req
+    });
     res.status(201).json({ count: inserted.length, students: inserted });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -431,6 +527,13 @@ router.delete('/students/:id', requireAdminAuth, requireSchoolScope, async (req,
   try {
     const deleted = await Student.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Student not found' });
+    await recordAuditLog({
+      schoolId: deleted.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'STUDENT_DELETED',
+      description: `छात्र #${deleted.id} (${deleted.name}, कक्षा: ${deleted.class}, अनुक्रमांक: ${deleted.rollNo}) को स्थायी रूप से हटाया गया।`,
+      req
+    });
     res.json({ success: true, message: 'Student deleted', id: req.params.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -681,6 +784,13 @@ router.post('/fees', requireAdminAuth, requireSchoolScope, async (req, res) => {
     }
     const fee = new Fee(feeData);
     await fee.save();
+    await recordAuditLog({
+      schoolId: fee.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'FEE_DEMAND_CREATED',
+      description: `शुल्क मांग #${fee.id} सृजित: छात्र #${fee.studentId} के लिए ₹${fee.totalAmount || 0} (${fee.feeType || 'वार्षिक/मासिक शुल्क'}, सत्र: ${fee.academicYear})`,
+      req
+    });
     res.status(201).json(fee);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -701,6 +811,13 @@ router.put('/fees/:id/pay', requireAdminAuth, requireSchoolScope, async (req, re
     fee.paymentMode = paymentMode || 'Online UPI';
 
     await fee.save();
+    await recordAuditLog({
+      schoolId: fee.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'FEE_PAYMENT_COLLECTED',
+      description: `शुल्क भुगतान प्राप्त: छात्र #${fee.studentId} - रसीद संख्या: ${fee.receiptNo}, राशि: ₹${fee.paidAmount}, माध्यम: ${fee.paymentMode}`,
+      req
+    });
     res.json(fee);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -1056,6 +1173,13 @@ router.delete('/staff/:id', requireAdminAuth, requireSchoolScope, async (req, re
   try {
     const deleted = await Staff.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Staff member not found' });
+    await recordAuditLog({
+      schoolId: deleted.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'STAFF_REMOVED',
+      description: `कर्मचारी/आचार्य #${deleted.id} (${deleted.name}, पद: ${deleted.designation || 'आचार्य'}) को हटाया गया।`,
+      req
+    });
     res.json({ success: true, id: req.params.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1125,6 +1249,13 @@ router.patch('/exams/:id/lock', requireAdminAuth, requireSchoolScope, async (req
       { returnDocument: 'after', runValidators: true }
     );
     if (!exam) return res.status(404).json({ error: 'Exam not found' });
+    await recordAuditLog({
+      schoolId: exam.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: exam.isLocked ? 'EXAM_LOCKED' : 'EXAM_UNLOCKED',
+      description: `परीक्षा #${exam.id} (${exam.name || exam.term}) को ${exam.isLocked ? 'स्थिर/लॉक (Locked)' : 'अनलॉक (Unlocked)'} किया गया।`,
+      req
+    });
     res.json({ success: true, isLocked: exam.isLocked, exam });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -1223,6 +1354,16 @@ router.post('/exams/marks-bulk', requirePortalAuth, requireSchoolScope, async (r
         results.push(newReport);
       }
     }
+
+    await recordAuditLog({
+      schoolId: targetSchoolId,
+      actorType: req.user?.role || 'admin',
+      actorId: req.user?.staffId || req.user?.teacherId || '',
+      actorName: req.user?.name || req.user?.schoolName || 'आचार्य / व्यवस्थापक',
+      action: 'EXAM_MARKS_RECORDED',
+      description: `परीक्षा '${term}' (${year}) - विषय: ${subject} हेतु ${results.length} छात्रों के प्राप्तांक दर्ज/अद्यतन किए गए।`,
+      req
+    });
 
     res.json({ success: true, count: results.length, updated: results });
   } catch (err) {
