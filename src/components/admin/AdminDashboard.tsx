@@ -24,6 +24,7 @@ import { BonafideCertificateModal } from './BonafideCertificateModal';
 import { BulkNotificationModal } from './BulkNotificationModal';
 import { AuditLogModal } from './AuditLogModal';
 import { SessionManagementModal } from './SessionManagementModal';
+import { TabulationRegisterModal } from './TabulationRegisterModal';
 import { HelpGuideModal } from './HelpGuideModal';
 import { HelpTooltip } from '../common/HelpTooltip';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
@@ -149,6 +150,7 @@ export const AdminDashboard: React.FC = () => {
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
   const [showSessionManagementModal, setShowSessionManagementModal] = useState(false);
   const [showHelpGuideModal, setShowHelpGuideModal] = useState(false);
+  const [showTabulationModal, setShowTabulationModal] = useState(false);
 
   const [activeAdmitCard, setActiveAdmitCard] = useState<{ student: Student; exam: Exam } | null>(null);
   const [activeCharacterStudent, setActiveCharacterStudent] = useState<Student | null>(null);
@@ -736,6 +738,13 @@ export const AdminDashboard: React.FC = () => {
             <span>📝 परीक्षा व अंक</span>
           </button>
           <button
+            onClick={() => setShowTabulationModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+            title="कक्षावार समग्र परीक्षा परिणाम सारणी (Tabulation Register)"
+          >
+            <span>📋 टैबुलेशन रजिस्टर (TR)</span>
+          </button>
+          <button
             onClick={() => setShowTimetableModal(true)}
             className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
           >
@@ -992,6 +1001,17 @@ export const AdminDashboard: React.FC = () => {
                       परीक्षा समय-सारिणी व मार्क्स एंट्री
                     </span>
                     <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowTabulationModal(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-950 text-xs font-bold transition-all border border-orange-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileSpreadsheet className="w-4 h-4 text-orange-600" />
+                      समग्र परीक्षा परिणाम सारणी (TR Sheet)
+                    </span>
+                    <span className="text-orange-600">→</span>
                   </button>
 
                   <button
@@ -1802,6 +1822,16 @@ export const AdminDashboard: React.FC = () => {
                 <p className="text-xs text-stone-500">
                   सत्र 2025-26 • अर्धवार्षिक एवं वार्षिक परीक्षा परिणाम तथा पंचमुखी संस्कार मूल्यांकन
                 </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowTabulationModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
+                  title="कक्षावार समग्र परीक्षा परिणाम सारणी देखें व प्रिंट करें"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>समग्र परीक्षा परिणाम सारणी (TR Sheet)</span>
+                </button>
               </div>
             </div>
 
@@ -2749,6 +2779,11 @@ export const AdminDashboard: React.FC = () => {
       <SessionManagementModal
         isOpen={showSessionManagementModal}
         onClose={() => setShowSessionManagementModal(false)}
+      />
+
+      <TabulationRegisterModal
+        isOpen={showTabulationModal}
+        onClose={() => setShowTabulationModal(false)}
       />
 
       <HelpGuideModal

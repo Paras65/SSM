@@ -923,7 +923,10 @@ router.post('/fees/rollover-arrears', requireAdminAuth, requireSchoolScope, asyn
 router.get('/reports', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    const reports = await ReportCard.find(filter);
+    if (req.query.examTerm) filter.examTerm = req.query.examTerm;
+    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
+    if (req.query.studentId) filter.studentId = req.query.studentId;
+    const reports = await ReportCard.find(filter).lean();
     res.json(reports);
   } catch (err) {
     res.status(500).json({ error: err.message });

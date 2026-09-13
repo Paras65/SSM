@@ -281,9 +281,13 @@ export const api = {
   },
 
   // ================= REPORT CARDS =================
-  async getReports(schoolId?: string): Promise<ReportCard[]> {
-    const url = schoolId ? `/reports?schoolId=${encodeURIComponent(schoolId)}` : '/reports';
-    const res = await apiFetch(url);
+  async getReports(schoolId?: string, term?: string, academicYear?: string): Promise<ReportCard[]> {
+    const params = new URLSearchParams();
+    if (schoolId) params.append('schoolId', schoolId);
+    if (term) params.append('examTerm', term);
+    if (academicYear) params.append('academicYear', academicYear);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/reports${qs}`);
     return handleJsonResponse<ReportCard[]>(res, 'Failed to fetch report cards');
   },
 

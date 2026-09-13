@@ -92,7 +92,7 @@ export interface FeeRecord {
 
 export interface SubjectMarks {
   subject: string;
-  code: string;
+  code?: string;
   maxMarks: number;
   marksObtained: number;
   grade: string;
