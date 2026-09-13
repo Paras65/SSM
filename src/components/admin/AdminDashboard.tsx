@@ -24,6 +24,8 @@ import { BonafideCertificateModal } from './BonafideCertificateModal';
 import { BulkNotificationModal } from './BulkNotificationModal';
 import { AuditLogModal } from './AuditLogModal';
 import { SessionManagementModal } from './SessionManagementModal';
+import { HelpGuideModal } from './HelpGuideModal';
+import { HelpTooltip } from '../common/HelpTooltip';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
 import { api } from '../../services/api';
@@ -146,6 +148,7 @@ export const AdminDashboard: React.FC = () => {
   const [showBulkNotificationModal, setShowBulkNotificationModal] = useState(false);
   const [showAuditLogModal, setShowAuditLogModal] = useState(false);
   const [showSessionManagementModal, setShowSessionManagementModal] = useState(false);
+  const [showHelpGuideModal, setShowHelpGuideModal] = useState(false);
 
   const [activeAdmitCard, setActiveAdmitCard] = useState<{ student: Student; exam: Exam } | null>(null);
   const [activeCharacterStudent, setActiveCharacterStudent] = useState<Student | null>(null);
@@ -779,6 +782,13 @@ export const AdminDashboard: React.FC = () => {
             className="py-3 px-2.5 border-b-2 border-transparent text-amber-300 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
           >
             <span>🎓 सत्र व प्रोन्नति</span>
+          </button>
+          <button
+            onClick={() => setShowHelpGuideModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-emerald-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1.5"
+            title="व्यवस्थापक मार्गदर्शिका व समस्या निवारक"
+          >
+            <span>❓ मार्गदर्शिका</span>
           </button>
         </div>
       </header>
@@ -2739,6 +2749,13 @@ export const AdminDashboard: React.FC = () => {
       <SessionManagementModal
         isOpen={showSessionManagementModal}
         onClose={() => setShowSessionManagementModal(false)}
+      />
+
+      <HelpGuideModal
+        isOpen={showHelpGuideModal}
+        onClose={() => setShowHelpGuideModal(false)}
+        onOpenSessionModal={() => setShowSessionManagementModal(true)}
+        onOpenAuditModal={() => setShowAuditLogModal(true)}
       />
 
       {/* Single Item Document Modals */}

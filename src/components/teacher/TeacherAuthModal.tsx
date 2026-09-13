@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { api } from '../../services/api';
 import { X, Lock, Phone, GraduationCap, AlertCircle } from 'lucide-react';
+import { HelpTooltip } from '../common/HelpTooltip';
 
 interface TeacherAuthModalProps {
   isOpen: boolean;
@@ -81,9 +82,15 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block font-bold text-stone-700 mb-1">
-              पंजीकृत मोबाइल नंबर (Registered Mobile)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-bold text-stone-700">
+                पंजीकृत मोबाइल नंबर (Registered Mobile)
+              </label>
+              <HelpTooltip
+                title="आचार्य मोबाइल नंबर"
+                content="विद्यालय रिकॉर्ड में पंजीकृत 10 अंकों का मोबाइल नंबर दर्ज करें।"
+              />
+            </div>
             <div className="relative">
               <Phone className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
               <input
@@ -98,9 +105,15 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block font-bold text-stone-700 mb-1">
-              सुरक्षा पिन (4-Digit PIN)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-bold text-stone-700">
+                सुरक्षा पिन (4-Digit PIN)
+              </label>
+              <HelpTooltip
+                title="आचार्य सुरक्षा पिन"
+                content="विद्यालय द्वारा निर्धारित 4-अंकीय पिन दर्ज करें। डिफ़ॉल्ट पिन '1234' है। यदि आप पिन भूल गए हैं, तो अपने विद्यालय व्यवस्थापक से संपर्क करें।"
+              />
+            </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
               <input

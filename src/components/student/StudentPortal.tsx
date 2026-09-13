@@ -9,6 +9,7 @@ import { LeaveApplicationModal } from '../common/LeaveApplicationModal';
 import { AdmitCardModal } from '../admin/AdmitCardModal';
 import { CharacterCertificateModal } from '../admin/CharacterCertificateModal';
 import { BonafideCertificateModal } from '../admin/BonafideCertificateModal';
+import { HelpTooltip } from '../common/HelpTooltip';
 import type { Homework, Exam } from '../../types';
 import {
   ArrowLeft,
@@ -138,7 +139,13 @@ export const StudentPortal: React.FC = () => {
               <input required value={rollNo} onChange={event => setRollNo(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" placeholder="उदा. 101" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">कक्षा (ऐच्छिक / सहोदर हेतु)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-stone-700">कक्षा (सहोदर हेतु)</label>
+                <HelpTooltip
+                  title="सहोदर टकराव निवारण"
+                  content="यदि एक ही मोबाइल नंबर पर दो भाई-बहन पंजीकृत हैं, तो उस बच्चे की कक्षा चुनें जिसका पोर्टल खोलना चाहते हैं।"
+                />
+              </div>
               <select value={studentClass} onChange={event => setStudentClass(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white">
                 <option value="">सभी कक्षाएं</option>
                 {classes.map(c => (
@@ -148,7 +155,13 @@ export const StudentPortal: React.FC = () => {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">पंजीकृत मोबाइल नंबर</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-stone-700">पंजीकृत मोबाइल नंबर</label>
+              <HelpTooltip
+                title="मोबाइल नंबर सहायता"
+                content="विद्यालय में पंजीकृत 10 अंकों का मोबाइल नंबर दर्ज करें। +91 या 0 लगाने की आवश्यकता नहीं है।"
+              />
+            </div>
             <input required type="tel" value={contact} onChange={event => setContact(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="+91 98765 43210" />
           </div>
           <button type="submit" disabled={isLoggingIn} className="w-full py-3 rounded-xl bg-orange-700 hover:bg-orange-800 disabled:opacity-60 text-white text-sm font-bold">{isLoggingIn ? 'सत्यापन हो रहा है...' : 'सुरक्षित प्रवेश करें'}</button>

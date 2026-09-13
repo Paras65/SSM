@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Calendar
 } from 'lucide-react';
+import { HelpTooltip } from '../common/HelpTooltip';
 
 interface SessionManagementModalProps {
   isOpen: boolean;
@@ -316,6 +317,10 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
           >
             <GraduationCap className="w-4 h-4" />
             <span>1. कक्षा-वार छात्र प्रोन्नति ({classStudents.length})</span>
+            <HelpTooltip
+              title="छात्र प्रोन्नति"
+              content="वार्षिक परीक्षा परिणाम के बाद ही छात्रों को प्रमोट करें। 10वीं/12वीं के उत्तीर्ण छात्र Alumni बन जाएंगे और पिछला शैक्षणिक इतिहास सुरक्षित रहेगा।"
+            />
           </button>
           <button
             onClick={() => setActiveTab('fee_rollover')}
@@ -327,6 +332,10 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
           >
             <Receipt className="w-4 h-4" />
             <span>2. बकाया शुल्क अंतरण (₹{totalArrearsAmount.toLocaleString()})</span>
+            <HelpTooltip
+              title="बकाया शुल्क अंतरण"
+              content="गत सत्र का बकाया शुल्क नए सत्र में स्थानांतरित करें। सिस्टम छात्र-वार जांच करता है ताकि एक ही सत्र का बकाया दो बार न जुड़े।"
+            />
           </button>
           <button
             onClick={() => setActiveTab('exam_lock')}
@@ -338,6 +347,10 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
           >
             <ShieldCheck className="w-4 h-4" />
             <span>3. परीक्षा परिणाम स्थिरीकरण / लॉक</span>
+            <HelpTooltip
+              title="परीक्षा स्थिरीकरण"
+              content="परीक्षा को लॉक करने के बाद शिक्षक या अन्य उपयोगकर्ता अंकों में अनपेक्षित फेरबदल नहीं कर सकेंगे।"
+            />
           </button>
         </div>
 
