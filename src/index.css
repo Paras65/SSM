@@ -61,13 +61,37 @@
 }
 
 @media print {
-  body {
-    background: white !important;
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
   }
-  .no-print {
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background: white !important;
+    color: #1c1917 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print,
+  nav,
+  footer,
+  aside {
     display: none !important;
   }
+
   .print-only {
     display: block !important;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
