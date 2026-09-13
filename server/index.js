@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const apiRoutes = require('./routes/api');
 const seedDatabase = require('./seed');
+const { sanitizeNoSql } = require('./middleware/sanitize');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -86,6 +87,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
+app.use(sanitizeNoSql);
 
 // HTTP Request & Performance Logger
 app.use((req, res, next) => {

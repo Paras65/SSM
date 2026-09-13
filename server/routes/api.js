@@ -21,6 +21,7 @@ const InventoryItem = require('../models/InventoryItem');
 const AuditLog = require('../models/AuditLog');
 const { requireAdminAuth, requireStudentAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope, generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode } = require('../middleware/auth');
 const { calculateCurrentAcademicYear, isValidAcademicYearFormat } = require('../utils/sessionHelper');
+const { escapeRegex, cleanStringParam } = require('../middleware/sanitize');
 
 function generateUniqueId(prefix = 'item') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
@@ -106,12 +107,18 @@ async function executeSafeQuery(Model, filter, req, res, sort = { createdAt: -1 
 router.post('/auth/login', async (req, res) => {
   try {
     const { schoolId, passcode } = req.body;
-    if (!passcode) {
+    if (!passcode || typeof passcode !== 'string' || !passcode.trim()) {
       return res.status(400).json({ error: 'पासकोड दर्ज करना अनिवार्य है। (Passcode is required)' });
     }
+    if (schoolId !== undefined && typeof schoolId !== 'string') {
+      return res.status(400).json({ error: 'अमान्य शाखा आईडी प्रारूप! (Invalid schoolId format)' });
+    }
 
-    if (schoolId === '__developer__') {
-      if (!isValidDeveloperPasscode(passcode)) {
+    const cleanPasscode = passcode.trim();
+    const cleanSchoolId = schoolId ? schoolId.trim() : '';
+
+    if (cleanSchoolId === '__developer__') {
+      if (!isValidDeveloperPasscode(cleanPasscode)) {
         await recordAuditLog({
           schoolId: 'ssm-developer',
           actorType: 'developer',
@@ -153,12 +160,12 @@ router.post('/auth/login', async (req, res) => {
 
     // Find school to compare passcode
     let school = null;
-    if (schoolId) {
-      school = await School.findOne({ id: schoolId });
+    if (cleanSchoolId) {
+      school = await School.findOne({ id: cleanSchoolId });
     }
 
     // Only allow the configured school passcode; no universal fallback avoids weak admin access.
-    const isMatch = isValidAdminPasscode(school?.adminPasscode, passcode);
+    const isMatch = isValidAdminPasscode(school?.adminPasscode, cleanPasscode);
 
     if (!isMatch) {
       await recordAuditLog({
@@ -214,23 +221,27 @@ router.post('/auth/login', async (req, res) => {
 router.post('/auth/student-login', async (req, res) => {
   try {
     const { schoolId, rollNo, contact, studentClass } = req.body;
-    if (!schoolId || !rollNo || !contact) {
+    if (!schoolId || !rollNo || !contact || typeof schoolId !== 'string' || typeof rollNo !== 'string' || typeof contact !== 'string') {
       return res.status(400).json({ error: 'शाखा, अनुक्रमांक और मोबाइल नंबर आवश्यक हैं।' });
     }
-    if (String(schoolId).length > 100 || String(rollNo).length > 30 || String(contact).length > 30) {
+    const cleanSchoolId = schoolId.trim();
+    const cleanRollNo = rollNo.trim();
+    const cleanContact = contact.trim();
+
+    if (cleanSchoolId.length > 100 || cleanRollNo.length > 30 || cleanContact.length > 30) {
       return res.status(400).json({ error: 'छात्र लॉगिन विवरण अमान्य हैं।' });
     }
-    const digitsOnly = String(contact).replace(/\D/g, '').slice(-10);
-    const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : String(contact).trim();
+    const digitsOnly = cleanContact.replace(/\D/g, '').slice(-10);
+    const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : escapeRegex(cleanContact);
     
     const queryFilter = {
-      schoolId,
-      rollNo: String(rollNo).trim(),
+      schoolId: cleanSchoolId,
+      rollNo: cleanRollNo,
       contact: { $regex: pattern }
     };
 
-    if (studentClass) {
-      queryFilter.class = String(studentClass).trim();
+    if (studentClass && typeof studentClass === 'string') {
+      queryFilter.class = studentClass.trim();
     }
 
     const matchingStudents = await Student.find(queryFilter).lean();
@@ -285,14 +296,19 @@ router.post('/auth/student-login', async (req, res) => {
 router.post('/auth/teacher-login', async (req, res) => {
   try {
     const { schoolId, phone, pin } = req.body;
-    if (!phone || !pin) {
+    if (!phone || !pin || typeof phone !== 'string' || typeof pin !== 'string') {
       return res.status(400).json({ error: 'मोबाइल नंबर और पिन आवश्यक हैं।' });
     }
-    const digitsOnly = String(phone).replace(/\D/g, '').slice(-10);
-    const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : String(phone).trim();
+    if (schoolId !== undefined && typeof schoolId !== 'string') {
+      return res.status(400).json({ error: 'अमान्य शाखा आईडी प्रारूप!' });
+    }
+    const safePhone = phone.trim();
+    const safePin = pin.trim();
+    const digitsOnly = safePhone.replace(/\D/g, '').slice(-10);
+    const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : escapeRegex(safePhone);
     const filter = {
       phone: { $regex: pattern },
-      ...(schoolId ? { schoolId } : {})
+      ...(schoolId && typeof schoolId === 'string' ? { schoolId: schoolId.trim() } : {})
     };
 
     const teacher = await Staff.findOne(filter).lean();
@@ -403,6 +419,16 @@ router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res
     const updatePayload = { ...req.body };
     const targetFilter = { id: req.params.id, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) };
 
+    // Privilege Escalation Defense: Only developer role can change school plan subscription
+    if (!req.user || req.user.role !== 'developer') {
+      delete updatePayload.plan;
+    }
+
+    // Strip immutable primary keys and timestamps
+    delete updatePayload.id;
+    delete updatePayload._id;
+    delete updatePayload.createdAt;
+
     // If adminPasscode is updated, increment tokenVersion to invalidate existing stale sessions
     if (updatePayload.adminPasscode) {
       const existing = await School.findOne(targetFilter).lean();
@@ -439,11 +465,16 @@ router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res
 // ================= STUDENTS =================
 router.get('/students', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    if (req.query.class) filter.class = req.query.class;
-    if (req.query.section) filter.section = req.query.section;
-    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
-    if (req.query.status) filter.status = req.query.status;
+    const schoolId = cleanStringParam(req.query.schoolId);
+    const filter = schoolId ? { schoolId } : {};
+    const cls = cleanStringParam(req.query.class);
+    const sec = cleanStringParam(req.query.section);
+    const yr = cleanStringParam(req.query.academicYear);
+    const st = cleanStringParam(req.query.status);
+    if (cls) filter.class = cls;
+    if (sec) filter.section = sec;
+    if (yr) filter.academicYear = yr;
+    if (st) filter.status = st;
     await executeSafeQuery(Student, filter, req, res, { createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -511,9 +542,17 @@ router.post('/students/bulk', requireAdminAuth, requireSchoolScope, async (req, 
 
 router.put('/students/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    delete updateData.id;
+    delete updateData._id;
+    delete updateData.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updateData.schoolId;
+    }
+
     const student = await Student.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
-      req.body,
+      updateData,
       { returnDocument: 'after', runValidators: true }
     );
     if (!student) return res.status(404).json({ error: 'Student not found' });
@@ -760,10 +799,14 @@ router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req
 // ================= FEES =================
 router.get('/fees', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    if (req.query.studentId) filter.studentId = req.query.studentId;
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
+    const schoolId = cleanStringParam(req.query.schoolId);
+    const studentId = cleanStringParam(req.query.studentId);
+    const status = cleanStringParam(req.query.status);
+    const yr = cleanStringParam(req.query.academicYear);
+    const filter = schoolId ? { schoolId } : {};
+    if (studentId) filter.studentId = studentId;
+    if (status) filter.status = status;
+    if (yr) filter.academicYear = yr;
     await executeSafeQuery(Fee, filter, req, res, { createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -922,10 +965,14 @@ router.post('/fees/rollover-arrears', requireAdminAuth, requireSchoolScope, asyn
 // ================= REPORT CARDS =================
 router.get('/reports', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    if (req.query.examTerm) filter.examTerm = req.query.examTerm;
-    if (req.query.academicYear) filter.academicYear = req.query.academicYear;
-    if (req.query.studentId) filter.studentId = req.query.studentId;
+    const schoolId = cleanStringParam(req.query.schoolId);
+    const examTerm = cleanStringParam(req.query.examTerm);
+    const yr = cleanStringParam(req.query.academicYear);
+    const studentId = cleanStringParam(req.query.studentId);
+    const filter = schoolId ? { schoolId } : {};
+    if (examTerm) filter.examTerm = examTerm;
+    if (yr) filter.academicYear = yr;
+    if (studentId) filter.studentId = studentId;
     const reports = await ReportCard.find(filter).lean();
     res.json(reports);
   } catch (err) {
@@ -1160,9 +1207,17 @@ router.post('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => 
 
 router.put('/staff/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    delete updateData.id;
+    delete updateData._id;
+    delete updateData.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updateData.schoolId;
+    }
+
     const member = await Staff.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
-      req.body,
+      updateData,
       { returnDocument: 'after', runValidators: true }
     );
     if (!member) return res.status(404).json({ error: 'Staff member not found' });
@@ -1231,9 +1286,17 @@ router.put('/exams/:id', requirePortalAuth, requireSchoolScope, async (req, res)
       });
     }
 
+    const updateData = { ...req.body };
+    delete updateData.id;
+    delete updateData._id;
+    delete updateData.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updateData.schoolId;
+    }
+
     const updated = await Exam.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
-      req.body,
+      updateData,
       { returnDocument: 'after', runValidators: true }
     );
     res.json(updated);
@@ -1481,9 +1544,17 @@ router.post('/transport/routes', requirePortalAuth, requireSchoolScope, async (r
 
 router.put('/transport/routes/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    delete updateData.id;
+    delete updateData._id;
+    delete updateData.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updateData.schoolId;
+    }
+
     const updated = await TransportRoute.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
-      req.body,
+      updateData,
       { returnDocument: 'after', runValidators: true }
     );
     if (!updated) return res.status(404).json({ error: 'Route not found' });
@@ -1509,13 +1580,18 @@ router.delete('/transport/routes/:id', requirePortalAuth, requireSchoolScope, as
 // ================= LIBRARY (PUSTAKALAYA) =================
 router.get('/library/books', async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    if (req.query.category) filter.category = req.query.category;
-    if (req.query.search) {
+    const schoolId = cleanStringParam(req.query.schoolId);
+    const category = cleanStringParam(req.query.category);
+    const rawSearch = cleanStringParam(req.query.search);
+
+    const filter = schoolId ? { schoolId } : {};
+    if (category) filter.category = category;
+    if (rawSearch) {
+      const safeSearch = escapeRegex(rawSearch);
       filter.$or = [
-        { title: { $regex: req.query.search, $options: 'i' } },
-        { author: { $regex: req.query.search, $options: 'i' } },
-        { accessionNo: { $regex: req.query.search, $options: 'i' } }
+        { title: { $regex: safeSearch, $options: 'i' } },
+        { author: { $regex: safeSearch, $options: 'i' } },
+        { accessionNo: { $regex: safeSearch, $options: 'i' } }
       ];
     }
     await executeSafeQuery(Book, filter, req, res, { title: 1 });
@@ -1540,9 +1616,17 @@ router.post('/library/books', requirePortalAuth, requireSchoolScope, async (req,
 
 router.put('/library/books/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    delete updateData.id;
+    delete updateData._id;
+    delete updateData.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updateData.schoolId;
+    }
+
     const updated = await Book.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
-      req.body,
+      updateData,
       { returnDocument: 'after', runValidators: true }
     );
     if (!updated) return res.status(404).json({ error: 'Book not found' });
@@ -1646,9 +1730,17 @@ router.post('/inventory', requirePortalAuth, requireSchoolScope, async (req, res
 
 router.put('/inventory/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    delete updateData.id;
+    delete updateData._id;
+    delete updateData.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updateData.schoolId;
+    }
+
     const updated = await InventoryItem.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
-      req.body,
+      updateData,
       { returnDocument: 'after', runValidators: true }
     );
     if (!updated) return res.status(404).json({ error: 'Item not found' });

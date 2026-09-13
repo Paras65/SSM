@@ -214,3 +214,4 @@ export function generateTabulationCSV(
 
   return '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 }
+
