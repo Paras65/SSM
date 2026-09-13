@@ -26,7 +26,9 @@ import {
   CheckCheck,
   XCircle,
   Sun,
-  MessageSquare
+  MessageSquare,
+  Lightbulb,
+  X
 } from 'lucide-react';
 
 type TeacherTab = 'attendance' | 'homework' | 'marks' | 'timetable' | 'leaves' | 'salary';
@@ -46,6 +48,7 @@ export const TeacherPortal: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState('Class 8');
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [attendanceSearch, setAttendanceSearch] = useState('');
+  const [showTips, setShowTips] = useState(true);
 
   // Quick subject chips
   const QUICK_SUBJECTS = ['गणित', 'हिन्दी', 'विज्ञान', 'अंग्रेज़ी', 'संस्कृत', 'सामाजिक विज्ञान', 'कम्प्यूटर'];
@@ -314,6 +317,19 @@ export const TeacherPortal: React.FC = () => {
 
           <div className="flex items-center gap-2 text-xs shrink-0">
             <button
+              onClick={() => setShowTips(!showTips)}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs shrink-0 ${
+                showTips
+                  ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40 hover:bg-amber-500/30'
+                  : 'bg-orange-900/60 text-orange-200 hover:bg-orange-900'
+              }`}
+              title="आचार्य त्वरित सुझाव देखें या छुपाएं"
+            >
+              <Lightbulb className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">{showTips ? 'सुझाव सक्रिय' : 'सुझाव देखें'}</span>
+            </button>
+
+            <button
               onClick={handleLogout}
               className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-800 hover:bg-red-700 text-white font-bold transition shadow-xs text-xs shrink-0"
               title="लॉगआउट"
@@ -455,6 +471,28 @@ export const TeacherPortal: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Quick Tip for Teachers */}
+            {showTips && (
+              <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-amber-950 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-1.5 rounded-xl bg-amber-200 text-amber-900 shrink-0">
+                    <Lightbulb className="w-4 h-4 text-amber-800" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-amber-900">💡 आचार्य सुझाव (30 सेकंड में हाजिरी): </span>
+                    <span>पहले <strong>"सभी उपस्थित"</strong> बटन दबाएं, फिर केवल गैर-हाजिर (अनुपस्थित) 2-3 बच्चों के आगे <strong>'A'</strong> चुनें। एक-एक बच्चे पर अलग-अलग क्लिक करने का समय बचेगा!</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowTips(false)}
+                  className="text-stone-400 hover:text-stone-700 text-xs shrink-0 p-1 rounded-lg hover:bg-amber-100"
+                  title="सुझाव छुपाएं"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Live Attendance Stats Counter Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -616,6 +654,28 @@ export const TeacherPortal: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Quick Tip for Teachers */}
+            {showTips && (
+              <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-amber-950 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-1.5 rounded-xl bg-amber-200 text-amber-900 shrink-0">
+                    <Lightbulb className="w-4 h-4 text-amber-800" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-amber-900">💡 आचार्य सुझाव (अभिभावक व्हाट्सएप ब्रॉडकास्ट): </span>
+                    <span>विषय चिप्स (उदा. <strong>गणित, हिन्दी</strong>) पर 1-क्लिक करके विषय चुनें। गृहकार्य प्रकाशित होते ही नीचे <strong>"व्हाट्सएप साझा"</strong> बटन दबाएं — अभिभावकों के क्लास ग्रुप में संरचित संदेश तुरंत चला जाएगा!</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowTips(false)}
+                  className="text-stone-400 hover:text-stone-700 text-xs shrink-0 p-1 rounded-lg hover:bg-amber-100"
+                  title="सुझाव छुपाएं"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {showAddHw && (
               <form onSubmit={handleCreateHomework} className="bg-white p-5 rounded-3xl border-2 border-orange-300 shadow-md space-y-4 text-xs">
@@ -816,6 +876,28 @@ export const TeacherPortal: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Quick Tip for Teachers */}
+            {showTips && (
+              <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-amber-950 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-1.5 rounded-xl bg-amber-200 text-amber-900 shrink-0">
+                    <Lightbulb className="w-4 h-4 text-amber-800" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-amber-900">💡 आचार्य सुझाव (तीव्र कीबोर्ड एंट्री): </span>
+                    <span>अंक टाइप करके कीबोर्ड का <strong>Enter</strong> या <strong>↓ (Down Arrow)</strong> दबाएं — कर्सर खुद अगले छात्र पर जाएगा (माउस छूने की आवश्यकता नहीं)। जो छात्र परीक्षा में नहीं आया, उसके आगे <strong>'AB'</strong> दबाएं!</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowTips(false)}
+                  className="text-stone-400 hover:text-stone-700 text-xs shrink-0 p-1 rounded-lg hover:bg-amber-100"
+                  title="सुझाव छुपाएं"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Live Class Statistics Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
@@ -1032,6 +1114,28 @@ export const TeacherPortal: React.FC = () => {
                 {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+
+            {/* Quick Tip for Teachers */}
+            {showTips && (
+              <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-amber-950 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-1.5 rounded-xl bg-amber-200 text-amber-900 shrink-0">
+                    <Lightbulb className="w-4 h-4 text-amber-800" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-amber-900">💡 आचार्य सुझाव (दैनिक कक्षा कार्यक्रम): </span>
+                    <span>आज की घंटियां (Periods 1-8) सबसे ऊपर दी गई हैं, जिससे आपको विद्यालय पहुंचते ही स्पष्ट पता रहेगा कि किस घंटी में किस कक्षा में जाना है।</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowTips(false)}
+                  className="text-stone-400 hover:text-stone-700 text-xs shrink-0 p-1 rounded-lg hover:bg-amber-100"
+                  title="सुझाव छुपाएं"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Today's Priority Schedule Banner */}
             <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/50 p-5 rounded-3xl shadow-xs space-y-3">
