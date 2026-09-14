@@ -337,7 +337,7 @@ export const AdmissionInquiry: React.FC = () => {
                   <div className="p-3 bg-amber-50/80 border border-amber-300 rounded-xl space-y-2">
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900">
                       <ShieldCheck className="w-4 h-4 text-orange-600 shrink-0" />
-                      <span>डिजिटल व्यक्तिगत डेटा संरक्षण (DPDP Act 2023) अभिभावक सहमति:</span>
+                      <span>अभिभावक डेटा सुरक्षा सहमति:</span>
                     </div>
                     <label className="flex items-start gap-2.5 text-xs text-stone-700 cursor-pointer">
                       <input
@@ -354,7 +354,7 @@ export const AdmissionInquiry: React.FC = () => {
                           onClick={() => setShowPrivacyModal(true)}
                           className="font-bold text-orange-700 hover:text-orange-900 underline inline-flex items-center gap-0.5"
                         >
-                          {t('privacyNotice')} (DPDP Policy)
+                          {t('privacyNotice')}
                         </button>
                       </span>
                     </label>

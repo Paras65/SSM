@@ -69,10 +69,10 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({ onOpenSign
     {
       id: 'security',
       icon: ShieldCheck,
-      badge: 'DPDP Act 2023',
+      badge: 'सुरक्षित डेटा',
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
       title: 'डेटा सुरक्षा व सामान्य बैकअप',
-      desc: 'भारत के डेटा संरक्षण कानून (DPDP Act 2023) का सामान्य अनुपालन। इंटरनेट न होने पर भी ऑफलाइन कैशिंग, और शाम को संपूर्ण डेटा का 1-क्लिक सुरक्षित बैकअप।',
+      desc: 'सुरक्षित डेटा संरक्षण, ऑफलाइन कैशिंग और शाम को 1-क्लिक सुरक्षित बैकअप की सुविधा। आपके विद्यालय का डिजिटल डेटा हमेशा संरक्षित और सुलभ रहता है।',
       features: ['ऑफलाइन PWA समर्थन', '1-क्लिक JSON बैकअप व रीस्टोर', 'ज़ीरो डेटा लीक गारंटी']
     }
   ];

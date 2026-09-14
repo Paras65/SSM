@@ -94,7 +94,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-medium cursor-pointer"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
-                  <span>{t('privacyNotice')} (DPDP Act 2023)</span>
+                  <span>{t('privacyNotice')}</span>
                 </button>
               </li>
               <li><a href="#terms" className="hover:text-orange-400 transition-colors">{t('termsOfUse')}</a></li>
@@ -164,7 +164,7 @@ export const Footer: React.FC = () => {
               <Lock className="w-4 h-4" />
             </span>
             <span>
-              <strong className="text-amber-300">DPDP Act 2023 का अनुपालन:</strong> छात्र डेटा 100% सुरक्षित, एन्क्रिप्टेड एवं विज्ञापन-मुक्त (No Ads & No Tracking) है।
+              <strong className="text-amber-300">डेटा सुरक्षा का अनुपालन:</strong> छात्र डेटा 100% सुरक्षित, एन्क्रिप्टेड एवं विज्ञापन-मुक्त (No Ads & No Tracking) है।
             </span>
           </div>
           <div className="flex items-center gap-3">

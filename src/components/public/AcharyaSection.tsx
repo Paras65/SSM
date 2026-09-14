@@ -10,7 +10,7 @@ export const AcharyaSection: React.FC = () => {
   const [liveStaff, setLiveStaff] = useState<Staff[]>([]);
 
   useEffect(() => {
-    if (isDemoMode) {
+    if (isDemoMode || !currentSchool.id) {
       setLiveStaff([]);
       return;
     }
@@ -22,7 +22,7 @@ export const AcharyaSection: React.FC = () => {
         }
       })
       .catch(() => {
-        // Fall back gracefully if server offline
+        if (isMounted) setLiveStaff([]);
       });
 
     return () => {
@@ -30,47 +30,38 @@ export const AcharyaSection: React.FC = () => {
     };
   }, [currentSchool.id, isDemoMode]);
 
-  // Dynamic faculty list: Live MongoDB data first, fallback to mock in demo/offline
   const facultyList = useMemo(() => {
-    if (liveStaff.length > 0) {
-      return liveStaff.map(member => {
-        const isDidi = member.gender === 'Didi';
-        const title = isDidi ? 'दीदी जी' : 'आचार्य जी';
-        const subjectsList = member.subjects
-          ? member.subjects.split(',').map(s => s.trim()).filter(Boolean)
-          : ['समस्त विषय'];
-
-        let experienceStr = 'अनुभवी';
-        if (member.joiningDate) {
-          const joinYear = parseInt(member.joiningDate.split('-')[0], 10);
-          if (!isNaN(joinYear)) {
-            const yrs = Math.max(1, new Date().getFullYear() - joinYear);
-            experienceStr = `${yrs} वर्ष`;
-          }
-        }
-
-        return {
-          id: member.id,
-          name: member.name,
-          title,
-          designation: member.designation,
-          qualification: member.qualification || 'स्नातकोत्तर / बी.एड.',
-          experience: experienceStr,
-          subjects: subjectsList
-        };
-      });
+    if (liveStaff.length === 0) {
+      return [];
     }
 
-    return INITIAL_ACHARYAS.map((ach, idx) => {
-      if (idx === 0 && currentSchool.principalName) {
-        return {
-          ...ach,
-          name: currentSchool.principalName
-        };
+    return liveStaff.map(member => {
+      const isDidi = member.gender === 'Didi';
+      const title = isDidi ? 'दीदी जी' : 'आचार्य जी';
+      const subjectsList = member.subjects
+        ? member.subjects.split(',').map(s => s.trim()).filter(Boolean)
+        : ['समस्त विषय'];
+
+      let experienceStr = 'अनुभवी';
+      if (member.joiningDate) {
+        const joinYear = parseInt(member.joiningDate.split('-')[0], 10);
+        if (!isNaN(joinYear)) {
+          const yrs = Math.max(1, new Date().getFullYear() - joinYear);
+          experienceStr = `${yrs} वर्ष`;
+        }
       }
-      return ach;
+
+      return {
+        id: member.id,
+        name: member.name,
+        title,
+        designation: member.designation,
+        qualification: member.qualification || 'स्नातकोत्तर / बी.एड.',
+        experience: experienceStr,
+        subjects: subjectsList
+      };
     });
-  }, [liveStaff, currentSchool.principalName]);
+  }, [liveStaff]);
 
   return (
     <section id="acharyas" className="py-16 bg-gradient-to-b from-stone-50 via-amber-50/30 to-white border-b border-orange-200">

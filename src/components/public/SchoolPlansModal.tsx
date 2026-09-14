@@ -337,10 +337,10 @@ export const SchoolPlansModal: React.FC<SchoolPlansModalProps> = ({
               </div>
               <div>
                 <h4 className="font-bold text-stone-900 dark:text-white">
-                  विद्या भारती विद्यालय गरिमा एवं DPDP Act 2023 अनुपालन
+                  विद्या भारती विद्यालय गरिमा एवं सुरक्षित डेटा संचालन
                 </h4>
                 <p className="text-stone-600 dark:text-stone-400 text-[11px] mt-0.5">
-                  कोई व्यावसायिक विज्ञापन नहीं • 100% डेटा स्वामित्व आपके विद्यालय का • सुरक्षित भारतीय क्लाउड सर्वर
+                  कोई व्यावसायिक विज्ञापन नहीं • 100% डेटा स्वामित्व आपके विद्यालय का • सुरक्षित क्लाउड सर्वर
                 </p>
               </div>
             </div>

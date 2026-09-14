@@ -3,26 +3,26 @@ import type { School, Student, AttendanceRecord, FeeRecord, ReportCard, Notice, 
 import { INITIAL_STUDENTS, INITIAL_FEES, INITIAL_REPORT_CARDS, INITIAL_NOTICES } from '../data/mockData';
 import { api } from '../services/api';
 
-const DEFAULT_FALLBACK_SCHOOL: School = {
-  id: 'ssm-national',
-  name: 'Saraswati Shishu Mandir Digital ERP System (SSM ERP)',
-  hindiName: 'सरस्वती शिशु मंदिर डिजिटल ईआरपी प्रणाली (SSM ERP)',
-  tagline: 'सा विद्या या विमुक्तये (That is knowledge which liberates)',
-  affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान',
-  affiliationNo: 'VB-CENTRAL-001',
-  established: '1952',
-  address: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEFAULT_ADDRESS) || 'SSM ERP',
-  city: 'अखिल भारतीय',
-  state: 'भारत',
-  prant: 'विद्या भारती',
-  phone: (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_SUPPORT_PHONE || import.meta.env?.VITE_DEFAULT_PHONE)) || '+91 94150 00000',
-  email: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_UPGRADE_CONTACT) || 'support@init65.co.in',
-  timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
-  principalName: 'केंद्रीय समन्वय समिति',
-  adminPasscode: '1952',
+const EMPTY_SCHOOL: School = {
+  id: '',
+  name: 'School not configured',
+  hindiName: 'विद्यालय आवंटित नहीं है',
+  tagline: '',
+  affiliate: '',
+  affiliationNo: '',
+  established: '',
+  address: '',
+  city: '',
+  state: '',
+  prant: '',
+  phone: '',
+  email: '',
+  timings: '',
+  principalName: '',
+  adminPasscode: '',
   plan: 'free',
-  udiseCode: '09000000000',
-  website: 'https://www.init65.co.in'
+  udiseCode: '',
+  website: ''
 };
 
 const HISTORIC_GORAKHPUR_BRANCH: School = {
@@ -159,14 +159,14 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
-  const [schools, setSchools] = useState<School[]>([DEFAULT_FALLBACK_SCHOOL, HISTORIC_GORAKHPUR_BRANCH]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [currentSchoolId, setCurrentSchoolIdState] = useState<string>(() => {
-    return readStorage('ssm_current_school_id') || 'ssm-national';
+    return readStorage('ssm_current_school_id') || '';
   });
 
   const currentSchool = isDemoMode
     ? DEMO_SANDBOX_SCHOOL
-    : (schools.find(s => s.id === currentSchoolId) || schools[0] || DEFAULT_FALLBACK_SCHOOL);
+    : (schools.find(s => s.id === currentSchoolId) || schools[0] || EMPTY_SCHOOL);
   const publicSchool = currentSchool;
 
   // DB connection status
@@ -174,23 +174,15 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [dbHost, setDbHost] = useState<string>('MongoDB Atlas');
 
   // Live Database-Driven Collections (empty by default; populated via MongoDB API)
-  const [students, setStudents] = useState<Student[]>(() => {
-    return isDemoMode ? INITIAL_STUDENTS : [];
-  });
+  const [students, setStudents] = useState<Student[]>([]);
 
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
 
-  const [feeRecords, setFeeRecords] = useState<FeeRecord[]>(() => {
-    return isDemoMode ? INITIAL_FEES : [];
-  });
+  const [feeRecords, setFeeRecords] = useState<FeeRecord[]>([]);
 
-  const [reportCards, setReportCards] = useState<ReportCard[]>(() => {
-    return isDemoMode ? INITIAL_REPORT_CARDS : [];
-  });
+  const [reportCards, setReportCards] = useState<ReportCard[]>([]);
 
-  const [notices, setNotices] = useState<Notice[]>(() => {
-    return isDemoMode ? INITIAL_NOTICES : [];
-  });
+  const [notices, setNotices] = useState<Notice[]>([]);
 
   // Switch active school
   const setCurrentSchoolId = (id: string) => {
@@ -214,8 +206,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Fetch schools list first (publicly accessible)
         const dbSchools = await api.getSchools().catch(() => []);
         if (dbSchools.length > 0) {
-          const hasNational = dbSchools.some(s => s.id === 'ssm-national');
-          setSchools(hasNational ? dbSchools : [DEFAULT_FALLBACK_SCHOOL, ...dbSchools]);
+          setSchools(dbSchools);
+        } else {
+          setSchools([]);
         }
 
         // Always fetch public notices for the active school so parents see live notices
@@ -259,10 +252,22 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       } else {
         setDbStatus('offline');
+        setSchools([]);
+        setStudents([]);
+        setAttendanceRecords([]);
+        setFeeRecords([]);
+        setReportCards([]);
+        setNotices([]);
       }
     } catch (err) {
       console.warn('MongoDB API not reachable, using offline cache:', err);
       setDbStatus('offline');
+      setSchools([]);
+      setStudents([]);
+      setAttendanceRecords([]);
+      setFeeRecords([]);
+      setReportCards([]);
+      setNotices([]);
     }
   };
 
@@ -324,6 +329,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // storage unavailable
     }
     setIsDemoMode(true);
+    setSchools([DEMO_SANDBOX_SCHOOL]);
+    setCurrentSchoolIdState('ssm-demo');
+    localStorage.setItem('ssm_current_school_id', 'ssm-demo');
     setStudents(INITIAL_STUDENTS);
     setFeeRecords(INITIAL_FEES);
     setReportCards(INITIAL_REPORT_CARDS);

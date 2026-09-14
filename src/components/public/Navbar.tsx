@@ -637,13 +637,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   आचार्य एवं दीदी जी (Faculty)
                 </a>
                 <a
-                  href="#alumni"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-lg hover:bg-orange-100 text-orange-900 font-bold"
-                >
-                  🎓 पूर्व छात्र परिषद (Alumni Corner)
-                </a>
-                <a
                   href="#gallery"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-3 py-2 rounded-lg hover:bg-orange-100 text-stone-800"

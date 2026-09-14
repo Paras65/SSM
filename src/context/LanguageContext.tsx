@@ -49,7 +49,7 @@ export const translations: Translations = {
   search: { hi: 'खोजें...', en: 'Search...', cg: 'खोजव...' },
   print: { hi: 'प्रिंट करें', en: 'Print Document', cg: 'छापव (प्रिंट)' },
   close: { hi: 'बंद करें', en: 'Close', cg: 'बंद करव' }
-  ,privacyNotice: { hi: 'गोपनीयता सूचना', en: 'Privacy Notice' }
+  ,privacyNotice: { hi: 'गोपनीयता नीति', en: 'Privacy Policy' }
   ,termsOfUse: { hi: 'उपयोग की शर्तें', en: 'Terms of Use' }
   ,guardianConsent: { hi: 'मैं छात्र का अभिभावक/अधिकृत संरक्षक हूं और चुनी गई शाखा द्वारा इस प्रवेश पूछताछ के लिए दिए गए विवरण के उपयोग और संपर्क की सहमति देता/देती हूं।', en: 'I am the student\'s parent or authorised guardian and consent to the selected branch using these details and contacting me about this admission enquiry.' }
   ,applicationFailed: { hi: 'आवेदन जमा नहीं हो सका। कृपया पुनः प्रयास करें या सीधे चुनी गई शाखा से संपर्क करें।', en: 'The application could not be submitted. Please try again or contact the selected branch directly.' }
