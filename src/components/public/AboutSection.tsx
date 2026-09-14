@@ -69,7 +69,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenSignUp }) => {
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span><strong>DPDP Act 2023 सुरक्षा:</strong> 100% विज्ञापन-मुक्त, सुरक्षित एवं स्वायत्त बहु-शाखा डेटाबेस।</span>
+                <span><strong>डेटा सुरक्षा:</strong> 100% विज्ञापन-मुक्त, सुरक्षित एवं स्वायत्त बहु-शाखा डेटाबेस।</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />

@@ -30,7 +30,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
               </h3>
               <p className="text-xs text-orange-100 flex items-center gap-1.5 mt-0.5">
                 <Lock className="w-3.5 h-3.5 text-yellow-300" />
-                <span>डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम (DPDP Act 2023) अनुपालित</span>
+                <span>डेटा सुरक्षा एवं गोपनीयता नीति</span>
               </p>
             </div>
           </div>

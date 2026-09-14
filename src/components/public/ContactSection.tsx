@@ -234,7 +234,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>DPDP Act 2023 के तहत पूर्ण डेटा संप्रभुता</span>
+                  <span>सुरक्षित छात्र डेटा प्रबंधन एवं पूर्ण डेटा संप्रभुता</span>
                 </div>
               </div>
             </div>

@@ -158,14 +158,14 @@ export const Footer: React.FC = () => {
 
         </div>
 
-        {/* DPDP Act 2023 Trust & Compliance Bar */}
+        {/* Data Protection Trust & Compliance Bar */}
         <div className="my-6 p-3.5 bg-stone-900/90 border border-orange-900/60 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-stone-300">
             <span className="p-1.5 rounded-lg bg-orange-950 border border-orange-800 text-orange-400">
               <Lock className="w-4 h-4" />
             </span>
             <span>
-              <strong className="text-amber-300">DPDP Act 2023 अनुपालित:</strong> छात्र डेटा 100% सुरक्षित, एन्क्रिप्टेड एवं विज्ञापन-मुक्त (No Ads & No Tracking) है।
+              <strong className="text-amber-300">डेटा सुरक्षा:</strong> छात्र डेटा 100% सुरक्षित, एन्क्रिप्टेड एवं विज्ञापन-मुक्त (No Ads & No Tracking) है।
             </span>
           </div>
           <div className="flex items-center gap-3">
