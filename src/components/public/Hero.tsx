@@ -174,19 +174,19 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-orange-200/80">
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
                 <span className="block text-2xl font-black text-orange-700">100%</span>
-                <span className="text-xs text-stone-600 font-medium">डिजिटल तैयार</span>
+                <span className="text-xs text-stone-600 font-medium">कागज-रहित ईआरपी</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
-                <span className="block text-2xl font-black text-orange-700">100%</span>
-                <span className="text-xs text-stone-600 font-medium">बोर्ड परीक्षा परिणाम</span>
+                <span className="block text-xl sm:text-2xl font-black text-orange-700">NEP 2020</span>
+                <span className="text-xs text-stone-600 font-medium">360° प्रगति पत्र</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
                 <span className="block text-2xl font-black text-orange-700">5+</span>
                 <span className="text-xs text-stone-600 font-medium">पंचमुखी आयाम</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
-                <span className="block text-2xl font-black text-orange-700">1000+</span>
-                <span className="text-xs text-stone-600 font-medium">सफल पुरातन छात्र</span>
+                <span className="block text-xl sm:text-2xl font-black text-orange-700">बहु-शाखा</span>
+                <span className="text-xs text-stone-600 font-medium">स्वायत्त क्लाउड</span>
               </div>
             </div>
 
