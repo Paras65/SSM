@@ -252,3 +252,4 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
     </div>
   );
 };
+

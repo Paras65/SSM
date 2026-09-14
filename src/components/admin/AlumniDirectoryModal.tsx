@@ -277,3 +277,4 @@ export const AlumniDirectoryModal: React.FC<AlumniDirectoryModalProps> = ({ isOp
     </div>
   );
 };
+

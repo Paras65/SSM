@@ -144,3 +144,4 @@ export const AlumniSection: React.FC = () => {
     </section>
   );
 };
+

@@ -40,3 +40,4 @@ export const DemoBanner: React.FC = () => {
     </div>
   );
 };
+

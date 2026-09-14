@@ -293,3 +293,4 @@ export const AlumniRegistrationModal: React.FC<AlumniRegistrationModalProps> = (
     </div>
   );
 };
+
