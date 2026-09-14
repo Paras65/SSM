@@ -666,7 +666,7 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={() => setShowSessionManagementModal(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold border border-amber-400/40 transition-colors shrink-0"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold border border-amber-400/40 transition-colors shrink-0"
               title="सत्र प्रबंधन, छात्र प्रोन्नति एवं बकाया शुल्क अंतरण"
             >
               <GraduationCap className="w-3.5 h-3.5 text-amber-300 shrink-0" />
@@ -676,7 +676,7 @@ export const AdminDashboard: React.FC = () => {
             {/* Proposal Print Button */}
             <button
               onClick={() => setShowProposalModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
               title="प्रधानाचार्य / प्रबंधक हेतु आधिकारिक A4 प्रस्ताव पत्र व कोटेशन प्रिंट करें"
             >
               <Printer className="w-3.5 h-3.5 text-yellow-200" />
@@ -1757,7 +1757,7 @@ export const AdminDashboard: React.FC = () => {
                   <option value="Class 10">Class 10</option>
                 </select>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => {
                       requirePro(
