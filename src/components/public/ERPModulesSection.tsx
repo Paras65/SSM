@@ -204,3 +204,4 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({ onOpenSign
     </section>
   );
 };
+

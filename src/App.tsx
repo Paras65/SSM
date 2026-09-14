@@ -10,9 +10,12 @@ import { VandanaCorner } from './components/public/VandanaCorner';
 import { AcharyaSection } from './components/public/AcharyaSection';
 import { AdmissionInquiry } from './components/public/AdmissionInquiry';
 import { Gallery } from './components/public/Gallery';
+import { AlumniSection } from './components/public/AlumniSection';
+import { TCVerificationModal } from './components/public/TCVerificationModal';
 import { Footer } from './components/public/Footer';
 import { LegalInformation } from './components/public/LegalInformation';
 import { OfflineBadge } from './components/common/OfflineBadge';
+import { DemoBanner } from './components/common/DemoBanner';
 import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 import { AdminAuthModal } from './components/admin/AdminAuthModal';
 import { ERPModulesSection } from './components/public/ERPModulesSection';
@@ -35,10 +38,11 @@ const PortalLoadingFallback: React.FC<{ label: string }> = ({ label }) => (
 );
 
 const SchoolApp: React.FC = () => {
-  const { viewMode, setViewMode } = useSchool();
+  const { viewMode, setViewMode, startDemoMode } = useSchool();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTeacherAuthModal, setShowTeacherAuthModal] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
+  const [showTcVerificationModal, setShowTcVerificationModal] = useState(false);
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
   const [schoolModalPlan, setSchoolModalPlan] = useState<'free' | 'pro'>('free');
 
@@ -80,6 +84,7 @@ const SchoolApp: React.FC = () => {
 
   return (
     <>
+      <DemoBanner />
       <OfflineBadge />
       {viewMode === 'admin' ? (
         <React.Suspense fallback={<PortalLoadingFallback label="व्यवस्थापक नियंत्रण पटल लोड हो रहा है..." />}>
@@ -100,6 +105,8 @@ const SchoolApp: React.FC = () => {
             onOpenLogin={handleOpenLogin}
             onOpenBranchList={handleOpenBranchList}
             onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
+            onOpenVerifyTc={() => setShowTcVerificationModal(true)}
+            onStartDemo={startDemoMode}
           />
           <main className="flex-1">
             <Hero
@@ -107,6 +114,8 @@ const SchoolApp: React.FC = () => {
               onOpenLogin={handleOpenLogin}
               onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
               onOpenBranchList={handleOpenBranchList}
+              onOpenVerifyTc={() => setShowTcVerificationModal(true)}
+              onStartDemo={startDemoMode}
             />
             <ERPModulesSection
               onOpenSignUp={() => handleOpenSignUp('free')}
@@ -119,6 +128,7 @@ const SchoolApp: React.FC = () => {
             <PanchmukhiShiksha />
             <VandanaCorner />
             <AcharyaSection />
+            <AlumniSection />
             <Gallery />
           </main>
           <LegalInformation />
@@ -149,6 +159,12 @@ const SchoolApp: React.FC = () => {
           setShowTeacherAuthModal(false);
           setViewMode('teacher');
         }}
+      />
+
+      {/* TC Verification Modal */}
+      <TCVerificationModal
+        isOpen={showTcVerificationModal}
+        onClose={() => setShowTcVerificationModal(false)}
       />
 
       {/* School Management Modal */}

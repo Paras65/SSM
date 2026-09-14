@@ -4,12 +4,14 @@ import { useLanguage } from '../../context/LanguageContext';
 import { Sparkles, Phone, Mail, MapPin, Clock, Heart, ShieldCheck, Lock, Crown } from 'lucide-react';
 import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 import { SchoolPlansModal } from './SchoolPlansModal';
+import { TCVerificationModal } from './TCVerificationModal';
 
 export const Footer: React.FC = () => {
   const { publicSchool } = useSchool();
   const { t } = useLanguage();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showPlansModal, setShowPlansModal] = useState(false);
+  const [showTcModal, setShowTcModal] = useState(false);
 
   return (
     <footer className="bg-gradient-to-b from-stone-900 via-stone-950 to-black text-white pt-14 pb-8 border-t-4 border-orange-600">
@@ -55,6 +57,16 @@ export const Footer: React.FC = () => {
               <li><a href="#notices" className="hover:text-orange-400 transition-colors">सूचनाएं एवं परीक्षा कार्यक्रम</a></li>
               <li><a href="#admissions" className="hover:text-orange-400 transition-colors">सत्र 2026-27 प्रवेश फॉर्म</a></li>
               <li><a href="#acharyas" className="hover:text-orange-400 transition-colors">आचार्य एवं दीदी जी परिचय</a></li>
+              <li><a href="#alumni" className="hover:text-orange-400 transition-colors text-amber-300 font-semibold">🎓 पूर्व छात्र परिषद (Purva Chhatra)</a></li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowTcModal(true)}
+                  className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-stone-300 hover:text-amber-200 font-medium cursor-pointer"
+                >
+                  <span>🔍 ऑनलाइन टीसी सत्यापन (Verify TC)</span>
+                </button>
+              </li>
               <li>
                 <button
                   type="button"
@@ -187,6 +199,12 @@ export const Footer: React.FC = () => {
       <SchoolPlansModal
         isOpen={showPlansModal}
         onClose={() => setShowPlansModal(false)}
+      />
+
+      {/* Public TC Verification Modal */}
+      <TCVerificationModal
+        isOpen={showTcModal}
+        onClose={() => setShowTcModal(false)}
       />
     </footer>
   );

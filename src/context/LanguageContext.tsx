@@ -1,23 +1,31 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type Language = 'hi' | 'en';
+export type Language = 'hi' | 'en' | 'sa' | 'bn' | 'gu' | 'or';
+
+export const SUPPORTED_LANGUAGES: { code: Language; name: string; nativeName: string; region: string }[] = [
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', region: 'उत्तर एवं मध्य भारत' },
+  { code: 'en', name: 'English', nativeName: 'English', region: 'All India' },
+  { code: 'sa', name: 'Sanskrit', nativeName: 'संस्कृतम्', region: 'देववाणी / अखिल भारतीय' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', region: 'पश्चिम बंगाल / त्रिपुरा' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', region: 'गुजरात प्रांत' },
+  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', region: 'ओडिशा प्रांत' }
+];
 
 interface Translations {
   [key: string]: {
-    hi: string;
-    en: string;
+    [lang in Language]?: string;
   };
 }
 
 export const translations: Translations = {
-  navHome: { hi: 'मुख्य पृष्ठ', en: 'Home' },
-  navPanchmukhi: { hi: 'पंचमुखी शिक्षा', en: 'Panchmukhi System' },
-  navDailyRoutine: { hi: 'दैनिक दिनचर्या', en: 'Daily Routine' },
-  navNotices: { hi: 'सूचना पट्ट', en: 'Notices' },
-  navAdmissions: { hi: 'प्रवेश 2026-27', en: 'Admissions 2026-27' },
-  navPortal: { hi: 'छात्र पोर्टल', en: 'Student Portal' },
-  navAdmin: { hi: 'आचार्य ERP', en: 'Teacher ERP' },
-  switchSchool: { hi: 'शाखा बदलें', en: 'Change Branch' },
+  navHome: { hi: 'मुख्य पृष्ठ', en: 'Home', sa: 'मुख्यपृष्ठम्', bn: 'মূল পাতা', gu: 'મુખ્ય પૃષ્ઠ', or: 'ମୁଖ୍ୟ ପୃଷ୍ଠା' },
+  navPanchmukhi: { hi: 'पंचमुखी शिक्षा', en: 'Panchmukhi System', sa: 'पञ्चमुखी शिक्षा', bn: 'পঞ্চমুখী শিক্ষা', gu: 'પંચમુખી શિક્ષણ', or: 'ପଞ୍ଚମୁଖୀ ଶିକ୍ଷା' },
+  navDailyRoutine: { hi: 'दैनिक दिनचर्या', en: 'Daily Routine', sa: 'दैनन्दिनी दिनचर्या', bn: 'দৈনিক রুটিন', gu: 'દૈનિક દિનચર્યા', or: 'ଦୈନିକ ଦିନଚର୍ଯ୍ୟା' },
+  navNotices: { hi: 'सूचना पट्ट', en: 'Notices', sa: 'सूचनापट्टः', bn: 'বিজ্ঞপ্তি ফলক', gu: 'સૂચના પટ્ટ', or: 'ସୂଚନା ଫଳକ' },
+  navAdmissions: { hi: 'प्रवेश 2026-27', en: 'Admissions 2026-27', sa: 'प्रवेशः २०२६-२७', bn: 'ভর্তি ২০২৬-২৭', gu: 'પ્રવેશ ૨૦૨૬-૨૭', or: 'ନାମଲେଖା ୨୦୨୬-୨୭' },
+  navPortal: { hi: 'छात्र पोर्टल', en: 'Student Portal', sa: 'छात्रप्रवेशद्वारम्', bn: 'ছাত্র পোর্টাল', gu: 'વિદ્યાર્થી પોર્ટલ', or: 'ଛାତ୍ର ପୋର୍ଟାଲ' },
+  navAdmin: { hi: 'आचार्य ERP', en: 'Teacher ERP', sa: 'आचार्य ईआरपी', bn: 'শিক্ষক ইআরপি', gu: 'આચાર્ય ERP', or: 'ଆଚାର୍ଯ୍ୟ ERP' },
+  switchSchool: { hi: 'शाखा बदलें', en: 'Change Branch', sa: 'शाखां परिवर्तयतु', bn: 'শাখা পরিবর্তন', gu: 'શાખા બદલો', or: 'ଶାଖା ପରିବର୍ତ୍ତନ' },
   
   // Dashboard & Sections
   tabStudents: { hi: 'विद्यार्थी पंजिका', en: 'Students Directory' },
@@ -74,7 +82,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = (key: string, fallback?: string): string => {
     if (translations[key] && translations[key][language]) {
-      return translations[key][language];
+      return translations[key][language] as string;
+    }
+    if (translations[key] && translations[key]['hi']) {
+      return translations[key]['hi'] as string;
     }
     return fallback || key;
   };

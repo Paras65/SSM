@@ -45,11 +45,37 @@ const HISTORIC_GORAKHPUR_BRANCH: School = {
   udiseCode: '09510100101'
 };
 
+export const DEMO_SANDBOX_SCHOOL: School = {
+  id: 'ssm-demo',
+  name: 'Saraswati Shishu Mandir Senior Secondary School (Demo Sandbox)',
+  hindiName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय (लाइव डेमो)',
+  tagline: 'सा विद्या या विमुक्तये • लाइव सैंडबॉक्स परीक्षण',
+  affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान',
+  affiliationNo: 'VB-DEMO-2026',
+  established: '1952',
+  address: 'विद्या भारती परिसर, आदर्श नगर, नई दिल्ली - 110001',
+  city: 'आदर्श नगर (डेमो)',
+  state: 'नई दिल्ली',
+  prant: 'दिल्ली प्रांत',
+  phone: '011-23456789',
+  email: 'demo@vidyabharti.net',
+  timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक',
+  principalName: 'आचार्य देवव्रत शास्त्री',
+  adminPasscode: '1952',
+  plan: 'pro',
+  udiseCode: '07010100101'
+};
+
 interface SchoolContextType {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   selectedStudentId: string | null;
   setSelectedStudentId: (id: string | null) => void;
+
+  // Demo Sandbox Mode
+  isDemoMode: boolean;
+  startDemoMode: () => void;
+  exitDemoMode: () => void;
 
   // Multi-School Management
   schools: School[];
@@ -122,12 +148,22 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' && window.sessionStorage.getItem('ssm_is_demo') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [schools, setSchools] = useState<School[]>([DEFAULT_FALLBACK_SCHOOL, HISTORIC_GORAKHPUR_BRANCH]);
   const [currentSchoolId, setCurrentSchoolIdState] = useState<string>(() => {
     return readStorage('ssm_current_school_id') || 'ssm-national';
   });
 
-  const currentSchool = schools.find(s => s.id === currentSchoolId) || schools[0] || DEFAULT_FALLBACK_SCHOOL;
+  const currentSchool = isDemoMode
+    ? DEMO_SANDBOX_SCHOOL
+    : (schools.find(s => s.id === currentSchoolId) || schools[0] || DEFAULT_FALLBACK_SCHOOL);
   const publicSchool = currentSchool;
 
   // DB connection status
@@ -327,7 +363,40 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const isFeatureAllowed = (_feature: ProFeatureKey): boolean => {
+    if (isDemoMode) return true;
     return currentSchool?.plan === 'pro';
+  };
+
+  const startDemoMode = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem('ssm_is_demo', 'true');
+        window.sessionStorage.setItem('ssm_admin_token', 'demo_session_token_1952');
+        window.sessionStorage.setItem('ssm_admin_role', 'principal');
+      }
+    } catch {
+      // storage unavailable
+    }
+    setIsDemoMode(true);
+    setStudents(INITIAL_STUDENTS);
+    setFeeRecords(INITIAL_FEES);
+    setReportCards(INITIAL_REPORT_CARDS);
+    setNotices(INITIAL_NOTICES);
+    setViewMode('admin');
+  };
+
+  const exitDemoMode = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem('ssm_is_demo');
+        window.sessionStorage.removeItem('ssm_admin_token');
+        window.sessionStorage.removeItem('ssm_admin_role');
+      }
+    } catch {
+      // storage unavailable
+    }
+    setIsDemoMode(false);
+    setViewMode('public');
   };
 
   // Student actions (MongoDB + Optimistic)
@@ -545,6 +614,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setViewMode,
         selectedStudentId,
         setSelectedStudentId,
+        isDemoMode,
+        startDemoMode,
+        exitDemoMode,
         schools,
         currentSchool,
         publicSchool,

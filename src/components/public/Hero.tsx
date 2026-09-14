@@ -7,9 +7,18 @@ interface HeroProps {
   onOpenLogin?: () => void;
   onOpenTeacherLogin?: () => void;
   onOpenBranchList?: () => void;
+  onOpenVerifyTc?: () => void;
+  onStartDemo?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin, onOpenTeacherLogin, onOpenBranchList }) => {
+export const Hero: React.FC<HeroProps> = ({
+  onOpenSignUp,
+  onOpenLogin,
+  onOpenTeacherLogin,
+  onOpenBranchList,
+  onOpenVerifyTc,
+  onStartDemo
+}) => {
   const { setViewMode, publicSchool } = useSchool();
 
   return (
@@ -113,6 +122,17 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin, onOpenTea
 
             {/* Platform Action Buttons */}
             <div className="flex flex-wrap gap-2.5 justify-center lg:justify-start pt-1 text-xs">
+              {onStartDemo && (
+                <button
+                  type="button"
+                  onClick={onStartDemo}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer border border-amber-300"
+                  title="बिना पासवर्ड तुरंत लाइव डेमो का अनुभव लें"
+                >
+                  <span>🎮 1-क्लिक लाइव डेमो</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={onOpenSignUp}
@@ -130,6 +150,17 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin, onOpenTea
                 <span>🏫</span>
                 <span>{publicSchool.id === 'ssm-national' ? 'विद्यालय शाखा चुनें' : `शाखा: ${publicSchool.city}`}</span>
               </button>
+
+              {onOpenVerifyTc && (
+                <button
+                  type="button"
+                  onClick={onOpenVerifyTc}
+                  className="px-4 py-2.5 rounded-xl bg-white hover:bg-orange-50 text-orange-950 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="स्थानांतरण प्रमाण पत्र (TC) ऑनलाइन सत्यापित करें"
+                >
+                  <span>🔍 टीसी सत्यापन</span>
+                </button>
+              )}
 
               <a
                 href="#modules"

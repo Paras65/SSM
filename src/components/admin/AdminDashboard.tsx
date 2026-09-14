@@ -29,6 +29,7 @@ import { TabulationRegisterModal } from './TabulationRegisterModal';
 import { HelpGuideModal } from './HelpGuideModal';
 import { SchoolProposalModal } from './SchoolProposalModal';
 import { BulkIdCardModal } from './BulkIdCardModal';
+import { AlumniDirectoryModal } from './AlumniDirectoryModal';
 import { HelpTooltip } from '../common/HelpTooltip';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
@@ -166,6 +167,7 @@ export const AdminDashboard: React.FC = () => {
   const [showTabulationModal, setShowTabulationModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showBulkIdCardModal, setShowBulkIdCardModal] = useState(false);
+  const [showAlumniModal, setShowAlumniModal] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRestoreBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -925,9 +927,16 @@ export const AdminDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setShowSessionManagementModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-300 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+            className="py-3 px-2.5 border-b-2 border-transparent text-amber-300 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
           >
             <span>🎓 सत्र व प्रोन्नति</span>
+          </button>
+          <button
+            onClick={() => setShowAlumniModal(true)}
+            className="py-3 px-2.5 border-b-2 border-transparent text-yellow-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
+            title="विद्या भारती पुरातन छात्र परिषद पंजिका देखें"
+          >
+            <span>📜 पूर्व छात्र परिषद</span>
           </button>
           <button
             onClick={() => setShowHelpGuideModal(true)}
@@ -3101,6 +3110,11 @@ export const AdminDashboard: React.FC = () => {
         onClose={() => setShowBulkIdCardModal(false)}
         students={students}
         school={currentSchool}
+      />
+
+      <AlumniDirectoryModal
+        isOpen={showAlumniModal}
+        onClose={() => setShowAlumniModal(false)}
       />
 
       {/* Single Item Document Modals */}

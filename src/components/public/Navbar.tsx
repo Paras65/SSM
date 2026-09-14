@@ -4,23 +4,27 @@ import { AdminAuthModal } from '../admin/AdminAuthModal';
 import { SchoolManagementModal } from '../admin/SchoolManagementModal';
 import { subscribePwaInstall, promptPwaInstall } from '../../services/pwa';
 import { Sparkles, Phone, Mail, Clock, UserCheck, Menu, X, Smartphone, Globe, LogIn, Plus, BookOpen } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage, SUPPORTED_LANGUAGES, type Language } from '../../context/LanguageContext';
 
 interface NavbarProps {
   onOpenSignUp?: (plan?: 'free' | 'pro') => void;
   onOpenLogin?: () => void;
   onOpenBranchList?: () => void;
   onOpenTeacherLogin?: () => void;
+  onOpenVerifyTc?: () => void;
+  onStartDemo?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenSignUp,
   onOpenLogin,
   onOpenBranchList,
-  onOpenTeacherLogin
+  onOpenTeacherLogin,
+  onOpenVerifyTc,
+  onStartDemo
 }) => {
   const { viewMode, setViewMode, dbStatus, currentSchool, publicSchool } = useSchool();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, toggleLanguage, setLanguage, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const isAdminAuthenticated = Boolean(sessionStorage.getItem('ssm_admin_token'));
@@ -136,6 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <a href="#panchmukhi" className="hover:text-orange-600 transition-colors">पंचमुखी</a>
             <a href="#vandana" className="hover:text-orange-600 transition-colors">वंदना</a>
             <a href="#acharyas" className="hover:text-orange-600 transition-colors">आचार्य</a>
+            <a href="#alumni" className="hover:text-orange-600 transition-colors font-bold text-orange-800">पूर्व छात्र</a>
             <a href="#gallery" className="hover:text-orange-600 transition-colors">चित्रदीर्घा</a>
           </nav>
 
@@ -200,15 +205,45 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-[10px] text-orange-700">▼</span>
             </button>
 
-            {/* Language Switcher */}
-            <button
-              onClick={toggleLanguage}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-orange-950 border border-orange-300 transition-all shadow-xs"
-              title="भाषा बदलें / Switch Language"
-            >
-              <Globe className="w-3.5 h-3.5 text-orange-700" />
-              <span>{language === 'hi' ? 'EN' : 'हिन्दी'}</span>
-            </button>
+            {/* 1-Click Sandbox Demo Trigger */}
+            {onStartDemo && (
+              <button
+                type="button"
+                onClick={onStartDemo}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-stone-950 border border-amber-300 shadow-xs transition cursor-pointer shrink-0"
+                title="बिना पासवर्ड लाइव डेमो चलाएं"
+              >
+                <span>🎮 डेमो</span>
+              </button>
+            )}
+
+            {/* Language Switcher Dropdown */}
+            <div className="relative group">
+              <button
+                type="button"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-orange-950 border border-orange-300 transition-all shadow-xs cursor-pointer"
+                title="भाषा / Select Language"
+              >
+                <Globe className="w-3.5 h-3.5 text-orange-700" />
+                <span>{SUPPORTED_LANGUAGES.find(l => l.code === language)?.nativeName || 'हिन्दी'}</span>
+                <span className="text-[9px] text-orange-700">▼</span>
+              </button>
+              <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-orange-200 py-1 hidden group-hover:block z-50">
+                {SUPPORTED_LANGUAGES.map(langItem => (
+                  <button
+                    key={langItem.code}
+                    type="button"
+                    onClick={() => setLanguage(langItem.code)}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-semibold flex items-center justify-between hover:bg-orange-50 cursor-pointer ${
+                      language === langItem.code ? 'text-orange-700 bg-orange-50 font-bold' : 'text-stone-800'
+                    }`}
+                  >
+                    <span>{langItem.nativeName}</span>
+                    <span className="text-[10px] text-stone-400">{langItem.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {canInstallPwa && (
               <button
@@ -327,12 +362,47 @@ export const Navbar: React.FC<NavbarProps> = ({
             आचार्य एवं दीदी जी (Faculty)
           </a>
           <a
+            href="#alumni"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md hover:bg-orange-100 text-orange-900 font-bold"
+          >
+            🎓 पूर्व छात्र परिषद (Alumni Corner)
+          </a>
+          <a
             href="#gallery"
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
           >
             चित्रदीर्घा (School Gallery)
           </a>
+
+          {onOpenVerifyTc && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenVerifyTc();
+              }}
+              className="w-full text-left px-3 py-2 rounded-md bg-amber-100/70 hover:bg-amber-100 text-orange-950 font-bold text-xs flex items-center gap-2"
+            >
+              <span>🔍</span>
+              <span>टीसी सत्यापन (Verify Transfer Certificate)</span>
+            </button>
+          )}
+
+          {onStartDemo && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onStartDemo();
+              }}
+              className="w-full text-left px-3 py-2 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-stone-950 font-black text-xs flex items-center gap-2"
+            >
+              <span>🎮</span>
+              <span>1-क्लिक लाइव डेमो (Sandbox Test)</span>
+            </button>
+          )}
 
           <div className="pt-2 border-t border-orange-200 flex flex-col gap-2">
             <button
