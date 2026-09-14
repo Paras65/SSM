@@ -216,3 +216,4 @@ export const SchoolProposalModal: React.FC<SchoolProposalModalProps> = ({ isOpen
     document.body
   );
 };
+

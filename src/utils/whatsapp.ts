@@ -59,3 +59,4 @@ export function generateAttendanceAlertWhatsAppUrl(
 
   return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 }
+
