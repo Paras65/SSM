@@ -687,10 +687,10 @@ export const AdminDashboard: React.FC = () => {
                 showSuccess('सम्पूर्ण विद्यालय डेटा बैकअप (.JSON) सफलतापूर्वक डाउनलोड हो गया है।');
               }}
               className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-[11px] font-bold border border-stone-700 transition-colors shrink-0 cursor-pointer"
-              title="सम्पूर्ण विद्यालय डेटा बैकअप JSON फाइल में डाउनलोड करें"
+              title="सम्पूर्ण विद्यालय डेटा बैकअप फाइल अपने कंप्यूटर में डाउनलोड करें"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span>डेटा बैकअप</span>
+              <span>डेटा बैकअप (डाउनलोड)</span>
             </button>
 
             {/* Hidden Backup File Input for Restore */}
@@ -705,10 +705,10 @@ export const AdminDashboard: React.FC = () => {
             <button
               onClick={() => backupFileInputRef.current?.click()}
               className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-[11px] font-bold border border-stone-700 transition-colors shrink-0 cursor-pointer"
-              title="पूर्व में डाउनलोड किया गया JSON बैकअप रीस्टोर करें"
+              title="पूर्व में डाउनलोड की गई सुरक्षित बैकअप फाइल से डेटा वापस लाएं"
             >
               <Upload className="w-3.5 h-3.5 text-amber-400" />
-              <span>डेटा रीस्टोर</span>
+              <span>डेटा रीस्टोर (फ़ाइल से)</span>
             </button>
 
             {/* Pitching Demo Seeder Button */}
@@ -914,8 +914,9 @@ export const AdminDashboard: React.FC = () => {
           <button
             onClick={() => setShowAuditLogModal(true)}
             className="py-3 px-2.5 border-b-2 border-transparent text-cyan-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1"
+            title="विद्यालय सुरक्षा एवं कार्यालय गतिविधि रजिस्टर"
           >
-            <span>🛡️ ऑडिट लॉग</span>
+            <span>🛡️ गतिविधि रजिस्टर</span>
           </button>
           <button
             onClick={() => setShowSessionManagementModal(true)}
@@ -925,10 +926,11 @@ export const AdminDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setShowHelpGuideModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-emerald-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1.5"
-            title="व्यवस्थापक मार्गदर्शिका व समस्या निवारक"
+            className="my-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 hover:text-white border border-amber-400/50 whitespace-nowrap font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            title="गैर-तकनीकी स्टाफ व नए आचार्यों हेतु 1-मिनट सरल मार्गदर्शिका"
           >
-            <span>❓ मार्गदर्शिका</span>
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span>💡 मदद चाहिए? (गाइड)</span>
           </button>
         </div>
       </header>
@@ -977,6 +979,110 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </section>
             
+            {/* Non-Tech Friendly: 1-Click Daily Routine Strip */}
+            <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 p-4 sm:p-5 rounded-2xl border border-amber-200/90 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-600 animate-pulse shrink-0" />
+                  <h2 className="text-sm sm:text-base font-black text-stone-900">
+                    दैनिक त्वरित कार्य (Daily Routine Shortcuts)
+                  </h2>
+                  <span className="hidden md:inline-block px-2 py-0.5 rounded-md bg-orange-100 text-orange-800 text-[10px] font-bold border border-orange-200">
+                    1-क्लिक में काम पूरा करें
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowHelpGuideModal(true)}
+                  className="text-xs font-bold text-orange-800 hover:text-orange-950 flex items-center gap-1 self-start sm:self-auto cursor-pointer"
+                >
+                  <span>💡 काम कैसे करें? (सरल 1-मिनट गाइड देखें)</span>
+                  <span>→</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+                {/* 1. Daily Attendance */}
+                <button
+                  onClick={() => setCurrentTab('attendance')}
+                  className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-green-50 border border-green-200 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-green-100 text-green-700 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-stone-900 group-hover:text-green-800">
+                    आज की हाजिरी
+                  </span>
+                  <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+                    कक्षा चुनें व हाजिरी दर्ज करें
+                  </span>
+                </button>
+
+                {/* 2. New Admission */}
+                <button
+                  onClick={() => setShowAddStudent(true)}
+                  className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-orange-50 border border-orange-200 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-stone-900 group-hover:text-orange-800">
+                    नया छात्र प्रवेश
+                  </span>
+                  <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+                    भैया/बहिन का नया नामांकन
+                  </span>
+                </button>
+
+                {/* 3. Collect Fee & Receipt */}
+                <button
+                  onClick={() => setCurrentTab('fees')}
+                  className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-amber-50 border border-amber-200 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <Receipt className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-stone-900 group-hover:text-amber-800">
+                    शुल्क जमा व रसीद
+                  </span>
+                  <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+                    फीस लेकर पक्की रसीद काटें
+                  </span>
+                </button>
+
+                {/* 4. WhatsApp / Notice */}
+                <button
+                  onClick={() => setCurrentTab('notices')}
+                  className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-blue-50 border border-blue-200 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <Bell className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-stone-900 group-hover:text-blue-800">
+                    व्हाट्सएप सूचना
+                  </span>
+                  <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+                    अभिभावकों को संदेश भेजें
+                  </span>
+                </button>
+
+                {/* 5. Bulk ID Cards */}
+                <button
+                  onClick={() => setShowBulkIdCardModal(true)}
+                  className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-purple-50 border border-purple-200 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left col-span-2 sm:col-span-1"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <IdCard className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-stone-900 group-hover:text-purple-800">
+                    बल्क आईडी कार्ड
+                  </span>
+                  <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+                    A4 शीट पर 8 कार्ड प्रिंट करें
+                  </span>
+                </button>
+              </div>
+            </div>
+
             {/* KPI Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               

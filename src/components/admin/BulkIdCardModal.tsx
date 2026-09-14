@@ -217,3 +217,4 @@ export const BulkIdCardModal: React.FC<BulkIdCardModalProps> = ({
     document.body
   );
 };
+
