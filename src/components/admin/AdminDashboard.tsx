@@ -27,9 +27,13 @@ import { AuditLogModal } from './AuditLogModal';
 import { SessionManagementModal } from './SessionManagementModal';
 import { TabulationRegisterModal } from './TabulationRegisterModal';
 import { HelpGuideModal } from './HelpGuideModal';
+import { SchoolProposalModal } from './SchoolProposalModal';
 import { HelpTooltip } from '../common/HelpTooltip';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
+import { generateAdmissionWhatsAppUrl } from '../../utils/whatsapp';
+import { downloadFullSchoolBackup } from '../../utils/backupExport';
+import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import { api } from '../../services/api';
 import type { Student, FeeRecord, ReportCard, Homework, Staff, Exam } from '../../types';
 import {
@@ -83,6 +87,9 @@ export const AdminDashboard: React.FC = () => {
     feeRecords,
     markFeePaid,
     reportCards,
+    addOrUpdateReportCard,
+    bulkAddStudents,
+    addFeeRecord,
     notices,
     addNotice,
     deleteNotice
@@ -154,6 +161,32 @@ export const AdminDashboard: React.FC = () => {
   const [showSessionManagementModal, setShowSessionManagementModal] = useState(false);
   const [showHelpGuideModal, setShowHelpGuideModal] = useState(false);
   const [showTabulationModal, setShowTabulationModal] = useState(false);
+  const [showProposalModal, setShowProposalModal] = useState(false);
+
+  const handleSeedDemoData = async () => {
+    if (!window.confirm(`क्या आप '${currentSchool.hindiName || currentSchool.name}' में 12 छात्र, उपस्थिति, शुल्क, 360° NEP रिपोर्ट कार्ड एवं नोटिस लोड करना चाहते हैं?`)) {
+      return;
+    }
+    try {
+      const demo = generateRichDemoData(currentSchool.id, currentSchool.city);
+      if (bulkAddStudents) {
+        await bulkAddStudents(demo.students);
+      }
+      for (const f of demo.feeRecords) {
+        await addFeeRecord(f);
+      }
+      for (const r of demo.reportCards) {
+        await addOrUpdateReportCard(r);
+      }
+      for (const n of demo.notices) {
+        await addNotice(n);
+      }
+      showSuccess('रिच डेमो डेटा (12 छात्र, उपस्थिति, शुल्क, समग्र प्रगति पत्र) सफलतापूर्वक लोड हो गया है।');
+      await refreshFromDb();
+    } catch (err: any) {
+      showError('डेमो डेटा लोड करने में त्रुटि: ' + (err.message || 'Error'));
+    }
+  };
 
   const [activeAdmitCard, setActiveAdmitCard] = useState<{ student: Student; exam: Exam } | null>(null);
   const [activeCharacterStudent, setActiveCharacterStudent] = useState<Student | null>(null);
@@ -594,6 +627,39 @@ export const AdminDashboard: React.FC = () => {
             >
               <GraduationCap className="w-3.5 h-3.5 text-amber-300 shrink-0" />
               <span>सत्र: {currentSchool.currentAcademicYear || '2025-26'} 🔄</span>
+            </button>
+
+            {/* Proposal Print Button */}
+            <button
+              onClick={() => setShowProposalModal(true)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+              title="प्रधानाचार्य / प्रबंधक हेतु आधिकारिक A4 प्रस्ताव पत्र व कोटेशन प्रिंट करें"
+            >
+              <Printer className="w-3.5 h-3.5 text-yellow-200" />
+              <span className="hidden sm:inline">प्रस्ताव पत्र</span>
+            </button>
+
+            {/* 1-Click Full Backup Button */}
+            <button
+              onClick={() => {
+                downloadFullSchoolBackup(currentSchool, students, feeRecords, attendanceRecords, reportCards, notices);
+                showSuccess('सम्पूर्ण विद्यालय डेटा बैकअप (.JSON) सफलतापूर्वक डाउनलोड हो गया है।');
+              }}
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-[11px] font-bold border border-stone-700 transition-colors shrink-0 cursor-pointer"
+              title="सम्पूर्ण विद्यालय डेटा बैकअप JSON फाइल में डाउनलोड करें"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>डेटा बैकअप</span>
+            </button>
+
+            {/* Pitching Demo Seeder Button */}
+            <button
+              onClick={handleSeedDemoData}
+              className="hidden xl:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 text-yellow-300 text-[11px] font-bold border border-orange-800/80 transition-colors shrink-0 cursor-pointer"
+              title="पिचिंग एवं लाइव डेमो हेतु 12 छात्र, उपस्थिति, शुल्क एवं 360° रिपोर्ट कार्ड लोड करें"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+              <span>डेमो लोड</span>
             </button>
 
             <span className="hidden lg:inline-block px-2.5 py-1 bg-orange-950 rounded-full border border-orange-800 text-amber-200 shrink-0">
@@ -2049,6 +2115,18 @@ export const AdminDashboard: React.FC = () => {
                           </span>
                         </td>
                         <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                          {generateAdmissionWhatsAppUrl(adm.phone, adm.studentName, adm.applyingClass, currentSchool.hindiName || currentSchool.name, currentSchool.city) && (
+                            <a
+                              href={generateAdmissionWhatsAppUrl(adm.phone, adm.studentName, adm.applyingClass, currentSchool.hindiName || currentSchool.name, currentSchool.city)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-[11px] shadow-xs inline-flex items-center gap-1 transition"
+                              title="अभिभावक को सीधे व्हाट्सएप पर प्रवेश सूचना संदेश भेजें"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              <span>WhatsApp</span>
+                            </a>
+                          )}
                           {adm.status !== 'Admitted' && (
                             <button
                               onClick={() => handleApproveAdmission(adm.id)}
@@ -2797,6 +2875,11 @@ export const AdminDashboard: React.FC = () => {
         onClose={() => setShowHelpGuideModal(false)}
         onOpenSessionModal={() => setShowSessionManagementModal(true)}
         onOpenAuditModal={() => setShowAuditLogModal(true)}
+      />
+
+      <SchoolProposalModal
+        isOpen={showProposalModal}
+        onClose={() => setShowProposalModal(false)}
       />
 
       {/* Single Item Document Modals */}
