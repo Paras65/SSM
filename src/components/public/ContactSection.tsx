@@ -38,8 +38,15 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   });
   const [submitted, setSubmitted] = useState(false);
 
+  const envPhone = (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_SUPPORT_PHONE || import.meta.env?.VITE_DEFAULT_PHONE)) || '+91 94150 00000';
+  const envAddress = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEFAULT_ADDRESS) || 'SSM ERP';
+  const displayAddress = (publicSchool.id === 'ssm-national' || !publicSchool.address || publicSchool.address.includes('विद्या भारती अखिल भारतीय शिक्षा संस्थान')) ? envAddress : publicSchool.address;
+  const displayPhone = (publicSchool.id === 'ssm-national' || !publicSchool.phone || publicSchool.phone.includes('1800-180-5522')) ? envPhone : publicSchool.phone;
+  const displayEmail = publicSchool.email || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_UPGRADE_CONTACT) || 'support@init65.co.in';
+  const displayWebsite = publicSchool.website || 'https://www.init65.co.in';
+
   // Clean phone number for WhatsApp URL
-  const phoneClean = (publicSchool.phone || '9415000000').replace(/[^0-9]/g, '');
+  const phoneClean = displayPhone.replace(/[^0-9]/g, '');
   const waTarget = phoneClean.length === 10 ? `91${phoneClean}` : phoneClean;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,7 +101,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
               <div className="space-y-3 text-xs text-stone-700">
                 <div className="flex items-start gap-2.5">
                   <MapPin className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
-                  <span>{publicSchool.address}</span>
+                  <span>{displayAddress}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Clock className="w-4 h-4 text-orange-600 shrink-0" />
@@ -102,25 +109,25 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Phone className="w-4 h-4 text-orange-600 shrink-0" />
-                  <a href={`tel:${publicSchool.phone}`} className="hover:text-orange-700 font-semibold underline decoration-orange-300">
-                    {publicSchool.phone}
+                  <a href={`tel:${displayPhone}`} className="hover:text-orange-700 font-semibold underline decoration-orange-300">
+                    {displayPhone}
                   </a>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Mail className="w-4 h-4 text-orange-600 shrink-0" />
-                  <a href={`mailto:${publicSchool.email || 'support@init65.co.in'}`} className="hover:text-orange-700 font-semibold">
-                    {publicSchool.email || 'support@init65.co.in'}
+                  <a href={`mailto:${displayEmail}`} className="hover:text-orange-700 font-semibold">
+                    {displayEmail}
                   </a>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Globe className="w-4 h-4 text-orange-600 shrink-0" />
                   <a
-                    href={publicSchool.website || 'https://www.init65.co.in'}
+                    href={displayWebsite}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-orange-700 font-mono font-bold underline decoration-orange-300"
                   >
-                    {publicSchool.website ? publicSchool.website.replace(/^https?:\/\//, '') : 'www.init65.co.in'}
+                    {displayWebsite.replace(/^https?:\/\//, '')}
                   </a>
                 </div>
               </div>

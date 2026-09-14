@@ -13,6 +13,13 @@ export const Footer: React.FC = () => {
   const [showPlansModal, setShowPlansModal] = useState(false);
   const [showTcModal, setShowTcModal] = useState(false);
 
+  const envPhone = (typeof import.meta !== 'undefined' && (import.meta.env?.VITE_SUPPORT_PHONE || import.meta.env?.VITE_DEFAULT_PHONE)) || '+91 94150 00000';
+  const envAddress = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEFAULT_ADDRESS) || 'SSM ERP';
+  const displayAddress = (publicSchool.id === 'ssm-national' || !publicSchool.address || publicSchool.address.includes('विद्या भारती अखिल भारतीय शिक्षा संस्थान')) ? envAddress : publicSchool.address;
+  const displayPhone = (publicSchool.id === 'ssm-national' || !publicSchool.phone || publicSchool.phone.includes('1800-180-5522')) ? envPhone : publicSchool.phone;
+  const displayEmail = publicSchool.email || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_UPGRADE_CONTACT) || 'support@init65.co.in';
+  const displayWebsite = publicSchool.website || 'https://www.init65.co.in';
+
   return (
     <footer className="bg-gradient-to-b from-stone-900 via-stone-950 to-black text-white pt-14 pb-8 border-t-4 border-orange-600">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -101,29 +108,29 @@ export const Footer: React.FC = () => {
             <div className="space-y-2.5 text-xs text-stone-300">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                <span>{publicSchool.address}</span>
+                <span>{displayAddress}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-orange-500 shrink-0" />
-                <a href={`tel:${publicSchool.phone}`} className="hover:text-amber-300 transition">
-                  {publicSchool.phone}
+                <a href={`tel:${displayPhone}`} className="hover:text-amber-300 transition">
+                  {displayPhone}
                 </a>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-orange-500 shrink-0" />
-                <a href={`mailto:${publicSchool.email || 'support@init65.co.in'}`} className="hover:text-amber-300 transition">
-                  {publicSchool.email || 'support@init65.co.in'}
+                <a href={`mailto:${displayEmail}`} className="hover:text-amber-300 transition">
+                  {displayEmail}
                 </a>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-orange-500 shrink-0" />
                 <a
-                  href={publicSchool.website || 'https://www.init65.co.in'}
+                  href={displayWebsite}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-amber-300 hover:text-white font-mono font-bold hover:underline transition"
                 >
-                  {publicSchool.website ? publicSchool.website.replace(/^https?:\/\//, '') : 'www.init65.co.in'}
+                  {displayWebsite.replace(/^https?:\/\//, '')}
                 </a>
               </div>
             </div>
