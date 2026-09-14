@@ -712,7 +712,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
 
                       <div className="mt-5 pt-4 border-t border-stone-200 flex items-center justify-between">
                         <span className="text-xs font-mono text-stone-500">
-                          पासकोड: <strong className="text-stone-800 font-bold">{sch.adminPasscode}</strong>
+                          सम्बद्धता: <strong className="text-stone-800 font-mono">{sch.affiliationNo || 'सत्यापित'}</strong>
                         </span>
 
                         {isActive ? (
