@@ -23,7 +23,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenSignUp }) => {
             संस्कारयुक्त शिक्षा एवं आधुनिक डिजिटल ईआरपी का संगम
           </h2>
           <p className="mt-3 text-sm sm:text-base text-stone-600 leading-relaxed">
-            वर्ष 1952 में गोरखपुर की पावन धरा से शुरू हुआ यह आंदोलन आज <strong>विद्या भारती अखिल भारतीय शिक्षा संस्थान</strong> के 
+            वर्ष 1952 में शुरू हुई यह शिक्षा परंपरा आज <strong>विद्या भारती अखिल भारतीय शिक्षा संस्थान</strong> के 
             मार्गदर्शन में आधुनिक क्लाउड ईआरपी तकनीक के साथ प्रत्येक भैया-बहिन के सर्वांगीण विकास को समर्पित है।
           </p>
         </div>
@@ -36,11 +36,11 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenSignUp }) => {
             <div className="p-5 bg-gradient-to-r from-orange-100/70 via-amber-50 to-orange-100/50 rounded-2xl border border-orange-200 shadow-2xs space-y-2">
               <h3 className="text-base sm:text-lg font-bold text-orange-950 flex items-center gap-2">
                 <span>🚩</span>
-                <span>प्रथम शिशु मंदिर: गोरखपुर, 1952</span>
+                <span>शिक्षा परंपरा की शुरुआत: 1952</span>
               </h3>
               <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
                 राष्ट्रऋषि नानाजी देशमुख एवं पूज्य गुरुजी माधवराव सदाशिवराव गोलवलकर के पावन सान्निध्य में
-                प्रथम 'सरस्वती शिशु मंदिर' की नींव गोरखपुर में रखी गई थी। आज यह व्यवस्था देश के कोने-कोने में, 
+                प्रथम 'सरस्वती शिशु मंदिर' की स्थापना 1952 में हुई थी। आज यह व्यवस्था देश के कोने-कोने में,
                 महानगरों से लेकर वनवासी व सीमांत क्षेत्रों तक हजारों विद्यालयों के रूप में राष्ट्र सेवा कर रही है।
               </p>
             </div>

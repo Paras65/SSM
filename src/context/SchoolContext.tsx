@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { School, Student, AttendanceRecord, FeeRecord, ReportCard, Notice, ViewMode, AttendanceStatus, SchoolPlan, ProFeatureKey } from '../types';
-import { INITIAL_STUDENTS, INITIAL_FEES, INITIAL_REPORT_CARDS, INITIAL_NOTICES } from '../data/mockData';
+import { INITIAL_STUDENTS, INITIAL_FEES, INITIAL_REPORT_CARDS, INITIAL_NOTICES, SCHOOL_INFO } from '../data/mockData';
 import { api } from '../services/api';
 
 const EMPTY_SCHOOL: School = {
@@ -23,6 +23,28 @@ const EMPTY_SCHOOL: School = {
   plan: 'free',
   udiseCode: '',
   website: ''
+};
+
+const PUBLIC_BRAND_SCHOOL: School = {
+  id: 'ssm-national',
+  name: SCHOOL_INFO.name,
+  hindiName: SCHOOL_INFO.hindiName,
+  tagline: SCHOOL_INFO.tagline,
+  affiliate: SCHOOL_INFO.affiliate,
+  affiliationNo: '',
+  established: SCHOOL_INFO.established,
+  address: SCHOOL_INFO.address,
+  city: '',
+  state: '',
+  prant: '',
+  phone: SCHOOL_INFO.phone,
+  email: SCHOOL_INFO.email,
+  timings: SCHOOL_INFO.timings,
+  principalName: SCHOOL_INFO.principalName,
+  adminPasscode: '',
+  plan: 'free',
+  udiseCode: '',
+  website: SCHOOL_INFO.website
 };
 
 const HISTORIC_GORAKHPUR_BRANCH: School = {
@@ -167,7 +189,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const currentSchool = isDemoMode
     ? DEMO_SANDBOX_SCHOOL
     : (schools.find(s => s.id === currentSchoolId) || schools[0] || EMPTY_SCHOOL);
-  const publicSchool = currentSchool;
+  const publicSchool = PUBLIC_BRAND_SCHOOL;
 
   // DB connection status
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting');

@@ -36,7 +36,7 @@ export const AlumniRegistrationModal: React.FC<AlumniRegistrationModalProps> = (
   const [formData, setFormData] = useState({
     name: '',
     batch: '2016',
-    schoolBranch: publicSchool.city || 'गोरखपुर',
+    schoolBranch: publicSchool.city || 'SSM ERP',
     qualification: '',
     profession: '',
     organisation: '',
