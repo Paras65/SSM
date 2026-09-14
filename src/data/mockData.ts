@@ -480,8 +480,8 @@ export const INITIAL_REPORT_CARDS: ReportCard[] = [
 ];
 
 export const SCHOOL_INFO = {
-  name: 'Saraswati Shishu Mandir (Vidya Bharati Akhil Bharatiya Shiksha Sansthan)',
-  hindiName: 'सरस्वती शिशु एवं विद्या मंदिर',
+  name: 'Saraswati Shishu Mandir Digital ERP System (SSM ERP)',
+  hindiName: 'सरस्वती शिशु मंदिर डिजिटल ईआरपी प्रणाली (SSM ERP)',
   tagline: 'सा विद्या या विमुक्तये (That is knowledge which liberates)',
   affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान',
   established: '1952',

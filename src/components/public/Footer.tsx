@@ -35,10 +35,12 @@ export const Footer: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-base font-bold text-orange-400 leading-tight">
-                  {publicSchool.hindiName}
+                  {publicSchool.id === 'ssm-national' ? 'SSM ERP' : publicSchool.hindiName}
                 </h4>
                 <span className="text-[10px] text-amber-200 uppercase tracking-wider block">
-                  {publicSchool.prant} • विद्या भारती
+                  {publicSchool.id === 'ssm-national' 
+                    ? 'सरस्वती शिशु मंदिर डिजिटल ईआरपी प्रणाली • विद्या भारती' 
+                    : `${publicSchool.prant} • विद्या भारती`}
                 </span>
               </div>
             </div>
@@ -188,7 +190,7 @@ export const Footer: React.FC = () => {
         {/* Developer Vision & Portfolio Credit */}
         <div className="pt-4 border-t border-stone-800 flex flex-col md:flex-row justify-between items-center text-xs text-stone-400 gap-4">
           <div className="space-y-1 text-center md:text-left">
-            <p>© {new Date().getFullYear()} {publicSchool.hindiName}। • सॉफ्टवेयर कॉपीराइट: <span className="text-amber-300 font-bold">init65.co.in</span></p>
+            <p>© {new Date().getFullYear()} {publicSchool.id === 'ssm-national' ? 'SSM ERP' : publicSchool.hindiName}। • सॉफ्टवेयर कॉपीराइट: <span className="text-amber-300 font-bold">init65.co.in</span></p>
             <p className="text-[11px] text-stone-500 max-w-xl">
               सरस्वती शिशु मंदिर के भैया-बहिनों, आचार्यों एवं विद्यालय प्रबंधन की व्यावहारिक समस्याओं के समाधान हेतु समर्पित स्वतंत्र ईआरपी प्रणाली।
             </p>
