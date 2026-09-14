@@ -6,7 +6,7 @@ import {
   generateAttendanceAlertWhatsAppUrl
 } from '../utils/whatsapp';
 import { generateRichDemoData } from '../utils/demoDataSeeder';
-import { generateFullBackupJSON } from '../utils/backupExport';
+import { generateFullBackupJSON, parseAndValidateBackupJSON } from '../utils/backupExport';
 import type { School } from '../types';
 
 describe('Pitching & Field-Ready Utilities Suite', () => {
@@ -129,6 +129,62 @@ describe('Pitching & Field-Ready Utilities Suite', () => {
       expect(parsed.counts.fees).toBe(12);
       expect(parsed.counts.reportCards).toBe(12);
       expect(parsed.counts.notices).toBe(3);
+    });
+
+    it('parses and validates valid backup JSON payload successfully', () => {
+      const mockSchool: School = {
+        id: 'sch-restore-1',
+        name: 'Saraswati Vidya Mandir',
+        hindiName: 'सरस्वती विद्या मंदिर',
+        tagline: 'सा विद्या या विमुक्तये',
+        affiliate: 'Vidya Bharati',
+        affiliationNo: 'VB-DL-01',
+        established: '1990',
+        address: 'केशव कुंज',
+        city: 'नई दिल्ली',
+        state: 'दिल्ली',
+        prant: 'दिल्ली प्रान्त',
+        phone: '011-2350011',
+        email: 'svm@vidyabharti.org',
+        timings: '08:00 AM - 02:00 PM',
+        principalName: 'श्री आलोक जी',
+        adminPasscode: '1234',
+        plan: 'pro'
+      };
+
+      const demo = generateRichDemoData(mockSchool.id, mockSchool.city);
+      const json = generateFullBackupJSON(
+        mockSchool,
+        demo.students,
+        demo.feeRecords,
+        demo.attendanceRecords,
+        demo.reportCards,
+        demo.notices
+      );
+
+      const restoreResult = parseAndValidateBackupJSON(json);
+      expect(restoreResult.backupVersion).toBe('SSM-ERP-V1.0');
+      expect(restoreResult.school.id).toBe('sch-restore-1');
+      expect(restoreResult.data.students.length).toBe(12);
+      expect(restoreResult.data.fees.length).toBe(12);
+      expect(restoreResult.data.attendance.length).toBe(12);
+      expect(restoreResult.data.reportCards.length).toBe(12);
+      expect(restoreResult.data.notices.length).toBe(3);
+    });
+
+    it('throws descriptive errors for corrupted or invalid backup JSON', () => {
+      // Invalid JSON syntax
+      expect(() => parseAndValidateBackupJSON('{ bad json')).toThrow('अमान्य JSON प्रारूप');
+
+      // Invalid backup version / missing identifier
+      expect(() => parseAndValidateBackupJSON(JSON.stringify({ someData: 123 }))).toThrow('अमान्य बैकअप संस्करण');
+
+      // Missing data payload or missing students array
+      expect(() => parseAndValidateBackupJSON(JSON.stringify({
+        backupVersion: 'SSM-ERP-V1.0',
+        school: { id: 'sch-1' },
+        data: {}
+      }))).toThrow('बैकअप फ़ाइल में अनिवार्य संग्रह');
     });
   });
 });

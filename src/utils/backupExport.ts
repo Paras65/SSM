@@ -82,3 +82,54 @@ export function downloadFullSchoolBackup(
   URL.revokeObjectURL(url);
 }
 
+export function parseAndValidateBackupJSON(jsonString: string): FullSchoolBackupData {
+  if (!jsonString || typeof jsonString !== 'string') {
+    throw new Error('अमान्य बैकअप फ़ाइल: फ़ाइल रिक्त अथवा दूषित है। (Backup file is empty or invalid)');
+  }
+
+  let parsed: any;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch {
+    throw new Error('अमान्य JSON प्रारूप: फ़ाइल सही बैकअप प्रारूप में नहीं है। (Malformed JSON format)');
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('अमान्य बैकअप डेटा संरचना। (Invalid backup object structure)');
+  }
+
+  if (parsed.backupVersion !== 'SSM-ERP-V1.0') {
+    throw new Error('अमान्य बैकअप संस्करण: यह फ़ाइल समर्थित SSM बैकअप संस्करण (SSM-ERP-V1.0) की नहीं है।');
+  }
+
+  if (!parsed.data || typeof parsed.data !== 'object') {
+    throw new Error('बैकअप फ़ाइल में डेटा संग्रह (data collection) अनुपस्थित है।');
+  }
+
+  const { students, fees, attendance, reportCards, notices } = parsed.data;
+
+  if (!Array.isArray(students) || !Array.isArray(fees) || !Array.isArray(attendance) || !Array.isArray(reportCards)) {
+    throw new Error('बैकअप फ़ाइल में अनिवार्य संग्रह (छात्र, शुल्क, उपस्थिति, रिपोर्ट कार्ड) उपलब्ध नहीं हैं।');
+  }
+
+  return {
+    backupVersion: parsed.backupVersion,
+    exportedAt: parsed.exportedAt || new Date().toISOString(),
+    school: parsed.school || {},
+    counts: {
+      students: students.length,
+      fees: fees.length,
+      attendance: attendance.length,
+      reportCards: reportCards.length,
+      notices: Array.isArray(notices) ? notices.length : 0
+    },
+    data: {
+      students,
+      fees,
+      attendance,
+      reportCards,
+      notices: Array.isArray(notices) ? notices : []
+    }
+  };
+}
+

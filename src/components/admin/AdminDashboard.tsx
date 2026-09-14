@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useEffect, useMemo, useRef } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { AddStudentModal } from './AddStudentModal';
@@ -28,11 +28,12 @@ import { SessionManagementModal } from './SessionManagementModal';
 import { TabulationRegisterModal } from './TabulationRegisterModal';
 import { HelpGuideModal } from './HelpGuideModal';
 import { SchoolProposalModal } from './SchoolProposalModal';
+import { BulkIdCardModal } from './BulkIdCardModal';
 import { HelpTooltip } from '../common/HelpTooltip';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
 import { generateAdmissionWhatsAppUrl } from '../../utils/whatsapp';
-import { downloadFullSchoolBackup } from '../../utils/backupExport';
+import { downloadFullSchoolBackup, parseAndValidateBackupJSON } from '../../utils/backupExport';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import { api } from '../../services/api';
 import type { Student, FeeRecord, ReportCard, Homework, Staff, Exam } from '../../types';
@@ -54,6 +55,7 @@ import {
   IdCard,
   Check,
   Download,
+  Upload,
   FileText,
   Building2,
   BookOpen,
@@ -162,6 +164,45 @@ export const AdminDashboard: React.FC = () => {
   const [showHelpGuideModal, setShowHelpGuideModal] = useState(false);
   const [showTabulationModal, setShowTabulationModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
+  const [showBulkIdCardModal, setShowBulkIdCardModal] = useState(false);
+  const backupFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRestoreBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const backup = parseAndValidateBackupJSON(text);
+
+      const confirmMsg = `बैकअप फ़ाइल सफलतापूर्वक सत्यापित हुई! (संस्करण: ${backup.backupVersion})\n\nडेटा विवरण:\n• छात्र: ${backup.counts.students}\n• शुल्क रिकॉर्ड: ${backup.counts.fees}\n• उपस्थिति रिकॉर्ड: ${backup.counts.attendance}\n• समग्र रिपोर्ट कार्ड: ${backup.counts.reportCards}\n• सूचनाएं: ${backup.counts.notices}\n\nक्या आप यह सम्पूर्ण डेटा '${currentSchool.hindiName || currentSchool.name}' में रीस्टोर करना चाहते हैं?`;
+
+      if (!window.confirm(confirmMsg)) {
+        if (backupFileInputRef.current) backupFileInputRef.current.value = '';
+        return;
+      }
+
+      if (backup.data.students.length > 0 && bulkAddStudents) {
+        await bulkAddStudents(backup.data.students);
+      }
+      for (const fee of backup.data.fees) {
+        await addFeeRecord(fee);
+      }
+      for (const rep of backup.data.reportCards) {
+        await addOrUpdateReportCard(rep);
+      }
+      for (const not of backup.data.notices) {
+        await addNotice(not);
+      }
+
+      showSuccess(`बैकअप सफलतापूर्वक रीस्टोर हुआ! (${backup.counts.students} छात्र, ${backup.counts.fees} शुल्क रिकॉर्ड)`);
+      await refreshFromDb();
+    } catch (err: any) {
+      showError('बैकअप रीस्टोर करने में त्रुटि: ' + (err.message || 'Error'));
+    } finally {
+      if (backupFileInputRef.current) backupFileInputRef.current.value = '';
+    }
+  };
 
   const handleSeedDemoData = async () => {
     if (!window.confirm(`क्या आप '${currentSchool.hindiName || currentSchool.name}' में 12 छात्र, उपस्थिति, शुल्क, 360° NEP रिपोर्ट कार्ड एवं नोटिस लोड करना चाहते हैं?`)) {
@@ -650,6 +691,24 @@ export const AdminDashboard: React.FC = () => {
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
               <span>डेटा बैकअप</span>
+            </button>
+
+            {/* Hidden Backup File Input for Restore */}
+            <input
+              ref={backupFileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleRestoreBackup}
+              className="hidden"
+            />
+            {/* 1-Click Restore Backup Button */}
+            <button
+              onClick={() => backupFileInputRef.current?.click()}
+              className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-[11px] font-bold border border-stone-700 transition-colors shrink-0 cursor-pointer"
+              title="पूर्व में डाउनलोड किया गया JSON बैकअप रीस्टोर करें"
+            >
+              <Upload className="w-3.5 h-3.5 text-amber-400" />
+              <span>डेटा रीस्टोर</span>
             </button>
 
             {/* Pitching Demo Seeder Button */}
@@ -1334,6 +1393,15 @@ export const AdminDashboard: React.FC = () => {
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
                   <span>एक्सेल आयात</span>
+                </button>
+
+                <button
+                  onClick={() => setShowBulkIdCardModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
+                  title="कक्षावार A4 शीट पर 8 परिचय पत्र एक साथ प्रिंट करें"
+                >
+                  <IdCard className="w-3.5 h-3.5 text-yellow-200" />
+                  <span>बल्क आईडी कार्ड</span>
                 </button>
 
                 <button
@@ -2880,6 +2948,13 @@ export const AdminDashboard: React.FC = () => {
       <SchoolProposalModal
         isOpen={showProposalModal}
         onClose={() => setShowProposalModal(false)}
+      />
+
+      <BulkIdCardModal
+        isOpen={showBulkIdCardModal}
+        onClose={() => setShowBulkIdCardModal(false)}
+        students={students}
+        school={currentSchool}
       />
 
       {/* Single Item Document Modals */}
