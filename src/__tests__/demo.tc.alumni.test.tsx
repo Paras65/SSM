@@ -229,6 +229,7 @@ describe('SSM ERP High-Impact Enhancements Suite', () => {
       expect(codes).toContain('hi');
       expect(codes).toContain('en');
       expect(codes).toContain('sa');
+      expect(codes).toContain('cg');
       expect(codes).toContain('bn');
       expect(codes).toContain('gu');
       expect(codes).toContain('or');
@@ -264,6 +265,12 @@ describe('SSM ERP High-Impact Enhancements Suite', () => {
       });
       expect(container?.querySelector('#translated-home')?.textContent).toBe('मुख्यपृष्ठम्');
       expect(container?.querySelector('#translated-panchmukhi')?.textContent).toBe('पञ्चमुखी शिक्षा');
+
+      // Switch to Chhattisgarhi
+      act(() => {
+        langCtx.setLanguage('cg');
+      });
+      expect(container?.querySelector('#translated-home')?.textContent).toBe('मुख्य पाना');
 
       // Switch to Gujarati
       act(() => {
