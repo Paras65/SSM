@@ -263,6 +263,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       चित्रदीर्घा (Gallery)
                     </a>
+                    <a
+                      href="#contact"
+                      onClick={() => setMoreLinksOpen(false)}
+                      className="block px-3.5 py-1.5 text-xs text-orange-800 hover:bg-orange-50 font-bold"
+                    >
+                      संपर्क व सहायता (Contact & Support)
+                    </a>
                   </div>
                 )}
               </div>
@@ -648,6 +655,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="block px-3 py-2 rounded-lg hover:bg-orange-100 text-stone-800"
                 >
                   चित्रदीर्घा (School Gallery)
+                </a>
+                <a
+                  href="#contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg hover:bg-orange-100 text-orange-900 font-bold"
+                >
+                  📞 संपर्क व सहायता (Contact & ERP Helpdesk)
                 </a>
               </div>
             </div>

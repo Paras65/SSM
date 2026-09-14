@@ -11,6 +11,7 @@ import { AcharyaSection } from './components/public/AcharyaSection';
 import { AdmissionInquiry } from './components/public/AdmissionInquiry';
 import { Gallery } from './components/public/Gallery';
 import { AlumniSection } from './components/public/AlumniSection';
+import { ContactSection } from './components/public/ContactSection';
 import { TCVerificationModal } from './components/public/TCVerificationModal';
 import { Footer } from './components/public/Footer';
 import { LegalInformation } from './components/public/LegalInformation';
@@ -125,12 +126,16 @@ const SchoolApp: React.FC = () => {
             <DailyPanchang />
             <NoticeBoard />
             <AdmissionInquiry />
-            <AboutSection />
+            <AboutSection onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)} />
             <PanchmukhiShiksha />
             <VandanaCorner />
             <AcharyaSection />
             <AlumniSection />
             <Gallery />
+            <ContactSection
+              onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)}
+              onOpenBranchList={handleOpenBranchList}
+            />
           </main>
           <LegalInformation />
           <Footer />

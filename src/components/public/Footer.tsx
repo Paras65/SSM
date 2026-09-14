@@ -52,6 +52,7 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs text-stone-300">
               <li><a href="#about" className="hover:text-orange-400 transition-colors">विद्यालय परिचय एवं इतिहास</a></li>
+              <li><a href="#contact" className="hover:text-orange-400 transition-colors text-amber-300 font-medium">📞 संपर्क व ईआरपी सहायता केंद्र</a></li>
               <li><a href="#panchmukhi" className="hover:text-orange-400 transition-colors">पंचमुखी शिक्षा आयाम</a></li>
               <li><a href="#vandana" className="hover:text-orange-400 transition-colors">दैनिक सरस्वती वंदना एवं मंत्र</a></li>
               <li><a href="#notices" className="hover:text-orange-400 transition-colors">सूचनाएं एवं परीक्षा कार्यक्रम</a></li>
