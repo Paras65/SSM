@@ -18,6 +18,17 @@ const studentSchema = new mongoose.Schema({
   photoUrl: { type: String, default: '' },
   academicYear: { type: String, default: '2025-26', index: true },
   status: { type: String, enum: ['active', 'promoted', 'alumni', 'transferred'], default: 'active', index: true },
+  // UDISE+ & Government of India Student Identifiers
+  pen: { type: String, default: '', index: true },
+  apaarId: { type: String, default: '' },
+  socialCategory: { type: String, enum: ['General', 'OBC', 'SC', 'ST', ''], default: 'General' },
+  cwsn: { type: Boolean, default: false },
+  bpl: { type: Boolean, default: false },
+  udiseStatus: {
+    gp: { type: Boolean, default: false },
+    ep: { type: Boolean, default: false },
+    fp: { type: Boolean, default: false }
+  },
   academicHistory: [{
     academicYear: { type: String, required: true },
     class: { type: String, required: true },
@@ -35,6 +46,7 @@ studentSchema.index({ schoolId: 1, class: 1, section: 1 });
 studentSchema.index({ schoolId: 1, rollNo: 1 });
 studentSchema.index({ schoolId: 1, status: 1 });
 studentSchema.index({ schoolId: 1, academicYear: 1 });
+studentSchema.index({ schoolId: 1, pen: 1 });
 
 module.exports = mongoose.model('Student', studentSchema);
 

@@ -87,6 +87,9 @@ export const api = {
     if (data.token) {
       sessionStorage.removeItem('ssm_student_token');
       sessionStorage.removeItem('ssm_student_id');
+      sessionStorage.removeItem('ssm_teacher_token');
+      sessionStorage.removeItem('ssm_teacher_id');
+      sessionStorage.removeItem('ssm_teacher_name');
       sessionStorage.setItem('ssm_admin_token', data.token);
       sessionStorage.setItem('ssm_admin_authenticated', 'true');
       sessionStorage.setItem('ssm_admin_role', data.role || 'admin');
@@ -104,6 +107,9 @@ export const api = {
     sessionStorage.removeItem('ssm_admin_token');
     sessionStorage.removeItem('ssm_admin_authenticated');
     sessionStorage.removeItem('ssm_admin_role');
+    sessionStorage.removeItem('ssm_teacher_token');
+    sessionStorage.removeItem('ssm_teacher_id');
+    sessionStorage.removeItem('ssm_teacher_name');
     sessionStorage.setItem('ssm_student_token', data.token);
     sessionStorage.setItem('ssm_student_id', data.student.id);
     return data;
@@ -219,7 +225,7 @@ export const api = {
   },
 
   async verifyStudentTc(query: string, schoolId?: string): Promise<Student> {
-    const params = new URLSearchParams({ query });
+    const params = new URLSearchParams({ q: query, query });
     if (schoolId) params.append('schoolId', schoolId);
     const res = await apiFetch(`/students/verify-tc?${params.toString()}`);
     return handleJsonResponse<Student>(res, 'प्रमाणित छात्र अभिलेख नहीं मिला');
@@ -236,26 +242,18 @@ export const api = {
     if (date) params.append('date', date);
     if (schoolId) params.append('schoolId', schoolId);
     const queryString = params.toString();
-    const url = queryString ? `${API_BASE}/attendance?${queryString}` : `${API_BASE}/attendance`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch attendance');
-    return res.json();
+    const url = queryString ? `/attendance?${queryString}` : '/attendance';
+    const res = await apiFetch(url);
+    return handleJsonResponse<AttendanceRecord[]>(res, 'Failed to fetch attendance');
   },
 
   async setAttendance(studentId: string, date: string, status: AttendanceStatus, schoolId?: string): Promise<AttendanceRecord> {
-    const res = await fetch(`${API_BASE}/attendance`, {
+    const res = await apiFetch('/attendance', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ studentId, date, status, schoolId })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to save attendance');
-    }
-    return res.json();
+    return handleJsonResponse<AttendanceRecord>(res, 'Failed to save attendance');
   },
 
   async setBulkAttendance(updates: { studentId: string; date: string; status: AttendanceStatus; schoolId?: string }[], schoolId?: string): Promise<AttendanceRecord[]> {

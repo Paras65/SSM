@@ -465,7 +465,7 @@ router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res
 // Public TC / Student Verification endpoint (safe, rate-limited, read-only against MongoDB)
 router.get('/students/verify-tc', async (req, res) => {
   try {
-    const q = cleanStringParam(req.query.q);
+    const q = cleanStringParam(req.query.q || req.query.query);
     const schoolId = cleanStringParam(req.query.schoolId);
     if (!q || q.length < 2) {
       return res.status(400).json({ error: 'कृपया कम से कम 2 अक्षर या अंक दर्ज करें।' });
@@ -762,7 +762,7 @@ router.post('/students/promote', requireAdminAuth, requireSchoolScope, async (re
 });
 
 // ================= ATTENDANCE =================
-router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.get('/attendance', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = {};
     if (req.query.date) filter.date = req.query.date;
@@ -776,7 +776,7 @@ router.get('/attendance', requireAdminAuth, requireSchoolScope, async (req, res)
   }
 });
 
-router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.post('/attendance', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const { studentId, date, status = 'Present', schoolId, academicYear, class: studentClass } = req.body;
     if (!studentId || !date) {
@@ -808,7 +808,7 @@ router.post('/attendance', requireAdminAuth, requireSchoolScope, async (req, res
   }
 });
 
-router.post('/attendance/bulk', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.post('/attendance/bulk', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const { updates, schoolId } = req.body; // array of { studentId, date, status }
     if (!Array.isArray(updates) || updates.length === 0) {
@@ -1212,7 +1212,7 @@ router.get('/homework', requirePortalAuth, requireSchoolScope, async (req, res) 
   }
 });
 
-router.post('/homework', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.post('/homework', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) {
@@ -1229,7 +1229,7 @@ router.post('/homework', requireAdminAuth, requireSchoolScope, async (req, res) 
   }
 });
 
-router.delete('/homework/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.delete('/homework/:id', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const deleted = await Homework.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Homework not found' });
@@ -1336,7 +1336,7 @@ router.get('/exams', async (req, res) => {
   }
 });
 
-router.post('/exams', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/exams', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `exam-${Date.now()}`;
@@ -1352,7 +1352,7 @@ router.post('/exams', requirePortalAuth, requireSchoolScope, async (req, res) =>
   }
 });
 
-router.put('/exams/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.put('/exams/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const existing = await Exam.findOne({
       id: req.params.id,
@@ -1408,7 +1408,7 @@ router.patch('/exams/:id/lock', requireAdminAuth, requireSchoolScope, async (req
   }
 });
 
-router.delete('/exams/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.delete('/exams/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const deleted = await Exam.findOneAndDelete({
       id: req.params.id,
@@ -1422,7 +1422,7 @@ router.delete('/exams/:id', requirePortalAuth, requireSchoolScope, async (req, r
 });
 
 // Bulk Marks Matrix submission (updates/creates ReportCard records)
-router.post('/exams/marks-bulk', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/exams/marks-bulk', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const { schoolId, examTerm, academicYear, subject, marksList } = req.body;
     if (!marksList || !Array.isArray(marksList) || !subject) {
@@ -1530,7 +1530,7 @@ router.get('/timetable', async (req, res) => {
   }
 });
 
-router.post('/timetable', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/timetable', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { schoolId, class: className, section = 'A', schedule } = req.body;
     const targetSchoolId = req.user.role === 'developer' && schoolId ? schoolId : req.userSchoolId;
@@ -1580,7 +1580,7 @@ router.post('/leaves', requirePortalAuth, requireSchoolScope, async (req, res) =
   }
 });
 
-router.patch('/leaves/:id/status', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.patch('/leaves/:id/status', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const { status, reviewerRemarks, reviewedBy } = req.body;
     const validStatuses = ['Pending', 'Approved', 'Rejected'];
@@ -1609,7 +1609,7 @@ router.get('/transport/routes', async (req, res) => {
   }
 });
 
-router.post('/transport/routes', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/transport/routes', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `tr-${Date.now()}`;
@@ -1622,7 +1622,7 @@ router.post('/transport/routes', requirePortalAuth, requireSchoolScope, async (r
   }
 });
 
-router.put('/transport/routes/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.put('/transport/routes/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const updateData = { ...req.body };
     delete updateData.id;
@@ -1644,7 +1644,7 @@ router.put('/transport/routes/:id', requirePortalAuth, requireSchoolScope, async
   }
 });
 
-router.delete('/transport/routes/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.delete('/transport/routes/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const deleted = await TransportRoute.findOneAndDelete({
       id: req.params.id,
@@ -1680,7 +1680,7 @@ router.get('/library/books', async (req, res) => {
   }
 });
 
-router.post('/library/books', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/library/books', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `bk-${Date.now()}`;
@@ -1694,7 +1694,7 @@ router.post('/library/books', requirePortalAuth, requireSchoolScope, async (req,
   }
 });
 
-router.put('/library/books/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.put('/library/books/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const updateData = { ...req.body };
     delete updateData.id;
@@ -1716,7 +1716,7 @@ router.put('/library/books/:id', requirePortalAuth, requireSchoolScope, async (r
   }
 });
 
-router.delete('/library/books/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.delete('/library/books/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const deleted = await Book.findOneAndDelete({
       id: req.params.id,
@@ -1729,7 +1729,7 @@ router.delete('/library/books/:id', requirePortalAuth, requireSchoolScope, async
   }
 });
 
-router.get('/library/issues', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.get('/library/issues', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.status) filter.status = req.query.status;
@@ -1739,7 +1739,7 @@ router.get('/library/issues', requirePortalAuth, requireSchoolScope, async (req,
   }
 });
 
-router.post('/library/issue', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/library/issue', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `iss-${Date.now()}`;
@@ -1757,7 +1757,7 @@ router.post('/library/issue', requirePortalAuth, requireSchoolScope, async (req,
   }
 });
 
-router.post('/library/return', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/library/return', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { issueId, fineAmount = 0 } = req.body;
     if (!issueId) {
@@ -1795,7 +1795,7 @@ router.get('/inventory', async (req, res) => {
   }
 });
 
-router.post('/inventory', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/inventory', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) data.id = `inv-${Date.now()}`;
@@ -1808,7 +1808,7 @@ router.post('/inventory', requirePortalAuth, requireSchoolScope, async (req, res
   }
 });
 
-router.put('/inventory/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.put('/inventory/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const updateData = { ...req.body };
     delete updateData.id;
@@ -1830,7 +1830,7 @@ router.put('/inventory/:id', requirePortalAuth, requireSchoolScope, async (req, 
   }
 });
 
-router.delete('/inventory/:id', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.delete('/inventory/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const deleted = await InventoryItem.findOneAndDelete({
       id: req.params.id,
@@ -1843,7 +1843,7 @@ router.delete('/inventory/:id', requirePortalAuth, requireSchoolScope, async (re
   }
 });
 
-router.post('/inventory/:id/stock', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.post('/inventory/:id/stock', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const { delta } = req.body; // e.g. +10 or -2
     const item = await InventoryItem.findOneAndUpdate(
@@ -1866,7 +1866,7 @@ router.post('/inventory/:id/stock', requirePortalAuth, requireSchoolScope, async
 });
 
 // ================= AUDIT LOGS =================
-router.get('/audit-logs', requirePortalAuth, requireSchoolScope, async (req, res) => {
+router.get('/audit-logs', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const targetSchoolId = req.user?.role === 'developer' ? req.query.schoolId : req.userSchoolId;
     const filter = targetSchoolId ? { schoolId: targetSchoolId } : {};

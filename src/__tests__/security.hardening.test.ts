@@ -327,4 +327,151 @@ describe('Security Hardening, NoSQL Injection & Validation Suite', () => {
       expect(res.body.error).toBeDefined();
     });
   });
+
+  // =========================================================================
+  // 6. Role Privilege Escalation Defenses & UDISE+ Schema Persistence
+  // =========================================================================
+  describe('6. Role Privilege Escalation Defenses & UDISE+ Schema Persistence', () => {
+    let studentToken: string;
+    let teacherToken: string;
+
+    beforeEach(() => {
+      studentToken = jwt.sign(
+        {
+          schoolId: schoolIdA,
+          role: 'student',
+          studentId: 'std-sec-101',
+          studentClass: 'Class 8'
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '8h' }
+      );
+
+      teacherToken = jwt.sign(
+        {
+          schoolId: schoolIdA,
+          role: 'teacher',
+          teacherId: 'staff-sec-01',
+          schoolName: 'SSM Security Branch Alpha'
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '8h' }
+      );
+    });
+
+    it('rejects student token attempting to read administrative audit logs', async () => {
+      const res = await request(app)
+        .get('/api/audit-logs')
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('ADMIN_ROLE_REQUIRED');
+    });
+
+    it('rejects student token attempting to mutate exam schedule', async () => {
+      const res = await request(app)
+        .delete('/api/exams/exam-tamper')
+        .set('Authorization', `Bearer ${studentToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('ADMIN_ROLE_REQUIRED');
+    });
+
+    it('rejects student token attempting to approve or reject leave requests', async () => {
+      const res = await request(app)
+        .patch('/api/leaves/lv-101/status')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ status: 'Approved' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('TEACHER_ROLE_REQUIRED');
+    });
+
+    it('allows teacher token to query and submit attendance successfully', async () => {
+      const postRes = await request(app)
+        .post('/api/attendance')
+        .set('Authorization', `Bearer ${teacherToken}`)
+        .send({
+          studentId: 'std-sec-101',
+          date: '2026-09-15',
+          status: 'Present',
+          schoolId: schoolIdA
+        });
+
+      expect(postRes.status).toBe(200);
+      expect(postRes.body.status).toBe('Present');
+
+      const getRes = await request(app)
+        .get(`/api/attendance?schoolId=${schoolIdA}&date=2026-09-15`)
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      expect(getRes.status).toBe(200);
+      expect(Array.isArray(getRes.body)).toBe(true);
+      expect(getRes.body.length).toBeGreaterThan(0);
+    });
+
+    it('persists UDISE+ and APAAR ID fields into Student collection without stripping', async () => {
+      const studentData = {
+        id: 'std-udise-persistence',
+        schoolId: schoolIdA,
+        rollNo: '999',
+        name: 'दिव्यांश पांडेय',
+        gender: 'Bhaiya',
+        class: 'Class 9',
+        section: 'A',
+        fatherName: 'श्री संतोष पांडेय',
+        contact: '9876543210',
+        pen: '21098765432',
+        apaarId: '123456789012',
+        socialCategory: 'General',
+        cwsn: false,
+        bpl: true,
+        udiseStatus: { gp: true, ep: true, fp: false }
+      };
+
+      const res = await request(app)
+        .post('/api/students')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(studentData);
+
+      expect(res.status).toBe(201);
+      expect(res.body.pen).toBe('21098765432');
+      expect(res.body.apaarId).toBe('123456789012');
+      expect(res.body.bpl).toBe(true);
+
+      const inDb = await Student.findOne({ id: 'std-udise-persistence' }).lean();
+      expect(inDb).toBeDefined();
+      expect(inDb.pen).toBe('21098765432');
+      expect(inDb.apaarId).toBe('123456789012');
+      expect(inDb.bpl).toBe(true);
+      expect(inDb.udiseStatus?.gp).toBe(true);
+    });
+
+    it('verifies student TC using both q and query parameters', async () => {
+      await Student.create({
+        id: 'std-udise-verify',
+        schoolId: schoolIdA,
+        rollNo: '999',
+        name: 'दिव्यांश पांडेय',
+        gender: 'Bhaiya',
+        class: 'Class 9',
+        section: 'A',
+        fatherName: 'श्री संतोष पांडेय',
+        contact: '9876543210',
+        pen: '21098765432'
+      });
+
+      // Query with ?q=
+      const resQ = await request(app)
+        .get(`/api/students/verify-tc?schoolId=${schoolIdA}&q=21098765432`);
+      expect(resQ.status).toBe(200);
+      expect(resQ.body.name).toBe('दिव्यांश पांडेय');
+
+      // Query with ?query= (frontend interoperability)
+      const resQuery = await request(app)
+        .get(`/api/students/verify-tc?schoolId=${schoolIdA}&query=21098765432`);
+      expect(resQuery.status).toBe(200);
+      expect(resQuery.body.name).toBe('दिव्यांश पांडेय');
+    });
+  });
 });
