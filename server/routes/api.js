@@ -462,6 +462,37 @@ router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res
   }
 });
 
+// Public TC / Student Verification endpoint (safe, rate-limited, read-only against MongoDB)
+router.get('/students/verify-tc', async (req, res) => {
+  try {
+    const q = cleanStringParam(req.query.q);
+    const schoolId = cleanStringParam(req.query.schoolId);
+    if (!q || q.length < 2) {
+      return res.status(400).json({ error: 'कृपया कम से कम 2 अक्षर या अंक दर्ज करें।' });
+    }
+
+    const filter = schoolId ? { schoolId } : {};
+    const safeRegex = new RegExp(escapeRegex(q), 'i');
+
+    const student = await Student.findOne({
+      ...filter,
+      $or: [
+        { rollNo: safeRegex },
+        { pen: safeRegex },
+        { name: safeRegex }
+      ]
+    }).select('id schoolId rollNo name gender class section fatherName motherName admissionDate bloodGroup pen').lean();
+
+    if (!student) {
+      return res.status(404).json({ error: 'इस विवरण से कोई प्रमाणित छात्र अभिलेख नहीं मिला।' });
+    }
+
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ================= STUDENTS =================
 router.get('/students', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
@@ -1178,6 +1209,23 @@ router.delete('/homework/:id', requireAdminAuth, requireSchoolScope, async (req,
 });
 
 // ================= STAFF & ACHARYA =================
+// Public Staff / Acharya directory for homepage (sanitized, excludes sensitive salaries, PINs, contact)
+router.get('/staff/public', async (req, res) => {
+  try {
+    const filter = { status: 'Active' };
+    if (req.query.schoolId) {
+      filter.schoolId = cleanStringParam(req.query.schoolId);
+    }
+    const staff = await Staff.find(filter)
+      .select('id schoolId name gender designation qualification subjects joiningDate status')
+      .sort({ createdAt: 1 })
+      .lean();
+    res.json(staff);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};

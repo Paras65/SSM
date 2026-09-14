@@ -218,6 +218,13 @@ export const api = {
     return handleJsonResponse<{ success: boolean; message: string; student: Student }>(res, 'Failed to anonymize student data');
   },
 
+  async verifyStudentTc(query: string, schoolId?: string): Promise<Student> {
+    const params = new URLSearchParams({ query });
+    if (schoolId) params.append('schoolId', schoolId);
+    const res = await apiFetch(`/students/verify-tc?${params.toString()}`);
+    return handleJsonResponse<Student>(res, 'प्रमाणित छात्र अभिलेख नहीं मिला');
+  },
+
   // ================= ATTENDANCE =================
   async getAttendance(date?: string, schoolId?: string): Promise<AttendanceRecord[]> {
     const params = new URLSearchParams();
@@ -395,6 +402,12 @@ export const api = {
   // ================= STAFF & PAYROLL =================
   async getStaff(schoolId?: string): Promise<Staff[]> {
     const url = schoolId ? `/staff?schoolId=${encodeURIComponent(schoolId)}` : '/staff';
+    const res = await apiFetch(url);
+    return handleJsonResponse<Staff[]>(res, 'Failed to fetch staff');
+  },
+
+  async getPublicStaff(schoolId?: string): Promise<Staff[]> {
+    const url = schoolId ? `/staff/public?schoolId=${encodeURIComponent(schoolId)}` : '/staff/public';
     const res = await apiFetch(url);
     return handleJsonResponse<Staff[]>(res, 'Failed to fetch staff');
   },

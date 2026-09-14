@@ -50,53 +50,67 @@ export const NoticeBoard: React.FC = () => {
         </div>
 
         {/* Notices Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredNotices.map(notice => (
-            <div
-              key={notice.id}
-              className={`p-6 rounded-2xl border transition-all duration-200 hover:shadow-md flex flex-col justify-between ${
-                notice.isUrgent
-                  ? 'bg-gradient-to-br from-amber-50/80 to-white border-orange-400'
-                  : 'bg-white border-stone-200 hover:border-orange-200'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-800">
-                      <Tag className="w-3 h-3" />
-                      {notice.category}
-                    </span>
-                    {notice.isUrgent && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700 animate-pulse">
-                        <AlertCircle className="w-3 h-3" />
-                        अति महत्वपूर्ण
+        {filteredNotices.length === 0 ? (
+          <div className="text-center py-14 px-4 rounded-3xl border border-dashed border-orange-200 bg-orange-50/30">
+            <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center mx-auto mb-3">
+              <Bell className="w-6 h-6 opacity-70" />
+            </div>
+            <h4 className="text-base font-bold text-stone-900">
+              वर्तमान में कोई नवीन परिपत्र अथवा सूचना उपलब्ध नहीं है
+            </h4>
+            <p className="text-xs text-stone-500 max-w-md mx-auto mt-1">
+              प्रशासन द्वारा नई सूचनाएं, परीक्षा कार्यक्रम अथवा अवकाश परिपत्र जारी होने पर यहां तत्काल प्रदर्शित होंगे।
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredNotices.map(notice => (
+              <div
+                key={notice.id}
+                className={`p-6 rounded-2xl border transition-all duration-200 hover:shadow-md flex flex-col justify-between ${
+                  notice.isUrgent
+                    ? 'bg-gradient-to-br from-amber-50/80 to-white border-orange-400'
+                    : 'bg-white border-stone-200 hover:border-orange-200'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-800">
+                        <Tag className="w-3 h-3" />
+                        {notice.category}
                       </span>
-                    )}
+                      {notice.isUrgent && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700 animate-pulse">
+                          <AlertCircle className="w-3 h-3" />
+                          अति महत्वपूर्ण
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-stone-500 font-medium">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{notice.date}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-stone-500 font-medium">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{notice.date}</span>
-                  </div>
+
+                  <h3 className="text-base sm:text-lg font-bold text-stone-900 mb-2 leading-snug">
+                    {notice.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                    {notice.content}
+                  </p>
                 </div>
 
-                <h3 className="text-base sm:text-lg font-bold text-stone-900 mb-2 leading-snug">
-                  {notice.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                  {notice.content}
-                </p>
+                <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-orange-700 font-semibold">
+                  <span>आज्ञा से: प्रधानाचार्य</span>
+                  <span className="flex items-center gap-0.5 hover:underline cursor-pointer">
+                    विस्तृत विवरण <ArrowUpRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
               </div>
-
-              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-orange-700 font-semibold">
-                <span>आज्ञा से: प्रधानाचार्य</span>
-                <span className="flex items-center gap-0.5 hover:underline cursor-pointer">
-                  विस्तृत विवरण <ArrowUpRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
       </div>
     </section>

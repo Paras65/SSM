@@ -1,21 +1,76 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { INITIAL_ACHARYAS } from '../../data/mockData';
+import { api } from '../../services/api';
+import type { Staff } from '../../types';
 import { Users, Sparkles, Award, GraduationCap, BookOpen, Heart } from 'lucide-react';
 
 export const AcharyaSection: React.FC = () => {
-  const { currentSchool } = useSchool();
+  const { currentSchool, isDemoMode } = useSchool();
+  const [liveStaff, setLiveStaff] = useState<Staff[]>([]);
 
-  // Faculty list with active school's principal dynamically updated
-  const facultyList = INITIAL_ACHARYAS.map((ach, idx) => {
-    if (idx === 0 && currentSchool.principalName) {
-      return {
-        ...ach,
-        name: currentSchool.principalName
-      };
+  useEffect(() => {
+    if (isDemoMode) {
+      setLiveStaff([]);
+      return;
     }
-    return ach;
-  });
+    let isMounted = true;
+    api.getPublicStaff(currentSchool.id)
+      .then(data => {
+        if (isMounted && Array.isArray(data)) {
+          setLiveStaff(data);
+        }
+      })
+      .catch(() => {
+        // Fall back gracefully if server offline
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentSchool.id, isDemoMode]);
+
+  // Dynamic faculty list: Live MongoDB data first, fallback to mock in demo/offline
+  const facultyList = useMemo(() => {
+    if (liveStaff.length > 0) {
+      return liveStaff.map(member => {
+        const isDidi = member.gender === 'Didi';
+        const title = isDidi ? 'दीदी जी' : 'आचार्य जी';
+        const subjectsList = member.subjects
+          ? member.subjects.split(',').map(s => s.trim()).filter(Boolean)
+          : ['समस्त विषय'];
+
+        let experienceStr = 'अनुभवी';
+        if (member.joiningDate) {
+          const joinYear = parseInt(member.joiningDate.split('-')[0], 10);
+          if (!isNaN(joinYear)) {
+            const yrs = Math.max(1, new Date().getFullYear() - joinYear);
+            experienceStr = `${yrs} वर्ष`;
+          }
+        }
+
+        return {
+          id: member.id,
+          name: member.name,
+          title,
+          designation: member.designation,
+          qualification: member.qualification || 'स्नातकोत्तर / बी.एड.',
+          experience: experienceStr,
+          subjects: subjectsList
+        };
+      });
+    }
+
+    return INITIAL_ACHARYAS.map((ach, idx) => {
+      if (idx === 0 && currentSchool.principalName) {
+        return {
+          ...ach,
+          name: currentSchool.principalName
+        };
+      }
+      return ach;
+    });
+  }, [liveStaff, currentSchool.principalName]);
 
   return (
     <section id="acharyas" className="py-16 bg-gradient-to-b from-stone-50 via-amber-50/30 to-white border-b border-orange-200">

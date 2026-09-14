@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import { ShieldCheck, Search, X, CheckCircle2, AlertCircle, Printer, Award, FileText, QrCode } from 'lucide-react';
+import { ShieldCheck, Search, X, CheckCircle2, AlertCircle, Printer, Award, FileText, QrCode, Loader2 } from 'lucide-react';
+import { api } from '../../services/api';
 import type { Student } from '../../types';
 
 interface TCVerificationModalProps {
@@ -12,33 +13,73 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
   const { students, publicSchool } = useSchool();
   const [searchQuery, setSearchQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [matchedStudent, setMatchedStudent] = useState<Student | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSearch = (queryToUse?: string) => {
-    const q = (queryToUse !== undefined ? queryToUse : searchQuery).trim().toLowerCase();
+  // Sample verification chips: active students if available, or sample records for instant testing
+  const sampleChips = students.length > 0
+    ? students.slice(0, 3)
+    : [
+        { id: 'sample-001', rollNo: '101', pen: '21094837201', name: 'Aryan Sharma', class: 'Class 8', section: 'A', fatherName: 'Shri Rajesh Sharma', motherName: 'Smt. Sunita Sharma' },
+        { id: 'sample-002', rollNo: '102', pen: '21094837202', name: 'Ananya Verma', class: 'Class 8', section: 'A', fatherName: 'Shri Manoj Verma', motherName: 'Smt. Rekha Verma' }
+      ];
+
+  const handleSearch = async (queryToUse?: string) => {
+    const q = (queryToUse !== undefined ? queryToUse : searchQuery).trim();
     if (!q) return;
 
     setHasSearched(true);
-    // Match by rollNo, pen, name, or extracted sequence
-    const found = students.find(s => {
+    setIsSearching(true);
+    const qLower = q.toLowerCase();
+
+    // 1. Check local in-memory student state or sampleChips first (instant & synchronous)
+    let found = students.find(s => {
       const roll = (s.rollNo || '').toLowerCase();
       const pen = (s.pen || '').toLowerCase();
       const name = (s.name || '').toLowerCase();
       const rollDigits = roll.replace(/\D/g, '');
-      const queryDigits = q.replace(/\D/g, '');
+      const queryDigits = qLower.replace(/\D/g, '');
 
       return (
-        roll.includes(q) ||
-        pen.includes(q) ||
-        name.includes(q) ||
-        q.includes(roll) ||
+        roll.includes(qLower) ||
+        pen.includes(qLower) ||
+        name.includes(qLower) ||
+        qLower.includes(roll) ||
         (queryDigits.length >= 3 && rollDigits.includes(queryDigits))
       );
     });
 
-    setMatchedStudent(found || null);
+    if (!found) {
+      found = sampleChips.find(s => {
+        const roll = (s.rollNo || '').toLowerCase();
+        const pen = (s.pen || '').toLowerCase();
+        const name = (s.name || '').toLowerCase();
+        return roll === qLower || pen === qLower || name.toLowerCase().includes(qLower);
+      }) as any;
+    }
+
+    if (found) {
+      setMatchedStudent(found);
+      setIsSearching(false);
+      return;
+    }
+
+    // 2. If not found in memory/sampleChips, query live MongoDB database asynchronously
+    setIsSearching(true);
+    try {
+      const liveMatch = await api.verifyStudentTc(q, publicSchool.id);
+      if (liveMatch && liveMatch.id) {
+        setMatchedStudent(liveMatch);
+      } else {
+        setMatchedStudent(null);
+      }
+    } catch {
+      setMatchedStudent(null);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const currentYear = new Date().getFullYear();
@@ -96,17 +137,25 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
               </div>
               <button
                 type="button"
+                disabled={isSearching}
                 onClick={() => handleSearch()}
-                className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded-xl shadow-xs transition cursor-pointer shrink-0"
+                className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-xs transition cursor-pointer shrink-0 flex items-center gap-1.5"
               >
-                सत्यापित करें
+                {isSearching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>जांच जारी...</span>
+                  </>
+                ) : (
+                  <span>सत्यापित करें</span>
+                )}
               </button>
             </div>
 
             {/* Quick Demo Chips */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="text-[11px] font-semibold text-stone-500">त्वरित परीक्षण हेतु क्लिक करें:</span>
-              {students.slice(0, 3).map(s => (
+              {sampleChips.map(s => (
                 <button
                   key={s.id}
                   type="button"

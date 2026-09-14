@@ -125,7 +125,7 @@ const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
 export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('public');
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>('ssm-001');
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   // Multi-School state
   const readStorage = (key: string): string | null => {
@@ -170,83 +170,23 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting');
   const [dbHost, setDbHost] = useState<string>('MongoDB Atlas');
 
-  // States initialized with local fallback or empty
+  // Live Database-Driven Collections (empty by default; populated via MongoDB API)
   const [students, setStudents] = useState<Student[]>(() => {
-    const saved = readStorage(`ssm_students_${currentSchoolId}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // ignore corrupted cache and continue with defaults
-      }
-    }
-    const legacy = readStorage('ssm_students');
-    return legacy ? JSON.parse(legacy) : INITIAL_STUDENTS;
+    return isDemoMode ? INITIAL_STUDENTS : [];
   });
 
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
-    const saved = readStorage(`ssm_attendance_${currentSchoolId}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // ignore corrupted cache and continue with defaults
-      }
-    }
-    const legacy = readStorage('ssm_attendance');
-    if (legacy) {
-      try {
-        return JSON.parse(legacy);
-      } catch {
-        // ignore corrupted cache and continue with defaults
-      }
-    }
-    const today = new Date().toISOString().split('T')[0];
-    return INITIAL_STUDENTS.map((s, idx) => ({
-      id: `att-${idx}`,
-      studentId: s.id,
-      date: today,
-      status: (idx === 3 ? 'Absent' : idx === 6 ? 'Leave' : 'Present') as AttendanceStatus
-    }));
-  });
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
 
   const [feeRecords, setFeeRecords] = useState<FeeRecord[]>(() => {
-    const saved = readStorage(`ssm_fees_${currentSchoolId}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // ignore corrupted cache and continue with defaults
-      }
-    }
-    const legacy = readStorage('ssm_fees');
-    return legacy ? JSON.parse(legacy) : INITIAL_FEES;
+    return isDemoMode ? INITIAL_FEES : [];
   });
 
   const [reportCards, setReportCards] = useState<ReportCard[]>(() => {
-    const saved = readStorage(`ssm_report_cards_${currentSchoolId}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // ignore corrupted cache and continue with defaults
-      }
-    }
-    const legacy = readStorage('ssm_report_cards');
-    return legacy ? JSON.parse(legacy) : INITIAL_REPORT_CARDS;
+    return isDemoMode ? INITIAL_REPORT_CARDS : [];
   });
 
   const [notices, setNotices] = useState<Notice[]>(() => {
-    const saved = readStorage(`ssm_notices_${currentSchoolId}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // ignore corrupted cache and continue with defaults
-      }
-    }
-    const legacy = readStorage('ssm_notices');
-    return legacy ? JSON.parse(legacy) : INITIAL_NOTICES;
+    return isDemoMode ? INITIAL_NOTICES : [];
   });
 
   // Switch active school
@@ -277,7 +217,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // Always fetch public notices for the active school so parents see live notices
         api.getNotices(schoolIdToFetch).then(dbNotices => {
-          if (Array.isArray(dbNotices) && dbNotices.length > 0) {
+          if (Array.isArray(dbNotices)) {
             setNotices(dbNotices);
           }
         }).catch(() => {});
@@ -297,9 +237,12 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             api.getReports(schoolIdToFetch)
           ]);
 
-          if (studentsRes.status === 'fulfilled' && Array.isArray(studentsRes.value) && studentsRes.value.length > 0) {
+          if (studentsRes.status === 'fulfilled' && Array.isArray(studentsRes.value)) {
             setStudents(studentsRes.value);
-            setSelectedStudentId(prev => (prev && studentsRes.value.some(s => s.id === prev) ? prev : studentsRes.value[0].id));
+            setSelectedStudentId(prev => {
+              if (prev && studentsRes.value.some(s => s.id === prev)) return prev;
+              return studentsRes.value.length > 0 ? studentsRes.value[0].id : null;
+            });
           }
           if (attRes.status === 'fulfilled' && Array.isArray(attRes.value)) {
             setAttendanceRecords(attRes.value);
@@ -382,6 +325,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setFeeRecords(INITIAL_FEES);
     setReportCards(INITIAL_REPORT_CARDS);
     setNotices(INITIAL_NOTICES);
+    setSelectedStudentId(INITIAL_STUDENTS[0]?.id || null);
     setViewMode('admin');
   };
 
@@ -397,6 +341,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setIsDemoMode(false);
     setViewMode('public');
+    refreshFromDb(currentSchoolId);
   };
 
   // Student actions (MongoDB + Optimistic)
