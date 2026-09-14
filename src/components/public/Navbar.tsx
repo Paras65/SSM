@@ -201,12 +201,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 पंचांग
               </a>
-              <a
-                href="#alumni"
-                className="hover:text-orange-600 transition-colors text-orange-800 font-bold px-2 py-1 rounded-lg hover:bg-orange-50"
-              >
-                पूर्व छात्र
-              </a>
 
               {/* "Other Sections" Dropdown */}
               <div className="relative" ref={moreLinksRef}>
