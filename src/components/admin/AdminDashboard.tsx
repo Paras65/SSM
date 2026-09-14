@@ -581,7 +581,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Controls: Branch Switcher, Plan, Sync, Desktop Buttons */}
-          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 text-xs w-full sm:w-auto pb-0.5 sm:pb-0">
+          <div className="flex flex-wrap items-center justify-start sm:justify-end gap-1.5 sm:gap-2 text-xs w-full sm:w-auto pb-0.5 sm:pb-0">
             {/* School / Branch Switcher */}
             <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-orange-950 border border-orange-800 text-[11px] font-bold text-amber-200 min-w-0 max-w-[55%] sm:max-w-none">
               <Building2 className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
