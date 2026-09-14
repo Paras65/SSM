@@ -764,7 +764,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto text-xs font-medium border-t border-orange-800/60 w-full max-w-full scrollbar-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto text-xs font-medium border-t border-orange-800/60 w-full max-w-full">
           <button
             onClick={() => setCurrentTab('overview')}
             className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap ${
