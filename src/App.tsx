@@ -21,6 +21,7 @@ import { AdminAuthModal } from './components/admin/AdminAuthModal';
 import { ERPModulesSection } from './components/public/ERPModulesSection';
 import { TeacherAuthModal } from './components/teacher/TeacherAuthModal';
 import { SchoolManagementModal } from './components/admin/SchoolManagementModal';
+import { SchoolLocatorModal } from './components/public/SchoolLocatorModal';
 import { LanguageProvider } from './context/LanguageContext';
 import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/common/ToastContainer';
@@ -42,6 +43,7 @@ const SchoolApp: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTeacherAuthModal, setShowTeacherAuthModal] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
+  const [showSchoolLocatorModal, setShowSchoolLocatorModal] = useState(false);
   const [showTcVerificationModal, setShowTcVerificationModal] = useState(false);
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
   const [schoolModalPlan, setSchoolModalPlan] = useState<'free' | 'pro'>('free');
@@ -78,8 +80,7 @@ const SchoolApp: React.FC = () => {
   };
 
   const handleOpenBranchList = () => {
-    setSchoolModalMode('list');
-    setShowSchoolModal(true);
+    setShowSchoolLocatorModal(true);
   };
 
   return (
@@ -167,7 +168,13 @@ const SchoolApp: React.FC = () => {
         onClose={() => setShowTcVerificationModal(false)}
       />
 
-      {/* School Management Modal */}
+      {/* Public Vidya Bharati School Locator Modal */}
+      <SchoolLocatorModal
+        isOpen={showSchoolLocatorModal}
+        onClose={() => setShowSchoolLocatorModal(false)}
+      />
+
+      {/* School Management Modal (Used for Admin & Registration) */}
       <SchoolManagementModal
         isOpen={showSchoolModal}
         onClose={() => setShowSchoolModal(false)}

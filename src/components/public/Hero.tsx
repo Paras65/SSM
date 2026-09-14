@@ -145,10 +145,10 @@ export const Hero: React.FC<HeroProps> = ({
                 type="button"
                 onClick={onOpenBranchList}
                 className="px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-stone-900 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                title="अपनी विद्यालय शाखा चुनें या बदलें"
+                title="नजदीकी सरस्वती शिशु मंदिर खोजें (School Locator)"
               >
-                <span>🏫</span>
-                <span>{publicSchool.id === 'ssm-national' ? 'विद्यालय शाखा चुनें' : `शाखा: ${publicSchool.city}`}</span>
+                <span>🔍</span>
+                <span>{publicSchool.id === 'ssm-national' ? 'नजदीकी विद्यालय खोजें' : `शाखा: ${publicSchool.city}`}</span>
               </button>
 
               {onOpenVerifyTc && (

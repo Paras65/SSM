@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { AdminAuthModal } from '../admin/AdminAuthModal';
 import { SchoolManagementModal } from '../admin/SchoolManagementModal';
+import { SchoolLocatorModal } from './SchoolLocatorModal';
 import { subscribePwaInstall, promptPwaInstall } from '../../services/pwa';
 import { Sparkles, Phone, Mail, Clock, UserCheck, Menu, X, Smartphone, Globe, LogIn, Plus, BookOpen } from 'lucide-react';
 import { useLanguage, SUPPORTED_LANGUAGES, type Language } from '../../context/LanguageContext';
@@ -64,12 +65,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
+  const [showLocatorModal, setShowLocatorModal] = useState(false);
+
   const handleOpenBranchList = () => {
     if (onOpenBranchList) {
       onOpenBranchList();
     } else {
-      setSchoolModalMode('list');
-      setShowSchoolModal(true);
+      setShowLocatorModal(true);
     }
   };
 
@@ -192,15 +194,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>{isAdminAuthenticated ? 'Admin Dashboard' : 'प्रशासन'}</span>
             </button>
 
-            {/* Active Branch Chip with quick switch trigger */}
+            {/* Active School Chip with School Locator trigger */}
             <button
               onClick={handleOpenBranchList}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-orange-300 rounded-xl text-xs font-bold text-stone-900 hover:text-orange-950 transition cursor-pointer shrink-0 shadow-2xs"
-              title="वर्तमान सक्रिय शाखा • क्लिक करके अन्य शाखाएं देखें या बदलें"
+              title="नजदीकी सरस्वती शिशु मंदिर खोजें (School Locator)"
             >
-              <span className="text-sm">🏫</span>
+              <span className="text-sm">🔍</span>
               <span className="max-w-[100px] lg:max-w-[130px] truncate">
-                {publicSchool.id === 'ssm-national' ? 'शाखा चुनें' : publicSchool.city}
+                {publicSchool.id === 'ssm-national' ? 'विद्यालय खोजें' : publicSchool.city}
               </span>
               <span className="text-[10px] text-orange-700">▼</span>
             </button>
@@ -269,9 +271,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={handleOpenBranchList}
               className="p-1.5 bg-amber-100 text-orange-950 border border-orange-300 rounded-md text-xs font-bold"
-              title="Switch School Branch"
+              title="नजदीकी सरस्वती शिशु मंदिर खोजें (School Locator)"
             >
-              🏫 सभी शाखाएं
+              🔍 विद्यालय खोजें
             </button>
             <button
               onClick={handleOpenAdmin}
@@ -376,6 +378,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             चित्रदीर्घा (School Gallery)
           </a>
 
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleOpenBranchList();
+            }}
+            className="w-full text-left px-3 py-2 rounded-md bg-amber-50 hover:bg-amber-100 text-orange-950 font-bold text-xs flex items-center gap-2"
+          >
+            <span>🏫</span>
+            <span>नजदीकी सरस्वती शिशु मंदिर खोजें (School Locator)</span>
+          </button>
+
           {onOpenVerifyTc && (
             <button
               type="button"
@@ -469,6 +483,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         />
       </>
     )}
+
+    {/* Public Vidya Bharati School Locator Modal */}
+    <SchoolLocatorModal
+      isOpen={showLocatorModal}
+      onClose={() => setShowLocatorModal(false)}
+    />
   </>
 );
 };
