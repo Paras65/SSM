@@ -10,7 +10,6 @@ import { VandanaCorner } from './components/public/VandanaCorner';
 import { AcharyaSection } from './components/public/AcharyaSection';
 import { AdmissionInquiry } from './components/public/AdmissionInquiry';
 import { Gallery } from './components/public/Gallery';
-import { AlumniSection } from './components/public/AlumniSection';
 import { ContactSection } from './components/public/ContactSection';
 import { TCVerificationModal } from './components/public/TCVerificationModal';
 import { Footer } from './components/public/Footer';
@@ -130,7 +129,6 @@ const SchoolApp: React.FC = () => {
             <PanchmukhiShiksha />
             <VandanaCorner />
             <AcharyaSection />
-            <AlumniSection />
             <Gallery />
             <ContactSection
               onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)}
