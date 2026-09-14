@@ -187,11 +187,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Active Branch Chip with quick switch trigger */}
             <button
               onClick={handleOpenBranchList}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 border border-orange-200 rounded-xl text-xs font-bold text-stone-800 hover:text-orange-950 transition cursor-pointer shrink-0"
-              title="वर्तमान सक्रिय शाखा • क्लिक करके अन्य शाखाएं देखें"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-orange-300 rounded-xl text-xs font-bold text-stone-900 hover:text-orange-950 transition cursor-pointer shrink-0 shadow-2xs"
+              title="वर्तमान सक्रिय शाखा • क्लिक करके अन्य शाखाएं देखें या बदलें"
             >
               <span className="text-sm">🏫</span>
-              <span className="max-w-[70px] lg:max-w-[90px] truncate">{publicSchool.city || 'शाखाएं'}</span>
+              <span className="max-w-[100px] lg:max-w-[130px] truncate">
+                {publicSchool.id === 'ssm-national' ? 'शाखा चुनें' : publicSchool.city}
+              </span>
+              <span className="text-[10px] text-orange-700">▼</span>
             </button>
 
             {/* Language Switcher */}

@@ -113,3 +113,4 @@ export function downloadUdisePlusCSV(students: Student[], school: School): void 
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+

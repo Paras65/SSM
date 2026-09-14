@@ -6,9 +6,10 @@ interface HeroProps {
   onOpenSignUp?: () => void;
   onOpenLogin?: () => void;
   onOpenTeacherLogin?: () => void;
+  onOpenBranchList?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenLogin, onOpenTeacherLogin }) => {
+export const Hero: React.FC<HeroProps> = ({ onOpenLogin, onOpenTeacherLogin, onOpenBranchList }) => {
   const { setViewMode, publicSchool } = useSchool();
 
   return (
@@ -106,6 +107,16 @@ export const Hero: React.FC<HeroProps> = ({ onOpenLogin, onOpenTeacherLogin }) =
               >
                 <span>📢 सूचना पट्ट (Notices)</span>
               </a>
+              <button
+                type="button"
+                onClick={onOpenBranchList}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                title="अपनी विद्यालय शाखा चुनें या बदलें"
+              >
+                <span>🏫</span>
+                <span>{publicSchool.id === 'ssm-national' ? 'विद्यालय शाखा चुनें' : `शाखा: ${publicSchool.city}`}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={onOpenLogin}

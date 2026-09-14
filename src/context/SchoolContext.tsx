@@ -4,6 +4,27 @@ import { INITIAL_STUDENTS, INITIAL_FEES, INITIAL_REPORT_CARDS, INITIAL_NOTICES }
 import { api } from '../services/api';
 
 const DEFAULT_FALLBACK_SCHOOL: School = {
+  id: 'ssm-national',
+  name: 'Saraswati Shishu Mandir (Vidya Bharati Akhil Bharatiya Shiksha Sansthan)',
+  hindiName: 'सरस्वती शिशु एवं विद्या मंदिर',
+  tagline: 'सा विद्या या विमुक्तये (That is knowledge which liberates)',
+  affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान',
+  affiliationNo: 'VB-CENTRAL-001',
+  established: '1952',
+  address: 'विद्या भारती अखिल भारतीय शिक्षा संस्थान, नई दिल्ली - 110055',
+  city: 'अखिल भारतीय',
+  state: 'भारत',
+  prant: 'विद्या भारती',
+  phone: '1800-180-5522',
+  email: 'info@vidyabharti.net',
+  timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
+  principalName: 'केंद्रीय समन्वय समिति',
+  adminPasscode: '1952',
+  plan: 'free',
+  udiseCode: '09000000000'
+};
+
+const HISTORIC_GORAKHPUR_BRANCH: School = {
   id: 'ssm-gorakhpur',
   name: 'Saraswati Shishu Mandir Senior Secondary School, Gorakhpur',
   hindiName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय, गोरखपुर',
@@ -20,27 +41,8 @@ const DEFAULT_FALLBACK_SCHOOL: School = {
   timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
   principalName: 'आचार्य राम नारायण शुक्ला',
   adminPasscode: '1952',
-  plan: 'free'
-};
-
-const PUBLIC_PLATFORM_SCHOOL: School = {
-  id: 'ssm-platform',
-  name: 'Saraswati Shishu Mandir Digital ERP',
-  hindiName: 'सरस्वती शिशु मंदिर डिजिटल ईआरपी',
-  tagline: 'संस्कारयुक्त शिक्षा का सरल डिजिटल प्रबंधन',
-  affiliate: 'विद्या भारती विद्यालयों के लिए डिजिटल समाधान',
-  affiliationNo: '',
-  established: '',
-  address: 'सभी पंजीकृत शाखाओं के लिए',
-  city: 'सभी शाखाएं',
-  state: '',
-  prant: 'SSM ERP',
-  phone: 'सहायता केंद्र उपलब्ध',
-  email: 'support@init65.co.in',
-  timings: 'ऑनलाइन 24x7',
-  principalName: '',
-  adminPasscode: '',
-  plan: 'free'
+  plan: 'free',
+  udiseCode: '09510100101'
 };
 
 interface SchoolContextType {
@@ -120,9 +122,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
-  const [schools, setSchools] = useState<School[]>([DEFAULT_FALLBACK_SCHOOL]);
+  const [schools, setSchools] = useState<School[]>([DEFAULT_FALLBACK_SCHOOL, HISTORIC_GORAKHPUR_BRANCH]);
   const [currentSchoolId, setCurrentSchoolIdState] = useState<string>(() => {
-    return readStorage('ssm_current_school_id') || 'ssm-gorakhpur';
+    return readStorage('ssm_current_school_id') || 'ssm-national';
   });
 
   const currentSchool = schools.find(s => s.id === currentSchoolId) || schools[0] || DEFAULT_FALLBACK_SCHOOL;
@@ -233,7 +235,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Fetch schools list first (publicly accessible)
         const dbSchools = await api.getSchools().catch(() => []);
         if (dbSchools.length > 0) {
-          setSchools(dbSchools);
+          const hasNational = dbSchools.some(s => s.id === 'ssm-national');
+          setSchools(hasNational ? dbSchools : [DEFAULT_FALLBACK_SCHOOL, ...dbSchools]);
         }
 
         // Always fetch public notices for the active school so parents see live notices

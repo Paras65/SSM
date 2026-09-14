@@ -105,6 +105,7 @@ const SchoolApp: React.FC = () => {
               onOpenSignUp={() => handleOpenSignUp('free')}
               onOpenLogin={handleOpenLogin}
               onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
+              onOpenBranchList={handleOpenBranchList}
             />
             <DailyPanchang />
             <NoticeBoard />

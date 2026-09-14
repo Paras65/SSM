@@ -480,16 +480,16 @@ export const INITIAL_REPORT_CARDS: ReportCard[] = [
 ];
 
 export const SCHOOL_INFO = {
-  name: 'Saraswati Shishu Mandir Senior Secondary School',
-  hindiName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय',
+  name: 'Saraswati Shishu Mandir (Vidya Bharati Akhil Bharatiya Shiksha Sansthan)',
+  hindiName: 'सरस्वती शिशु एवं विद्या मंदिर',
   tagline: 'सा विद्या या विमुक्तये (That is knowledge which liberates)',
-  affiliate: 'Affiliated to Vidya Bharati Akhil Bharatiya Shiksha Sansthan & CBSE',
+  affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान',
   established: '1952',
-  gorakhpurNote: 'Inspired by the historic foundation at Gorakhpur, UP',
-  address: 'Vidya Bharati Marg, Civil Lines, Gorakhpur, Uttar Pradesh - 273001',
-  phone: '+91 551 2345678 / +91 94150 12345',
-  email: 'pradhanacharya@ssmgorakhpur.edu.in',
+  gorakhpurNote: 'Inspired by the historic 1952 foundation by Nanaji Deshmukh',
+  address: 'विद्या भारती अखिल भारतीय शिक्षा संस्थान, नई दिल्ली - 110055',
+  phone: '1800-180-5522 / +91 11 2350011',
+  email: 'info@vidyabharti.net',
   timings: 'Morning 7:30 AM to 1:30 PM (Mon-Sat)',
-  principalName: 'Acharya Ram Narayan Shukla',
+  principalName: 'केंद्रीय शिक्षा समन्वय समिति',
   motto: 'Knowledge, Character, Patriotism and Culture',
 };
