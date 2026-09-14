@@ -153,3 +153,30 @@ export function exportAttendanceToCSV(attendance: AttendanceRecord[], students: 
   const filename = `SSM_Attendance_${date}.csv`;
   downloadCSV(csv, filename);
 }
+
+export function downloadStudentCsvTemplate(): void {
+  const headers = [
+    'Roll No',
+    'Name',
+    'Gender (Bhaiya/Bahin)',
+    'Class',
+    'Section',
+    'Father Name',
+    'Mother Name',
+    'Contact',
+    'Address',
+    'DOB (YYYY-MM-DD)',
+    'Blood Group'
+  ];
+
+  const sampleRows = [
+    ['101', 'Bhaiya Keshav Sharma', 'Bhaiya', 'Class 6', 'A', 'Shri Ramesh Sharma', 'Smt. Geeta Sharma', '+91 98765 43210', 'Civil Lines', '2014-04-15', 'O+'],
+    ['102', 'Bahin Shreya Dixit', 'Bahin', 'Class 6', 'A', 'Shri Alok Dixit', 'Smt. Pratibha Dixit', '+91 94150 99887', 'Golghar', '2014-07-22', 'B+'],
+    ['103', 'Bhaiya Madhav Pandey', 'Bhaiya', 'Class 6', 'B', 'Shri Suresh Pandey', 'Smt. Saroj Pandey', '+91 98390 12345', 'Taramandal', '2014-02-10', 'A+'],
+    ['104', 'Bahin Ananya Tiwari', 'Bahin', 'Class 7', 'A', 'Shri Vinod Tiwari', 'Smt. Ritu Tiwari', '+91 99350 54321', 'Geeta Vatika', '2013-09-05', 'AB+'],
+    ['105', 'Bhaiya Devendra Nath', 'Bhaiya', 'Class 8', 'A', 'Shri Prem Nath', 'Smt. Shanti Devi', '+91 94500 67890', 'Shahpur', '2012-11-18', 'O+']
+  ];
+
+  const csv = [headers.join(','), ...sampleRows.map(row => row.map(sanitizeCsvCell).join(','))].join('\n');
+  downloadCSV(csv, 'SSM_Chhatra_Panjika_Sample_Template.csv');
+}

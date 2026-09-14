@@ -673,6 +673,17 @@ export const AdminDashboard: React.FC = () => {
               <span>सत्र: {currentSchool.currentAcademicYear || '2025-26'} 🔄</span>
             </button>
 
+            {/* 15-Day Free Trial / Pro Active Badge */}
+            {currentSchool.plan === 'pro' && (
+              <div
+                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 text-[11px] font-bold border border-amber-400/40 shrink-0"
+                title="15-दिवसीय प्रो पायलट ट्रायल सक्रिय है। समस्त उन्नत सुविधाएं (NEP रिपोर्ट कार्ड, डिजिटल आईडी, व्हाट्सएप सूचनाएं) उपलब्ध हैं।"
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span>15-दिवसीय प्रो ट्रायल सक्रिय</span>
+              </div>
+            )}
+
             {/* Proposal Print Button */}
             <button
               onClick={() => setShowProposalModal(true)}

@@ -3,7 +3,8 @@ import {
   cleanIndianPhone,
   generateAdmissionWhatsAppUrl,
   generateFeeReminderWhatsAppUrl,
-  generateAttendanceAlertWhatsAppUrl
+  generateAttendanceAlertWhatsAppUrl,
+  generateSchoolOnboardingWhatsAppUrl
 } from '../utils/whatsapp';
 import { generateRichDemoData } from '../utils/demoDataSeeder';
 import { generateFullBackupJSON, parseAndValidateBackupJSON } from '../utils/backupExport';
@@ -60,6 +61,23 @@ describe('Pitching & Field-Ready Utilities Suite', () => {
       expect(url).not.toBeNull();
       expect(url).toContain('https://wa.me/919876543210');
       expect(url).toContain(encodeURIComponent('अनुपस्थित (Absent)'));
+    });
+
+    it('generates direct WhatsApp URL for school onboarding welcome and credentials', () => {
+      const url = generateSchoolOnboardingWhatsAppUrl(
+        '9876543210',
+        'सरस्वती शिशु मंदिर माधव नगर',
+        'लखनऊ',
+        'आचार्य सतीश गुप्त',
+        '1952',
+        'VB-UP-2026-088',
+        true
+      );
+      expect(url).not.toBeNull();
+      expect(url).toContain('https://wa.me/919876543210');
+      expect(url).toContain(encodeURIComponent('सरस्वती शिशु मंदिर माधव नगर'));
+      expect(url).toContain(encodeURIComponent('1952'));
+      expect(url).toContain(encodeURIComponent('15-दिवसीय पूर्ण निःशुल्क प्रो ट्रायल'));
     });
   });
 

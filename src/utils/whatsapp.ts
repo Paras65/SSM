@@ -60,3 +60,26 @@ export function generateAttendanceAlertWhatsAppUrl(
   return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 }
 
+export function generateSchoolOnboardingWhatsAppUrl(
+  phone: string,
+  schoolName: string,
+  city: string,
+  principalName: string,
+  adminPasscode: string,
+  affiliationNo: string,
+  isPro: boolean
+): string | null {
+  const formattedPhone = cleanIndianPhone(phone);
+  if (!formattedPhone) return null;
+
+  const planText = isPro
+    ? '15-दिवसीय पूर्ण निःशुल्क प्रो ट्रायल (15-Day Free Trial Activated)'
+    : 'निःशुल्क सेवा (Free Seva Tier)';
+
+  const originUrl = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://ssm.edu.in';
+
+  const message = `सादर प्रणाम। 🙏\n\nसरस्वती शिशु मंदिर ईआरपी पोर्टल पर आपके विद्यालय *${schoolName}* (${city}) का पंजीकरण सफलतापूर्वक संपन्न हुआ।\n\n*पंजीकरण एवं लॉगिन विवरण:*\n• सम्बद्धता क्रमांक: *${affiliationNo}*\n• प्रधानाचार्य: *${principalName}*\n• एडमिन पासकोड: *${adminPasscode}*\n• सक्रिय योजना: *${planText}*\n• ईआरपी पोर्टल: ${originUrl}\n\nअब आप इस पासकोड से एडमिन डैशबोर्ड में लॉगिन कर छात्र पंजिका, उपस्थिति, शुल्क एवं परीक्षा प्रबंधन तुरंत शुरू कर सकते हैं।\n\n- विद्या भारती अखिल भारतीय शिक्षा संस्थान`;
+
+  return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+}
+

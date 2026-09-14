@@ -18,8 +18,13 @@ import {
   CheckCircle2,
   ArrowRight,
   Crown,
-  Gift
+  Gift,
+  MessageSquare,
+  Download,
+  Printer
 } from 'lucide-react';
+import { generateSchoolOnboardingWhatsAppUrl } from '../../utils/whatsapp';
+import { downloadStudentCsvTemplate } from '../../utils/csvExport';
 
 interface SchoolManagementModalProps {
   isOpen: boolean;
@@ -275,7 +280,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 justify-center pt-2">
+                  <div className="flex flex-wrap gap-3 justify-center pt-3">
                     <button
                       onClick={() => {
                         setCurrentSchoolId(createdSchool.id);
@@ -286,6 +291,56 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                       <span>इस शाखा का ERP नियंत्रण पटल खोलें</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+
+                    {generateSchoolOnboardingWhatsAppUrl(
+                      createdSchool.phone,
+                      createdSchool.hindiName,
+                      createdSchool.city,
+                      createdSchool.principalName,
+                      createdSchool.adminPasscode,
+                      createdSchool.affiliationNo,
+                      createdSchool.plan === 'pro'
+                    ) && (
+                      <a
+                        href={generateSchoolOnboardingWhatsAppUrl(
+                          createdSchool.phone,
+                          createdSchool.hindiName,
+                          createdSchool.city,
+                          createdSchool.principalName,
+                          createdSchool.adminPasscode,
+                          createdSchool.affiliationNo,
+                          createdSchool.plan === 'pro'
+                        )!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                        title="प्रधानाचार्य के व्हाट्सएप नंबर पर तुरंत लॉगिन विवरण व पासकोड भेजें"
+                      >
+                        <MessageSquare className="w-4 h-4 text-emerald-100" />
+                        <span>प्रधानाचार्य के WhatsApp पर विवरण भेजें</span>
+                      </a>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={downloadStudentCsvTemplate}
+                      className="px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-bold transition border border-amber-300 flex items-center gap-1.5 cursor-pointer"
+                      title="छात्रों की सूची 1-क्लिक में तैयार करने हेतु आधिकारिक एक्सेल प्रारूप डाउनलोड करें"
+                    >
+                      <Download className="w-4 h-4 text-amber-800" />
+                      <span>छात्र सूची प्रारूप (Excel/CSV)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition border border-stone-300 flex items-center gap-1.5 cursor-pointer"
+                      title="पंजीकरण पर्ची प्रिंट अथवा पीडीएफ सेव करें"
+                    >
+                      <Printer className="w-4 h-4 text-stone-600" />
+                      <span>पंजीकरण रसीद प्रिंट करें</span>
+                    </button>
+
                     {initialMode !== 'add' ? (
                       <button
                         onClick={() => {
