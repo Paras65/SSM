@@ -122,6 +122,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center space-x-3 xl:space-x-4 text-sm font-medium text-stone-700">
+            <a href="#modules" className="hover:text-orange-600 transition-colors font-bold text-orange-700 flex items-center gap-1">
+              <span>ईआरपी विशेषताएं</span>
+            </a>
             <a href="#notices" className="hover:text-orange-600 transition-colors font-semibold flex items-center gap-1">
               <span>सूचनाएं</span>
             </a>
@@ -267,6 +270,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile dropdown */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-orange-100 bg-amber-50/90 px-4 pt-2 pb-4 space-y-2 text-sm font-medium">
+          <a
+            href="#modules"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md bg-orange-100 text-orange-950 font-bold border border-orange-200"
+          >
+            💻 ईआरपी विशेषताएं व मॉड्यूल (ERP Modules)
+          </a>
           <a
             href="#notices"
             onClick={() => setMobileMenuOpen(false)}

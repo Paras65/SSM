@@ -9,7 +9,7 @@ interface HeroProps {
   onOpenBranchList?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenLogin, onOpenTeacherLogin, onOpenBranchList }) => {
+export const Hero: React.FC<HeroProps> = ({ onOpenSignUp, onOpenLogin, onOpenTeacherLogin, onOpenBranchList }) => {
   const { setViewMode, publicSchool } = useSchool();
 
   return (
@@ -24,107 +24,119 @@ export const Hero: React.FC<HeroProps> = ({ onOpenLogin, onOpenTeacherLogin, onO
           {/* Main Hero Content */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100 border border-orange-300 text-orange-800 text-xs font-semibold shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100 border border-orange-300 text-orange-900 text-xs font-bold shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>{publicSchool.affiliate} • {publicSchool.prant}</span>
+              <span>{publicSchool.affiliate} • डिजिटल ईआरपी मंच</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold text-stone-900 tracking-tight leading-tight">
-              संस्कारयुक्त शिक्षा, <br />
+            <h1 className="text-3xl sm:text-5xl font-black text-stone-900 tracking-tight leading-tight">
+              सरस्वती शिशु मंदिर <br />
               <span className="bg-gradient-to-r from-orange-700 via-amber-600 to-red-600 bg-clip-text text-transparent">
-                राष्ट्रभक्ति एवं सर्वांगीण विकास
+                डिजिटल ईआरपी प्रणाली (SSM ERP)
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-stone-700 max-w-2xl leading-relaxed">
-              <strong>{publicSchool.hindiName}</strong> में हम आधुनिक विज्ञान, गणित व तकनीकी शिक्षा के साथ-साथ
-              भारतीय सनातन संस्कृति, पंचमुखी शिक्षा और श्रेष्ठ नैतिक मूल्यों का सिंचन करते हैं।
+              विद्या भारती विद्यालयों के लिए सम्पूर्ण, सरल एवं सुरक्षित विद्यालय प्रबंधन सॉफ़्टवेयर। 
+              दैनिक हाजिरी, शुल्क रसीद, 360° समग्र प्रगति पत्र (NEP 2020) एवं UDISE+ सरकारी कंप्लायंस का एक मंच पर सुगम संचालन।
             </p>
 
-            {/* Motto Badge */}
+            {/* Motto & Heritage Badge */}
             <div className="p-3.5 bg-gradient-to-r from-amber-100 to-orange-50 rounded-xl border border-orange-300 flex items-center justify-center lg:justify-start gap-3 shadow-xs">
               <div className="w-9 h-9 rounded-lg bg-orange-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
                 ॐ
               </div>
               <div className="text-left">
-                <span className="block text-xs uppercase tracking-wider text-orange-900 font-bold">धैर्य एवं प्रेरणा वाक्य</span>
+                <span className="block text-xs uppercase tracking-wider text-orange-900 font-bold">ध्येय एवं प्रेरणा वाक्य</span>
                 <span className="text-sm sm:text-base font-bold text-orange-950 font-serif">
                   "{publicSchool.tagline}"
                 </span>
               </div>
             </div>
 
-            {/* Quick Access Portal Gateways for Parents & Teachers */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
-              {/* Student & Parent Portal Card */}
+            {/* 3 One-Tap Gateway Cards: Student, Teacher, Admin */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left">
+              {/* 1. Student & Parent Portal */}
               <button
                 type="button"
                 onClick={() => setViewMode('student')}
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-between group cursor-pointer"
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-md hover:shadow-lg transition-all flex flex-col justify-between group cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <span className="p-2 rounded-xl bg-white/20 text-white text-lg shadow-xs">
+                <div className="flex items-center justify-between w-full mb-2">
+                  <span className="p-2 rounded-xl bg-white/20 text-white text-base shadow-xs">
                     🎓
                   </span>
-                  <div>
-                    <span className="block font-black text-xs sm:text-sm tracking-wide">छात्र एवं अभिभावक पोर्टल</span>
-                    <span className="block text-[10px] text-emerald-100 font-medium">प्रगति पत्र, गृहकार्य, रसीदें</span>
-                  </div>
+                  <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-emerald-200 group-hover:translate-x-1 transition-transform shrink-0" />
+                <div>
+                  <span className="block font-black text-xs sm:text-sm tracking-wide">छात्र व अभिभावक</span>
+                  <span className="block text-[10px] text-emerald-100 font-medium mt-0.5">हाजिरी, गृहकार्य, प्रगति पत्र</span>
+                </div>
               </button>
 
-              {/* Acharya (Teacher) Portal Card */}
+              {/* 2. Acharya (Teacher) Portal */}
               <button
                 type="button"
                 onClick={onOpenTeacherLogin}
-                className="p-3.5 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-between group cursor-pointer"
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-md hover:shadow-lg transition-all flex flex-col justify-between group cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <span className="p-2 rounded-xl bg-white/20 text-white text-lg shadow-xs">
+                <div className="flex items-center justify-between w-full mb-2">
+                  <span className="p-2 rounded-xl bg-white/20 text-white text-base shadow-xs">
                     👨‍🏫
                   </span>
-                  <div>
-                    <span className="block font-black text-xs sm:text-sm tracking-wide">आचार्य पोर्टल (Teacher)</span>
-                    <span className="block text-[10px] text-amber-100 font-medium">हाजिरी, गृहकार्य, परीक्षा अंक</span>
-                  </div>
+                  <ArrowRight className="w-4 h-4 text-amber-200 group-hover:translate-x-1 transition-transform" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-amber-200 group-hover:translate-x-1 transition-transform shrink-0" />
+                <div>
+                  <span className="block font-black text-xs sm:text-sm tracking-wide">आचार्य पोर्टल</span>
+                  <span className="block text-[10px] text-amber-100 font-medium mt-0.5">दैनिक उपस्थिति, परीक्षा अंक</span>
+                </div>
+              </button>
+
+              {/* 3. Principal & Office Admin Portal */}
+              <button
+                type="button"
+                onClick={onOpenLogin}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-stone-900 to-stone-800 hover:from-black hover:to-stone-900 text-white shadow-md hover:shadow-lg transition-all flex flex-col justify-between group cursor-pointer border border-stone-700"
+              >
+                <div className="flex items-center justify-between w-full mb-2">
+                  <span className="p-2 rounded-xl bg-white/20 text-amber-400 text-base shadow-xs">
+                    🏛️
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-amber-300 group-hover:translate-x-1 transition-transform" />
+                </div>
+                <div>
+                  <span className="block font-black text-xs sm:text-sm tracking-wide text-amber-200">प्रशासन व कार्यालय</span>
+                  <span className="block text-[10px] text-stone-300 font-medium mt-0.5">शुल्क, UDISE+, पूर्ण नियंत्रण</span>
+                </div>
               </button>
             </div>
 
-            {/* Secondary Action Row: Admissions, Notices & Admin */}
+            {/* Platform Action Buttons */}
             <div className="flex flex-wrap gap-2.5 justify-center lg:justify-start pt-1 text-xs">
-              <a
-                href="#admissions"
-                className="px-4 py-2.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-950 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5"
+              <button
+                type="button"
+                onClick={onOpenSignUp}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <span>📝 नवीन प्रवेश आवेदन (2026-27)</span>
-              </a>
-              <a
-                href="#notices"
-                className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 font-bold border border-stone-300 shadow-2xs transition-all flex items-center gap-1.5"
-              >
-                <span>📢 सूचना पट्ट (Notices)</span>
-              </a>
+                <span>🚀 अपने विद्यालय को जोड़ें (निःशुल्क)</span>
+              </button>
+
               <button
                 type="button"
                 onClick={onOpenBranchList}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-stone-900 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                 title="अपनी विद्यालय शाखा चुनें या बदलें"
               >
                 <span>🏫</span>
                 <span>{publicSchool.id === 'ssm-national' ? 'विद्यालय शाखा चुनें' : `शाखा: ${publicSchool.city}`}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={onOpenLogin}
-                className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-200 font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer ml-auto sm:ml-0"
+              <a
+                href="#modules"
+                className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold border border-stone-300 shadow-2xs transition-all flex items-center gap-1.5"
               >
-                <LogIn className="w-3.5 h-3.5 text-amber-400" />
-                <span>कार्यालय प्रशासन (Admin)</span>
-              </button>
+                <span>⚙️ ईआरपी विशेषताएं</span>
+              </a>
             </div>
 
             {/* Highlights row */}

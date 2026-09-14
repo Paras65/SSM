@@ -15,6 +15,7 @@ import { LegalInformation } from './components/public/LegalInformation';
 import { OfflineBadge } from './components/common/OfflineBadge';
 import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 import { AdminAuthModal } from './components/admin/AdminAuthModal';
+import { ERPModulesSection } from './components/public/ERPModulesSection';
 import { TeacherAuthModal } from './components/teacher/TeacherAuthModal';
 import { SchoolManagementModal } from './components/admin/SchoolManagementModal';
 import { LanguageProvider } from './context/LanguageContext';
@@ -106,6 +107,10 @@ const SchoolApp: React.FC = () => {
               onOpenLogin={handleOpenLogin}
               onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
               onOpenBranchList={handleOpenBranchList}
+            />
+            <ERPModulesSection
+              onOpenSignUp={() => handleOpenSignUp('free')}
+              onOpenLogin={handleOpenLogin}
             />
             <DailyPanchang />
             <NoticeBoard />
