@@ -225,6 +225,11 @@ export const api = {
     return handleJsonResponse<Student>(res, 'प्रमाणित छात्र अभिलेख नहीं मिला');
   },
 
+  async getStudentMe(): Promise<{ student: Student; fees: FeeRecord[]; attendance: AttendanceRecord[]; reportCards: ReportCard[] }> {
+    const res = await apiFetch('/students/me');
+    return handleJsonResponse<{ student: Student; fees: FeeRecord[]; attendance: AttendanceRecord[]; reportCards: ReportCard[] }>(res, 'छात्र डेटा प्राप्त करने में विफल');
+  },
+
   // ================= ATTENDANCE =================
   async getAttendance(date?: string, schoolId?: string): Promise<AttendanceRecord[]> {
     const params = new URLSearchParams();

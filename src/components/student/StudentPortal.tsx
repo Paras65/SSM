@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { api } from '../../services/api';
 import { PragatiPatraModal } from '../admin/PragatiPatraModal';
@@ -10,7 +10,7 @@ import { AdmitCardModal } from '../admin/AdmitCardModal';
 import { CharacterCertificateModal } from '../admin/CharacterCertificateModal';
 import { BonafideCertificateModal } from '../admin/BonafideCertificateModal';
 import { HelpTooltip } from '../common/HelpTooltip';
-import type { Homework, Exam } from '../../types';
+import type { Homework, Exam, Student, FeeRecord, ReportCard, AttendanceRecord } from '../../types';
 import {
   ArrowLeft,
   Calendar,
@@ -53,10 +53,40 @@ export const StudentPortal: React.FC = () => {
     'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
     'Class 11', 'Class 12'
   ];
+  const [liveStudent, setLiveStudent] = useState<Student | null>(null);
+  const [liveFees, setLiveFees] = useState<FeeRecord[]>([]);
+  const [liveReports, setLiveReports] = useState<ReportCard[]>([]);
+  const [liveAttendance, setLiveAttendance] = useState<AttendanceRecord[]>([]);
+
+  const fetchStudentSelfData = useCallback(async () => {
+    if (!sessionStorage.getItem('ssm_student_token')) return;
+    try {
+      const data = await api.getStudentMe();
+      if (data && data.student) {
+        setLiveStudent(data.student);
+        setLiveFees(data.fees || []);
+        setLiveReports(data.reportCards || []);
+        setLiveAttendance(data.attendance || []);
+      }
+    } catch (err) {
+      console.warn('Could not fetch student self data:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isStudentAuthenticated) {
+      fetchStudentSelfData();
+    }
+  }, [isStudentAuthenticated, fetchStudentSelfData]);
+
   const authenticatedStudentId = sessionStorage.getItem('ssm_student_id');
-  const currentStudent = students.find(s => s.id === authenticatedStudentId);
-  const studentFee = currentStudent ? feeRecords.find(f => f.studentId === currentStudent.id) : undefined;
-  const studentReport = currentStudent ? reportCards.find(r => r.studentId === currentStudent.id) : undefined;
+  const currentStudent = liveStudent || students.find(s => s.id === authenticatedStudentId);
+  const studentFee = liveFees.length > 0
+    ? liveFees[0]
+    : (currentStudent ? feeRecords.find(f => f.studentId === currentStudent.id) : undefined);
+  const studentReport = liveReports.length > 0
+    ? liveReports[0]
+    : (currentStudent ? reportCards.find(r => r.studentId === currentStudent.id) : undefined);
 
   const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
   const [completedHw, setCompletedHw] = useState<Record<string, boolean>>({});
@@ -104,7 +134,9 @@ export const StudentPortal: React.FC = () => {
     try {
       const result = await api.loginStudent(currentSchool.id, rollNo, contact, studentClass || undefined);
       setSelectedStudentId(result.student.id);
+      setLiveStudent(result.student);
       setIsStudentAuthenticated(true);
+      fetchStudentSelfData();
     } catch (error: any) {
       setLoginError(error.message || 'छात्र विवरण गलत हैं।');
     } finally {
@@ -115,6 +147,10 @@ export const StudentPortal: React.FC = () => {
   const handleStudentLogout = () => {
     sessionStorage.removeItem('ssm_student_token');
     sessionStorage.removeItem('ssm_student_id');
+    setLiveStudent(null);
+    setLiveFees([]);
+    setLiveReports([]);
+    setLiveAttendance([]);
     setIsStudentAuthenticated(false);
     setViewMode('public');
   };

@@ -70,11 +70,17 @@ function requireStudentAuth(req, res, next) {
     req.userSchoolId = decoded.schoolId;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'अमान्य छात्र सत्र। (Invalid student session)', code: 'TOKEN_INVALID' });
+    const isExpired = err.name === 'TokenExpiredError';
+    return res.status(401).json({
+      error: isExpired
+        ? 'छात्र सत्र समाप्त हो गया है! कृपया पुनः लॉगिन करें। (Session expired)'
+        : 'अमान्य छात्र सत्र। (Invalid student session)',
+      code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID'
+    });
   }
 }
 
-function requireTeacherAuth(req, res, next) {
+async function requireTeacherAuth(req, res, next) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'आचार्य लॉगिन आवश्यक है। (Teacher login required)', code: 'AUTH_REQUIRED' });
@@ -85,15 +91,37 @@ function requireTeacherAuth(req, res, next) {
     if (!['teacher', 'admin', 'developer'].includes(decoded.role)) {
       return res.status(403).json({ error: 'केवल आचार्य / शिक्षक प्रवेश की अनुमति है।', code: 'TEACHER_ROLE_REQUIRED' });
     }
+
+    // Check token version to invalidate revoked sessions when admin passcode changes
+    if (decoded.role === 'admin' && decoded.schoolId && decoded.tokenVersion) {
+      try {
+        const school = await School.findOne({ id: decoded.schoolId }).select('tokenVersion').lean();
+        if (school && school.tokenVersion && decoded.tokenVersion < school.tokenVersion) {
+          return res.status(401).json({
+            error: 'पासकोड परिवर्तित हो चुका है! कृपया नए पासकोड से पुनः लॉगिन करें। (Passcode changed, session revoked)',
+            code: 'SESSION_REVOKED'
+          });
+        }
+      } catch (dbErr) {
+        // Non-blocking if DB query fails during disconnection
+      }
+    }
+
     req.user = decoded;
     req.userSchoolId = decoded.schoolId;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'अमान्य शिक्षक सत्र। (Invalid teacher session)', code: 'TOKEN_INVALID' });
+    const isExpired = err.name === 'TokenExpiredError';
+    return res.status(401).json({
+      error: isExpired
+        ? 'सत्र समाप्त हो गया है! कृपया पुनः लॉगिन करें। (Session expired, please re-authenticate)'
+        : 'अमान्य शिक्षक सत्र। (Invalid teacher session)',
+      code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID'
+    });
   }
 }
 
-function requirePortalAuth(req, res, next) {
+async function requirePortalAuth(req, res, next) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'पोर्टल लॉगिन आवश्यक है। (Portal login required)', code: 'AUTH_REQUIRED' });
@@ -104,6 +132,22 @@ function requirePortalAuth(req, res, next) {
     if (!['admin', 'developer', 'student', 'teacher'].includes(decoded.role)) {
       return res.status(403).json({ error: 'अमान्य पोर्टल भूमिका। (Invalid portal role)', code: 'ROLE_FORBIDDEN' });
     }
+
+    // Check token version to invalidate revoked sessions when admin passcode changes
+    if (decoded.role === 'admin' && decoded.schoolId && decoded.tokenVersion) {
+      try {
+        const school = await School.findOne({ id: decoded.schoolId }).select('tokenVersion').lean();
+        if (school && school.tokenVersion && decoded.tokenVersion < school.tokenVersion) {
+          return res.status(401).json({
+            error: 'पासकोड परिवर्तित हो चुका है! कृपया नए पासकोड से पुनः लॉगिन करें। (Passcode changed, session revoked)',
+            code: 'SESSION_REVOKED'
+          });
+        }
+      } catch (dbErr) {
+        // Non-blocking if DB query fails during disconnection
+      }
+    }
+
     if (decoded.role === 'student') {
       if (!decoded.studentClass) {
         return res.status(401).json({ error: 'छात्र सत्र पुराना है, कृपया पुनः लॉगिन करें।', code: 'STUDENT_SESSION_REFRESH_REQUIRED' });
@@ -121,7 +165,13 @@ function requirePortalAuth(req, res, next) {
     req.userSchoolId = decoded.schoolId;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'अमान्य पोर्टल सत्र। (Invalid portal session)', code: 'TOKEN_INVALID' });
+    const isExpired = err.name === 'TokenExpiredError';
+    return res.status(401).json({
+      error: isExpired
+        ? 'सत्र समाप्त हो गया है! कृपया पुनः लॉगिन करें। (Session expired, please re-authenticate)'
+        : 'अमान्य पोर्टल सत्र। (Invalid portal session)',
+      code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID'
+    });
   }
 }
 

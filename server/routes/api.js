@@ -493,8 +493,39 @@ router.get('/students/verify-tc', async (req, res) => {
   }
 });
 
+// Authenticated Student Self-Service (Profile, Attendance, Fees, Report Cards)
+router.get('/students/me', requireStudentAuth, async (req, res) => {
+  try {
+    const studentId = req.user.studentId;
+    const schoolId = req.user.schoolId;
+    if (!studentId) {
+      return res.status(400).json({ error: 'छात्र सत्र में छात्र पहचान उपलब्ध नहीं है।' });
+    }
+
+    const [student, fees, attendance, reportCards] = await Promise.all([
+      Student.findOne({ id: studentId, ...(schoolId ? { schoolId } : {}) }).lean(),
+      Fee.find({ studentId, ...(schoolId ? { schoolId } : {}) }).sort({ createdAt: -1 }).lean(),
+      Attendance.find({ studentId, ...(schoolId ? { schoolId } : {}) }).sort({ date: -1 }).limit(60).lean(),
+      ReportCard.find({ studentId, ...(schoolId ? { schoolId } : {}) }).sort({ createdAt: -1 }).lean()
+    ]);
+
+    if (!student) {
+      return res.status(404).json({ error: 'छात्र रिकॉर्ड नहीं मिला।' });
+    }
+
+    res.json({
+      student,
+      fees: fees || [],
+      attendance: attendance || [],
+      reportCards: reportCards || []
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ================= STUDENTS =================
-router.get('/students', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.get('/students', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const schoolId = cleanStringParam(req.query.schoolId);
     const filter = schoolId ? { schoolId } : {};
