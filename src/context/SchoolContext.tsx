@@ -126,7 +126,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
 
   const currentSchool = schools.find(s => s.id === currentSchoolId) || schools[0] || DEFAULT_FALLBACK_SCHOOL;
-  const publicSchool = PUBLIC_PLATFORM_SCHOOL;
+  const publicSchool = currentSchool;
 
   // DB connection status
   const [dbStatus, setDbStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting');
@@ -236,6 +236,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setSchools(dbSchools);
         }
 
+        // Always fetch public notices for the active school so parents see live notices
+        api.getNotices(schoolIdToFetch).then(dbNotices => {
+          if (Array.isArray(dbNotices) && dbNotices.length > 0) {
+            setNotices(dbNotices);
+          }
+        }).catch(() => {});
+
         // Check if user has admin or teacher token before querying protected collections
         const hasAuth = Boolean(
           sessionStorage.getItem('ssm_admin_token') ||
@@ -244,12 +251,11 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         if (hasAuth) {
           // Fetch records filtered by active school safely using allSettled
-          const [studentsRes, attRes, feesRes, repRes, notRes] = await Promise.allSettled([
+          const [studentsRes, attRes, feesRes, repRes] = await Promise.allSettled([
             api.getStudents(schoolIdToFetch),
             api.getAttendance(undefined, schoolIdToFetch),
             api.getFees(schoolIdToFetch),
-            api.getReports(schoolIdToFetch),
-            api.getNotices(schoolIdToFetch)
+            api.getReports(schoolIdToFetch)
           ]);
 
           if (studentsRes.status === 'fulfilled' && Array.isArray(studentsRes.value) && studentsRes.value.length > 0) {
@@ -264,9 +270,6 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
           if (repRes.status === 'fulfilled' && Array.isArray(repRes.value)) {
             setReportCards(repRes.value);
-          }
-          if (notRes.status === 'fulfilled' && Array.isArray(notRes.value)) {
-            setNotices(notRes.value);
           }
         }
       } else {

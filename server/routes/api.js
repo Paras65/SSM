@@ -1001,10 +1001,11 @@ router.post('/reports', requireAdminAuth, requireSchoolScope, async (req, res) =
 });
 
 // ================= NOTICES =================
-router.get('/notices', requireAdminAuth, requireSchoolScope, async (req, res) => {
+// Publicly accessible notices for parents & students (scoped by schoolId if provided)
+router.get('/notices', async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    if (req.query.category) filter.category = req.query.category;
+    if (req.query.category && req.query.category !== 'All') filter.category = req.query.category;
     await executeSafeQuery(Notice, filter, req, res, { date: -1, createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });

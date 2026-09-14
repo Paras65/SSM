@@ -132,6 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <a href="#about" className="hover:text-orange-600 transition-colors">परिचय</a>
             <a href="#panchmukhi" className="hover:text-orange-600 transition-colors">पंचमुखी</a>
             <a href="#vandana" className="hover:text-orange-600 transition-colors">वंदना</a>
+            <a href="#acharyas" className="hover:text-orange-600 transition-colors">आचार्य</a>
             <a href="#gallery" className="hover:text-orange-600 transition-colors">चित्रदीर्घा</a>
           </nav>
 
@@ -304,6 +305,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
           >
             वंदना व दैनिक प्रार्थना (Vandana)
+          </a>
+          <a
+            href="#acharyas"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-md hover:bg-orange-100 text-stone-800"
+          >
+            आचार्य एवं दीदी जी (Faculty)
           </a>
           <a
             href="#gallery"

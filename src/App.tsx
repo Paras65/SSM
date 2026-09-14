@@ -7,6 +7,7 @@ import { DailyPanchang } from './components/public/DailyPanchang';
 import { AboutSection } from './components/public/AboutSection';
 import { PanchmukhiShiksha } from './components/public/PanchmukhiShiksha';
 import { VandanaCorner } from './components/public/VandanaCorner';
+import { AcharyaSection } from './components/public/AcharyaSection';
 import { AdmissionInquiry } from './components/public/AdmissionInquiry';
 import { Gallery } from './components/public/Gallery';
 import { Footer } from './components/public/Footer';
@@ -111,6 +112,7 @@ const SchoolApp: React.FC = () => {
             <AboutSection />
             <PanchmukhiShiksha />
             <VandanaCorner />
+            <AcharyaSection />
             <Gallery />
           </main>
           <LegalInformation />

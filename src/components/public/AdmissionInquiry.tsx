@@ -6,7 +6,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 
 export const AdmissionInquiry: React.FC = () => {
-  const { schools, publicSchool } = useSchool();
+  const { schools, publicSchool, currentSchool } = useSchool();
   const { t } = useLanguage();
   const [selectedSchoolId, setSelectedSchoolId] = useState(publicSchool?.id || '');
 
@@ -15,6 +15,10 @@ export const AdmissionInquiry: React.FC = () => {
       setSelectedSchoolId(publicSchool.id);
     }
   }, [publicSchool?.id]);
+
+  const activeBranch = schools.find(s => s.id === selectedSchoolId) || currentSchool;
+  const helpdeskPhone = activeBranch.phone || '+91 551 2345678';
+  const helpdeskTimings = activeBranch.timings || 'प्रातः 8:00 से दोपहर 2:00 बजे तक';
   const [formData, setFormData] = useState({
     studentName: '',
     gender: 'Bhaiya',
@@ -102,7 +106,14 @@ export const AdmissionInquiry: React.FC = () => {
                 <Phone className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-stone-700">
                   <strong className="block text-stone-900 text-sm mb-0.5">प्रवेश सहायता प्रकोष्ठ (Helpdesk):</strong>
-                  प्रातः 8:00 से दोपहर 2:00 बजे तक विद्यालय कार्यालय में संपर्क करें अथवा +91 94150 12345 पर कॉल करें।
+                  {helpdeskTimings} विद्यालय कार्यालय में संपर्क करें अथवा{' '}
+                  <a
+                    href={`tel:${helpdeskPhone.split('/')[0].trim()}`}
+                    className="text-orange-700 font-bold hover:underline"
+                  >
+                    {helpdeskPhone}
+                  </a>{' '}
+                  पर कॉल करें।
                 </div>
               </div>
             </div>
