@@ -18,7 +18,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `शास्त्री नगर, ${city}`,
       dob: '2012-04-15',
       admissionDate: '2018-07-02',
-      bloodGroup: 'B+'
+      bloodGroup: 'B+',
+      pen: '21098765401',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-02`,
@@ -33,7 +37,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `रेलवे कॉलोनी रोड, ${city}`,
       dob: '2012-09-21',
       admissionDate: '2018-07-03',
-      bloodGroup: 'O+'
+      bloodGroup: 'O+',
+      pen: '21098765402',
+      socialCategory: 'OBC',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-03`,
@@ -48,7 +56,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `सिविल लाइंस, ${city}`,
       dob: '2011-01-10',
       admissionDate: '2017-06-25',
-      bloodGroup: 'A+'
+      bloodGroup: 'A+',
+      pen: '21098765403',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-04`,
@@ -63,7 +75,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `गोलघर, ${city}`,
       dob: '2013-05-18',
       admissionDate: '2019-07-01',
-      bloodGroup: 'AB+'
+      bloodGroup: 'AB+',
+      pen: '21098765404',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-05`,
@@ -78,7 +94,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `विकास नगर, ${city}`,
       dob: '2010-11-05',
       admissionDate: '2016-07-10',
-      bloodGroup: 'B+'
+      bloodGroup: 'B+',
+      pen: '21098765405',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-06`,
@@ -93,7 +113,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `मोहाद्दीपुर, ${city}`,
       dob: '2014-08-12',
       admissionDate: '2020-06-28',
-      bloodGroup: 'O+'
+      bloodGroup: 'O+',
+      pen: '21098765406',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-07`,
@@ -108,7 +132,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `गीता वाटिका, ${city}`,
       dob: '2019-03-25',
       admissionDate: '2023-04-10',
-      bloodGroup: 'A+'
+      bloodGroup: 'A+',
+      pen: '21098765407',
+      socialCategory: 'OBC',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-08`,
@@ -123,7 +151,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `तारामंडल एन्क्लेव, ${city}`,
       dob: '2015-06-30',
       admissionDate: '2021-07-15',
-      bloodGroup: 'B+'
+      bloodGroup: 'B+',
+      pen: '21098765408',
+      socialCategory: 'SC',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-09`,
@@ -138,7 +170,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `सूर्यकुंड धाम, ${city}`,
       dob: '2014-02-14',
       admissionDate: '2020-07-10',
-      bloodGroup: 'O+'
+      bloodGroup: 'O+',
+      pen: '21098765409',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-10`,
@@ -153,7 +189,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `बशारतपुर, ${city}`,
       dob: '2011-07-08',
       admissionDate: '2017-07-05',
-      bloodGroup: 'AB+'
+      bloodGroup: 'AB+',
+      pen: '21098765410',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-11`,
@@ -168,7 +208,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `धर्मशाला बाजार, ${city}`,
       dob: '2021-12-01',
       admissionDate: '2025-04-01',
-      bloodGroup: 'A+'
+      bloodGroup: 'A+',
+      pen: '21098765411',
+      socialCategory: 'ST',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     },
     {
       id: `${schoolId}-std-12`,
@@ -183,7 +227,11 @@ export function generateRichDemoData(schoolId: string, schoolCity: string) {
       address: `राप्ती नगर, ${city}`,
       dob: '2020-05-19',
       admissionDate: '2024-04-05',
-      bloodGroup: 'B+'
+      bloodGroup: 'B+',
+      pen: '21098765412',
+      socialCategory: 'General',
+      cwsn: false,
+      udiseStatus: { gp: true, ep: true, fp: true }
     }
   ];
 

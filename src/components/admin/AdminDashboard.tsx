@@ -34,6 +34,7 @@ import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
 import { generateAdmissionWhatsAppUrl } from '../../utils/whatsapp';
 import { downloadFullSchoolBackup, parseAndValidateBackupJSON } from '../../utils/backupExport';
+import { downloadUdisePlusCSV } from '../../utils/udiseExport';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import { api } from '../../services/api';
 import type { Student, FeeRecord, ReportCard, Homework, Staff, Exam } from '../../types';
@@ -723,6 +724,10 @@ export const AdminDashboard: React.FC = () => {
 
             <span className="hidden lg:inline-block px-2.5 py-1 bg-orange-950 rounded-full border border-orange-800 text-amber-200 shrink-0">
               प्रधानाचार्य: {currentSchool.principalName}
+            </span>
+
+            <span className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1 bg-stone-900 rounded-full border border-stone-700 text-stone-300 font-mono text-[11px] shrink-0" title="भारत सरकार UDISE+ विद्यालय कोड">
+              <span className="text-amber-400 font-bold">UDISE:</span> {currentSchool.udiseCode || '09510100101'}
             </span>
 
             {/* Desktop Logout and Add Student */}
@@ -1493,6 +1498,18 @@ export const AdminDashboard: React.FC = () => {
                 </button>
 
                 <button
+                  onClick={() => {
+                    downloadUdisePlusCSV(filteredStudents.length > 0 ? filteredStudents : students, currentSchool);
+                    showSuccess('UDISE+ SDMS सरकारी प्रारूप CSV सफलतापूर्वक डाउनलोड हो गई है।');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
+                  title="भारत सरकार UDISE+ SDMS आधिकारिक बैच प्रारूप (21 कॉलम) में CSV निर्यात करें"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-200" />
+                  <span>UDISE+ निर्यात</span>
+                </button>
+
+                <button
                   onClick={() => setShowBulkImport(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
                   title="एक्सेल या CSV फ़ाइल से एक साथ कई छात्र जोड़ें (Bulk Import)"
@@ -1560,12 +1577,35 @@ export const AdminDashboard: React.FC = () => {
                               </span>
                             )}
                             <div>
-                              <span>{student.name}</span>
-                              <span className={`ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                student.gender === 'Bhaiya' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
-                              }`}>
-                                {student.gender}
-                              </span>
+                              <div className="flex items-center">
+                                <span>{student.name}</span>
+                                <span className={`ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                  student.gender === 'Bhaiya' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
+                                }`}>
+                                  {student.gender}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-1 mt-0.5 text-[10px]">
+                                {student.pen ? (
+                                  <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono font-bold" title="UDISE+ Permanent Education Number (स्थायी शिक्षा संख्या)">
+                                    PEN: {student.pen}
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.2 rounded bg-stone-100 text-stone-500 border border-stone-200 font-mono" title="UDISE+ PEN अभी दर्ज नहीं है">
+                                    PEN: —
+                                  </span>
+                                )}
+                                {student.socialCategory && (
+                                  <span className="px-1 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200 font-semibold" title="सामाजिक श्रेणी">
+                                    {student.socialCategory}
+                                  </span>
+                                )}
+                                {student.cwsn && (
+                                  <span className="px-1 py-0.2 rounded bg-purple-100 text-purple-800 font-bold border border-purple-200" title="Children with Special Needs (दिव्यांग)">
+                                    CWSN
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>

@@ -31,6 +31,7 @@ export interface School {
   currentAcademicYear?: string;
   tokenVersion?: number;
   plan?: SchoolPlan;
+  udiseCode?: string;
 }
 
 export interface StudentAcademicHistory {
@@ -42,6 +43,8 @@ export interface StudentAcademicHistory {
   promotedAt: string;
   remarks?: string;
 }
+
+export type SocialCategory = 'General' | 'OBC' | 'SC' | 'ST';
 
 export interface Student {
   id: string;
@@ -62,6 +65,17 @@ export interface Student {
   academicYear?: string;
   status?: 'active' | 'promoted' | 'alumni' | 'transferred';
   academicHistory?: StudentAcademicHistory[];
+  // UDISE+ SDMS Compliance Identifiers
+  pen?: string; // Permanent Education Number (11 digits, Govt of India)
+  apaarId?: string; // Automated Permanent Academic Account Registry (12 digits)
+  socialCategory?: SocialCategory;
+  cwsn?: boolean; // Children with Special Needs
+  bpl?: boolean; // Below Poverty Line
+  udiseStatus?: {
+    gp: boolean; // General Profile
+    ep: boolean; // Enrollment Profile
+    fp: boolean; // Facility Profile
+  };
 }
 
 export type AttendanceStatus = 'Present' | 'Absent' | 'Leave';
