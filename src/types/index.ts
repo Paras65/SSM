@@ -32,6 +32,7 @@ export interface School {
   tokenVersion?: number;
   plan?: SchoolPlan;
   udiseCode?: string;
+  website?: string;
 }
 
 export interface StudentAcademicHistory {

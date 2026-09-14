@@ -14,7 +14,8 @@ import {
   Crown, 
   ArrowRight,
   HelpCircle,
-  School
+  School,
+  Globe
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 
@@ -107,8 +108,19 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Mail className="w-4 h-4 text-orange-600 shrink-0" />
-                  <a href={`mailto:${publicSchool.email}`} className="hover:text-orange-700 font-semibold">
-                    {publicSchool.email}
+                  <a href={`mailto:${publicSchool.email || 'support@init65.co.in'}`} className="hover:text-orange-700 font-semibold">
+                    {publicSchool.email || 'support@init65.co.in'}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Globe className="w-4 h-4 text-orange-600 shrink-0" />
+                  <a
+                    href={publicSchool.website || 'https://www.init65.co.in'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-orange-700 font-mono font-bold underline decoration-orange-300"
+                  >
+                    {publicSchool.website ? publicSchool.website.replace(/^https?:\/\//, '') : 'www.init65.co.in'}
                   </a>
                 </div>
               </div>

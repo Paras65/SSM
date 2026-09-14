@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Sparkles, Phone, Mail, MapPin, Clock, Heart, ShieldCheck, Lock, Crown } from 'lucide-react';
+import { Sparkles, Phone, Mail, MapPin, Clock, Heart, ShieldCheck, Lock, Crown, Globe } from 'lucide-react';
 import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 import { SchoolPlansModal } from './SchoolPlansModal';
 import { TCVerificationModal } from './TCVerificationModal';
@@ -105,15 +105,26 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-orange-500 shrink-0" />
-                <span>{publicSchool.phone}</span>
+                <a href={`tel:${publicSchool.phone}`} className="hover:text-amber-300 transition">
+                  {publicSchool.phone}
+                </a>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-orange-500 shrink-0" />
-                <span>{publicSchool.email}</span>
+                <a href={`mailto:${publicSchool.email || 'support@init65.co.in'}`} className="hover:text-amber-300 transition">
+                  {publicSchool.email || 'support@init65.co.in'}
+                </a>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-500 shrink-0" />
-                <span>{publicSchool.timings}</span>
+                <Globe className="w-4 h-4 text-orange-500 shrink-0" />
+                <a
+                  href={publicSchool.website || 'https://www.init65.co.in'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-300 hover:text-white font-mono font-bold hover:underline transition"
+                >
+                  {publicSchool.website ? publicSchool.website.replace(/^https?:\/\//, '') : 'www.init65.co.in'}
+                </a>
               </div>
             </div>
           </div>

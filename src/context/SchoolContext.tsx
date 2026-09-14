@@ -16,12 +16,13 @@ const DEFAULT_FALLBACK_SCHOOL: School = {
   state: 'भारत',
   prant: 'विद्या भारती',
   phone: '1800-180-5522',
-  email: 'info@vidyabharti.net',
+  email: 'support@init65.co.in',
   timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
   principalName: 'केंद्रीय समन्वय समिति',
   adminPasscode: '1952',
   plan: 'free',
-  udiseCode: '09000000000'
+  udiseCode: '09000000000',
+  website: 'https://www.init65.co.in'
 };
 
 const HISTORIC_GORAKHPUR_BRANCH: School = {
@@ -42,7 +43,8 @@ const HISTORIC_GORAKHPUR_BRANCH: School = {
   principalName: 'आचार्य राम नारायण शुक्ला',
   adminPasscode: '1952',
   plan: 'free',
-  udiseCode: '09510100101'
+  udiseCode: '09510100101',
+  website: 'https://www.init65.co.in'
 };
 
 export const DEMO_SANDBOX_SCHOOL: School = {
@@ -63,7 +65,8 @@ export const DEMO_SANDBOX_SCHOOL: School = {
   principalName: 'आचार्य देवव्रत शास्त्री',
   adminPasscode: '1952',
   plan: 'pro',
-  udiseCode: '07010100101'
+  udiseCode: '07010100101',
+  website: 'https://www.init65.co.in'
 };
 
 interface SchoolContextType {
