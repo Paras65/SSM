@@ -67,7 +67,6 @@ export const Footer: React.FC = () => {
               <li><a href="#notices" className="hover:text-orange-400 transition-colors">सूचनाएं एवं परीक्षा कार्यक्रम</a></li>
               <li><a href="#admissions" className="hover:text-orange-400 transition-colors">सत्र 2026-27 प्रवेश फॉर्म</a></li>
               <li><a href="#acharyas" className="hover:text-orange-400 transition-colors">आचार्य एवं दीदी जी परिचय</a></li>
-              <li><a href="#alumni" className="hover:text-orange-400 transition-colors text-amber-300 font-semibold">🎓 पूर्व छात्र परिषद (Purva Chhatra)</a></li>
               <li>
                 <button
                   type="button"

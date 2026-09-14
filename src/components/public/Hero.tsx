@@ -45,9 +45,9 @@ export const Hero: React.FC<HeroProps> = ({
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-stone-700 max-w-2xl leading-relaxed">
-              विद्या भारती विद्यालयों के लिए सम्पूर्ण, सरल एवं सुरक्षित विद्यालय प्रबंधन सॉफ़्टवेयर। 
-              दैनिक हाजिरी, शुल्क रसीद, 360° समग्र प्रगति पत्र (NEP 2020) एवं UDISE+ सरकारी कंप्लायंस का एक मंच पर सुगम संचालन।
+            <p className="text-base sm:text-lg text-stone-700 max-w-xl leading-relaxed">
+              एक मंच पर विद्यालय प्रशासन, शिक्षकों, छात्रों और अभिभावकों के लिए सरल, सुरक्षित और डिजिटल प्रबंधन।
+              हाजिरी, शुल्क, परीक्षाएं, रिपोर्ट कार्ड और प्रगति ट्रैकिंग अब एक ही सिस्टम में।
             </p>
 
             {/* Motto & Heritage Badge */}
@@ -56,7 +56,7 @@ export const Hero: React.FC<HeroProps> = ({
                 ॐ
               </div>
               <div className="text-left">
-                <span className="block text-xs uppercase tracking-wider text-orange-900 font-bold">ध्येय एवं प्रेरणा वाक्य</span>
+                <span className="block text-xs uppercase tracking-wider text-orange-900 font-bold">संकल्प</span>
                 <span className="text-sm sm:text-base font-bold text-orange-950 font-serif">
                   "{publicSchool.tagline}"
                 </span>
@@ -122,6 +122,14 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* Platform Action Buttons */}
             <div className="flex flex-wrap gap-2.5 justify-center lg:justify-start pt-1 text-xs">
+              <button
+                type="button"
+                onClick={onOpenSignUp}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>🚀 अपने विद्यालय को जोड़ें</span>
+              </button>
+
               {onStartDemo && (
                 <button
                   type="button"
@@ -129,17 +137,9 @@ export const Hero: React.FC<HeroProps> = ({
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer border border-amber-300"
                   title="बिना पासवर्ड तुरंत लाइव डेमो का अनुभव लें"
                 >
-                  <span>🎮 1-क्लिक लाइव डेमो</span>
+                  <span>🎮 लाइव डेमो</span>
                 </button>
               )}
-
-              <button
-                type="button"
-                onClick={onOpenSignUp}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>🚀 अपने विद्यालय को जोड़ें (निःशुल्क)</span>
-              </button>
 
               <button
                 type="button"
@@ -148,7 +148,7 @@ export const Hero: React.FC<HeroProps> = ({
                 title="नजदीकी सरस्वती शिशु मंदिर खोजें (School Locator)"
               >
                 <span>🔍</span>
-                <span>{publicSchool.id === 'ssm-national' ? 'नजदीकी विद्यालय खोजें' : `शाखा: ${publicSchool.city}`}</span>
+                <span>{publicSchool.id === 'ssm-national' ? 'विद्यालय खोजें' : `शाखा: ${publicSchool.city}`}</span>
               </button>
 
               {onOpenVerifyTc && (
@@ -158,16 +158,9 @@ export const Hero: React.FC<HeroProps> = ({
                   className="px-4 py-2.5 rounded-xl bg-white hover:bg-orange-50 text-orange-950 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                   title="स्थानांतरण प्रमाण पत्र (TC) ऑनलाइन सत्यापित करें"
                 >
-                  <span>🔍 टीसी सत्यापन</span>
+                  <span>✅ टीसी सत्यापन</span>
                 </button>
               )}
-
-              <a
-                href="#modules"
-                className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold border border-stone-300 shadow-2xs transition-all flex items-center gap-1.5"
-              >
-                <span>⚙️ ईआरपी विशेषताएं</span>
-              </a>
             </div>
 
             {/* Highlights row */}
