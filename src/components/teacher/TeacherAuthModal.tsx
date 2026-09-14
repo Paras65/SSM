@@ -111,7 +111,7 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({ isOpen, onCl
               </label>
               <HelpTooltip
                 title="आचार्य सुरक्षा पिन"
-                content="विद्यालय द्वारा निर्धारित 4-अंकीय पिन दर्ज करें। डिफ़ॉल्ट पिन '1234' है। यदि आप पिन भूल गए हैं, तो अपने विद्यालय व्यवस्थापक से संपर्क करें।"
+                content="विद्यालय द्वारा अधिकृत 4-अंकीय सुरक्षा पिन दर्ज करें। यदि आप पिन भूल गए हैं, तो अपने विद्यालय व्यवस्थापक से संपर्क करें।"
               />
             </div>
             <div className="relative">
@@ -122,12 +122,12 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({ isOpen, onCl
                 maxLength={6}
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="उदा. 1234"
+                placeholder="••••"
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
             <span className="block text-[10px] text-stone-400 mt-1">
-              (डिफ़ॉल्ट पिन: 1234 - यदि पिन भूल गए हों तो व्यवस्थापक से संपर्क करें)
+              (गोपनीय सुरक्षा पिन • भूल जाने पर व्यवस्थापक से संपर्क करें)
             </span>
           </div>
 
