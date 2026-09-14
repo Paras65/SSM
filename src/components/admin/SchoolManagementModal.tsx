@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSchool } from '../../context/SchoolContext';
 import type { School } from '../../types';
@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   ArrowRight,
-  Crown
+  Crown,
+  Gift
 } from 'lucide-react';
 
 interface SchoolManagementModalProps {
@@ -68,6 +69,15 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [plan, setPlan] = useState<'free' | 'pro'>(initialPlan);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdSchool, setCreatedSchool] = useState<School | null>(null);
+
+  // Sync state when modal opens or initialMode/initialPlan changes
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialMode);
+      setPlan(initialPlan);
+      setCreatedSchool(null);
+    }
+  }, [isOpen, initialMode, initialPlan]);
 
   // Sync state with prant automatically
   const handlePrantChange = (selectedPrant: string) => {
@@ -150,14 +160,18 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
             <div>
               <div className="flex items-center gap-2.5">
                 <h3 className="text-lg sm:text-xl font-bold text-amber-100 tracking-tight">
-                  विद्या भारती विद्यालय एवं शाखा प्रबंधन
+                  {initialMode === 'add'
+                    ? 'नवीन विद्यालय शाखा पंजीकरण एवं 15-दिवसीय निःशुल्क ट्रायल'
+                    : 'विद्या भारती विद्यालय एवं शाखा प्रबंधन'}
                 </h3>
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-orange-950/90 text-amber-200 border border-orange-700 font-mono font-semibold">
-                  Multi-School ERP
+                  {initialMode === 'add' ? '15-Day Free Trial' : 'Multi-School ERP'}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-orange-200 mt-1">
-                वर्तमान सक्रिय शाखा: <strong className="text-white font-semibold">{currentSchool.hindiName}</strong> ({currentSchool.city}, {currentSchool.prant})
+                {initialMode === 'add'
+                  ? 'सरस्वती शिशु मंदिर ईआरपी प्रणाली में अपनी शाखा तुरंत जोड़ें और निःशुल्क परीक्षण शुरू करें'
+                  : `वर्तमान सक्रिय शाखा: ${currentSchool.hindiName} (${currentSchool.city}, ${currentSchool.prant})`}
               </p>
             </div>
           </div>
@@ -171,43 +185,45 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="bg-amber-50/90 border-b border-amber-200 px-6 sm:px-8 pt-3 flex items-center justify-between shrink-0">
-          <div className="flex space-x-3 sm:space-x-4">
-            <button
-              onClick={() => {
-                setActiveTab('list');
-                setCreatedSchool(null);
-              }}
-              className={`pb-3.5 px-4 sm:px-5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2.5 transition-all cursor-pointer ${
-                activeTab === 'list'
-                  ? 'border-orange-600 text-orange-950'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <Building2 className="w-4 h-4 text-orange-700" />
-              <span>पंजीकृत शाखाएं</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-orange-200/80 text-orange-950 text-xs font-mono font-bold">
-                {schools.length}
-              </span>
-            </button>
+        {/* Tab Navigation - Only shown when managing branches in 'list' mode */}
+        {initialMode !== 'add' && (
+          <div className="bg-amber-50/90 border-b border-amber-200 px-6 sm:px-8 pt-3 flex items-center justify-between shrink-0">
+            <div className="flex space-x-3 sm:space-x-4">
+              <button
+                onClick={() => {
+                  setActiveTab('list');
+                  setCreatedSchool(null);
+                }}
+                className={`pb-3.5 px-4 sm:px-5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2.5 transition-all cursor-pointer ${
+                  activeTab === 'list'
+                    ? 'border-orange-600 text-orange-950'
+                    : 'border-transparent text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <Building2 className="w-4 h-4 text-orange-700" />
+                <span>पंजीकृत शाखाएं</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-orange-200/80 text-orange-950 text-xs font-mono font-bold">
+                  {schools.length}
+                </span>
+              </button>
 
-            <button
-              onClick={() => {
-                setActiveTab('add');
-                setCreatedSchool(null);
-              }}
-              className={`pb-3.5 px-4 sm:px-5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2.5 transition-all cursor-pointer ${
-                activeTab === 'add'
-                  ? 'border-orange-600 text-orange-950'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <Plus className="w-4 h-4 text-orange-600" />
-              <span>+ नवीन शाखा पंजीकरण (Add Branch)</span>
-            </button>
+              <button
+                onClick={() => {
+                  setActiveTab('add');
+                  setCreatedSchool(null);
+                }}
+                className={`pb-3.5 px-4 sm:px-5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2.5 transition-all cursor-pointer ${
+                  activeTab === 'add'
+                    ? 'border-orange-600 text-orange-950'
+                    : 'border-transparent text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <Plus className="w-4 h-4 text-orange-600" />
+                <span>+ नवीन शाखा पंजीकरण (Add Branch)</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 lg:p-8 overflow-y-auto flex-1 bg-stone-50/30">
@@ -232,6 +248,16 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                     <p className="text-xs text-stone-600 mt-1">
                       {createdSchool.city}, {createdSchool.state} • {createdSchool.prant}
                     </p>
+                    {createdSchool.plan === 'pro' ? (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-xs font-bold text-amber-900 mt-2">
+                        <Gift className="w-3.5 h-3.5 text-amber-700" />
+                        <span>🎁 15-दिवसीय प्रो ट्रायल सक्रिय (15-Day Free Trial Active)</span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 border border-emerald-300 rounded-full text-xs font-bold text-emerald-900 mt-2">
+                        <span>निःशुल्क आजीवन सेवा सक्रिय (Free Tier Active)</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto text-left bg-white p-4 rounded-xl border border-emerald-200 text-xs">
@@ -255,36 +281,53 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                         setCurrentSchoolId(createdSchool.id);
                         onClose();
                       }}
-                      className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                      className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>इस शाखा का ERP नियंत्रण पटल खोलें</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      onClick={() => {
-                        setCreatedSchool(null);
-                        setActiveTab('list');
-                      }}
-                      className="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition border border-stone-200"
-                    >
-                      सभी शाखाएं देखें
-                    </button>
+                    {initialMode !== 'add' ? (
+                      <button
+                        onClick={() => {
+                          setCreatedSchool(null);
+                          setActiveTab('list');
+                        }}
+                        className="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition border border-stone-200 cursor-pointer"
+                      >
+                        सभी शाखाएं देखें
+                      </button>
+                    ) : (
+                      <button
+                        onClick={onClose}
+                        className="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition border border-stone-200 cursor-pointer"
+                      >
+                        बंद करें
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleRegister} className="space-y-6">
                   
-                  <div className="bg-gradient-to-r from-amber-50 via-orange-50/60 to-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
-                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <Sparkles className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div className="text-xs sm:text-sm">
-                      <p className="font-bold text-orange-950 text-sm sm:text-base">
-                        नवीन शाखा स्वायत्त डेटाबेस (Autonomous School Multi-Tenancy)
-                      </p>
-                      <p className="text-stone-600 mt-1 leading-relaxed">
-                        इस फॉर्म को सबमिट करते ही इस विद्यालय शाखा का पृथक छात्र पंजिका, परीक्षा, शुल्क एवं आचार्य रिकॉर्ड्स तुरंत सक्रिय हो जाएंगे।
-                      </p>
+                  {/* 15-Day Free Pilot Trial Banner */}
+                  <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white border border-amber-400 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-yellow-200 shrink-0 shadow-xs">
+                        <Gift className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-extrabold text-sm sm:text-base text-yellow-100">
+                            🎁 विशेष पेशकश: 15-दिवसीय पूर्ण निःशुल्क ट्रायल (15-Day Free Pilot Trial)
+                          </span>
+                          <span className="bg-emerald-800 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                            0 अग्रिम शुल्क • 0 जोखिम
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/95 mt-1 leading-relaxed">
+                          पंजीकरण करते ही आपकी शाखा का स्वायत्त डेटाबेस तुरंत सक्रिय हो जाएगा। पहले 15 दिन सभी सुविधाओं का पूर्ण निःशुल्क अनुभव लें।
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -563,28 +606,37 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             : 'border-stone-200 bg-stone-50/40 hover:border-amber-300'
                         }`}
                       >
+                        {/* 15-Day Free Trial Corner Badge */}
+                        <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-600 to-amber-600 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-xs flex items-center gap-1">
+                          <Gift className="w-3 h-3 text-yellow-200" />
+                          <span>15-दिवसीय निःशुल्क ट्रायल</span>
+                        </div>
+
                         <div>
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between mb-2 pr-28">
                             <span className="text-sm sm:text-base font-bold text-amber-950 flex items-center gap-2">
                               <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
                               उन्नत प्रो सुविधाएं (Pro Features AMC)
                             </span>
-                            <div className="text-right">
-                              <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 block">
-                                Academic: ₹3,999/वर्ष
-                              </span>
-                              <span className="text-[10px] text-amber-900 mt-0.5 block">
-                                Smart ERP: ₹7,999/वर्ष
-                              </span>
-                            </div>
                           </div>
+
+                          <div className="bg-amber-100/90 border border-amber-300 rounded-xl p-2.5 mb-3">
+                            <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                              <Gift className="w-3.5 h-3.5 text-orange-700" />
+                              <span>पहले 15 दिन ₹0 (पूर्णतः निःशुल्क ट्रायल)</span>
+                            </span>
+                            <p className="text-[11px] text-amber-900 mt-0.5 font-medium leading-tight">
+                              कोई अग्रिम शुल्क नहीं। 15-दिवसीय परीक्षण उपरांत Academic: ₹3,999/वर्ष अथवा Smart ERP: ₹7,999/वर्ष।
+                            </p>
+                          </div>
+
                           <p className="text-xs text-stone-600 leading-relaxed mb-3">
-                            NEP 360° समग्र प्रगति पत्र, डिजिटल आईडी कार्ड, आचार्य पेरोल, व्हाट्सएप व दैनिक बैकअप।
+                            NEP 360° समग्र प्रगति पत्र, डिजिटल आईडी कार्ड, आचार्य पेरोल, व्हाट्सएप सूचनाएं व स्वचालित बैकअप।
                           </p>
                         </div>
                         <div className="flex items-center text-xs font-bold text-amber-800 gap-1.5 pt-2 border-t border-amber-200/60">
                           {plan === 'pro' ? <CheckCircle2 className="w-4 h-4 text-amber-600" /> : <div className="w-4 h-4 rounded-full border border-stone-300" />}
-                          <span>{plan === 'pro' ? 'वर्तमान में चयनित' : 'प्रो सुविधाएं चुनें'}</span>
+                          <span>{plan === 'pro' ? 'वर्तमान में चयनित (15-दिन ट्रायल)' : 'प्रो 15-दिवसीय ट्रायल चुनें'}</span>
                         </div>
                       </div>
                     </div>
@@ -594,7 +646,13 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                   <div className="flex items-center justify-end gap-4 pt-4 border-t border-stone-200">
                     <button
                       type="button"
-                      onClick={() => setActiveTab('list')}
+                      onClick={() => {
+                        if (initialMode === 'add') {
+                          onClose();
+                        } else {
+                          setActiveTab('list');
+                        }
+                      }}
                       className="px-6 py-3.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-sm sm:text-base font-semibold transition border border-stone-300 cursor-pointer"
                     >
                       रद्द करें
@@ -604,8 +662,14 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                       disabled={isSubmitting}
                       className="px-8 py-3.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl text-sm sm:text-base font-bold shadow-lg hover:shadow-orange-600/25 transition flex items-center gap-2.5 disabled:opacity-50 cursor-pointer"
                     >
-                      <Building2 className="w-5 h-5" />
-                      <span>{isSubmitting ? 'पंजीकरण प्रगति पर है...' : 'शाखा पंजीकृत करें'}</span>
+                      {plan === 'pro' ? <Gift className="w-5 h-5" /> : <Building2 className="w-5 h-5" />}
+                      <span>
+                        {isSubmitting
+                          ? 'पंजीकरण प्रगति पर है...'
+                          : plan === 'pro'
+                            ? '15-दिवसीय निःशुल्क ट्रायल के साथ शाखा पंजीकृत करें'
+                            : 'शाखा पंजीकृत करें (निःशुल्क सेवा)'}
+                      </span>
                     </button>
                   </div>
                 </form>
