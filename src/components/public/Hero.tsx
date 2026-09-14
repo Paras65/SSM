@@ -41,7 +41,7 @@ export const Hero: React.FC<HeroProps> = ({
             <h1 className="text-3xl sm:text-5xl font-black text-stone-900 tracking-tight leading-tight">
               सरस्वती शिशु मंदिर <br />
               <span className="bg-gradient-to-r from-orange-700 via-amber-600 to-red-600 bg-clip-text text-transparent">
-                डिजिटल ईआरपी प्रणाली (SSM ERP)
+                डिजिटल ईआरपी प्रणाली <span className="whitespace-nowrap text-[0.86em]">(SSM ERP)</span>
               </span>
             </h1>
 

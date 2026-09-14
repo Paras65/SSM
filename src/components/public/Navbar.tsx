@@ -176,7 +176,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Desktop Navigation Links (Visible on XL+ screens with "Other Sections" dropdown) */}
-            <nav className="hidden xl:flex items-center space-x-2 text-xs font-semibold text-stone-700 shrink-0">
+            <nav className="hidden 2xl:flex items-center space-x-2 text-xs font-semibold text-stone-700 shrink-0">
               <a
                 href="#modules"
                 className="hover:text-orange-600 transition-colors font-bold text-orange-700 px-2 py-1 rounded-lg hover:bg-orange-50"
@@ -270,7 +270,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </nav>
 
             {/* Desktop & Tablet Actions Container */}
-            <div className="hidden md:flex items-center space-x-2 shrink-0">
+            <div className="hidden md:flex flex-wrap items-center justify-end gap-2 shrink-0 min-w-0">
               {/* Unified Portals Dropdown */}
               <div className="relative" ref={portalsRef}>
                 <button
@@ -442,7 +442,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="xl:hidden p-2 text-stone-700 hover:text-stone-950 hover:bg-orange-50 rounded-xl border border-orange-200 transition cursor-pointer"
+                className="2xl:hidden p-2 text-stone-700 hover:text-stone-950 hover:bg-orange-50 rounded-xl border border-orange-200 transition cursor-pointer"
                 title="नेविगेशन मेनू"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -478,7 +478,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile & Tablet Dropdown Drawer */}
         {mobileMenuOpen && (
-          <div className="xl:hidden border-t border-orange-200 bg-amber-50/95 backdrop-blur-md px-4 pt-3 pb-6 space-y-3 text-sm font-medium shadow-lg max-h-[85vh] overflow-y-auto animate-in fade-in duration-150">
+          <div className="2xl:hidden border-t border-orange-200 bg-amber-50/95 backdrop-blur-md px-4 pt-3 pb-6 space-y-3 text-sm font-medium shadow-lg max-h-[85vh] overflow-y-auto animate-in fade-in duration-150">
             {/* Quick Portals Access Cards in Mobile */}
             <div className="space-y-1.5">
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-orange-900/70 px-1">
