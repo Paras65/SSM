@@ -377,3 +377,4 @@ export const SchoolPlansModal: React.FC<SchoolPlansModalProps> = ({
     document.body
   );
 };
+
