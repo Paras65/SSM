@@ -55,8 +55,8 @@ export const SchoolPlansModal: React.FC<SchoolPlansModalProps> = ({
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-orange-500/15 via-amber-400/10 to-transparent rounded-full blur-3xl pointer-events-none -ml-16 -mb-16" />
 
         {/* Modal Header */}
-        <div className="relative z-10 px-5 sm:px-8 py-5 bg-gradient-to-r from-orange-700 via-amber-600 to-orange-700 text-white flex items-center justify-between border-b border-orange-500/30">
-          <div className="flex items-center gap-3.5">
+        <div className="relative z-10 px-5 sm:px-8 py-5 bg-gradient-to-r from-orange-700 via-amber-600 to-orange-700 text-white flex flex-wrap items-center justify-between gap-3 border-b border-orange-500/30">
+          <div className="flex items-center gap-3.5 min-w-0 flex-1">
             <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-md text-yellow-300 shrink-0">
               <Crown className="w-6 h-6 fill-yellow-300" />
             </div>
@@ -65,7 +65,7 @@ export const SchoolPlansModal: React.FC<SchoolPlansModalProps> = ({
                 <Sparkles className="w-3 h-3 text-yellow-200" />
                 <span>विद्या भारती ईआरपी समाधान • संस्थागत योजनाएं</span>
               </div>
-              <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+              <h2 className="text-lg sm:text-xl font-black tracking-tight text-white break-words">
                 सरस्वती शिशु मंदिर ईआरपी योजनाएं व 15-दिवसीय निःशुल्क ट्रायल
               </h2>
             </div>

@@ -288,8 +288,8 @@ export const TeacherPortal: React.FC = () => {
     <div className="min-h-screen bg-stone-100 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <header className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white shadow-lg sticky top-0 z-30 w-full max-w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-16 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-16 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => setViewMode('public')}
               className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition shrink-0"
@@ -315,7 +315,7 @@ export const TeacherPortal: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs shrink-0">
+          <div className="flex items-center gap-2 text-xs shrink-0 ml-auto">
             <button
               onClick={() => setShowTips(!showTips)}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs shrink-0 ${
