@@ -106,50 +106,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// In-memory rate limiter for public/authentication endpoints
-const endpointAttempts = new Map();
+// Rate limiting using express-rate-limit (survives restarts, production-safe)
+const rateLimit = require('express-rate-limit');
+
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
-// Periodic memory leak prevention: sweep expired IP entries every 10 minutes
-const cleanupTimer = setInterval(() => {
-  const now = Date.now();
-  for (const [key, timestamps] of endpointAttempts.entries()) {
-    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-    if (valid.length === 0) {
-      endpointAttempts.delete(key);
-    } else {
-      endpointAttempts.set(key, valid);
-    }
-  }
-}, 10 * 60 * 1000);
-if (cleanupTimer.unref) cleanupTimer.unref();
-
-function rateLimitEndpoint(keyPrefix, maxAttempts = 10) {
-  return (req, res, next) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-    const key = `${keyPrefix}:${ip}`;
-    const now = Date.now();
-
-    const userAttempts = endpointAttempts.get(key) || [];
-    const recentAttempts = userAttempts.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-
-    if (recentAttempts.length >= maxAttempts) {
-      return res.status(429).json({
-        error: 'सुरक्षा चेतावनी: बहुत अधिक प्रयास! कृपया 15 मिनट पश्चात पुनः प्रयास करें। (Too many attempts, rate limit exceeded)',
-        code: 'RATE_LIMIT_EXCEEDED'
-      });
-    }
-
-    recentAttempts.push(now);
-    endpointAttempts.set(key, recentAttempts);
-    next();
-  };
+function rateLimitEndpoint(maxAttempts = 10) {
+  return rateLimit({
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    max: maxAttempts,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      error: 'सुरक्षा चेतावनी: बहुत अधिक प्रयास! कृपया 15 मिनट पश्चात पुनः प्रयास करें। (Too many attempts, rate limit exceeded)',
+      code: 'RATE_LIMIT_EXCEEDED'
+    },
+    skip: (req) => process.env.NODE_ENV === 'test'
+  });
 }
 
-app.use('/api/auth/login', rateLimitEndpoint('admin-login'));
-app.use('/api/auth/student-login', rateLimitEndpoint('student-login', 8));
-app.use('/api/auth/teacher-login', rateLimitEndpoint('teacher-login', 8));
-app.use('/api/admissions', rateLimitEndpoint('admission-submit', 20));
+app.use('/api/auth/login', rateLimitEndpoint(10));
+app.use('/api/auth/student-login', rateLimitEndpoint(8));
+app.use('/api/auth/teacher-login', rateLimitEndpoint(8));
+app.use('/api/admissions', rateLimitEndpoint(20));
 
 // API Routes
 app.use('/api', apiRoutes);

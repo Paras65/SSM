@@ -391,6 +391,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const created = await api.createStudent(newStudent);
       setStudents(prev => prev.map(s => s.id === tempId ? created : s));
     } catch (err) {
+      // Rollback: remove optimistically added student on failure
+      setStudents(prev => prev.filter(s => s.id !== tempId));
       console.error('Error saving student to MongoDB:', err);
     }
   };
@@ -403,15 +405,20 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         schoolId: currentSchool.id
       });
     } catch (err) {
+      // Rollback: restore previous student data on failure
+      setStudents(prev => prev.map(s => s.id === updatedStudent.id ? (students.find(o => o.id === updatedStudent.id) || s) : s));
       console.error('Error updating student in MongoDB:', err);
     }
   };
 
   const deleteStudent = async (id: string) => {
+    const snapshot = students.find(s => s.id === id);
     setStudents(prev => prev.filter(s => s.id !== id));
     try {
       await api.deleteStudent(id);
     } catch (err) {
+      // Rollback: re-insert deleted student on failure
+      if (snapshot) setStudents(prev => [...prev, snapshot]);
       console.error('Error deleting student from MongoDB:', err);
     }
   };
@@ -539,6 +546,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const created = await api.createFee(newRecord);
       setFeeRecords(prev => prev.map(f => f.id === tempId ? created : f));
     } catch (err) {
+      // Rollback: remove optimistically added fee record on failure
+      setFeeRecords(prev => prev.filter(f => f.id !== tempId));
       console.error('Error creating fee record in MongoDB:', err);
     }
   };
@@ -572,6 +581,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const created = await api.createNotice(newNotice);
       setNotices(prev => prev.map(n => n.id === tempId ? created : n));
     } catch (err) {
+      // Rollback: remove optimistically added notice on failure
+      setNotices(prev => prev.filter(n => n.id !== tempId));
       console.error('Error saving notice to MongoDB:', err);
     }
   };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { LibraryBook, BookIssueRecord } from '../../types';
 import { X, Book, Plus, Search, CheckCircle2, RotateCcw, User, Clock } from 'lucide-react';
@@ -11,6 +12,7 @@ interface LibraryManagementModalProps {
 
 export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool, students } = useSchool();
+  const { showError } = useToast();
   const [activeTab, setActiveTab] = useState<'catalog' | 'issues'>('catalog');
   const [books, setBooks] = useState<LibraryBook[]>([]);
   const [issues, setIssues] = useState<BookIssueRecord[]>([]);
@@ -42,6 +44,7 @@ export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ 
       setBooks(bookData);
       setIssues(issueData);
     } catch (err) {
+      showError('पुस्तकालय डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to load library data:', err);
     }
   };

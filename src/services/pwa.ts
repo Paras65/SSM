@@ -13,10 +13,14 @@ export const registerServiceWorker = () => {
       navigator.serviceWorker
         .register('/sw.js')
         .then(reg => {
-          console.log('✅ [PWA] Service Worker registered with scope:', reg.scope);
+          if (import.meta.env.DEV) {
+            console.log('✅ [PWA] Service Worker registered with scope:', reg.scope);
+          }
         })
         .catch(err => {
-          console.warn('⚠️ [PWA] Service Worker registration failed:', err);
+          if (import.meta.env.DEV) {
+            console.warn('⚠️ [PWA] Service Worker registration failed:', err);
+          }
         });
     });
   }
@@ -30,7 +34,9 @@ export const registerServiceWorker = () => {
 
   // Listen for appinstalled
   window.addEventListener('appinstalled', () => {
-    console.log('🎉 [PWA] Saraswati Shishu Mandir App successfully installed!');
+    if (import.meta.env.DEV) {
+      console.log('🎉 [PWA] Saraswati Shishu Mandir App successfully installed!');
+    }
     deferredPrompt = null;
     installListeners.forEach(cb => cb(false));
   });

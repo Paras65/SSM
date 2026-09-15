@@ -114,7 +114,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
         city: city.trim(),
         state: state.trim() || 'उत्तर प्रदेश',
         prant,
-        affiliationNo: affiliationNo.trim() || `VB-${fallbackPrefix.slice(0, 3).toUpperCase()}-2026`,
+        affiliationNo: affiliationNo.trim() || `VB-${fallbackPrefix.slice(0, 3).toUpperCase()}-${new Date().getFullYear()}`,
         principalName: principalName.trim(),
         adminPasscode: adminPasscode.trim() || '1952',
         phone: phone.trim() || '+91 94150 00000',

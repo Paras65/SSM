@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Exam, Student, ExamScheduleItem } from '../../types';
 import { X, Calendar, Plus, Trash2, CheckCircle2, FileSpreadsheet, Clock, Award } from 'lucide-react';
@@ -12,6 +13,7 @@ interface ExamManagementModalProps {
 
 export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen, onClose, onOpenAdmitCard }) => {
   const { currentSchool, students } = useSchool();
+  const { showError } = useToast();
   const [activeTab, setActiveTab] = useState<'exams' | 'marks'>('exams');
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,7 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
         setSelectedExamId(data[0].id);
       }
     } catch (err) {
+      showError('परीक्षा डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to fetch exams:', err);
     } finally {
       setLoading(false);

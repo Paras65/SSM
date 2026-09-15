@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { LeaveRequest } from '../../types';
 import { X, CheckCircle, XCircle, Clock, Calendar, Filter } from 'lucide-react';
@@ -11,6 +12,7 @@ interface LeaveManagementModalProps {
 
 export const LeaveManagementModal: React.FC<LeaveManagementModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool } = useSchool();
+  const { showError } = useToast();
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [filterType, setFilterType] = useState<'all' | 'student' | 'staff'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'Pending' | 'Approved' | 'Rejected'>('Pending');
@@ -22,6 +24,7 @@ export const LeaveManagementModal: React.FC<LeaveManagementModalProps> = ({ isOp
       const data = await api.getLeaves(currentSchool.id);
       setLeaves(data);
     } catch (err) {
+      showError('अवकाश डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to fetch leaves:', err);
     } finally {
       setLoading(false);

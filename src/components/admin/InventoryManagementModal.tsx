@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { InventoryItem } from '../../types';
 import { X, Package, Plus, Trash2, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
@@ -11,6 +12,7 @@ interface InventoryManagementModalProps {
 
 export const InventoryManagementModal: React.FC<InventoryManagementModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool } = useSchool();
+  const { showError } = useToast();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [showAddItem, setShowAddItem] = useState(false);
@@ -29,6 +31,7 @@ export const InventoryManagementModal: React.FC<InventoryManagementModalProps> =
       const data = await api.getInventory(currentSchool.id);
       setItems(data);
     } catch (err) {
+      showError('सामग्री सूची लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to load inventory:', err);
     }
   };

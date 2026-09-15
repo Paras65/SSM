@@ -45,7 +45,9 @@ async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Re
   try {
     return await fetch(url, { ...options, headers });
   } catch (err: any) {
-    console.warn(`[API Offline/Network Error] ${options.method || 'GET'} ${url}:`, err.message);
+    if (import.meta.env.DEV) {
+      console.warn(`[API Offline/Network Error] ${options.method || 'GET'} ${url}:`, err.message);
+    }
     throw new Error('सर्वर अथवा नेटवर्क से संपर्क नहीं हो सका। कृपया कनेक्शन जांचें। (Network/Server connection failed)');
   }
 }

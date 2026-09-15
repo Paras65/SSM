@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { TransportRoute, TransportStop } from '../../types';
 import { X, Bus, Plus, Trash2, Phone, MapPin, CheckCircle2 } from 'lucide-react';
@@ -11,6 +12,7 @@ interface TransportManagementModalProps {
 
 export const TransportManagementModal: React.FC<TransportManagementModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool } = useSchool();
+  const { showError } = useToast();
   const [routes, setRoutes] = useState<TransportRoute[]>([]);
   const [showAddRoute, setShowAddRoute] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,7 @@ export const TransportManagementModal: React.FC<TransportManagementModalProps> =
       const data = await api.getTransportRoutes(currentSchool.id);
       setRoutes(data);
     } catch (err) {
+      showError('परिवहन डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to fetch routes:', err);
     } finally {
       setLoading(false);

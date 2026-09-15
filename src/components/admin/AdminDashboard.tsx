@@ -1,3 +1,7 @@
+// TODO: [REFACTOR] AdminDashboard is a 180KB+ monolith (~3100 lines).
+// Split into sub-components: AdminNav, DashboardStats, StudentTable, QuickActions, etc.
+// Use React.lazy + Suspense for heavy modal sections.
+// Tracked in issues_backlog — scheduled for post quota-reset (after Sep 21, 2026).
 import React, { useCallback, useState, useEffect, useMemo, useRef } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';

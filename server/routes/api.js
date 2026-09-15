@@ -1,3 +1,9 @@
+// TODO: [REFACTOR] api.js is a 76KB monolith (~1900 lines) containing all routes.
+// Split into domain-based route files:
+//   routes/students.js, routes/fees.js, routes/exams.js,
+//   routes/attendance.js, routes/library.js, routes/transport.js, etc.
+// Mount each in server/index.js as: app.use('/api/students', require('./routes/students'));
+// Tracked in issues_backlog — scheduled for post quota-reset (after Sep 21, 2026).
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');

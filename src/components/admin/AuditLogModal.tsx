@@ -39,6 +39,7 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
   const { currentSchool } = useSchool();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Filters
@@ -57,103 +58,13 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
 
   const fetchLogs = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const data = await api.getAuditLogs(currentSchool.id);
       setLogs(data || []);
     } catch {
-      // Fallback robust mock audit entries
-      setLogs([
-        {
-          id: 'log-101',
-          schoolId: currentSchool.id,
-          actorType: 'admin',
-          actorName: 'व्यवस्थापक (Admin)',
-          action: 'ADMIN_LOGIN_SUCCESS',
-          description: `प्रशासक सफलतापूर्वक प्रमाणित हुआ (${currentSchool.name || 'सरस्वती शिशु मंदिर'})`,
-          ip: '192.168.1.10',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'log-102',
-          schoolId: currentSchool.id,
-          actorType: 'admin',
-          actorName: 'व्यवस्थापक',
-          action: 'PASSCODE_CHANGED',
-          description: 'प्रशासक सुरक्षा पासकोड बदला गया एवं सक्रिय सत्र अमान्य (invalidated) किए गए (संस्करण: 2)',
-          ip: '192.168.1.10',
-          createdAt: new Date(Date.now() - 900000).toISOString()
-        },
-        {
-          id: 'log-103',
-          schoolId: currentSchool.id,
-          actorType: 'admin',
-          actorName: 'व्यवस्थापक',
-          action: 'FEE_PAYMENT_COLLECTED',
-          description: 'शुल्क भुगतान प्राप्त: छात्र #ssm-102 - रसीद संख्या: SSM-REC-2026-0041, राशि: ₹1800, माध्यम: UPI QR',
-          ip: '192.168.1.10',
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 'log-104',
-          schoolId: currentSchool.id,
-          actorType: 'teacher',
-          actorName: 'आचार्य रामेश्वर शुक्ल',
-          action: 'EXAM_MARKS_RECORDED',
-          description: 'परीक्षा \'वार्षिक परीक्षा\' (2025-26) - विषय: गणित हेतु 42 छात्रों के प्राप्तांक दर्ज/अद्यतन किए गए।',
-          ip: '192.168.1.45',
-          createdAt: new Date(Date.now() - 7200000).toISOString()
-        },
-        {
-          id: 'log-105',
-          schoolId: currentSchool.id,
-          actorType: 'admin',
-          actorName: 'व्यवस्थापक',
-          action: 'EXAM_LOCKED',
-          description: 'परीक्षा #exam-annual-2026 (वार्षिक परीक्षा 2026) को स्थिर/लॉक (Locked) किया गया।',
-          ip: '192.168.1.10',
-          createdAt: new Date(Date.now() - 14400000).toISOString()
-        },
-        {
-          id: 'log-106',
-          schoolId: currentSchool.id,
-          actorType: 'admin',
-          actorName: 'प्रशासक',
-          action: 'ADMIN_LOGIN_FAILED',
-          description: `अमान्य एडमिन पासकोड से लॉगिन का असफल प्रयास (शाखा: ${currentSchool.id})`,
-          ip: '203.0.113.88',
-          createdAt: new Date(Date.now() - 28800000).toISOString()
-        },
-        {
-          id: 'log-107',
-          schoolId: currentSchool.id,
-          actorType: 'student',
-          actorName: 'छात्र आयुष वर्मा',
-          action: 'STUDENT_LOGIN_SUCCESS',
-          description: 'छात्र आयुष वर्मा (अनुक्रमांक: 105, कक्षा: Class 6) द्वारा पोर्टल लॉगिन',
-          ip: '49.36.12.19',
-          createdAt: new Date(Date.now() - 43200000).toISOString()
-        },
-        {
-          id: 'log-108',
-          schoolId: currentSchool.id,
-          actorType: 'admin',
-          actorName: 'व्यवस्थापक',
-          action: 'DPDP_STUDENT_ANONYMIZED',
-          description: 'छात्र #ssm-089 (राहुल मौर्य) का व्यक्तिगत डेटा DPDP Act 2023 (TC/विलोपन अधिकार) के तहत अनामीकृत किया गया।',
-          ip: '192.168.1.10',
-          createdAt: new Date(Date.now() - 86400000).toISOString()
-        },
-        {
-          id: 'log-109',
-          schoolId: currentSchool.id,
-          actorType: 'developer',
-          actorName: 'Developer Console',
-          action: 'DEVELOPER_LOGIN_SUCCESS',
-          description: 'डेवलपर प्रशासन सफलतापूर्वक प्रमाणित हुआ।',
-          ip: '127.0.0.1',
-          createdAt: new Date(Date.now() - 108000000).toISOString()
-        }
-      ]);
+      setLogs([]);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -614,6 +525,20 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
                   <td colSpan={6} className="py-16 text-center text-stone-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-600" />
                     ऑडिट लॉग्स लोड हो रहे हैं...
+                  </td>
+                </tr>
+              ) : fetchError ? (
+                <tr>
+                  <td colSpan={6} className="py-16 text-center text-stone-400">
+                    <AlertTriangle className="w-10 h-10 mx-auto mb-2 text-red-400" />
+                    <p className="font-bold text-red-600">ऑडिट लॉग लोड करने में त्रुटि</p>
+                    <p className="text-xs text-stone-400 mt-1">सर्वर से कनेक्ट नहीं हो सका। कृपया इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।</p>
+                    <button
+                      onClick={fetchLogs}
+                      className="mt-3 px-4 py-1.5 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition"
+                    >
+                      🔄 पुनः प्रयास करें
+                    </button>
                   </td>
                 </tr>
               ) : paginatedLogs.length === 0 ? (
