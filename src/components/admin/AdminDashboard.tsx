@@ -121,6 +121,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
+  const [showMobileModules, setShowMobileModules] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
@@ -765,8 +766,93 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto text-xs font-medium border-t border-orange-800/60 w-full max-w-full">
+        {/* Mobile module navigation */}
+        <div className="sm:hidden border-t border-orange-800/60 px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <label htmlFor="mobile-admin-section" className="sr-only">वर्तमान अनुभाग चुनें</label>
+            <select
+              id="mobile-admin-section"
+              value={currentTab}
+              onChange={(e) => {
+                const nextTab = e.target.value as AdminTab;
+                if (nextTab === 'reports' && !isPro) {
+                  requirePro(
+                    '360° समग्र प्रगति पत्र (Holistic Report Cards)',
+                    'NEP 2020 एवं विद्या भारती 5 आधार विषयों सहित समग्र प्रगति पत्र केवल प्रो योजना में उपलब्ध है।',
+                    () => setCurrentTab(nextTab)
+                  );
+                  return;
+                }
+                if (nextTab === 'staff' && !isPro) {
+                  requirePro(
+                    'आचार्य एवं वेतन प्रबंधन (Staff & Payroll)',
+                    'शिक्षकों का पूर्ण रिकॉर्ड एवं मासिक वेतन पर्ची केवल प्रो योजना में उपलब्ध है।',
+                    () => setCurrentTab(nextTab)
+                  );
+                  return;
+                }
+                setCurrentTab(nextTab);
+              }}
+              className="min-w-0 flex-1 rounded-lg border border-orange-700 bg-orange-950 px-3 py-2 text-xs font-bold text-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="overview">मुख्य पृष्ठ (Overview)</option>
+              <option value="students">छात्र पंजिका ({totalStudents})</option>
+              <option value="attendance">दैनिक उपस्थिति</option>
+              <option value="fees">शुल्क प्रबंधन व रसीद</option>
+              <option value="reports">प्रगति पत्र {isPro ? '' : '(PRO)'}</option>
+              <option value="homework">दैनिक गृहकार्य ({homeworkList.length})</option>
+              <option value="staff">आचार्य एवं वेतन {isPro ? '' : '(PRO)'}</option>
+              <option value="admissions">प्रवेश समीक्षा ({admissions.length})</option>
+              <option value="notices">सूचना प्रसारण</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setShowMobileModules(value => !value)}
+              aria-expanded={showMobileModules}
+              className="shrink-0 rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-100"
+            >
+              {showMobileModules ? 'बंद करें' : 'सभी मॉड्यूल'}
+            </button>
+          </div>
+
+          {showMobileModules && (
+            <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl bg-orange-950/70 p-2">
+              {[
+                ['📝', 'परीक्षा व अंक', () => setShowExamModal(true)],
+                ['📋', 'टैबुलेशन रजिस्टर', () => setShowTabulationModal(true)],
+                ['🕒', 'समय सारिणी', () => setShowTimetableModal(true)],
+                ['🌴', 'अवकाश समीक्षा', () => setShowLeaveModal(true)],
+                ['🚌', 'बस परिवहन', () => setShowTransportModal(true)],
+                ['📚', 'पुस्तकालय', () => setShowLibraryModal(true)],
+                ['🎒', 'भंडार स्टॉक', () => setShowInventoryModal(true)],
+                ['📢', 'संदेश प्रसारण', () => setShowBulkNotificationModal(true)],
+                ['🛡️', 'गतिविधि रजिस्टर', () => setShowAuditLogModal(true)],
+                ['🎓', 'सत्र व प्रोन्नति', () => setShowSessionManagementModal(true)],
+                ['💡', 'मदद गाइड', () => setShowHelpGuideModal(true)],
+                ['⚙️', 'शाखा प्रबंधन', () => {
+                  setSchoolModalMode('list');
+                  setShowSchoolModal(true);
+                }]
+              ].map(([icon, label, action]) => (
+                <button
+                  key={label as string}
+                  type="button"
+                  onClick={() => {
+                    (action as () => void)();
+                    setShowMobileModules(false);
+                  }}
+                  className="flex min-h-11 items-center gap-2 rounded-lg border border-orange-800 bg-orange-900/70 px-2.5 py-2 text-left text-[11px] font-bold text-amber-100 hover:bg-orange-800"
+                >
+                  <span aria-hidden="true">{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop tab navigation */}
+        <div className="hidden sm:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-wrap gap-x-1 sm:gap-x-2 gap-y-0.5 overflow-x-visible text-xs font-medium border-t border-orange-800/60 w-full max-w-full">
           <button
             onClick={() => setCurrentTab('overview')}
             className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap ${
