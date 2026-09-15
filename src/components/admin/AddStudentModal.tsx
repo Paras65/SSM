@@ -50,14 +50,14 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-orange-200">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-xl w-full max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto border border-orange-200">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-700 to-amber-600 text-white px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="bg-gradient-to-r from-orange-700 to-amber-600 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <UserPlus className="w-5 h-5 text-yellow-300" />
-            <h3 className="text-base font-bold">
+            <h3 className="text-sm sm:text-base font-bold leading-tight">
               नवीन छात्र प्रवेश पंजीयन (New Student Admission)
             </h3>
           </div>
@@ -67,7 +67,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
             <div>
@@ -249,7 +249,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
 
           {/* UDISE+ SDMS Section */}
           <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-200 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-start justify-between gap-1.5">
               <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
                 <span>🇮🇳 UDISE+ SDMS सरकारी पहचान (वैकल्पिक)</span>
               </span>
