@@ -58,6 +58,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   initialPlan = 'free'
 }) => {
   const { schools, currentSchool, setCurrentSchoolId, registerSchool, setViewMode } = useSchool();
+  const isDeveloper = typeof window !== 'undefined' && sessionStorage.getItem('ssm_admin_role') === 'developer';
   const [activeTab, setActiveTab] = useState<'list' | 'add'>(initialMode);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -188,7 +189,9 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
     }
   };
 
-  const filteredSchools = schools.filter(s =>
+  const visibleSchools = isDeveloper ? schools : schools.filter(s => s.id === currentSchool.id);
+
+  const filteredSchools = visibleSchools.filter(s =>
     s.hindiName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -251,24 +254,26 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                 <Building2 className="w-4 h-4 text-orange-700" />
                 <span>पंजीकृत शाखाएं</span>
                 <span className="px-2.5 py-0.5 rounded-full bg-orange-200/80 text-orange-950 text-xs font-mono font-bold">
-                  {schools.length}
+                  {visibleSchools.length}
                 </span>
               </button>
 
-              <button
-                onClick={() => {
-                  setActiveTab('add');
-                  setCreatedSchool(null);
-                }}
-                className={`pb-3.5 px-4 sm:px-5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2.5 transition-all cursor-pointer ${
-                  activeTab === 'add'
-                    ? 'border-orange-600 text-orange-950'
-                    : 'border-transparent text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                <Plus className="w-4 h-4 text-orange-600" />
-                <span>+ नवीन शाखा पंजीकरण (Add Branch)</span>
-              </button>
+              {isDeveloper && (
+                <button
+                  onClick={() => {
+                    setActiveTab('add');
+                    setCreatedSchool(null);
+                  }}
+                  className={`pb-3.5 px-4 sm:px-5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2.5 transition-all cursor-pointer ${
+                    activeTab === 'add'
+                      ? 'border-orange-600 text-orange-950'
+                      : 'border-transparent text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  <Plus className="w-4 h-4 text-orange-600" />
+                  <span>+ नवीन शाखा पंजीकरण (Add Branch)</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -897,7 +902,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             <span className="hidden sm:inline">डेटा आर्काइव (JSON)</span>
                           </button>
 
-                          {sch.status !== 'discontinued' && (
+                          {isDeveloper && sch.status !== 'discontinued' && (
                             <button
                               type="button"
                               onClick={() => {
@@ -920,7 +925,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             <Check className="w-4 h-4 text-green-700" />
                             <span>वर्तमान चयनित</span>
                           </span>
-                        ) : (
+                        ) : isDeveloper ? (
                           <button
                             onClick={() => {
                               setCurrentSchoolId(sch.id);
@@ -931,7 +936,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             <span>इस शाखा में स्विच करें</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   );

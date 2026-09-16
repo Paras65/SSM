@@ -542,30 +542,39 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Controls: Branch Switcher, Plan, Sync, Desktop Buttons */}
           <div className="flex flex-wrap items-center justify-start sm:justify-end gap-1.5 sm:gap-2 text-xs w-full sm:w-auto pb-0.5 sm:pb-0">
-            {/* School / Branch Switcher */}
-            <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-orange-950 border border-orange-800 text-[11px] font-bold text-amber-200 min-w-0 max-w-[55%] sm:max-w-none">
-              <Building2 className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-              <select
-                value={currentSchool.id}
-                onChange={(e) => {
-                  if (e.target.value === 'ADD_NEW') {
-                    setSchoolModalMode('add');
-                    setShowSchoolModal(true);
-                  } else {
-                    setCurrentSchoolId(e.target.value);
-                  }
-                }}
-                className="bg-transparent border-none text-[11px] font-bold text-amber-100 focus:outline-none cursor-pointer truncate w-full max-w-[110px] xs:max-w-[140px] sm:max-w-[170px] lg:max-w-[220px]"
-                title="Switch School Branch"
-              >
-                {schools.map(s => (
-                  <option key={s.id} value={s.id} className="text-stone-900 font-medium">
-                    {s.city} ({s.prant})
-                  </option>
-                ))}
-                <option value="ADD_NEW" className="text-orange-900 font-bold">+ नई शाखा जोड़ें...</option>
-              </select>
-            </div>
+            {/* School / Branch Switcher (Super-Admin / Developer Only) */}
+            {isDeveloper ? (
+              <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-orange-950 border border-orange-800 text-[11px] font-bold text-amber-200 min-w-0 max-w-[55%] sm:max-w-none">
+                <Building2 className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                <select
+                  value={currentSchool.id}
+                  onChange={(e) => {
+                    if (e.target.value === 'ADD_NEW') {
+                      setSchoolModalMode('add');
+                      setShowSchoolModal(true);
+                    } else {
+                      setCurrentSchoolId(e.target.value);
+                    }
+                  }}
+                  className="bg-transparent border-none text-[11px] font-bold text-amber-100 focus:outline-none cursor-pointer truncate w-full max-w-[110px] xs:max-w-[140px] sm:max-w-[170px] lg:max-w-[220px]"
+                  title="Switch School Branch (Developer Only)"
+                >
+                  {schools.map(s => (
+                    <option key={s.id} value={s.id} className="text-stone-900 font-medium">
+                      {s.city} ({s.prant})
+                    </option>
+                  ))}
+                  <option value="ADD_NEW" className="text-orange-900 font-bold">+ नई शाखा जोड़ें...</option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950/80 border border-orange-800/60 text-[11px] font-bold text-amber-200 shrink-0">
+                <Building2 className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                <span className="truncate max-w-[130px] sm:max-w-[200px]" title={currentSchool.name}>
+                  {currentSchool.city} ({currentSchool.prant})
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center gap-1.5 shrink-0">
               {/* Plan Badge */}

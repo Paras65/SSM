@@ -141,15 +141,17 @@ export const Hero: React.FC<HeroProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={onOpenBranchList}
-                className="px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-stone-900 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                title="नजदीकी सरस्वती शिशु मंदिर खोजें (School Locator)"
-              >
-                <span>🔍</span>
-                <span>{publicSchool.id === 'ssm-national' ? 'विद्यालय खोजें' : `शाखा: ${publicSchool.city}`}</span>
-              </button>
+              {Boolean(onOpenBranchList && (publicSchool.id === 'ssm-national' || (typeof window !== 'undefined' && sessionStorage.getItem('ssm_admin_token')))) && (
+                <button
+                  type="button"
+                  onClick={onOpenBranchList}
+                  className="px-4 py-2.5 rounded-xl bg-white hover:bg-amber-50 text-stone-900 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="नजदीकी सरस्वती शिशु मंदिर खोजें (School Locator)"
+                >
+                  <span>🔍</span>
+                  <span>{publicSchool.id === 'ssm-national' ? 'विद्यालय खोजें' : `शाखा: ${publicSchool.city}`}</span>
+                </button>
+              )}
 
               {onOpenVerifyTc && (
                 <button
