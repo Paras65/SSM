@@ -444,7 +444,7 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
                             <td className="p-3">
                               <select
                                 value={studentActions[st.id] || 'promote'}
-                                onChange={e => setStudentActions(prev => ({ ...prev, [st.id]: e.target.value as any }))}
+                                onChange={e => setStudentActions(prev => ({ ...prev, [st.id]: e.target.value as 'promote' | 'detain' | 'alumni' }))}
                                 className="px-2 py-1 rounded-lg border border-stone-300 font-medium text-xs bg-white focus:ring-2 focus:ring-orange-500"
                               >
                                 <option value="promote">प्रमोट करें ({targetClass})</option>

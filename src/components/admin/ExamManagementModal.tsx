@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Exam, Student, ExamScheduleItem } from '../../types';
-import { X, Calendar, Plus, Trash2, CheckCircle2, FileSpreadsheet, Clock, Award } from 'lucide-react';
+import { X, Calendar, Plus, Trash2, CheckCircle2, FileSpreadsheet, Clock, Award, AlertTriangle } from 'lucide-react';
 
 interface ExamManagementModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
   const [activeTab, setActiveTab] = useState<'exams' | 'marks'>('exams');
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   // New Exam Form state
   const [showAddExam, setShowAddExam] = useState(false);
@@ -42,6 +43,7 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
 
   const fetchExams = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const data = await api.getExams(currentSchool.id);
       setExams(data);
@@ -49,6 +51,7 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
         setSelectedExamId(data[0].id);
       }
     } catch (err) {
+      setFetchError(true);
       showError('परीक्षा डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to fetch exams:', err);
     } finally {
@@ -233,10 +236,11 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
                         onChange={(e) => setExamTerm(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white"
                       >
+                        <option value="Traimasik">त्रैमासिक परीक्षा (Traimasik / Quarterly)</option>
+                        <option value="Half-Yearly">अर्धवार्षिक परीक्षा (Ardhvarshik / Half-Yearly)</option>
+                        <option value="Annual">वार्षिक परीक्षा (Varshik / Annual Exam)</option>
                         <option value="Unit-Test-1">इकाई परीक्षा 1 (Unit Test 1)</option>
-                        <option value="Half-Yearly">अर्धवार्षिक परीक्षा (Half-Yearly)</option>
                         <option value="Unit-Test-2">इकाई परीक्षा 2 (Unit Test 2)</option>
-                        <option value="Annual">वार्षिक परीक्षा (Annual Exam)</option>
                       </select>
                     </div>
                     <div>
@@ -352,7 +356,21 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
 
               {/* List of Scheduled Exams */}
               <div className="space-y-3">
-                {exams.length === 0 ? (
+                {loading ? (
+                  <p className="text-center text-stone-400 py-8">परीक्षा डेटा लोड हो रहा है...</p>
+                ) : fetchError ? (
+                  <div className="p-8 text-center bg-red-50 rounded-2xl border border-red-200 text-stone-600">
+                    <AlertTriangle className="w-8 h-8 mx-auto text-red-500 mb-1" />
+                    <p className="font-bold text-red-700">परीक्षा डेटा लोड करने में त्रुटि</p>
+                    <p className="text-xs text-stone-400 mt-1">सर्वर से संपर्क नहीं हो सका।</p>
+                    <button
+                      onClick={fetchExams}
+                      className="mt-2 px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs"
+                    >
+                      🔄 पुनः प्रयास करें
+                    </button>
+                  </div>
+                ) : exams.length === 0 ? (
                   <p className="text-center text-stone-400 py-8">कोई परीक्षा निर्धारित नहीं है।</p>
                 ) : (
                   exams.map(exam => (

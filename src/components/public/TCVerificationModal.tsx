@@ -19,11 +19,11 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
   if (!isOpen) return null;
 
   // Sample verification chips: active students if available, or sample records for instant testing
-  const sampleChips = students.length > 0
+  const sampleChips: Student[] = students.length > 0
     ? students.slice(0, 3)
     : [
-        { id: 'sample-001', rollNo: '101', pen: '21094837201', name: 'Aryan Sharma', class: 'Class 8', section: 'A', fatherName: 'Shri Rajesh Sharma', motherName: 'Smt. Sunita Sharma' },
-        { id: 'sample-002', rollNo: '102', pen: '21094837202', name: 'Ananya Verma', class: 'Class 8', section: 'A', fatherName: 'Shri Manoj Verma', motherName: 'Smt. Rekha Verma' }
+        { id: 'sample-001', rollNo: '101', pen: '21094837201', name: 'Aryan Sharma', gender: 'Bhaiya', class: 'Class 8', section: 'A', fatherName: 'Shri Rajesh Sharma', motherName: 'Smt. Sunita Sharma', contact: '+91 98765 43210', address: 'Gorakhpur', dob: '2012-04-15', admissionDate: '2018-07-02', bloodGroup: 'B+' },
+        { id: 'sample-002', rollNo: '102', pen: '21094837202', name: 'Ananya Verma', gender: 'Bahin', class: 'Class 8', section: 'A', fatherName: 'Shri Manoj Verma', motherName: 'Smt. Rekha Verma', contact: '+91 98234 56789', address: 'Gorakhpur', dob: '2012-09-21', admissionDate: '2018-07-03', bloodGroup: 'O+' }
       ];
 
   const handleSearch = async (queryToUse?: string) => {
@@ -57,7 +57,7 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
         const pen = (s.pen || '').toLowerCase();
         const name = (s.name || '').toLowerCase();
         return roll === qLower || pen === qLower || name.toLowerCase().includes(qLower);
-      }) as any;
+      });
     }
 
     if (found) {

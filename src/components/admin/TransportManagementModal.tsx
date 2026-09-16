@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { TransportRoute, TransportStop } from '../../types';
-import { X, Bus, Plus, Trash2, Phone, MapPin, CheckCircle2 } from 'lucide-react';
+import { X, Bus, Plus, Trash2, Phone, MapPin, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface TransportManagementModalProps {
   isOpen: boolean;
@@ -14,8 +14,9 @@ export const TransportManagementModal: React.FC<TransportManagementModalProps> =
   const { currentSchool } = useSchool();
   const { showError } = useToast();
   const [routes, setRoutes] = useState<TransportRoute[]>([]);
-  const [showAddRoute, setShowAddRoute] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+  const [showAddRoute, setShowAddRoute] = useState(false);
 
   // Form state
   const [routeName, setRouteName] = useState('रूट 1 - नगर केंद्र से विद्यालय');
@@ -32,10 +33,12 @@ export const TransportManagementModal: React.FC<TransportManagementModalProps> =
 
   const fetchRoutes = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const data = await api.getTransportRoutes(currentSchool.id);
       setRoutes(data);
     } catch (err) {
+      setFetchError(true);
       showError('परिवहन डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to fetch routes:', err);
     } finally {
@@ -278,7 +281,21 @@ export const TransportManagementModal: React.FC<TransportManagementModalProps> =
 
           {/* Routes Cards */}
           <div className="space-y-4">
-            {routes.length === 0 ? (
+            {loading ? (
+              <p className="text-center text-stone-400 py-10">परिवहन डेटा लोड हो रहा है...</p>
+            ) : fetchError ? (
+              <div className="p-8 text-center bg-red-50 rounded-2xl border border-red-200 text-stone-600">
+                <AlertTriangle className="w-8 h-8 mx-auto text-red-500 mb-1" />
+                <p className="font-bold text-red-700">परिवहन डेटा लोड करने में त्रुटि</p>
+                <p className="text-xs text-stone-400 mt-1">सर्वर से संपर्क नहीं हो सका।</p>
+                <button
+                  onClick={fetchRoutes}
+                  className="mt-2 px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs"
+                >
+                  🔄 पुनः प्रयास करें
+                </button>
+              </div>
+            ) : routes.length === 0 ? (
               <p className="text-center text-stone-400 py-10">कोई बस रूट पंजीकृत नहीं है।</p>
             ) : (
               routes.map(r => (

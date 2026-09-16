@@ -26,13 +26,21 @@ export const InventoryManagementModal: React.FC<InventoryManagementModalProps> =
   const [minimumAlertStock, setMinimumAlertStock] = useState(10);
   const [unit, setUnit] = useState('सेट (Set)');
 
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+
   const fetchInventory = async () => {
+    setLoading(true);
+    setFetchError(false);
     try {
       const data = await api.getInventory(currentSchool.id);
       setItems(data);
     } catch (err) {
+      setFetchError(true);
       showError('सामग्री सूची लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to load inventory:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -253,7 +261,26 @@ export const InventoryManagementModal: React.FC<InventoryManagementModalProps> =
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {filteredItems.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-stone-400">
+                      भंडार सूची लोड हो रही है...
+                    </td>
+                  </tr>
+                ) : fetchError ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-stone-500">
+                      <AlertTriangle className="w-8 h-8 mx-auto text-red-500 mb-1" />
+                      <p className="font-bold text-red-600">सामग्री सूची लोड करने में त्रुटि</p>
+                      <button
+                        onClick={fetchInventory}
+                        className="mt-2 px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-xs"
+                      >
+                        🔄 पुनः प्रयास करें
+                      </button>
+                    </td>
+                  </tr>
+                ) : filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-stone-400">
                       भंडार में कोई वस्तु नहीं मिली।

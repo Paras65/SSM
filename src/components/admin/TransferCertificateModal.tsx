@@ -88,7 +88,7 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
             <label className="block text-[10px] font-bold text-amber-900 uppercase">विद्यार्थी आचरण</label>
             <select
               value={conduct}
-              onChange={e => setConduct(e.target.value as any)}
+              onChange={e => setConduct(e.target.value as 'उत्तम' | 'अति उत्तम' | 'श्रेष्ठ')}
               className="w-full bg-white border border-amber-300 rounded px-2 py-1 text-xs"
             >
               <option value="श्रेष्ठ">श्रेष्ठ (Excellent)</option>

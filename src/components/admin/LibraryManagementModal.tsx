@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { LibraryBook, BookIssueRecord } from '../../types';
-import { X, Book, Plus, Search, CheckCircle2, RotateCcw, User, Clock } from 'lucide-react';
+import { X, Book, Plus, Search, CheckCircle2, RotateCcw, User, Clock, AlertTriangle } from 'lucide-react';
 
 interface LibraryManagementModalProps {
   isOpen: boolean;
@@ -35,7 +35,12 @@ export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ 
   const [issueStudentId, setIssueStudentId] = useState('');
   const [issueDueDate, setIssueDueDate] = useState(() => new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]);
 
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+
   const fetchLibraryData = async () => {
+    setLoading(true);
+    setFetchError(false);
     try {
       const [bookData, issueData] = await Promise.all([
         api.getBooks(currentSchool.id),
@@ -44,8 +49,11 @@ export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ 
       setBooks(bookData);
       setIssues(issueData);
     } catch (err) {
+      setFetchError(true);
       showError('पुस्तकालय डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to load library data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -320,7 +328,26 @@ export const LibraryManagementModal: React.FC<LibraryManagementModalProps> = ({ 
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100">
-                    {filteredBooks.length === 0 ? (
+                    {loading ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-stone-400">
+                          पुस्तकालय डेटा लोड हो रहा है...
+                        </td>
+                      </tr>
+                    ) : fetchError ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-stone-500">
+                          <AlertTriangle className="w-8 h-8 mx-auto text-red-500 mb-1" />
+                          <p className="font-bold text-red-600">पुस्तकालय डेटा लोड करने में त्रुटि</p>
+                          <button
+                            onClick={fetchLibraryData}
+                            className="mt-2 px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-xs"
+                          >
+                            🔄 पुनः प्रयास करें
+                          </button>
+                        </td>
+                      </tr>
+                    ) : filteredBooks.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="p-8 text-center text-stone-400">
                           कोई पुस्तक नहीं मिली।

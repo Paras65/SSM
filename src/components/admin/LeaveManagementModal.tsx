@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { LeaveRequest } from '../../types';
-import { X, CheckCircle, XCircle, Clock, Calendar, Filter } from 'lucide-react';
+import { X, CheckCircle, XCircle, Clock, Calendar, Filter, AlertTriangle } from 'lucide-react';
 
 interface LeaveManagementModalProps {
   isOpen: boolean;
@@ -17,13 +17,16 @@ export const LeaveManagementModal: React.FC<LeaveManagementModalProps> = ({ isOp
   const [filterType, setFilterType] = useState<'all' | 'student' | 'staff'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'Pending' | 'Approved' | 'Rejected'>('Pending');
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchLeaves = useCallback(async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const data = await api.getLeaves(currentSchool.id);
       setLeaves(data);
     } catch (err) {
+      setFetchError(true);
       showError('अवकाश डेटा लोड करने में त्रुटि। कृपया पुनः प्रयास करें।');
       console.error('Failed to fetch leaves:', err);
     } finally {
@@ -89,7 +92,7 @@ export const LeaveManagementModal: React.FC<LeaveManagementModalProps> = ({ isOp
             <span className="font-bold text-stone-600">वर्ग:</span>
             <select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
+              onChange={(e) => setFilterType(e.target.value as 'all' | 'student' | 'staff')}
               className="px-2.5 py-1.5 rounded-xl border border-stone-300 bg-stone-50 font-bold"
             >
               <option value="all">सभी आवेदक (All)</option>
@@ -102,7 +105,7 @@ export const LeaveManagementModal: React.FC<LeaveManagementModalProps> = ({ isOp
             <span className="font-bold text-stone-600">स्थिति:</span>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'Pending' | 'Approved' | 'Rejected')}
               className="px-2.5 py-1.5 rounded-xl border border-stone-300 bg-stone-50 font-bold"
             >
               <option value="all">सभी स्थितियां</option>
@@ -117,6 +120,18 @@ export const LeaveManagementModal: React.FC<LeaveManagementModalProps> = ({ isOp
         <div className="flex-1 overflow-y-auto py-4 space-y-3 text-xs">
           {loading ? (
             <p className="text-center text-stone-400 py-8">लोड हो रहा है...</p>
+          ) : fetchError ? (
+            <div className="text-center py-12 space-y-2">
+              <AlertTriangle className="w-10 h-10 mx-auto text-red-500 mb-1" />
+              <p className="font-bold text-red-600">अवकाश डेटा लोड करने में त्रुटि</p>
+              <p className="text-xs text-stone-400">सर्वर से संपर्क नहीं हो सका। कृपया पुनः प्रयास करें।</p>
+              <button
+                onClick={fetchLeaves}
+                className="mt-2 px-4 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs"
+              >
+                🔄 पुनः प्रयास करें
+              </button>
+            </div>
           ) : filteredLeaves.length === 0 ? (
             <div className="text-center text-stone-400 py-12">
               <Clock className="w-10 h-10 mx-auto text-stone-300 mb-2" />

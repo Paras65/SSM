@@ -267,8 +267,9 @@ export const TabulationRegisterModal: React.FC<TabulationRegisterModalProps> = (
                 onChange={e => setSelectedTerm(e.target.value)}
                 className="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50/50 font-bold text-orange-950 focus:ring-2 focus:ring-amber-500 shadow-2xs"
               >
-                <option value="वार्षिक परीक्षा">वार्षिक परीक्षा (Annual Exam)</option>
-                <option value="अर्धवार्षिक परीक्षा">अर्धवार्षिक परीक्षा (Half-Yearly)</option>
+                <option value="त्रैमासिक परीक्षा">त्रैमासिक परीक्षा (Traimasik / Quarterly)</option>
+                <option value="अर्धवार्षिक परीक्षा">अर्धवार्षिक परीक्षा (Ardhvarshik / Half-Yearly)</option>
+                <option value="वार्षिक परीक्षा">वार्षिक परीक्षा (Varshik / Annual Exam)</option>
                 <option value="प्रथम आवधिक परीक्षा">प्रथम आवधिक परीक्षा (PT-1)</option>
                 <option value="द्वितीय आवधिक परीक्षा">द्वितीय आवधिक परीक्षा (PT-2)</option>
               </select>

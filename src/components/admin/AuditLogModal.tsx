@@ -475,7 +475,7 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
             <select
               value={filterTimeRange}
               onChange={(e) => {
-                setFilterTimeRange(e.target.value as any);
+                setFilterTimeRange(e.target.value as 'all' | 'today' | '7days' | '30days');
                 setCurrentPage(1);
               }}
               className="px-2.5 py-1.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-700 font-bold focus:outline-hidden focus:border-amber-500"
