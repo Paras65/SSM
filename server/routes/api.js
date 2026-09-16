@@ -1273,7 +1273,7 @@ router.get('/staff/public', async (req, res) => {
   }
 });
 
-router.get('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.get('/staff', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.status) filter.status = req.query.status;

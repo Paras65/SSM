@@ -310,11 +310,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return created;
     } catch (err) {
       console.error('Error creating school in MongoDB:', err);
-      const fallbackId = schoolData.id || generateClientId('ssm-branch');
-      const newSchool: School = { ...schoolData, id: fallbackId };
-      setSchools(prev => [...prev, newSchool]);
-      setCurrentSchoolId(newSchool.id);
-      return newSchool;
+      throw err;
     }
   };
 
