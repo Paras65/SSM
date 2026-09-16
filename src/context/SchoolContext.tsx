@@ -152,7 +152,17 @@ interface SchoolContextType {
 const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
 export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [viewMode, setViewModeState] = useState<ViewMode>('public');
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname.replace(/^\//, '');
+        if (path === 'admin' && sessionStorage.getItem('ssm_admin_token')) return 'admin';
+        if (path === 'teacher' && sessionStorage.getItem('ssm_teacher_token')) return 'teacher';
+        if (path === 'student' && sessionStorage.getItem('ssm_student_token')) return 'student';
+      }
+    } catch {}
+    return 'public';
+  });
 
   const setViewMode = React.useCallback((mode: ViewMode) => {
     setViewModeState(mode);

@@ -37,7 +37,14 @@ type TeacherTab = 'attendance' | 'homework' | 'marks' | 'timetable' | 'leaves' |
 export const TeacherPortal: React.FC = () => {
   const { currentSchool, setViewMode, students, setStudentAttendance, bulkSetAttendance, getAttendanceForDate, attendanceRecords } = useSchool();
   const { showSuccess, showError, showWarning } = useToast();
-  const [currentTab, setCurrentTab] = useState<TeacherTab>('attendance');
+  const [currentTab, setCurrentTab] = useState<TeacherTab>(() => {
+    try {
+      const saved = sessionStorage.getItem('ssm_teacher_tab');
+      const validTabs: TeacherTab[] = ['attendance', 'homework', 'marks', 'timetable', 'leaves', 'salary'];
+      if (saved && validTabs.includes(saved as TeacherTab)) return saved as TeacherTab;
+    } catch {}
+    return 'attendance';
+  });
   const teacherId = sessionStorage.getItem('ssm_teacher_id') || '';
   const teacherName = sessionStorage.getItem('ssm_teacher_name') || 'आचार्य जी';
 
@@ -144,6 +151,11 @@ export const TeacherPortal: React.FC = () => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  // Persist active tab so it survives page reload
+  useEffect(() => {
+    try { sessionStorage.setItem('ssm_teacher_tab', currentTab); } catch {}
+  }, [currentTab]);
 
   const handleLogout = () => {
     api.logoutTeacher();

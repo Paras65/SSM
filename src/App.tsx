@@ -38,6 +38,47 @@ const PortalLoadingFallback: React.FC<{ label: string }> = ({ label }) => (
   </div>
 );
 
+interface PEBState { hasError: boolean; error: Error | null; }
+class PortalErrorBoundary extends React.Component<{ children: React.ReactNode }, PEBState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error): PEBState {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    if (import.meta.env.DEV) console.error('[PortalErrorBoundary]', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center gap-4 p-8 text-center">
+          <span className="text-5xl">⚠️</span>
+          <div>
+            <h2 className="text-lg font-black text-stone-800 mb-1">पोर्टल में अप्रत्याशित त्रुटि</h2>
+            <p className="text-sm text-stone-500 max-w-sm">
+              पोर्टल लोड करते समय एक त्रुटि हुई। कृपया पुनः प्रयास करें या मुख्य पृष्ठ पर जाएं।
+            </p>
+            {import.meta.env.DEV && this.state.error && (
+              <pre className="mt-3 text-left text-xs bg-red-50 border border-red-200 rounded-lg p-3 max-w-lg overflow-auto text-red-700">
+                {this.state.error.message}
+              </pre>
+            )}
+          </div>
+          <button
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = '/'; }}
+            className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition cursor-pointer"
+          >
+            🏠 मुख्य पृष्ठ पर वापस जाएं
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const SchoolApp: React.FC = () => {
   const { viewMode, setViewMode, startDemoMode } = useSchool();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -50,19 +91,15 @@ const SchoolApp: React.FC = () => {
 
   useEffect(() => {
     if (window.location.pathname === '/admin') {
-      if (sessionStorage.getItem('ssm_admin_token')) {
-        setViewMode('admin');
-      } else {
+      if (!sessionStorage.getItem('ssm_admin_token')) {
         setShowAuthModal(true);
       }
     } else if (window.location.pathname === '/teacher') {
-      if (sessionStorage.getItem('ssm_teacher_token')) {
-        setViewMode('teacher');
-      } else {
+      if (!sessionStorage.getItem('ssm_teacher_token')) {
         setShowTeacherAuthModal(true);
       }
     }
-  }, [setViewMode]);
+  }, []);
 
   const isAnyPublicModalOpen = showAuthModal || showTeacherAuthModal || showSchoolModal || showSchoolLocatorModal || showTcVerificationModal;
 
@@ -118,17 +155,23 @@ const SchoolApp: React.FC = () => {
       <DemoBanner />
       <OfflineBadge />
       {viewMode === 'admin' ? (
-        <React.Suspense fallback={<PortalLoadingFallback label="व्यवस्थापक नियंत्रण पटल लोड हो रहा है..." />}>
-          <AdminDashboard />
-        </React.Suspense>
+        <PortalErrorBoundary>
+          <React.Suspense fallback={<PortalLoadingFallback label="व्यवस्थापक नियंत्रण पटल लोड हो रहा है..." />}>
+            <AdminDashboard />
+          </React.Suspense>
+        </PortalErrorBoundary>
       ) : viewMode === 'teacher' ? (
-        <React.Suspense fallback={<PortalLoadingFallback label="आचार्य पोर्टल लोड हो रहा है..." />}>
-          <TeacherPortal />
-        </React.Suspense>
+        <PortalErrorBoundary>
+          <React.Suspense fallback={<PortalLoadingFallback label="आचार्य पोर्टल लोड हो रहा है..." />}>
+            <TeacherPortal />
+          </React.Suspense>
+        </PortalErrorBoundary>
       ) : viewMode === 'student' ? (
-        <React.Suspense fallback={<PortalLoadingFallback label="छात्र एवं अभिभावक पोर्टल लोड हो रहा है..." />}>
-          <StudentPortal />
-        </React.Suspense>
+        <PortalErrorBoundary>
+          <React.Suspense fallback={<PortalLoadingFallback label="छात्र एवं अभिभावक पोर्टल लोड हो रहा है..." />}>
+            <StudentPortal />
+          </React.Suspense>
+        </PortalErrorBoundary>
       ) : (
         <div className="min-h-screen bg-stone-50 flex flex-col w-full max-w-full overflow-x-hidden">
           <Navbar

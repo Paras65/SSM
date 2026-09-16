@@ -45,6 +45,7 @@ import { AdminStaffTab } from './tabs/AdminStaffTab';
 import type { AdminTab } from './tabs/types';
 
 import { HelpTooltip } from '../common/HelpTooltip';
+import { TabErrorBoundary } from '../common/TabErrorBoundary';
 import { downloadFullSchoolBackup, parseAndValidateBackupJSON } from '../../utils/backupExport';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import { api } from '../../services/api';
@@ -99,7 +100,14 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
+  const [currentTab, setCurrentTab] = useState<AdminTab>(() => {
+    try {
+      const param = new URLSearchParams(window.location.search).get('tab');
+      const validTabs: AdminTab[] = ['overview', 'students', 'attendance', 'fees', 'reports', 'homework', 'staff', 'admissions', 'notices', 'developer'];
+      if (param && validTabs.includes(param as AdminTab)) return param as AdminTab;
+    } catch {}
+    return 'overview';
+  });
   const [showMobileModules, setShowMobileModules] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -1026,120 +1034,142 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Tab Subcomponents */}
         {currentTab === 'overview' && (
-          <AdminOverviewTab
-            isDeveloper={isDeveloper}
-            developerMetrics={developerMetrics}
-            staffCount={staffList.length}
-            totalBhaiya={totalBhaiya}
-            totalBahin={totalBahin}
-            attendanceRate={attendanceRate}
-            presentCount={presentCount}
-            totalFeeCollected={totalFeeCollected}
-            totalFeePending={totalFeePending}
-            onNavigateTab={navigateTab}
-            onOpenHelpGuide={() => setShowHelpGuideModal(true)}
-            onOpenAddStudent={() => setShowAddStudent(true)}
-            onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
-            onOpenExamModal={() => setShowExamModal(true)}
-            onOpenTabulationModal={() => setShowTabulationModal(true)}
-            onOpenTimetableModal={() => setShowTimetableModal(true)}
-            onOpenLeaveModal={() => setShowLeaveModal(true)}
-            onOpenTransportModal={() => setShowTransportModal(true)}
-            onOpenLibraryModal={() => setShowLibraryModal(true)}
-            onOpenInventoryModal={() => setShowInventoryModal(true)}
-            onOpenBulkNotificationModal={() => setShowBulkNotificationModal(true)}
-            onOpenAuditLogModal={() => setShowAuditLogModal(true)}
-            requirePro={requirePro}
-            onOpenReportModal={setActiveReportModal}
-          />
+          <TabErrorBoundary tabName="मुख्य पृष्ठ (Overview)">
+            <AdminOverviewTab
+              isDeveloper={isDeveloper}
+              developerMetrics={developerMetrics}
+              staffCount={staffList.length}
+              totalBhaiya={totalBhaiya}
+              totalBahin={totalBahin}
+              attendanceRate={attendanceRate}
+              presentCount={presentCount}
+              totalFeeCollected={totalFeeCollected}
+              totalFeePending={totalFeePending}
+              onNavigateTab={navigateTab}
+              onOpenHelpGuide={() => setShowHelpGuideModal(true)}
+              onOpenAddStudent={() => setShowAddStudent(true)}
+              onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
+              onOpenExamModal={() => setShowExamModal(true)}
+              onOpenTabulationModal={() => setShowTabulationModal(true)}
+              onOpenTimetableModal={() => setShowTimetableModal(true)}
+              onOpenLeaveModal={() => setShowLeaveModal(true)}
+              onOpenTransportModal={() => setShowTransportModal(true)}
+              onOpenLibraryModal={() => setShowLibraryModal(true)}
+              onOpenInventoryModal={() => setShowInventoryModal(true)}
+              onOpenBulkNotificationModal={() => setShowBulkNotificationModal(true)}
+              onOpenAuditLogModal={() => setShowAuditLogModal(true)}
+              requirePro={requirePro}
+              onOpenReportModal={setActiveReportModal}
+            />
+          </TabErrorBoundary>
         )}
 
         {currentTab === 'students' && (
-          <AdminStudentsTab
-            totalBhaiya={totalBhaiya}
-            totalBahin={totalBahin}
-            requirePro={requirePro}
-            onOpenAddStudent={() => setShowAddStudent(true)}
-            onOpenBulkImport={() => setShowBulkImport(true)}
-            onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
-            onOpenPhotoUpload={setActivePhotoStudent}
-            onOpenIdCard={setActiveIdCardStudent}
-            onOpenTc={setActiveTcStudent}
-            onOpenReportModal={setActiveReportModal}
-            onOpenCharacterCertificate={setActiveCharacterStudent}
-            onOpenBonafideCertificate={setActiveBonafideStudent}
-          />
+          <TabErrorBoundary tabName="छात्र पंजिका (Students)">
+            <AdminStudentsTab
+              totalBhaiya={totalBhaiya}
+              totalBahin={totalBahin}
+              requirePro={requirePro}
+              onOpenAddStudent={() => setShowAddStudent(true)}
+              onOpenBulkImport={() => setShowBulkImport(true)}
+              onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
+              onOpenPhotoUpload={setActivePhotoStudent}
+              onOpenIdCard={setActiveIdCardStudent}
+              onOpenTc={setActiveTcStudent}
+              onOpenReportModal={setActiveReportModal}
+              onOpenCharacterCertificate={setActiveCharacterStudent}
+              onOpenBonafideCertificate={setActiveBonafideStudent}
+            />
+          </TabErrorBoundary>
         )}
 
         {currentTab === 'attendance' && (
-          <AdminAttendanceTab
-            requirePro={requirePro}
-            onOpenWhatsAppAlert={setActiveWhatsAppAlert}
-          />
+          <TabErrorBoundary tabName="दैनिक उपस्थिति (Attendance)">
+            <AdminAttendanceTab
+              requirePro={requirePro}
+              onOpenWhatsAppAlert={setActiveWhatsAppAlert}
+            />
+          </TabErrorBoundary>
         )}
 
         {currentTab === 'fees' && (
-          <AdminFeesTab
-            totalFeeCollected={totalFeeCollected}
-            totalFeePending={totalFeePending}
-            requirePro={requirePro}
-            onOpenFeeModal={setActiveFeeModal}
-            onOpenWhatsAppAlert={setActiveWhatsAppAlert}
-          />
+          <TabErrorBoundary tabName="शुल्क प्रबंधन (Fees)">
+            <AdminFeesTab
+              totalFeeCollected={totalFeeCollected}
+              totalFeePending={totalFeePending}
+              requirePro={requirePro}
+              onOpenFeeModal={setActiveFeeModal}
+              onOpenWhatsAppAlert={setActiveWhatsAppAlert}
+            />
+          </TabErrorBoundary>
         )}
 
         {currentTab === 'reports' && (
-          <AdminReportsTab
-            requirePro={requirePro}
-            onOpenReportModal={setActiveReportModal}
-            onOpenTabulationModal={() => setShowTabulationModal(true)}
-            onOpenUpgradeModal={setUpgradeModalFeature}
-          />
+          <TabErrorBoundary tabName="प्रगति पत्र (Reports)">
+            <AdminReportsTab
+              requirePro={requirePro}
+              onOpenReportModal={setActiveReportModal}
+              onOpenTabulationModal={() => setShowTabulationModal(true)}
+              onOpenUpgradeModal={setUpgradeModalFeature}
+            />
+          </TabErrorBoundary>
         )}
 
         {currentTab === 'admissions' && (
-          <AdminAdmissionsTab
-            admissions={admissions}
-            onApprove={handleApproveAdmission}
-            onDelete={handleDeleteAdmission}
-          />
+          <TabErrorBoundary tabName="प्रवेश समीक्षा (Admissions)">
+            <AdminAdmissionsTab
+              admissions={admissions}
+              onApprove={handleApproveAdmission}
+              onDelete={handleDeleteAdmission}
+            />
+          </TabErrorBoundary>
         )}
 
-        {currentTab === 'notices' && <AdminNoticesTab />}
+        {currentTab === 'notices' && (
+          <TabErrorBoundary tabName="सूचना प्रसारण (Notices)">
+            <AdminNoticesTab />
+          </TabErrorBoundary>
+        )}
 
         {currentTab === 'homework' && (
-          <AdminHomeworkTab
-            homeworkList={homeworkList}
-            onRefresh={fetchHomeworkAndStaff}
-            setHomeworkList={setHomeworkList}
-          />
+          <TabErrorBoundary tabName="दैनिक गृहकार्य (Homework)">
+            <AdminHomeworkTab
+              homeworkList={homeworkList}
+              onRefresh={fetchHomeworkAndStaff}
+              setHomeworkList={setHomeworkList}
+            />
+          </TabErrorBoundary>
         )}
 
         {currentTab === 'staff' && (
-          <AdminStaffTab
-            staffList={staffList}
-            onRefresh={fetchHomeworkAndStaff}
-            setStaffList={setStaffList}
-            onOpenSalarySlip={setActiveSalarySlipStaff}
-            onOpenUpgradeModal={setUpgradeModalFeature}
-          />
+          <TabErrorBoundary tabName="आचार्य एवं वेतन (Staff)">
+            <AdminStaffTab
+              staffList={staffList}
+              onRefresh={fetchHomeworkAndStaff}
+              setStaffList={setStaffList}
+              onOpenSalarySlip={setActiveSalarySlipStaff}
+              onOpenUpgradeModal={setUpgradeModalFeature}
+            />
+          </TabErrorBoundary>
         )}
 
         {/* ================= TAB: DEVELOPER CONSOLE (डेवलपर सुपर-एडमिन कंसोल) ================= */}
         {currentTab === 'developer' && (
-          <Suspense fallback={
-            <div className="flex flex-col items-center justify-center py-24">
-              <RefreshCw className="w-8 h-8 text-amber-600 animate-spin mb-3" />
-              <p className="text-stone-500 text-sm font-hindi">कंसोल लोड हो रहा है...</p>
-            </div>
-          }>
-            <DeveloperDashboard
-              onBack={() => navigateTab('overview')}
-              onSwitchToBranch={(branchId) => {
-                navigateTab('overview');
-              }}
-            />
-          </Suspense>
+          <TabErrorBoundary tabName="डेवलपर कंसोल (Developer)">
+            <Suspense fallback={
+              <div className="flex flex-col items-center justify-center py-24">
+                <RefreshCw className="w-8 h-8 text-amber-600 animate-spin mb-3" />
+                <p className="text-stone-500 text-sm font-hindi">कंसोल लोड हो रहा है...</p>
+              </div>
+            }>
+              <DeveloperDashboard
+                onBack={() => navigateTab('overview')}
+                onSwitchToBranch={(branchId) => {
+                  navigateTab('overview');
+                }}
+              />
+            </Suspense>
+          </TabErrorBoundary>
         )}
 
       </main>

@@ -92,6 +92,7 @@ export const api = {
       sessionStorage.removeItem('ssm_teacher_token');
       sessionStorage.removeItem('ssm_teacher_id');
       sessionStorage.removeItem('ssm_teacher_name');
+      sessionStorage.removeItem('ssm_teacher_tab');
       sessionStorage.setItem('ssm_admin_token', data.token);
       sessionStorage.setItem('ssm_admin_authenticated', 'true');
       sessionStorage.setItem('ssm_admin_role', data.role || 'admin');
@@ -136,6 +137,7 @@ export const api = {
     sessionStorage.removeItem('ssm_teacher_token');
     sessionStorage.removeItem('ssm_teacher_id');
     sessionStorage.removeItem('ssm_teacher_name');
+    sessionStorage.removeItem('ssm_teacher_tab');
   },
 
   logoutAdmin(): void {
@@ -147,6 +149,7 @@ export const api = {
     sessionStorage.removeItem('ssm_teacher_token');
     sessionStorage.removeItem('ssm_teacher_id');
     sessionStorage.removeItem('ssm_teacher_name');
+    sessionStorage.removeItem('ssm_teacher_tab');
   },
 
   // ================= SCHOOLS =================
