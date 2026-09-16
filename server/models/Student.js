@@ -43,6 +43,7 @@ const studentSchema = new mongoose.Schema({
 });
 
 studentSchema.index({ schoolId: 1, class: 1, section: 1 });
+studentSchema.index({ schoolId: 1, academicYear: 1, class: 1, section: 1, rollNo: 1 });
 studentSchema.index({ schoolId: 1, rollNo: 1 });
 studentSchema.index({ schoolId: 1, status: 1 });
 studentSchema.index({ schoolId: 1, academicYear: 1 });

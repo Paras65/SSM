@@ -178,6 +178,28 @@ export const api = {
     return handleJsonResponse<School>(res, 'Failed to update school');
   },
 
+  async exportSchoolArchive(id: string): Promise<any> {
+    const res = await apiFetch(`/schools/${id}/archive`);
+    return handleJsonResponse<any>(res, 'Failed to export school archive');
+  },
+
+  async discontinueSchool(id: string, reason?: string): Promise<{ success: boolean; message: string; school: School }> {
+    const res = await apiFetch(`/schools/${id}/discontinue`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason, confirmText: 'DISCONTINUE' })
+    });
+    return handleJsonResponse<any>(res, 'शाखा विसर्जन विफल रहा');
+  },
+
+  async reactivateSchool(id: string): Promise<{ success: boolean; message: string; school: School }> {
+    const res = await apiFetch(`/schools/${id}/reactivate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return handleJsonResponse<any>(res, 'शाखा पुनः सक्रियण विफल रहा');
+  },
+
   // ================= STUDENTS =================
   async getStudents(schoolId?: string): Promise<Student[]> {
     const url = schoolId ? `/students?schoolId=${encodeURIComponent(schoolId)}` : '/students';
@@ -415,6 +437,11 @@ export const api = {
     const url = schoolId ? `/staff/public?schoolId=${encodeURIComponent(schoolId)}` : '/staff/public';
     const res = await apiFetch(url);
     return handleJsonResponse<Staff[]>(res, 'Failed to fetch staff');
+  },
+
+  async getTeacherMe(): Promise<Staff> {
+    const res = await apiFetch('/staff/me');
+    return handleJsonResponse<Staff>(res, 'Failed to fetch teacher profile');
   },
 
   async createStaff(staff: Omit<Staff, 'id'> & { id?: string }): Promise<Staff> {

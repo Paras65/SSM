@@ -19,7 +19,10 @@ const schoolSchema = new mongoose.Schema({
   adminPasscode: { type: String, default: '1952' },
   currentAcademicYear: { type: String, default: '2025-26' },
   tokenVersion: { type: Number, default: 1 },
-  plan: { type: String, enum: ['free', 'academic', 'pro'], default: 'free' }
+  plan: { type: String, enum: ['free', 'academic', 'pro'], default: 'free' },
+  status: { type: String, enum: ['active', 'suspended', 'discontinued'], default: 'active', index: true },
+  discontinuedAt: { type: Date },
+  discontinuationReason: { type: String, default: '' }
 }, {
   timestamps: true
 });

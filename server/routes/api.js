@@ -170,6 +170,14 @@ router.post('/auth/login', async (req, res) => {
       school = await School.findOne({ id: cleanSchoolId });
     }
 
+    // Check if school is discontinued
+    if (school && school.status === 'discontinued') {
+      return res.status(403).json({
+        error: 'यह विद्यालय शाखा वर्तमान में निष्क्रय (Discontinued) है। व्यवस्थापक लॉगिन उपलब्ध नहीं है।',
+        code: 'SCHOOL_DISCONTINUED'
+      });
+    }
+
     // Only allow the configured school passcode; no universal fallback avoids weak admin access.
     const isMatch = isValidAdminPasscode(school?.adminPasscode, cleanPasscode);
 
@@ -475,6 +483,163 @@ router.put('/schools/:id', requireAdminAuth, requireSchoolScope, async (req, res
     res.json(school);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * Complete Data Portability & Archive Export:
+ * Complies with DPDP Act 2023 & statutory school record requirements.
+ * Allows an authorized school administrator to download their complete institutional dataset before exit.
+ */
+router.get('/schools/:id/archive', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const schoolId = req.params.id;
+    const targetFilter = { schoolId };
+
+    const [
+      school,
+      students,
+      fees,
+      attendance,
+      reportCards,
+      staff,
+      notices,
+      exams,
+      transport,
+      books,
+      inventory
+    ] = await Promise.all([
+      School.findOne({ id: schoolId }).lean(),
+      Student.find(targetFilter).lean(),
+      Fee.find(targetFilter).lean(),
+      Attendance.find(targetFilter).lean(),
+      ReportCard.find(targetFilter).lean(),
+      Staff.find(targetFilter).select('-pin').lean(),
+      Notice.find(targetFilter).lean(),
+      Exam.find(targetFilter).lean(),
+      TransportRoute.find(targetFilter).lean(),
+      Book.find(targetFilter).lean(),
+      InventoryItem.find(targetFilter).lean()
+    ]);
+
+    if (!school) return res.status(404).json({ error: 'विद्यालय शाखा नहीं मिली।' });
+
+    await recordAuditLog({
+      schoolId,
+      actorType: req.user?.role || 'admin',
+      actorName: req.user?.schoolName || school.name,
+      action: 'FULL_ARCHIVE_EXPORTED',
+      description: `संस्थागत पूर्ण डेटा अभिलेखागार निर्यात (Institutional Data Archive Exported for offboarding/backup)`,
+      req
+    });
+
+    res.json({
+      exportedAt: new Date().toISOString(),
+      school,
+      counts: {
+        students: students.length,
+        fees: fees.length,
+        attendance: attendance.length,
+        reportCards: reportCards.length,
+        staff: staff.length,
+        notices: notices.length,
+        exams: exams.length,
+        transport: transport.length,
+        books: books.length,
+        inventory: inventory.length
+      },
+      data: {
+        students,
+        fees,
+        attendance,
+        reportCards,
+        staff,
+        notices,
+        exams,
+        transport,
+        books,
+        inventory
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'डेटा निर्यात में त्रुटि: ' + err.message });
+  }
+});
+
+/**
+ * School Discontinuation / Offboarding:
+ * Marks branch status as 'discontinued', invalidates session tokens,
+ * while preserving historic Transfer Certificate (TC) verification records.
+ */
+router.post('/schools/:id/discontinue', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const schoolId = req.params.id;
+    const { reason, confirmText } = req.body;
+
+    if (confirmText !== 'DISCONTINUE') {
+      return res.status(400).json({
+        error: 'पुष्टिकरण हेतु "DISCONTINUE" प्रविष्ट करें। (Type "DISCONTINUE" to confirm offboarding)',
+        code: 'CONFIRMATION_REQUIRED'
+      });
+    }
+
+    const school = await School.findOne({ id: schoolId });
+    if (!school) return res.status(404).json({ error: 'विद्यालय शाखा नहीं मिली।' });
+
+    school.status = 'discontinued';
+    school.discontinuedAt = new Date();
+    school.discontinuationReason = reason || 'प्रबंधन के निर्देशानुसार सेवा विसर्जन (Discontinued as requested by school management)';
+    school.tokenVersion = (school.tokenVersion || 1) + 1; // Invalidate all existing admin/staff tokens
+    await school.save();
+
+    await recordAuditLog({
+      schoolId,
+      actorType: req.user?.role || 'admin',
+      actorName: req.user?.schoolName || school.name,
+      action: 'SCHOOL_DISCONTINUED',
+      description: `विद्यालय शाखा सेवा विसर्जन (Branch Discontinued): ${school.hindiName}. कारण: ${school.discontinuationReason}`,
+      req
+    });
+
+    res.json({
+      success: true,
+      message: 'विद्यालय शाखा सफलतापूर्वक विसर्जित (Discontinued) की गई। सत्र अमान्य कर दिए गए हैं।',
+      school
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'शाखा विसर्जन में त्रुटि: ' + err.message });
+  }
+});
+
+/**
+ * School Reactivation (Developer / Super Admin):
+ */
+router.post('/schools/:id/reactivate', requireAdminAuth, async (req, res) => {
+  try {
+    if (req.user?.role !== 'developer') {
+      return res.status(403).json({ error: 'केवल डेवलपर प्रशासन शाखा पुनः सक्रिय कर सकता है।', code: 'DEVELOPER_ROLE_REQUIRED' });
+    }
+
+    const school = await School.findOne({ id: req.params.id });
+    if (!school) return res.status(404).json({ error: 'विद्यालय शाखा नहीं मिली।' });
+
+    school.status = 'active';
+    school.discontinuedAt = null;
+    school.discontinuationReason = '';
+    await school.save();
+
+    await recordAuditLog({
+      schoolId: school.id,
+      actorType: 'developer',
+      actorName: 'Developer Console',
+      action: 'SCHOOL_REACTIVATED',
+      description: `विद्यालय शाखा पुनः सक्रिय की गई: ${school.hindiName}`,
+      req
+    });
+
+    res.json({ success: true, message: 'शाखा पुनः सक्रिय कर दी गई है।', school });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -1273,7 +1438,27 @@ router.get('/staff/public', async (req, res) => {
   }
 });
 
-router.get('/staff', requireTeacherAuth, requireSchoolScope, async (req, res) => {
+// Authenticated Teacher Self-Service (Own profile, salary, basic pay, allowances)
+router.get('/staff/me', requireTeacherAuth, async (req, res) => {
+  try {
+    const teacherId = req.user.staffId;
+    const schoolId = req.user.schoolId;
+    if (!teacherId) {
+      return res.status(400).json({ error: 'आचार्य सत्र पहचान उपलब्ध नहीं है।' });
+    }
+    const teacher = await Staff.findOne({ id: teacherId, ...(req.user.role === 'developer' ? {} : { schoolId }) })
+      .select('-pin')
+      .lean();
+    if (!teacher) {
+      return res.status(404).json({ error: 'आचार्य रिकॉर्ड नहीं मिला।' });
+    }
+    res.json(teacher);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.status) filter.status = req.query.status;

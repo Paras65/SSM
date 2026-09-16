@@ -82,16 +82,15 @@ export const TeacherPortal: React.FC = () => {
 
   const fetchInitialData = useCallback(async () => {
     try {
-      const [staffData, hwData, examData, ttData, leaveData] = await Promise.all([
-        api.getStaff(currentSchool.id).catch(() => []),
+      const [teacherMe, hwData, examData, ttData, leaveData] = await Promise.all([
+        api.getTeacherMe().catch(() => null),
         api.getHomework(currentSchool.id, selectedClass).catch(() => []),
         api.getExams(currentSchool.id).catch(() => []),
         api.getTimetable(currentSchool.id, selectedClass).catch(() => []),
         api.getLeaves(currentSchool.id, 'staff', teacherId).catch(() => [])
       ]);
 
-      const me = staffData.find((s: Staff) => s.id === teacherId);
-      if (me) setTeacherProfile(me);
+      if (teacherMe) setTeacherProfile(teacherMe);
       setHomeworkList(hwData);
       setExams(examData);
       if (examData.length > 0 && !selectedExamId) {

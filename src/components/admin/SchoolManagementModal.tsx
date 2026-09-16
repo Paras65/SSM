@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSchool } from '../../context/SchoolContext';
+import { api } from '../../services/api';
 import type { School } from '../../types';
 import {
   Building2,
@@ -21,7 +22,8 @@ import {
   Gift,
   MessageSquare,
   Download,
-  Printer
+  Printer,
+  AlertTriangle
 } from 'lucide-react';
 import { generateSchoolOnboardingWhatsAppUrl } from '../../utils/whatsapp';
 import { downloadStudentCsvTemplate } from '../../utils/csvExport';
@@ -55,7 +57,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   initialMode = 'list',
   initialPlan = 'free'
 }) => {
-  const { schools, currentSchool, setCurrentSchoolId, registerSchool } = useSchool();
+  const { schools, currentSchool, setCurrentSchoolId, registerSchool, setViewMode } = useSchool();
   const [activeTab, setActiveTab] = useState<'list' | 'add'>(initialMode);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -74,6 +76,47 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [plan, setPlan] = useState<'free' | 'pro'>(initialPlan);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdSchool, setCreatedSchool] = useState<School | null>(null);
+
+  // Discontinuation & Archive State
+  const [discontinuingSchool, setDiscontinuingSchool] = useState<School | null>(null);
+  const [discontinueReason, setDiscontinueReason] = useState('');
+  const [discontinueConfirmText, setDiscontinueConfirmText] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportArchive = async (schoolId: string) => {
+    setIsExporting(true);
+    try {
+      const archive = await api.exportSchoolArchive(schoolId);
+      const jsonStr = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(archive, null, 2))}`;
+      const dl = document.createElement('a');
+      dl.setAttribute('href', jsonStr);
+      dl.setAttribute('download', `SSM_${schoolId}_Archive_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(dl);
+      dl.click();
+      dl.remove();
+    } catch (err: any) {
+      alert('आर्काइव डाउनलोड विफल: ' + (err.message || 'त्रुटि'));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleConfirmDiscontinue = async (schoolId: string) => {
+    if (discontinueConfirmText !== 'DISCONTINUE') {
+      alert('कृपया पुष्टिकरण हेतु अंग्रेजी में "DISCONTINUE" लिखें।');
+      return;
+    }
+    try {
+      await api.discontinueSchool(schoolId, discontinueReason);
+      alert('शाखा सफलतापूर्वक विसर्जित कर दी गई है। सभी व्यवस्थापक सत्र समाप्त कर दिए गए हैं।');
+      setDiscontinuingSchool(null);
+      setDiscontinueConfirmText('');
+      setDiscontinueReason('');
+      window.location.reload();
+    } catch (err: any) {
+      alert('शाखा विसर्जन विफल: ' + (err.message || 'त्रुटि'));
+    }
+  };
 
   // Sync state when modal opens or initialMode/initialPlan changes
   useEffect(() => {
@@ -282,9 +325,17 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
 
                   <div className="flex flex-wrap gap-3 justify-center pt-3">
                     <button
-                      onClick={() => {
-                        setCurrentSchoolId(createdSchool.id);
-                        onClose();
+                      onClick={async () => {
+                        try {
+                          await api.loginAdmin(createdSchool.id, createdSchool.adminPasscode || '1952');
+                          setCurrentSchoolId(createdSchool.id);
+                          setViewMode('admin');
+                          onClose();
+                        } catch {
+                          setCurrentSchoolId(createdSchool.id);
+                          setViewMode('admin');
+                          onClose();
+                        }
                       }}
                       className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer"
                     >
@@ -782,7 +833,11 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                           </div>
 
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {(sch.plan === 'pro' || (sch.id === 'ssm-gorakhpur' && !sch.plan)) ? (
+                            {sch.status === 'discontinued' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300 text-[11px] font-bold shadow-2xs">
+                                <span>सेवा विसर्जित (Discontinued)</span>
+                              </span>
+                            ) : (sch.plan === 'pro' || (sch.id === 'ssm-gorakhpur' && !sch.plan)) ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold shadow-2xs">
                                 <Crown className="w-3 h-3 text-amber-600 fill-amber-500" />
                                 <span>तकनीकी सहयोग (Tech Support)</span>
@@ -793,7 +848,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                               </span>
                             )}
 
-                            {isActive ? (
+                            {isActive && sch.status !== 'discontinued' ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold border border-green-300 shadow-2xs">
                                 <Check className="w-3.5 h-3.5 text-green-700" />
                                 <span>सक्रिय शाखा</span>
@@ -829,12 +884,38 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                         </div>
                       </div>
 
-                      <div className="mt-5 pt-4 border-t border-stone-200 flex items-center justify-between">
-                        <span className="text-xs font-mono text-stone-500">
-                          सम्बद्धता: <strong className="text-stone-800 font-mono">{sch.affiliationNo || 'सत्यापित'}</strong>
-                        </span>
+                      <div className="mt-5 pt-4 border-t border-stone-200 flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleExportArchive(sch.id)}
+                            disabled={isExporting}
+                            className="p-1.5 rounded-lg border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                            title="सम्पूर्ण संस्थागत डेटा बैकअप डाउनलोड करें (DPDP Act Institutional Archive)"
+                          >
+                            <Download className="w-3.5 h-3.5 text-stone-600" />
+                            <span className="hidden sm:inline">डेटा आर्काइव (JSON)</span>
+                          </button>
 
-                        {isActive ? (
+                          {sch.status !== 'discontinued' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDiscontinuingSchool(sch);
+                                setDiscontinueConfirmText('');
+                                setDiscontinueReason('');
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-700 text-xs font-semibold transition cursor-pointer"
+                              title="शाखा सेवा विसर्जन / निष्क्रियन (Offboard School)"
+                            >
+                              विसर्जन
+                            </button>
+                          )}
+                        </div>
+
+                        {sch.status === 'discontinued' ? (
+                          <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">शाखा विसर्जित</span>
+                        ) : isActive ? (
                           <span className="text-xs sm:text-sm font-bold text-green-700 flex items-center gap-1.5">
                             <Check className="w-4 h-4 text-green-700" />
                             <span>वर्तमान चयनित</span>
@@ -867,6 +948,79 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
           )}
 
         </div>
+
+        {/* Discontinue Confirmation Modal Dialog */}
+        {discontinuingSchool && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border-2 border-red-300 space-y-4">
+              <div className="flex items-center gap-3 text-red-700">
+                <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-stone-900">
+                    शाखा सेवा विसर्जन (Discontinue School Branch)
+                  </h4>
+                  <p className="text-xs text-stone-500">{discontinuingSchool.hindiName}</p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 space-y-2 leading-relaxed">
+                <p className="font-bold">⚠️ विसर्जन उपरांत परिणाम (DPDP Act 2023):</p>
+                <ul className="list-disc list-inside space-y-1 text-stone-700 text-[11px]">
+                  <li>इस शाखा के सभी व्यवस्थापक एवं आचार्य लॉगिन तुरंत निष्क्रय हो जाएंगे।</li>
+                  <li>दैनिक उपस्थिति, गृहकार्य एवं नवीन शुल्क संकलन बंद हो जाएगा।</li>
+                  <li><strong>टीसी (Transfer Certificate) सत्यापन चालू रहेगा</strong> ताकि पूर्व छात्रों को कोई असुविधा न हो।</li>
+                  <li>कृपया विसर्जन से पूर्व शाखा का <strong>पूर्ण डेटा बैकअप</strong> अवश्य डाउनलोड कर लें।</li>
+                </ul>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  विसर्जन का कारण (Reason for Offboarding)
+                </label>
+                <input
+                  type="text"
+                  placeholder="उदा. संस्था प्रबंधन समिति का निर्णय / विद्यालय स्थानांतरण"
+                  value={discontinueReason}
+                  onChange={e => setDiscontinueReason(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-red-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-red-700 mb-1">
+                  पुष्टिकरण हेतु बड़े अक्षरों में <span className="font-mono font-black">DISCONTINUE</span> लिखें:
+                </label>
+                <input
+                  type="text"
+                  placeholder="DISCONTINUE"
+                  value={discontinueConfirmText}
+                  onChange={e => setDiscontinueConfirmText(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-red-300 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-red-500 uppercase"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDiscontinuingSchool(null)}
+                  className="px-4 py-2 rounded-xl border border-stone-300 text-xs font-semibold hover:bg-stone-100 text-stone-700 cursor-pointer"
+                >
+                  रद्द करें
+                </button>
+                <button
+                  type="button"
+                  disabled={discontinueConfirmText !== 'DISCONTINUE'}
+                  onClick={() => handleConfirmDiscontinue(discontinuingSchool.id)}
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-xs font-bold transition shadow-md cursor-pointer"
+                >
+                  शाखा विसर्जन की पुष्टि करें
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>,

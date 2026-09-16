@@ -33,6 +33,7 @@ import { TabulationRegisterModal } from './TabulationRegisterModal';
 import { HelpGuideModal } from './HelpGuideModal';
 import { SchoolProposalModal } from './SchoolProposalModal';
 import { BulkIdCardModal } from './BulkIdCardModal';
+import { DeveloperDashboard } from './DeveloperDashboard';
 import { HelpTooltip } from '../common/HelpTooltip';
 import { exportStudentsToCSV, exportFeesToCSV, exportAttendanceToCSV } from '../../utils/csvExport';
 import { generateReportCardWhatsAppLink } from '../../utils/whatsappAlerts';
@@ -58,10 +59,10 @@ import {
   Trash2,
   RefreshCw,
   IdCard,
-  Check,
+  FileText,
   Download,
   Upload,
-  FileText,
+  UserCheck,
   Building2,
   BookOpen,
   Briefcase,
@@ -71,11 +72,13 @@ import {
   Crown,
   Lock,
   Shield,
-  FileSpreadsheet
-  ,LogOut
+  FileSpreadsheet,
+  LogOut,
+  ArrowRight,
+  Check
 } from 'lucide-react';
 
-type AdminTab = 'overview' | 'students' | 'attendance' | 'fees' | 'reports' | 'homework' | 'staff' | 'admissions' | 'notices';
+type AdminTab = 'overview' | 'students' | 'attendance' | 'fees' | 'reports' | 'homework' | 'staff' | 'admissions' | 'notices' | 'developer';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -804,6 +807,7 @@ export const AdminDashboard: React.FC = () => {
               <option value="staff">आचार्य एवं वेतन {isPro ? '' : '(PRO)'}</option>
               <option value="admissions">प्रवेश समीक्षा ({admissions.length})</option>
               <option value="notices">सूचना प्रसारण</option>
+              {isDeveloper && <option value="developer">🛠️ डेवलपर कंसोल (Developer Super-Admin)</option>}
             </select>
             <button
               type="button"
@@ -1038,6 +1042,19 @@ export const AdminDashboard: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             <span>💡 मदद चाहिए? (गाइड)</span>
           </button>
+          {isDeveloper && (
+            <button
+              onClick={() => setCurrentTab('developer')}
+              className={`my-1.5 px-3 py-1.5 rounded-xl border whitespace-nowrap font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                currentTab === 'developer'
+                  ? 'bg-amber-400 text-stone-950 border-amber-300 ring-2 ring-amber-300'
+                  : 'bg-orange-950 text-amber-200 border-amber-400/50 hover:bg-orange-800'
+              }`}
+              title="डेवलपर सुपर-एडमिन कंसोल (सभी शाखाएं, सदस्यताएं व ऑडिट)"
+            >
+              <span>🛠️ डेवलपर कंसोल</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -1055,9 +1072,18 @@ export const AdminDashboard: React.FC = () => {
                     <h2 className="text-lg sm:text-xl font-black text-amber-200">डेवलपर नेटवर्क अवलोकन</h2>
                     <p className="text-xs text-stone-300 mt-0.5 sm:mt-1">सभी पंजीकृत शाखाओं का संयुक्त संचालन सारांश</p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-200 border border-amber-400/40 text-[11px] font-bold self-start sm:self-auto">
-                    {schools.length} शाखाएं
-                  </span>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <button
+                      onClick={() => setCurrentTab('developer')}
+                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-stone-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>🛠️ पूर्ण डेवलपर कंसोल खोलें</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-200 border border-amber-400/40 text-[11px] font-bold">
+                      {schools.length} शाखाएं
+                    </span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
                   <div className="bg-white/10 rounded-xl p-3"><Users className="w-4 h-4 text-amber-300 mb-2" /><strong className="block text-lg sm:text-xl">{developerMetrics.students}</strong><span className="text-[11px] text-stone-300">कुल छात्र</span></div>
@@ -3040,8 +3066,17 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-          </div>
+            </div>
           )
+        )}
+
+        {/* ================= TAB: DEVELOPER CONSOLE (डेवलपर सुपर-एडमिन कंसोल) ================= */}
+        {currentTab === 'developer' && (
+          <DeveloperDashboard
+            onSwitchToBranch={(branchId) => {
+              setCurrentTab('overview');
+            }}
+          />
         )}
 
       </main>

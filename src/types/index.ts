@@ -31,6 +31,9 @@ export interface School {
   currentAcademicYear?: string;
   tokenVersion?: number;
   plan?: SchoolPlan;
+  status?: 'active' | 'suspended' | 'discontinued';
+  discontinuedAt?: string;
+  discontinuationReason?: string;
   udiseCode?: string;
   website?: string;
 }
