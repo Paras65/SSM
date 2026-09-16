@@ -404,9 +404,12 @@ router.get('/schools/:id', async (req, res) => {
   }
 });
 
-router.post('/schools', requireAdminAuth, requireSchoolScope, async (req, res) => {
+router.post('/schools', async (req, res) => {
   try {
     const data = req.body;
+    if (!data.hindiName || !data.city) {
+      return res.status(400).json({ error: 'विद्यालय का नाम और नगर अनिवार्य है।' });
+    }
     if (!data.id) {
       const rawSlug = (data.name || data.city || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const citySlug = rawSlug.length > 0 ? rawSlug.slice(0, 15) : 'branch';
@@ -414,6 +417,13 @@ router.post('/schools', requireAdminAuth, requireSchoolScope, async (req, res) =
     }
     const school = new School(data);
     await school.save();
+    await recordAuditLog({
+      schoolId: school.id,
+      actorType: req.user?.role || 'public',
+      action: 'SCHOOL_REGISTERED',
+      description: `नवीन विद्यालय शाखा पंजीकृत: ${school.hindiName} (${school.city}, ${school.prant})`,
+      req
+    });
     res.status(201).json(school);
   } catch (err) {
     res.status(400).json({ error: err.message });

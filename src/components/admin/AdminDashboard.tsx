@@ -817,7 +817,7 @@ export const AdminDashboard: React.FC = () => {
 
           {showMobileModules && (
             <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl bg-orange-950/70 p-2">
-              {[
+              {([
                 ['📝', 'परीक्षा व अंक', () => setShowExamModal(true)],
                 ['📋', 'टैबुलेशन रजिस्टर', () => setShowTabulationModal(true)],
                 ['🕒', 'समय सारिणी', () => setShowTimetableModal(true)],
@@ -833,7 +833,7 @@ export const AdminDashboard: React.FC = () => {
                   setSchoolModalMode('list');
                   setShowSchoolModal(true);
                 }]
-              ].map(([icon, label, action]) => (
+              ] as Array<[string, string, () => void]>).map(([icon, label, action]) => (
                 <button
                   key={label as string}
                   type="button"
