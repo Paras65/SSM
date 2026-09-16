@@ -80,6 +80,41 @@ export const TeacherPortal: React.FC = () => {
   const [leaveReason, setLeaveReason] = useState('');
   const [leaveSuccess, setLeaveSuccess] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showSalarySlip) {
+          e.preventDefault();
+          setShowSalarySlip(false);
+        } else if (showAddHw) {
+          e.preventDefault();
+          setShowAddHw(false);
+        } else if (currentTab !== 'attendance') {
+          e.preventDefault();
+          setCurrentTab('attendance');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSalarySlip, showAddHw, currentTab]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (showSalarySlip) {
+        setShowSalarySlip(false);
+      } else if (showAddHw) {
+        setShowAddHw(false);
+      } else if (currentTab !== 'attendance') {
+        setCurrentTab('attendance');
+      } else {
+        setViewMode('public');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showSalarySlip, showAddHw, currentTab, setViewMode]);
+
   const fetchInitialData = useCallback(async () => {
     try {
       const [teacherMe, hwData, examData, ttData, leaveData] = await Promise.all([
@@ -290,12 +325,18 @@ export const TeacherPortal: React.FC = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-16 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
-              onClick={() => setViewMode('public')}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition shrink-0"
-              title="मुख्य वेबसाइट पर लौटें"
+              onClick={() => {
+                if (currentTab !== 'attendance') {
+                  setCurrentTab('attendance');
+                } else {
+                  setViewMode('public');
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition shrink-0 cursor-pointer shadow-xs"
+              title={currentTab !== 'attendance' ? 'उपस्थिति पटल पर वापस जाएं' : 'मुख्य वेबसाइट पर लौटें'}
             >
               <ArrowLeft className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">मुख्य वेबसाइट</span>
+              <span>{currentTab !== 'attendance' ? 'उपस्थिति पटल' : 'मुख्य वेबसाइट'}</span>
             </button>
             <div className="h-5 w-px bg-orange-700 hidden sm:block shrink-0" />
             <div className="flex items-center gap-2 min-w-0">
@@ -412,6 +453,23 @@ export const TeacherPortal: React.FC = () => {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-5 sm:space-y-6 overflow-x-hidden">
+
+        {/* Sub-tab In-line Back Navigation Bar */}
+        {currentTab !== 'attendance' && (
+          <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-amber-200 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setCurrentTab('attendance')}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold text-xs border border-amber-200 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4 text-amber-800 shrink-0" />
+              <span>← दैनिक उपस्थिति पर वापस (Back to Attendance)</span>
+            </button>
+            <span className="text-xs font-semibold text-stone-500 capitalize hidden sm:inline">
+              वर्तमान अनुभाग: {currentTab}
+            </span>
+          </div>
+        )}
 
         {/* ================= TAB 1: ATTENDANCE ================= */}
         {currentTab === 'attendance' && (

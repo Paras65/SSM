@@ -64,6 +64,36 @@ const SchoolApp: React.FC = () => {
     }
   }, [setViewMode]);
 
+  const isAnyPublicModalOpen = showAuthModal || showTeacherAuthModal || showSchoolModal || showSchoolLocatorModal || showTcVerificationModal;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isAnyPublicModalOpen) {
+        setShowAuthModal(false);
+        setShowTeacherAuthModal(false);
+        setShowSchoolModal(false);
+        setShowSchoolLocatorModal(false);
+        setShowTcVerificationModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAnyPublicModalOpen]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isAnyPublicModalOpen) {
+        setShowAuthModal(false);
+        setShowTeacherAuthModal(false);
+        setShowSchoolModal(false);
+        setShowSchoolLocatorModal(false);
+        setShowTcVerificationModal(false);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAnyPublicModalOpen]);
+
   const handleOpenSignUp = (plan: 'free' | 'pro' = 'free') => {
     setSchoolModalPlan(plan);
     setSchoolModalMode('add');

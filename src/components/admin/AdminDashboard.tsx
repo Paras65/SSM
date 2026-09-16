@@ -242,6 +242,128 @@ export const AdminDashboard: React.FC = () => {
   const [activeCharacterStudent, setActiveCharacterStudent] = useState<Student | null>(null);
   const [activeBonafideStudent, setActiveBonafideStudent] = useState<Student | null>(null);
 
+  // Check if any admin modal is currently active
+  const isAnyModalOpen = Boolean(
+    upgradeModalFeature ||
+    showAddStudent ||
+    showBulkImport ||
+    showSchoolModal ||
+    activeFeeModal ||
+    activeReportModal ||
+    activeIdCardStudent ||
+    activeTcStudent ||
+    activeSalarySlipStaff ||
+    activeWhatsAppAlert ||
+    activePhotoStudent ||
+    showExamModal ||
+    showTimetableModal ||
+    showLeaveModal ||
+    showTransportModal ||
+    showLibraryModal ||
+    showInventoryModal ||
+    showBulkNotificationModal ||
+    showAuditLogModal ||
+    showSessionManagementModal ||
+    showHelpGuideModal ||
+    showTabulationModal ||
+    showProposalModal ||
+    showBulkIdCardModal ||
+    activeAdmitCard ||
+    activeCharacterStudent ||
+    activeBonafideStudent
+  );
+
+  const closeAllModals = useCallback(() => {
+    setUpgradeModalFeature(null);
+    setShowAddStudent(false);
+    setShowBulkImport(false);
+    setShowSchoolModal(false);
+    setActiveFeeModal(null);
+    setActiveReportModal(null);
+    setActiveIdCardStudent(null);
+    setActiveTcStudent(null);
+    setActiveSalarySlipStaff(null);
+    setActiveWhatsAppAlert(null);
+    setActivePhotoStudent(null);
+    setShowExamModal(false);
+    setShowTimetableModal(false);
+    setShowLeaveModal(false);
+    setShowTransportModal(false);
+    setShowLibraryModal(false);
+    setShowInventoryModal(false);
+    setShowBulkNotificationModal(false);
+    setShowAuditLogModal(false);
+    setShowSessionManagementModal(false);
+    setShowHelpGuideModal(false);
+    setShowTabulationModal(false);
+    setShowProposalModal(false);
+    setShowBulkIdCardModal(false);
+    setActiveAdmitCard(null);
+    setActiveCharacterStudent(null);
+    setActiveBonafideStudent(null);
+  }, []);
+
+  // Sync tab with browser hash and state
+  const navigateTab = useCallback((tab: AdminTab) => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ adminTab: tab }, '', `#tab=${tab}`);
+      }
+    } catch {}
+    setCurrentTab(tab);
+  }, []);
+
+  // Initialize tab from location hash on load
+  useEffect(() => {
+    try {
+      const hash = window.location.hash;
+      const match = hash.match(/#tab=([a-z]+)/);
+      if (match && match[1]) {
+        const tabName = match[1] as AdminTab;
+        const validTabs: AdminTab[] = ['overview', 'students', 'attendance', 'fees', 'reports', 'homework', 'staff', 'admissions', 'notices', 'developer'];
+        if (validTabs.includes(tabName)) {
+          setCurrentTab(tabName);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Handle browser back button (popstate)
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (isAnyModalOpen) {
+        closeAllModals();
+        return;
+      }
+      if (e.state?.adminTab) {
+        setCurrentTab(e.state.adminTab);
+      } else if (currentTab !== 'overview') {
+        setCurrentTab('overview');
+      } else {
+        setViewMode('public');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAnyModalOpen, closeAllModals, currentTab, setViewMode]);
+
+  // Handle Escape key to dismiss any active modal or return from sub-tab to overview
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isAnyModalOpen) {
+          e.preventDefault();
+          closeAllModals();
+        } else if (currentTab !== 'overview') {
+          e.preventDefault();
+          navigateTab('overview');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAnyModalOpen, closeAllModals, currentTab, navigateTab]);
+
   // Homework creation form state
   const [showAddHomework, setShowAddHomework] = useState(false);
   const [hwClass, setHwClass] = useState('Class 8');
@@ -545,12 +667,18 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
             <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
               <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-orange-800/80 hover:bg-orange-800 text-xs font-semibold text-amber-200 transition-colors shrink-0"
-                title="वेबसाइट पर लौटें"
+                onClick={() => {
+                  if (currentTab !== 'overview') {
+                    navigateTab('overview');
+                  } else {
+                    handleLogout();
+                  }
+                }}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-800/80 hover:bg-orange-800 text-xs font-semibold text-amber-200 transition-colors shrink-0 cursor-pointer shadow-xs"
+                title={currentTab !== 'overview' ? 'डैशबोर्ड मुख्य पृष्ठ पर वापस जाएं' : 'वेबसाइट पर लौटें'}
               >
                 <ArrowLeft className="w-4 h-4 shrink-0" />
-                <span className="hidden sm:inline">वेबसाइट पर लौटें</span>
+                <span>{currentTab !== 'overview' ? 'मुख्य डैशबोर्ड' : 'वेबसाइट पर लौटें'}</span>
               </button>
               <div className="h-6 w-px bg-orange-700 hidden sm:block shrink-0" />
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
@@ -1061,6 +1189,23 @@ export const AdminDashboard: React.FC = () => {
       {/* Main Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-5 sm:space-y-6 overflow-x-hidden">
         
+        {/* Sub-tab In-line Back Navigation Bar */}
+        {currentTab !== 'overview' && (
+          <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-orange-200/80 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => navigateTab('overview')}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-950 font-bold text-xs border border-orange-200 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4 text-orange-700 shrink-0" />
+              <span>← मुख्य डैशबोर्ड पर वापस (Back to Overview)</span>
+            </button>
+            <span className="text-xs font-semibold text-stone-500 capitalize hidden sm:inline">
+              वर्तमान अनुभाग: {currentTab}
+            </span>
+          </div>
+        )}
+
         {/* ================= TAB 1: OVERVIEW ================= */}
         {currentTab === 'overview' && (
           <div className="space-y-6">
@@ -3073,8 +3218,9 @@ export const AdminDashboard: React.FC = () => {
         {/* ================= TAB: DEVELOPER CONSOLE (डेवलपर सुपर-एडमिन कंसोल) ================= */}
         {currentTab === 'developer' && (
           <DeveloperDashboard
+            onBack={() => navigateTab('overview')}
             onSwitchToBranch={(branchId) => {
-              setCurrentTab('overview');
+              navigateTab('overview');
             }}
           />
         )}

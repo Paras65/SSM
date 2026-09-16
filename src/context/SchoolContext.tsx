@@ -149,7 +149,37 @@ interface SchoolContextType {
 const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
 export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [viewMode, setViewMode] = useState<ViewMode>('public');
+  const [viewMode, setViewModeState] = useState<ViewMode>('public');
+
+  const setViewMode = React.useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    try {
+      if (typeof window !== 'undefined') {
+        const path = mode === 'public' ? '/' : `/${mode}`;
+        if (window.location.pathname !== path) {
+          window.history.pushState({ viewMode: mode }, '', path);
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const stateMode = event.state?.viewMode as ViewMode | undefined;
+      if (stateMode) {
+        setViewModeState(stateMode);
+      } else {
+        const path = window.location.pathname.replace(/^\//, '');
+        if (path === 'admin' || path === 'teacher' || path === 'student') {
+          setViewModeState(path as ViewMode);
+        } else {
+          setViewModeState('public');
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   // Multi-School state

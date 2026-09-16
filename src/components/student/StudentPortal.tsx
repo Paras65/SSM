@@ -116,6 +116,56 @@ export const StudentPortal: React.FC = () => {
   const [showBonafideModal, setShowBonafideModal] = useState(false);
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
 
+  const isAnyStudentModalOpen = Boolean(
+    showReportModal ||
+    showFeeModal ||
+    showIdCardModal ||
+    showTcModal ||
+    showLeaveModal ||
+    showAdmitCardModal ||
+    showCharacterModal ||
+    showBonafideModal
+  );
+
+  const closeAllStudentModals = useCallback(() => {
+    setShowReportModal(false);
+    setShowFeeModal(false);
+    setShowIdCardModal(false);
+    setShowTcModal(false);
+    setShowLeaveModal(false);
+    setShowAdmitCardModal(false);
+    setShowCharacterModal(false);
+    setShowBonafideModal(false);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isAnyStudentModalOpen) {
+          e.preventDefault();
+          closeAllStudentModals();
+        } else {
+          e.preventDefault();
+          setViewMode('public');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAnyStudentModalOpen, closeAllStudentModals, setViewMode]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isAnyStudentModalOpen) {
+        closeAllStudentModals();
+      } else {
+        setViewMode('public');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAnyStudentModalOpen, closeAllStudentModals, setViewMode]);
+
   useEffect(() => {
     if (!currentSchool.id) return;
     api.getExams(currentSchool.id)
@@ -216,11 +266,11 @@ export const StudentPortal: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={handleStudentLogout}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition-colors shrink-0"
-              title="लॉगआउट"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition-colors shrink-0 cursor-pointer shadow-xs"
+              title="मुख्य वेबसाइट पर लौटें / लॉगआउट"
             >
               <ArrowLeft className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">लॉगआउट</span>
+              <span>वेबसाइट पर लौटें</span>
             </button>
             <div className="h-5 w-px bg-orange-700 hidden sm:block shrink-0" />
             <div className="flex items-center gap-2 min-w-0">

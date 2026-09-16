@@ -26,15 +26,17 @@ import {
   ShieldCheck,
   Check,
   X,
-  Copy
+  Copy,
+  ArrowLeft
 } from 'lucide-react';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 
 interface DeveloperDashboardProps {
   onSwitchToBranch?: (schoolId: string) => void;
+  onBack?: () => void;
 }
 
-export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitchToBranch }) => {
+export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitchToBranch, onBack }) => {
   const { schools, refreshFromDb, setCurrentSchoolId, bulkAddStudents, addFeeRecord, addOrUpdateReportCard, addNotice } = useSchool();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
@@ -252,6 +254,25 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (editingPasscodeSchool) {
+          e.preventDefault();
+          setEditingPasscodeSchool(null);
+        } else if (activeSection !== 'overview') {
+          e.preventDefault();
+          setActiveSection('overview');
+        } else if (onBack) {
+          e.preventDefault();
+          onBack();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editingPasscodeSchool, activeSection, onBack]);
+
   // Filtered Schools
   const filteredSchools = useMemo(() => {
     return schools.filter(s => {
@@ -312,29 +333,51 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
           </div>
         </div>
 
-        {/* Live Database Status Indicator */}
-        <div className="flex items-center gap-2.5 bg-stone-900/80 px-3.5 py-2 rounded-2xl border border-stone-700/80 text-xs">
-          <span className={`w-2.5 h-2.5 rounded-full ${dbHealth?.database === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
-          <div className="text-[11px] leading-tight font-mono">
-            <span className="text-stone-400 block">Database:</span>
-            <span className="text-emerald-300 font-bold">{dbHealth?.database === 'connected' ? 'MongoDB Atlas (Live)' : 'Disconnected'}</span>
+        {/* Live Database Status Indicator & Back Button */}
+        <div className="flex items-center gap-2 flex-wrap self-stretch sm:self-auto justify-between sm:justify-end">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition shadow-sm cursor-pointer shrink-0"
+              title="सामान्य व्यवस्थापक डैशबोर्ड पर वापस जाएं"
+            >
+              <ArrowLeft className="w-4 h-4 text-stone-950 shrink-0" />
+              <span>← मुख्य डैशबोर्ड पर वापस</span>
+            </button>
+          )}
+          <div className="flex items-center gap-2.5 bg-stone-900/80 px-3.5 py-2 rounded-2xl border border-stone-700/80 text-xs">
+            <span className={`w-2.5 h-2.5 rounded-full ${dbHealth?.database === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
+            <div className="text-[11px] leading-tight font-mono">
+              <span className="text-stone-400 block">Database:</span>
+              <span className="text-emerald-300 font-bold">{dbHealth?.database === 'connected' ? 'MongoDB Atlas (Live)' : 'Disconnected'}</span>
+            </div>
+            <button
+              onClick={() => {
+                loadNetworkData();
+                showInfo('डेटा रिफ्रेश हो रहा है...');
+              }}
+              disabled={isLoadingMetrics}
+              className="ml-2 p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-200 transition cursor-pointer"
+              title="रिफ्रेश करें"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingMetrics ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-          <button
-            onClick={() => {
-              loadNetworkData();
-              showInfo('डेटा रिफ्रेश हो रहा है...');
-            }}
-            disabled={isLoadingMetrics}
-            className="ml-2 p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-200 transition cursor-pointer"
-            title="रिफ्रेश करें"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingMetrics ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 
       {/* Navigation Sub-Tabs */}
       <div className="flex items-center gap-2 border-b border-stone-200 pb-2 overflow-x-auto text-xs font-bold">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-amber-100 text-stone-800 hover:text-amber-950 border border-stone-300 hover:border-amber-400 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+            title="व्यवस्थापक मुख्य पृष्ठ पर वापस लौटें"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-orange-600" />
+            <span>डैशबोर्ड</span>
+          </button>
+        )}
         <button
           onClick={() => setActiveSection('overview')}
           className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
