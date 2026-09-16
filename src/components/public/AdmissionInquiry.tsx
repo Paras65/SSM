@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { useSchool } from '../../context/SchoolContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
+import { SSM_CLASSES } from '../../types';
 
 export const AdmissionInquiry: React.FC = () => {
   const { schools, publicSchool, currentSchool } = useSchool();
@@ -257,19 +258,9 @@ export const AdmissionInquiry: React.FC = () => {
                         onChange={e => setFormData({ ...formData, applyingClass: e.target.value })}
                         className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
                       >
-                        <option value="Arun (Nursery)">अरुण (Nursery / शिशु वाटिका)</option>
-                        <option value="Uday (LKG)">उदय (LKG)</option>
-                        <option value="Prabhat (UKG)">प्रभात (UKG)</option>
-                        <option value="Class 1">कक्षा 1 (Class 1)</option>
-                        <option value="Class 2">कक्षा 2 (Class 2)</option>
-                        <option value="Class 3">कक्षा 3 (Class 3)</option>
-                        <option value="Class 4">कक्षा 4 (Class 4)</option>
-                        <option value="Class 5">कक्षा 5 (Class 5)</option>
-                        <option value="Class 6">कक्षा 6 (Class 6)</option>
-                        <option value="Class 7">कक्षा 7 (Class 7)</option>
-                        <option value="Class 8">कक्षा 8 (Class 8)</option>
-                        <option value="Class 9">कक्षा 9 (Class 9)</option>
-                        <option value="Class 10">कक्षा 10 (Class 10)</option>
+                        {SSM_CLASSES.map(cls => (
+                          <option key={cls} value={cls}>{cls}</option>
+                        ))}
                       </select>
                     </div>
 

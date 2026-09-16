@@ -11,6 +11,7 @@ import { CharacterCertificateModal } from '../admin/CharacterCertificateModal';
 import { BonafideCertificateModal } from '../admin/BonafideCertificateModal';
 import { HelpTooltip } from '../common/HelpTooltip';
 import type { Homework, Exam, Student, FeeRecord, ReportCard, AttendanceRecord } from '../../types';
+import { SSM_CLASSES } from '../../types';
 import {
   ArrowLeft,
   Calendar,
@@ -47,12 +48,7 @@ export const StudentPortal: React.FC = () => {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const classes = [
-    'Shishu Vatika', 'Nursery', 'LKG', 'UKG',
-    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
-    'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
-    'Class 11', 'Class 12'
-  ];
+  const classes = SSM_CLASSES;
   const [liveStudent, setLiveStudent] = useState<Student | null>(null);
   const [liveFees, setLiveFees] = useState<FeeRecord[]>([]);
   const [liveReports, setLiveReports] = useState<ReportCard[]>([]);

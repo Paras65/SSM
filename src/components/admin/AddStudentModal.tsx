@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { X, UserPlus } from 'lucide-react';
 import type { Gender, SocialCategory } from '../../types';
+import { SSM_CLASSES } from '../../types';
 
 interface AddStudentModalProps {
   onClose: () => void;
@@ -138,19 +139,9 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
                 onChange={e => setFormData({ ...formData, class: e.target.value })}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500 bg-white"
               >
-                <option value="Arun (Nursery)">अरुण (Nursery)</option>
-                <option value="Uday (LKG)">उदय (LKG)</option>
-                <option value="Prabhat (Prep)">प्रभात (Prep)</option>
-                <option value="Class 1">Class 1</option>
-                <option value="Class 2">Class 2</option>
-                <option value="Class 3">Class 3</option>
-                <option value="Class 4">Class 4</option>
-                <option value="Class 5">Class 5</option>
-                <option value="Class 6">Class 6</option>
-                <option value="Class 7">Class 7</option>
-                <option value="Class 8">Class 8</option>
-                <option value="Class 9">Class 9</option>
-                <option value="Class 10">Class 10</option>
+                {SSM_CLASSES.map(cls => (
+                  <option key={cls} value={cls}>{cls}</option>
+                ))}
               </select>
             </div>
 

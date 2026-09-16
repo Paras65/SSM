@@ -3,6 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Homework, Staff, Exam, Timetable, LeaveRequest } from '../../types';
+import { SSM_CLASSES } from '../../types';
 import { StaffSalarySlipModal } from '../admin/StaffSalarySlipModal';
 import {
   ArrowLeft,
@@ -52,7 +53,7 @@ export const TeacherPortal: React.FC = () => {
   const [showSalarySlip, setShowSalarySlip] = useState(false);
 
   // Class Selection for Attendance & Homework
-  const CLASSES = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
+  const CLASSES = SSM_CLASSES;
   const [selectedClass, setSelectedClass] = useState('Class 8');
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [attendanceSearch, setAttendanceSearch] = useState('');
