@@ -19,6 +19,7 @@ const Transport = require('../../server/models/Transport.js');
 const Book = require('../../server/models/Book.js');
 const BookIssue = require('../../server/models/BookIssue.js');
 const InventoryItem = require('../../server/models/InventoryItem.js');
+const Staff = require('../../server/models/Staff.js');
 const AuditLog = require('../../server/models/AuditLog.js');
 
 let mongoServer: MongoMemoryServer;
@@ -47,6 +48,7 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
       Book.deleteMany({}),
       BookIssue.deleteMany({}),
       InventoryItem.deleteMany({}),
+      Staff.deleteMany({}),
       AuditLog.deleteMany({})
     ]);
 
@@ -146,6 +148,17 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
       unitPrice: 1500,
       unit: 'पीस (Pcs)',
       stockQuantity: 20
+    });
+
+    await Staff.create({
+      id: 'stf-a-01',
+      schoolId: 'school-a',
+      name: 'Acharya Sharma',
+      gender: 'Acharya',
+      designation: 'गणित आचार्य',
+      phone: '+91 99999 11111',
+      pin: '5678',
+      monthlySalary: 28000
     });
 
     await AuditLog.create([
@@ -332,6 +345,79 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(2);
+    });
+  });
+
+  describe('7. School Lifecycle & Administrative Branch Isolation', () => {
+    it('prevents School A admin from exporting School B institutional archive', async () => {
+      const res = await request(app)
+        .get('/api/schools/school-b/archive')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('SCHOOL_SCOPE_FORBIDDEN');
+    });
+
+    it('allows School A admin to export their own branch archive', async () => {
+      const res = await request(app)
+        .get('/api/schools/school-a/archive')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.school.id).toBe('school-a');
+      expect(res.body.counts).toBeDefined();
+    });
+
+    it('prevents School A admin from discontinuing School B', async () => {
+      const res = await request(app)
+        .post('/api/schools/school-b/discontinue')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({ confirmText: 'DISCONTINUE', reason: 'Malicious attempt' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('SCHOOL_SCOPE_FORBIDDEN');
+
+      // Verify School B is still active
+      const schoolB = await School.findOne({ id: 'school-b' }).lean();
+      expect(schoolB.status).not.toBe('discontinued');
+    });
+
+    it('prevents non-developer admin from reactivating a discontinued school', async () => {
+      // Discontinue school A first
+      await School.updateOne({ id: 'school-a' }, { status: 'discontinued' });
+
+      const res = await request(app)
+        .post('/api/schools/school-a/reactivate')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('DEVELOPER_ROLE_REQUIRED');
+    });
+
+    it('allows developer to reactivate a discontinued school branch', async () => {
+      await School.updateOne({ id: 'school-a' }, { status: 'discontinued' });
+
+      const res = await request(app)
+        .post('/api/schools/school-a/reactivate')
+        .set('Authorization', `Bearer ${developerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      const reactivated = await School.findOne({ id: 'school-a' }).lean();
+      expect(reactivated.status).toBe('active');
+    });
+
+    it('excludes teacher PIN from GET /api/staff administrative responses', async () => {
+      const res = await request(app)
+        .get('/api/staff')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0].pin).toBeUndefined();
+      expect(res.body[0].name).toBe('Acharya Sharma');
     });
   });
 });

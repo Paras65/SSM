@@ -76,14 +76,19 @@ router.get('/status', (req, res) => {
  * 3. Uses .lean() to eliminate Mongoose document hydration overhead
  * 4. Injects standard X-Total-Count, X-Page, X-Per-Page, X-Total-Pages headers
  */
-async function executeSafeQuery(Model, filter, req, res, sort = { createdAt: -1 }) {
+async function executeSafeQuery(Model, filter, req, res, sort = { createdAt: -1 }, select = null) {
   const isPaginated = req.query.paginated === 'true' || req.query.page !== undefined;
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || (isPaginated ? 50 : 250)), 500);
   const skip = (page - 1) * limit;
 
+  let query = Model.find(filter).sort(sort).skip(skip).limit(limit);
+  if (select) {
+    query = query.select(select);
+  }
+
   const [records, total] = await Promise.all([
-    Model.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+    query.lean(),
     Model.countDocuments(filter)
   ]);
 
@@ -509,7 +514,7 @@ router.get('/schools/:id/archive', requireAdminAuth, requireSchoolScope, async (
       books,
       inventory
     ] = await Promise.all([
-      School.findOne({ id: schoolId }).lean(),
+      School.findOne({ id: schoolId, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) }).lean(),
       Student.find(targetFilter).lean(),
       Fee.find(targetFilter).lean(),
       Attendance.find(targetFilter).lean(),
@@ -583,7 +588,7 @@ router.post('/schools/:id/discontinue', requireAdminAuth, requireSchoolScope, as
       });
     }
 
-    const school = await School.findOne({ id: schoolId });
+    const school = await School.findOne({ id: schoolId, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) });
     if (!school) return res.status(404).json({ error: 'विद्यालय शाखा नहीं मिली।' });
 
     school.status = 'discontinued';
@@ -1463,7 +1468,7 @@ router.get('/staff', requireAdminAuth, requireSchoolScope, async (req, res) => {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.status) filter.status = req.query.status;
     if (req.query.gender) filter.gender = req.query.gender;
-    await executeSafeQuery(Staff, filter, req, res, { createdAt: -1 });
+    await executeSafeQuery(Staff, filter, req, res, { createdAt: -1 }, '-pin');
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -185,9 +185,15 @@ function requireSchoolScope(req, res, next) {
     });
   }
 
+  const pathSchoolId = (req.originalUrl?.includes('/schools/') || req.path?.includes('/schools/'))
+    ? req.params?.id
+    : null;
+
   const requestedSchoolIds = [
     req.body?.schoolId,
     req.query?.schoolId,
+    req.params?.schoolId,
+    pathSchoolId,
     ...(Array.isArray(req.body?.updates) ? req.body.updates.map(update => update.schoolId) : [])
   ].filter(Boolean);
 
