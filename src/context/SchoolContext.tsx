@@ -158,7 +158,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const path = window.location.pathname.replace(/^\//, '');
         if (path === 'admin' && sessionStorage.getItem('ssm_admin_token')) return 'admin';
         if (path === 'teacher' && sessionStorage.getItem('ssm_teacher_token')) return 'teacher';
-        if (path === 'student' && sessionStorage.getItem('ssm_student_token')) return 'student';
+        if (path === 'student') return 'student';
       }
     } catch {}
     return 'public';
@@ -179,15 +179,16 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const stateMode = event.state?.viewMode as ViewMode | undefined;
-      if (stateMode) {
-        setViewModeState(stateMode);
+      const targetMode = stateMode || (window.location.pathname.replace(/^\//, '') as ViewMode);
+
+      if (targetMode === 'admin') {
+        setViewModeState(sessionStorage.getItem('ssm_admin_token') ? 'admin' : 'public');
+      } else if (targetMode === 'teacher') {
+        setViewModeState(sessionStorage.getItem('ssm_teacher_token') ? 'teacher' : 'public');
+      } else if (targetMode === 'student') {
+        setViewModeState('student');
       } else {
-        const path = window.location.pathname.replace(/^\//, '');
-        if (path === 'admin' || path === 'teacher' || path === 'student') {
-          setViewModeState(path as ViewMode);
-        } else {
-          setViewModeState('public');
-        }
+        setViewModeState('public');
       }
     };
     window.addEventListener('popstate', handlePopState);

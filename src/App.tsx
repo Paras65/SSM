@@ -217,7 +217,12 @@ const SchoolApp: React.FC = () => {
       {/* Admin Passcode Modal */}
       <AdminAuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => {
+          setShowAuthModal(false);
+          if (typeof window !== 'undefined' && window.location.pathname === '/admin' && viewMode !== 'admin') {
+            window.history.replaceState({}, '', '/');
+          }
+        }}
         onSuccess={() => {
           setShowAuthModal(false);
           setViewMode('admin');
@@ -231,7 +236,12 @@ const SchoolApp: React.FC = () => {
       {/* Teacher Auth Modal */}
       <TeacherAuthModal
         isOpen={showTeacherAuthModal}
-        onClose={() => setShowTeacherAuthModal(false)}
+        onClose={() => {
+          setShowTeacherAuthModal(false);
+          if (typeof window !== 'undefined' && window.location.pathname === '/teacher' && viewMode !== 'teacher') {
+            window.history.replaceState({}, '', '/');
+          }
+        }}
         onSuccess={() => {
           setShowTeacherAuthModal(false);
           setViewMode('teacher');

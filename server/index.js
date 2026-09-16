@@ -5,7 +5,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const apiRoutes = require('./routes/api');
-const seedDatabase = require('./seed');
 const { sanitizeNoSql } = require('./middleware/sanitize');
 
 const app = express();
@@ -191,9 +190,6 @@ async function startServer() {
     });
     console.log('✅ Connected successfully to MongoDB!');
     console.log(`📡 Database Host: ${mongoose.connection.host}`);
-
-    // Seed database if needed
-    await seedDatabase();
 
     app.listen(PORT, () => {
       console.log(`🚀 Saraswati Shishu Mandir Backend running at: http://localhost:${PORT}`);
