@@ -28,6 +28,7 @@ import {
   Sun,
   MessageSquare,
   Lightbulb,
+  Edit2,
   X
 } from 'lucide-react';
 
@@ -56,6 +57,7 @@ export const TeacherPortal: React.FC = () => {
   // Homework state
   const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
   const [showAddHw, setShowAddHw] = useState(false);
+  const [editingHw, setEditingHw] = useState<Homework | null>(null);
   const [hwSubject, setHwSubject] = useState('गणित');
   const [hwTitle, setHwTitle] = useState('');
   const [hwDesc, setHwDesc] = useState('');
@@ -89,6 +91,7 @@ export const TeacherPortal: React.FC = () => {
         } else if (showAddHw) {
           e.preventDefault();
           setShowAddHw(false);
+          setEditingHw(null);
         } else if (currentTab !== 'attendance') {
           e.preventDefault();
           setCurrentTab('attendance');
@@ -178,28 +181,52 @@ export const TeacherPortal: React.FC = () => {
     return Math.round((present / recs.length) * 100);
   };
 
-  const handleCreateHomework = async (e: React.FormEvent) => {
+  const handleStartEditHw = (hw: Homework) => {
+    setEditingHw(hw);
+    setHwSubject(hw.subject);
+    setHwTitle(hw.title);
+    setHwDesc(hw.description);
+    setHwDueDate(hw.dueDate);
+    setShowAddHw(true);
+  };
+
+  const handleSaveHomework = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hwTitle || !hwDesc) return;
     try {
-      const newHw = await api.createHomework({
-        schoolId: currentSchool.id,
-        class: selectedClass,
-        subject: hwSubject,
-        title: hwTitle,
-        description: hwDesc,
-        assignedBy: teacherProfile ? `${teacherProfile.name} (${teacherProfile.gender === 'Acharya' ? 'आचार्य' : 'दीदी'})` : teacherName,
-        dueDate: hwDueDate,
-        date: new Date().toISOString().split('T')[0],
-        status: 'Active'
-      });
-      setHomeworkList(prev => [newHw, ...prev]);
-      setShowAddHw(false);
-      setHwTitle('');
-      setHwDesc('');
-      showSuccess('नया गृहकार्य सफलतापूर्वक जोड़ा गया!');
+      if (editingHw) {
+        const updated = await api.updateHomework(editingHw.id, {
+          subject: hwSubject,
+          title: hwTitle,
+          description: hwDesc,
+          dueDate: hwDueDate
+        });
+        setHomeworkList(prev => prev.map(h => h.id === editingHw.id ? updated : h));
+        setEditingHw(null);
+        setShowAddHw(false);
+        setHwTitle('');
+        setHwDesc('');
+        showSuccess('गृहकार्य सफलतापूर्वक संशोधित किया गया!');
+      } else {
+        const newHw = await api.createHomework({
+          schoolId: currentSchool.id,
+          class: selectedClass,
+          subject: hwSubject,
+          title: hwTitle,
+          description: hwDesc,
+          assignedBy: teacherProfile ? `${teacherProfile.name} (${teacherProfile.gender === 'Acharya' ? 'आचार्य' : 'दीदी'})` : teacherName,
+          dueDate: hwDueDate,
+          date: new Date().toISOString().split('T')[0],
+          status: 'Active'
+        });
+        setHomeworkList(prev => [newHw, ...prev]);
+        setShowAddHw(false);
+        setHwTitle('');
+        setHwDesc('');
+        showSuccess('नया गृहकार्य सफलतापूर्वक जोड़ा गया!');
+      }
     } catch (err: any) {
-      showError(err.message || 'गृहकार्य जोड़ने में त्रुटि आई।');
+      showError(err.message || 'गृहकार्य सहेजने में त्रुटि आई।');
     }
   };
 
@@ -735,8 +762,10 @@ export const TeacherPortal: React.FC = () => {
             )}
 
             {showAddHw && (
-              <form onSubmit={handleCreateHomework} className="bg-white p-5 rounded-3xl border-2 border-orange-300 shadow-md space-y-4 text-xs">
-                <h4 className="font-bold text-stone-900 text-sm">नवीन गृहकार्य प्रविष्टि</h4>
+              <form onSubmit={handleSaveHomework} className="bg-white p-5 rounded-3xl border-2 border-orange-300 shadow-md space-y-4 text-xs">
+                <h4 className="font-bold text-stone-900 text-sm">
+                  {editingHw ? 'गृहकार्य विवरण संशोधित करें (Edit Homework)' : 'नवीन गृहकार्य प्रविष्टि'}
+                </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block font-bold text-stone-700 mb-1">विषय (Subject)</label>
@@ -801,7 +830,12 @@ export const TeacherPortal: React.FC = () => {
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowAddHw(false)}
+                    onClick={() => {
+                      setShowAddHw(false);
+                      setEditingHw(null);
+                      setHwTitle('');
+                      setHwDesc('');
+                    }}
                     className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-xl"
                   >
                     रद्द करें
@@ -810,7 +844,7 @@ export const TeacherPortal: React.FC = () => {
                     type="submit"
                     className="px-5 py-2 bg-orange-700 hover:bg-orange-800 text-white font-bold rounded-xl shadow-xs"
                   >
-                    गृहकार्य प्रकाशित करें
+                    {editingHw ? 'संशोधन सहेजें' : 'गृहकार्य प्रकाशित करें'}
                   </button>
                 </div>
               </form>
@@ -843,15 +877,26 @@ export const TeacherPortal: React.FC = () => {
                       <div className="text-[11px] text-stone-400 truncate">
                         प्रदत्त: {hw.assignedBy} ({hw.date})
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleShareHwWhatsApp(hw)}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition shrink-0"
-                        title="अभिभावक व्हाट्सएप ग्रुप पर साझा करें"
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                        <span>व्हाट्सएप साझा</span>
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditHw(hw)}
+                          className="px-2.5 py-1 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-900 font-bold text-[11px] flex items-center gap-1 transition"
+                          title="गृहकार्य संपादित करें"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>संपादित करें</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleShareHwWhatsApp(hw)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition"
+                          title="अभिभावक व्हाट्सएप ग्रुप पर साझा करें"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                          <span>व्हाट्सएप साझा</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))

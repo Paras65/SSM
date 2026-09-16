@@ -314,6 +314,13 @@ export const api = {
     return handleJsonResponse<FeeRecord>(res, 'Failed to create fee record');
   },
 
+  async deleteFee(id: string): Promise<{ success: boolean; id: string }> {
+    const res = await apiFetch(`/fees/${id}`, {
+      method: 'DELETE'
+    });
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete fee record');
+  },
+
   // ================= REPORT CARDS =================
   async getReports(schoolId?: string, term?: string, academicYear?: string): Promise<ReportCard[]> {
     const params = new URLSearchParams();
@@ -332,6 +339,13 @@ export const api = {
       body: JSON.stringify(report)
     });
     return handleJsonResponse<ReportCard>(res, 'Failed to save report card');
+  },
+
+  async deleteReport(id: string): Promise<{ success: boolean; id: string }> {
+    const res = await apiFetch(`/reports/${id}`, {
+      method: 'DELETE'
+    });
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete report card');
   },
 
   // ================= NOTICES =================
@@ -417,6 +431,15 @@ export const api = {
       body: JSON.stringify(hw)
     });
     return handleJsonResponse<Homework>(res, 'Failed to create homework');
+  },
+
+  async updateHomework(id: string, updates: Partial<Homework>): Promise<Homework> {
+    const res = await apiFetch(`/homework/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    return handleJsonResponse<Homework>(res, 'Failed to update homework');
   },
 
   async deleteHomework(id: string): Promise<{ success: boolean; id: string }> {

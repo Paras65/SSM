@@ -42,7 +42,7 @@ import { downloadFullSchoolBackup, parseAndValidateBackupJSON } from '../../util
 import { downloadUdisePlusCSV } from '../../utils/udiseExport';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import { api } from '../../services/api';
-import type { Student, FeeRecord, ReportCard, Homework, Staff, Exam } from '../../types';
+import type { Student, FeeRecord, ReportCard, Homework, Staff, Exam, Notice } from '../../types';
 import {
   Users,
   CheckCircle2,
@@ -96,10 +96,12 @@ export const AdminDashboard: React.FC = () => {
     getAttendanceForDate,
     feeRecords,
     markFeePaid,
+    addFeeRecord,
+    deleteFeeRecord,
     reportCards,
     addOrUpdateReportCard,
+    deleteReportCard,
     bulkAddStudents,
-    addFeeRecord,
     notices,
     addNotice,
     deleteNotice
@@ -2327,6 +2329,17 @@ export const AdminDashboard: React.FC = () => {
                               <span>रसीद देखें / प्रिंट</span>
                             </button>
                           )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`क्या आप ${student.name} का ${fee.term} का शुल्क रिकॉर्ड स्थायी रूप से हटाना चाहते हैं?`)) {
+                                deleteFeeRecord(fee.id);
+                              }
+                            }}
+                            className="p-1.5 text-stone-400 hover:text-red-600 rounded transition inline-flex items-center"
+                            title="शुल्क रिकॉर्ड हटाएं"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -2517,6 +2530,17 @@ export const AdminDashboard: React.FC = () => {
                           <Printer className="w-3.5 h-3.5" />
                           <span>प्रगति पत्र देखें / प्रिंट</span>
                         </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`क्या आप ${student.name} का ${report.examTerm} का प्रगति पत्र स्थायी रूप से हटाना चाहते हैं?`)) {
+                              deleteReportCard(report.id);
+                            }
+                          }}
+                          className="p-1.5 text-stone-400 hover:text-red-600 rounded transition inline-flex items-center"
+                          title="प्रगति पत्र हटाएं"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -2674,7 +2698,7 @@ export const AdminDashboard: React.FC = () => {
                   </label>
                   <select
                     value={newNoticeCategory}
-                    onChange={e => setNewNoticeCategory(e.target.value as any)}
+                    onChange={e => setNewNoticeCategory(e.target.value as Notice['category'])}
                     className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:ring-2 focus:ring-orange-500"
                   >
                     <option value="Academics">Academics (शैक्षणिक)</option>
@@ -3050,7 +3074,7 @@ export const AdminDashboard: React.FC = () => {
                     <label className="block text-stone-700 font-bold mb-1">पद संबोधन</label>
                     <select
                       value={stfGender}
-                      onChange={e => setStfGender(e.target.value as any)}
+                      onChange={e => setStfGender(e.target.value as 'Acharya' | 'Didi')}
                       className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500"
                     >
                       <option value="Acharya">आचार्य जी (Acharya)</option>

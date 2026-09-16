@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { School, Student, AttendanceRecord, FeeRecord, ReportCard, Notice, ViewMode, AttendanceStatus, SchoolPlan, ProFeatureKey } from '../types';
 import { INITIAL_STUDENTS, INITIAL_FEES, INITIAL_REPORT_CARDS, INITIAL_NOTICES, SCHOOL_INFO } from '../data/mockData';
 import { api } from '../services/api';
+import { useToast } from './ToastContext';
 
 const EMPTY_SCHOOL: School = {
   id: '',
@@ -134,10 +135,12 @@ interface SchoolContextType {
   feeRecords: FeeRecord[];
   markFeePaid: (feeId: string, paymentMode: string) => Promise<void>;
   addFeeRecord: (record: Omit<FeeRecord, 'id'>) => Promise<void>;
+  deleteFeeRecord: (feeId: string) => Promise<void>;
 
   // Report Cards
   reportCards: ReportCard[];
   addOrUpdateReportCard: (card: ReportCard) => Promise<void>;
+  deleteReportCard: (reportId: string) => Promise<void>;
   getReportCardForStudent: (studentId: string) => ReportCard | undefined;
 
   // Notices
@@ -180,6 +183,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  const { showError } = useToast();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   // Multi-School state
@@ -419,11 +424,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err) {
       // Rollback: remove optimistically added student on failure
       setStudents(prev => prev.filter(s => s.id !== tempId));
+      showError('छात्र रिकॉर्ड सहेजने में त्रुटि हुई! (Failed to save student)');
       console.error('Error saving student to MongoDB:', err);
     }
   };
 
   const updateStudent = async (updatedStudent: Student) => {
+    const prevSnapshot = students.find(o => o.id === updatedStudent.id);
     setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
     try {
       await api.updateStudent(updatedStudent.id, {
@@ -432,7 +439,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
     } catch (err) {
       // Rollback: restore previous student data on failure
-      setStudents(prev => prev.map(s => s.id === updatedStudent.id ? (students.find(o => o.id === updatedStudent.id) || s) : s));
+      if (prevSnapshot) {
+        setStudents(prev => prev.map(s => s.id === updatedStudent.id ? prevSnapshot : s));
+      }
+      showError('छात्र डेटा अपडेट करने में त्रुटि! परिवर्तन वापस ले लिए गए हैं।');
       console.error('Error updating student in MongoDB:', err);
     }
   };
@@ -444,7 +454,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await api.deleteStudent(id);
     } catch (err) {
       // Rollback: re-insert deleted student on failure
-      if (snapshot) setStudents(prev => [...prev, snapshot]);
+      if (snapshot) setStudents(prev => [snapshot, ...prev]);
+      showError('छात्र रिकॉर्ड हटाने में त्रुटि! रिकॉर्ड पुनर्स्थापित कर दिया गया है।');
       console.error('Error deleting student from MongoDB:', err);
     }
   };
@@ -541,6 +552,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Fee actions (MongoDB + Optimistic)
   const markFeePaid = async (feeId: string, paymentMode: string) => {
+    const prevFee = feeRecords.find(f => f.id === feeId);
     const schoolSuffix = (currentSchool.id || 'SSM').slice(-4).toUpperCase();
     setFeeRecords(prev => prev.map(fee => {
       if (fee.id === feeId) {
@@ -559,6 +571,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       await api.payFee(feeId, paymentMode);
     } catch (err) {
+      if (prevFee) {
+        setFeeRecords(prev => prev.map(f => f.id === feeId ? prevFee : f));
+      }
+      showError('शुल्क भुगतान दर्ज करने में त्रुटि!');
       console.error('Error saving fee payment to MongoDB:', err);
     }
   };
@@ -574,7 +590,21 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err) {
       // Rollback: remove optimistically added fee record on failure
       setFeeRecords(prev => prev.filter(f => f.id !== tempId));
+      showError('शुल्क रिकॉर्ड जोड़ने में त्रुटि!');
       console.error('Error creating fee record in MongoDB:', err);
+    }
+  };
+
+  const deleteFeeRecord = async (feeId: string) => {
+    const snapshot = feeRecords.find(f => f.id === feeId);
+    setFeeRecords(prev => prev.filter(f => f.id !== feeId));
+
+    try {
+      await api.deleteFee(feeId);
+    } catch (err) {
+      if (snapshot) setFeeRecords(prev => [snapshot, ...prev]);
+      showError('शुल्क रिकॉर्ड हटाने में त्रुटि! रिकॉर्ड पुनर्स्थापित कर दिया गया है।');
+      console.error('Error deleting fee record from MongoDB:', err);
     }
   };
 
@@ -590,6 +620,18 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await api.saveReport(cardWithSchool);
     } catch (err) {
       console.error('Error saving report card to MongoDB:', err);
+    }
+  };
+
+  const deleteReportCard = async (reportId: string) => {
+    const snapshot = reportCards.find(r => r.id === reportId);
+    setReportCards(prev => prev.filter(r => r.id !== reportId));
+    try {
+      await api.deleteReport(reportId);
+    } catch (err) {
+      if (snapshot) setReportCards(prev => [snapshot, ...prev]);
+      showError('प्रगति पत्र हटाने में त्रुटि! रिकॉर्ड पुनर्स्थापित कर दिया गया है।');
+      console.error('Error deleting report card from MongoDB:', err);
     }
   };
 
@@ -609,15 +651,19 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err) {
       // Rollback: remove optimistically added notice on failure
       setNotices(prev => prev.filter(n => n.id !== tempId));
+      showError('सूचना जोड़ने में त्रुटि!');
       console.error('Error saving notice to MongoDB:', err);
     }
   };
 
   const deleteNotice = async (id: string) => {
+    const snapshot = notices.find(n => n.id === id);
     setNotices(prev => prev.filter(n => n.id !== id));
     try {
       await api.deleteNotice(id);
     } catch (err) {
+      if (snapshot) setNotices(prev => [snapshot, ...prev]);
+      showError('सूचना हटाने में त्रुटि! सूचना पुनर्स्थापित कर दी गई है।');
       console.error('Error deleting notice from MongoDB:', err);
     }
   };
@@ -655,8 +701,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         feeRecords,
         markFeePaid,
         addFeeRecord,
+        deleteFeeRecord,
         reportCards,
         addOrUpdateReportCard,
+        deleteReportCard,
         getReportCardForStudent,
         notices,
         addNotice,

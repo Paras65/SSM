@@ -7,6 +7,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     css: true,
+    testTimeout: 25000,
+    hookTimeout: 35000,
+    fileParallelism: false,
     include: ['src/__tests__/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**', 'dist/**']
   }

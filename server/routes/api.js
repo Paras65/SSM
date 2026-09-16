@@ -1115,6 +1115,29 @@ router.put('/fees/:id/pay', requireAdminAuth, requireSchoolScope, async (req, re
   }
 });
 
+router.delete('/fees/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const fee = await Fee.findOne({ id: req.params.id });
+    if (!fee) return res.status(404).json({ error: 'Fee record not found' });
+
+    if (req.user.role !== 'developer' && fee.schoolId !== req.userSchoolId) {
+      return res.status(403).json({ error: 'अन्य शाखा के शुल्क रिकॉर्ड हटाने की अनुमति नहीं है।', code: 'TENANT_FORBIDDEN' });
+    }
+
+    await Fee.deleteOne({ id: req.params.id });
+    await recordAuditLog({
+      schoolId: fee.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'FEE_RECORD_DELETED',
+      description: `शुल्क रिकॉर्ड #${fee.id} हटाया गया: छात्र #${fee.studentId}, कुल देय: ₹${fee.totalAmount}, अवधि: ${fee.term} (${fee.academicYear})`,
+      req
+    });
+    res.json({ message: 'Fee record deleted successfully', id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * Academic Session: Fee Arrears Rollover
  * Aggregates all pending/partial fee dues for students in fromAcademicYear
@@ -1210,6 +1233,26 @@ router.post('/fees/rollover-arrears', requireAdminAuth, requireSchoolScope, asyn
   }
 });
 
+router.delete('/fees/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const deleted = await Fee.findOneAndDelete({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
+    if (!deleted) return res.status(404).json({ error: 'Fee record not found' });
+    await recordAuditLog({
+      schoolId: deleted.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'FEE_RECORD_DELETED',
+      description: `शुल्क रिकॉर्ड #${deleted.id} (छात्र: ${deleted.studentId}, राशि: ₹${deleted.totalAmount || deleted.paidAmount || 0}) निरस्त किया गया।`,
+      req
+    });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ================= REPORT CARDS =================
 router.get('/reports', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
@@ -1245,6 +1288,26 @@ router.post('/reports', requireAdminAuth, requireSchoolScope, async (req, res) =
     res.json(report);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/reports/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const deleted = await ReportCard.findOneAndDelete({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
+    if (!deleted) return res.status(404).json({ error: 'Report card not found' });
+    await recordAuditLog({
+      schoolId: deleted.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'REPORT_CARD_DELETED',
+      description: `प्रगति पत्र #${deleted.id} (छात्र: ${deleted.studentId}, परीक्षा: ${deleted.examTerm}) हटाया गया।`,
+      req
+    });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -1410,6 +1473,28 @@ router.post('/homework', requireTeacherAuth, requireSchoolScope, async (req, res
     const homework = new Homework(data);
     await homework.save();
     res.status(201).json(homework);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/homework/:id', requireTeacherAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const updatePayload = { ...req.body };
+    delete updatePayload.id;
+    delete updatePayload._id;
+    delete updatePayload.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updatePayload.schoolId;
+    }
+
+    const homework = await Homework.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      updatePayload,
+      { returnDocument: 'after', runValidators: true }
+    );
+    if (!homework) return res.status(404).json({ error: 'Homework not found' });
+    res.json(homework);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
