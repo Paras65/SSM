@@ -21,7 +21,7 @@ interface AdminStaffTabProps {
   onOpenUpgradeModal: (feature: { name: string; desc?: string }) => void;
 }
 
-export const AdminStaffTab: React.FC<AdminStaffTabProps> = ({
+const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
   staffList,
   onRefresh,
   setStaffList,
@@ -378,3 +378,4 @@ export const AdminStaffTab: React.FC<AdminStaffTabProps> = ({
   );
 };
 
+export const AdminStaffTab = React.memo(AdminStaffTabComponent);

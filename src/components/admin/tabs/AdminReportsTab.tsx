@@ -17,7 +17,7 @@ interface AdminReportsTabProps {
   onOpenUpgradeModal: (feature: { name: string; desc?: string }) => void;
 }
 
-export const AdminReportsTab: React.FC<AdminReportsTabProps> = ({
+const AdminReportsTabComponent: React.FC<AdminReportsTabProps> = ({
   requirePro,
   onOpenReportModal,
   onOpenTabulationModal,
@@ -261,3 +261,4 @@ export const AdminReportsTab: React.FC<AdminReportsTabProps> = ({
   );
 };
 
+export const AdminReportsTab = React.memo(AdminReportsTabComponent);

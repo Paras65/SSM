@@ -13,7 +13,7 @@ interface AdminAdmissionsTabProps {
   onDelete: (id: string) => void;
 }
 
-export const AdminAdmissionsTab: React.FC<AdminAdmissionsTabProps> = ({
+const AdminAdmissionsTabComponent: React.FC<AdminAdmissionsTabProps> = ({
   admissions,
   onApprove,
   onDelete
@@ -152,3 +152,4 @@ export const AdminAdmissionsTab: React.FC<AdminAdmissionsTabProps> = ({
   );
 };
 
+export const AdminAdmissionsTab = React.memo(AdminAdmissionsTabComponent);

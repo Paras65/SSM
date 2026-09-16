@@ -58,7 +58,7 @@ interface AdminOverviewTabProps {
   onOpenReportModal: (modal: { report: ReportCard; student: Student }) => void;
 }
 
-export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
+const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
   isDeveloper,
   developerMetrics,
   staffCount,
@@ -582,3 +582,4 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
   );
 };
 
+export const AdminOverviewTab = React.memo(AdminOverviewTabComponent);

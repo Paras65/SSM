@@ -19,6 +19,7 @@ const feeSchema = new mongoose.Schema({
 feeSchema.index({ schoolId: 1, createdAt: -1 });
 feeSchema.index({ schoolId: 1, studentId: 1 });
 feeSchema.index({ schoolId: 1, status: 1 });
+feeSchema.index({ schoolId: 1, academicYear: 1, status: 1 });
 
 module.exports = mongoose.model('Fee', feeSchema);
 

@@ -6,7 +6,7 @@ import {
   Trash2
 } from 'lucide-react';
 
-export const AdminNoticesTab: React.FC = () => {
+const AdminNoticesTabComponent: React.FC = () => {
   const { notices, addNotice, deleteNotice } = useSchool();
 
   // New Notice form state
@@ -154,3 +154,4 @@ export const AdminNoticesTab: React.FC = () => {
   );
 };
 
+export const AdminNoticesTab = React.memo(AdminNoticesTabComponent);

@@ -16,7 +16,7 @@ interface AdminHomeworkTabProps {
   setHomeworkList: React.Dispatch<React.SetStateAction<Homework[]>>;
 }
 
-export const AdminHomeworkTab: React.FC<AdminHomeworkTabProps> = ({
+const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
   homeworkList,
   onRefresh,
   setHomeworkList
@@ -254,3 +254,4 @@ export const AdminHomeworkTab: React.FC<AdminHomeworkTabProps> = ({
   );
 };
 
+export const AdminHomeworkTab = React.memo(AdminHomeworkTabComponent);

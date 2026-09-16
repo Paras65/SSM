@@ -22,7 +22,7 @@ interface AdminAttendanceTabProps {
   onOpenWhatsAppAlert: (payload: WhatsAppAlertPayload) => void;
 }
 
-export const AdminAttendanceTab: React.FC<AdminAttendanceTabProps> = ({
+const AdminAttendanceTabComponent: React.FC<AdminAttendanceTabProps> = ({
   requirePro,
   onOpenWhatsAppAlert
 }) => {
@@ -250,3 +250,4 @@ export const AdminAttendanceTab: React.FC<AdminAttendanceTabProps> = ({
   );
 };
 
+export const AdminAttendanceTab = React.memo(AdminAttendanceTabComponent);

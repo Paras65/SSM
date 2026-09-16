@@ -31,7 +31,7 @@ interface AdminStudentsTabProps {
   onOpenBonafideCertificate: (student: Student) => void;
 }
 
-export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
+const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
   totalBhaiya,
   totalBahin,
   requirePro,
@@ -367,3 +367,4 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
   );
 };
 
+export const AdminStudentsTab = React.memo(AdminStudentsTabComponent);

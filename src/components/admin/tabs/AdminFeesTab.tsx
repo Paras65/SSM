@@ -26,7 +26,7 @@ interface AdminFeesTabProps {
   onOpenWhatsAppAlert: (payload: WhatsAppAlertPayload) => void;
 }
 
-export const AdminFeesTab: React.FC<AdminFeesTabProps> = ({
+const AdminFeesTabComponent: React.FC<AdminFeesTabProps> = ({
   totalFeeCollected,
   totalFeePending,
   requirePro,
@@ -214,3 +214,4 @@ export const AdminFeesTab: React.FC<AdminFeesTabProps> = ({
   );
 };
 
+export const AdminFeesTab = React.memo(AdminFeesTabComponent);
