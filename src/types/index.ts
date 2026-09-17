@@ -83,6 +83,7 @@ export interface Student {
   contact: string;
   address: string;
   dob: string;
+  pin?: string;
   admissionDate: string;
   bloodGroup: string;
   photoUrl?: string;

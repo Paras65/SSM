@@ -13,6 +13,7 @@ const studentSchema = new mongoose.Schema({
   contact: { type: String, required: true },
   address: { type: String, default: '' },
   dob: { type: String, default: '' },
+  pin: { type: String, default: '' },
   admissionDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
   bloodGroup: { type: String, default: 'B+' },
   photoUrl: { type: String, default: '' },

@@ -45,6 +45,9 @@ export const StudentPortal: React.FC = () => {
   const [rollNo, setRollNo] = useState('');
   const [contact, setContact] = useState('');
   const [studentClass, setStudentClass] = useState('');
+  const [pin, setPin] = useState('');
+  const [dob, setDob] = useState('');
+  const [showSecurityFields, setShowSecurityFields] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -182,13 +185,23 @@ export const StudentPortal: React.FC = () => {
     setIsLoggingIn(true);
     setLoginError('');
     try {
-      const result = await api.loginStudent(currentSchool.id, rollNo, contact, studentClass || undefined);
+      const result = await api.loginStudent(
+        currentSchool.id,
+        rollNo,
+        contact,
+        studentClass || undefined,
+        dob || undefined,
+        pin || undefined
+      );
       setSelectedStudentId(result.student.id);
       setLiveStudent(result.student);
       setIsStudentAuthenticated(true);
       fetchStudentSelfData();
     } catch (error: any) {
-      if (error.code === 'AMBIGUOUS_STUDENT_MATCH' || error.message?.includes('सहोदर') || error.message?.includes('कक्षा')) {
+      if (error.code === 'PIN_REQUIRED') {
+        setShowSecurityFields(true);
+        setLoginError('इस छात्र खाते के लिए विद्यालय द्वारा 4-अंकीय सुरक्षा पिन निर्धारित किया गया है। कृपया नीचे पिन दर्ज करें।');
+      } else if (error.code === 'AMBIGUOUS_STUDENT_MATCH' || error.message?.includes('सहोदर') || error.message?.includes('कक्षा')) {
         setLoginError('समान अनुक्रमांक व मोबाइल पर एक से अधिक छात्र पंजीकृत हैं। कृपया ऊपर अपनी कक्षा का चयन करें।');
       } else {
         setLoginError(error.message || 'छात्र विवरण सत्यापित नहीं हो सके। कृपया अनुक्रमांक व मोबाइल की जांच करें।');
@@ -254,6 +267,42 @@ export const StudentPortal: React.FC = () => {
             </div>
             <input required type="tel" value={contact} onChange={event => setContact(event.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="+91 98765 43210" />
           </div>
+
+          <div className="pt-1 border-t border-stone-100">
+            <button
+              type="button"
+              onClick={() => setShowSecurityFields(prev => !prev)}
+              className="text-xs font-semibold text-orange-700 hover:text-orange-800 flex items-center gap-1.5 cursor-pointer py-1"
+            >
+              <span className="text-[10px]">{showSecurityFields ? '▼' : '▶'}</span>
+              <span>सुरक्षा पिन / जन्म तिथि (वैकल्पिक सुरक्षा जांच)</span>
+            </button>
+            {showSecurityFields && (
+              <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-amber-50/60 rounded-xl border border-amber-200 animate-fadeIn">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">सुरक्षा पिन (PIN)</label>
+                  <input
+                    type="password"
+                    maxLength={6}
+                    value={pin}
+                    onChange={e => setPin(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white"
+                    placeholder="उदा. 1234"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">जन्म तिथि (DOB)</label>
+                  <input
+                    type="date"
+                    value={dob}
+                    onChange={e => setDob(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           <button type="submit" disabled={isLoggingIn} className="w-full py-3 rounded-xl bg-orange-700 hover:bg-orange-800 disabled:opacity-60 text-white text-sm font-bold">{isLoggingIn ? 'सत्यापन हो रहा है...' : 'सुरक्षित प्रवेश करें'}</button>
           <button type="button" onClick={() => setViewMode('public')} className="w-full py-2 text-xs font-semibold text-stone-600 hover:text-orange-700">वेबसाइट पर लौटें</button>
         </form>

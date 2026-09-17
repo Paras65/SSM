@@ -469,6 +469,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const updateStudent = async (updatedStudent: Student) => {
     const prevSnapshot = students.find(o => o.id === updatedStudent.id);
     setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+    if (updatedStudent.class && prevSnapshot && prevSnapshot.class !== updatedStudent.class) {
+      setAttendanceRecords(prev => prev.map(a => a.studentId === updatedStudent.id ? { ...a, class: updatedStudent.class } : a));
+    }
     try {
       await api.updateStudent(updatedStudent.id, {
         ...updatedStudent,
@@ -487,6 +490,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deleteStudent = async (id: string) => {
     const snapshot = students.find(s => s.id === id);
     setStudents(prev => prev.filter(s => s.id !== id));
+    setFeeRecords(prev => prev.filter(f => f.studentId !== id));
+    setAttendanceRecords(prev => prev.filter(a => a.studentId !== id));
+    setReportCards(prev => prev.filter(r => r.studentId !== id));
     try {
       await api.deleteStudent(id);
     } catch (err) {

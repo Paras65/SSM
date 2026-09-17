@@ -4,6 +4,7 @@ const Student = require('../models/Student');
 const Fee = require('../models/Fee');
 const Attendance = require('../models/Attendance');
 const ReportCard = require('../models/ReportCard');
+const Leave = require('../models/Leave');
 const { requireAdminAuth, requireTeacherAuth, requireStudentAuth, requireSchoolScope } = require('../middleware/auth');
 const { cleanStringParam, escapeRegex } = require('../middleware/sanitize');
 const { generateUniqueId, recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
@@ -167,6 +168,32 @@ router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
       { returnDocument: 'after', runValidators: true }
     );
     if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    // Cascading active synchronization across modules
+    const cascadePromises = [];
+    if (updateData.class) {
+      cascadePromises.push(
+        Attendance.updateMany(
+          { studentId: student.id, schoolId: student.schoolId },
+          { $set: { class: student.class } }
+        )
+      );
+    }
+    if (updateData.name || updateData.class) {
+      const leaveUpdate = {};
+      if (updateData.name) leaveUpdate.applicantName = student.name;
+      if (updateData.class) leaveUpdate.classOrDesignation = student.class;
+      cascadePromises.push(
+        Leave.updateMany(
+          { applicantId: student.id, applicantType: 'student', schoolId: student.schoolId },
+          { $set: leaveUpdate }
+        )
+      );
+    }
+    if (cascadePromises.length > 0) {
+      await Promise.all(cascadePromises);
+    }
+
     res.json(student);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -178,11 +205,20 @@ router.delete('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => 
   try {
     const deleted = await Student.findOneAndDelete({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!deleted) return res.status(404).json({ error: 'Student not found' });
+
+    // Transactional cascade orphan purge
+    await Promise.all([
+      Fee.deleteMany({ studentId: deleted.id, schoolId: deleted.schoolId }),
+      Attendance.deleteMany({ studentId: deleted.id, schoolId: deleted.schoolId }),
+      ReportCard.deleteMany({ studentId: deleted.id, schoolId: deleted.schoolId }),
+      Leave.deleteMany({ applicantId: deleted.id, schoolId: deleted.schoolId })
+    ]);
+
     await recordAuditLog({
       schoolId: deleted.schoolId,
       actorType: req.user?.role || 'admin',
       action: 'STUDENT_DELETED',
-      description: `छात्र #${deleted.id} (${deleted.name}, कक्षा: ${deleted.class}, अनुक्रमांक: ${deleted.rollNo}) को स्थायी रूप से हटाया गया।`,
+      description: `छात्र #${deleted.id} (${deleted.name}, कक्षा: ${deleted.class}, अनुक्रमांक: ${deleted.rollNo}) एवं सम्बद्ध अभिलेखों को स्थायी रूप से हटाया गया।`,
       req
     });
     res.json({ success: true, message: 'Student deleted', id: req.params.id });

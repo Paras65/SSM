@@ -100,11 +100,25 @@ export const api = {
     return data;
   },
 
-  async loginStudent(schoolId: string, rollNo: string, contact: string, studentClass?: string): Promise<{ success: boolean; token: string; student: Student }> {
+  async loginStudent(
+    schoolId: string,
+    rollNo: string,
+    contact: string,
+    studentClass?: string,
+    dob?: string,
+    pin?: string
+  ): Promise<{ success: boolean; token: string; student: Student }> {
     const res = await apiFetch('/auth/student-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ schoolId, rollNo, contact, ...(studentClass ? { studentClass } : {}) })
+      body: JSON.stringify({
+        schoolId,
+        rollNo,
+        contact,
+        ...(studentClass ? { studentClass } : {}),
+        ...(dob ? { dob } : {}),
+        ...(pin ? { pin } : {})
+      })
     });
     const data = await handleJsonResponse<any>(res, 'छात्र प्रमाणीकरण विफल रहा');
     sessionStorage.removeItem('ssm_admin_token');

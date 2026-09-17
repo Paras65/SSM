@@ -133,7 +133,7 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/student-login
 router.post('/student-login', async (req, res) => {
   try {
-    const { schoolId, rollNo, contact, studentClass } = req.body;
+    const { schoolId, rollNo, contact, studentClass, dob, pin } = req.body;
     if (!schoolId || !rollNo || !contact || typeof schoolId !== 'string' || typeof rollNo !== 'string' || typeof contact !== 'string') {
       return res.status(400).json({ error: 'शाखा, अनुक्रमांक और मोबाइल नंबर आवश्यक हैं।' });
     }
@@ -182,6 +182,52 @@ router.post('/student-login', async (req, res) => {
     }
 
     const student = matchingStudents[0];
+
+    // Security PIN Verification: If student has a PIN configured on their record
+    if (student.pin && typeof student.pin === 'string' && student.pin.trim().length > 0) {
+      if (!pin || typeof pin !== 'string' || !pin.trim()) {
+        return res.status(422).json({
+          error: 'इस छात्र खाते के लिए 4-अंकीय सुरक्षा पिन आवश्यक है। (Security PIN required)',
+          code: 'PIN_REQUIRED'
+        });
+      }
+      if (pin.trim() !== student.pin.trim()) {
+        await recordAuditLog({
+          schoolId: student.schoolId,
+          actorType: 'student',
+          actorId: student.id,
+          actorName: student.name,
+          action: 'STUDENT_LOGIN_FAILED_PIN',
+          description: `छात्र ${student.name} (अनुक्रमांक: ${student.rollNo}) का गलत सुरक्षा पिन दर्ज किया गया`,
+          req
+        });
+        return res.status(401).json({
+          error: 'अमान्य सुरक्षा पिन! कृपया सही 4-अंकीय पिन दर्ज करें। (Invalid security PIN)',
+          code: 'INVALID_CREDENTIALS'
+        });
+      }
+    }
+
+    // Optional DOB verification: If client provides dob and student record has dob
+    if (dob && typeof dob === 'string' && dob.trim().length > 0) {
+      const cleanReqDob = dob.trim();
+      const cleanStudentDob = (student.dob || '').trim();
+      if (cleanStudentDob && cleanReqDob !== cleanStudentDob) {
+        await recordAuditLog({
+          schoolId: student.schoolId,
+          actorType: 'student',
+          actorId: student.id,
+          actorName: student.name,
+          action: 'STUDENT_LOGIN_FAILED_DOB',
+          description: `छात्र ${student.name} (अनुक्रमांक: ${student.rollNo}) की गलत जन्म तिथि दर्ज की गई`,
+          req
+        });
+        return res.status(401).json({
+          error: 'जन्म तिथि मेल नहीं खाती! कृपया सही जन्म तिथि दर्ज करें। (Date of birth does not match)',
+          code: 'INVALID_CREDENTIALS'
+        });
+      }
+    }
 
     const token = generateAdminToken({
       schoolId: student.schoolId,
