@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { School } from '../../types';
 import {
@@ -57,10 +58,14 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   initialMode = 'list',
   initialPlan = 'free'
 }) => {
-  const { schools, currentSchool, setCurrentSchoolId, registerSchool, setViewMode } = useSchool();
+  const { schools, currentSchool, setCurrentSchoolId, registerSchool, setViewMode, updateSchoolInfo, refreshFromDb } = useSchool();
+  const { showSuccess, showError, showWarning } = useToast();
   const isDeveloper = typeof window !== 'undefined' && sessionStorage.getItem('ssm_admin_role') === 'developer';
   const [activeTab, setActiveTab] = useState<'list' | 'add'>(initialMode);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Random 6-digit secure PIN generator
+  const generateSecurePin = () => Math.floor(100000 + Math.random() * 900000).toString();
 
   // New School Form State
   const [hindiName, setHindiName] = useState('');
@@ -70,7 +75,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [prant, setPrant] = useState('गोरक्ष प्रांत');
   const [affiliationNo, setAffiliationNo] = useState('');
   const [principalName, setPrincipalName] = useState('');
-  const [adminPasscode, setAdminPasscode] = useState('1952');
+  const [adminPasscode, setAdminPasscode] = useState(generateSecurePin);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
@@ -95,8 +100,9 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       document.body.appendChild(dl);
       dl.click();
       dl.remove();
+      showSuccess('संस्थागत डेटा आर्काइव सफलतापूर्वक डाउनलोड हुआ!');
     } catch (err: any) {
-      alert('आर्काइव डाउनलोड विफल: ' + (err.message || 'त्रुटि'));
+      showError('आर्काइव डाउनलोड विफल: ' + (err.message || 'त्रुटि'));
     } finally {
       setIsExporting(false);
     }
@@ -104,18 +110,29 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
 
   const handleConfirmDiscontinue = async (schoolId: string) => {
     if (discontinueConfirmText !== 'DISCONTINUE') {
-      alert('कृपया पुष्टिकरण हेतु अंग्रेजी में "DISCONTINUE" लिखें।');
+      showWarning('कृपया पुष्टिकरण हेतु अंग्रेजी में "DISCONTINUE" लिखें।');
       return;
     }
     try {
       await api.discontinueSchool(schoolId, discontinueReason);
-      alert('शाखा सफलतापूर्वक विसर्जित कर दी गई है। सभी व्यवस्थापक सत्र समाप्त कर दिए गए हैं।');
+      showSuccess('शाखा सफलतापूर्वक विसर्जित कर दी गई है। सभी व्यवस्थापक सत्र समाप्त कर दिए गए हैं।');
       setDiscontinuingSchool(null);
       setDiscontinueConfirmText('');
       setDiscontinueReason('');
-      window.location.reload();
+      await refreshFromDb();
     } catch (err: any) {
-      alert('शाखा विसर्जन विफल: ' + (err.message || 'त्रुटि'));
+      showError('शाखा विसर्जन विफल: ' + (err.message || 'त्रुटि'));
+    }
+  };
+
+  const handleToggleSchoolPlan = async (schoolId: string, currentSchoolPlan?: string) => {
+    const newPlan = currentSchoolPlan === 'pro' ? 'free' : 'pro';
+    try {
+      await updateSchoolInfo(schoolId, { plan: newPlan });
+      showSuccess(`शाखा सदस्यता सफलतापूर्वक ${newPlan === 'pro' ? 'Pro (उन्नत)' : 'Free (निःशुल्क)'} में परिवर्तित की गई।`);
+      await refreshFromDb();
+    } catch (err: any) {
+      showError('योजना परिवर्तन विफल: ' + (err.message || 'त्रुटि'));
     }
   };
 
@@ -141,7 +158,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hindiName.trim() || !city.trim() || !principalName.trim()) {
-      alert('कृपया विद्यालय का नाम (हिंदी), नगर एवं प्रधानाचार्य का नाम अनिवार्य रूप से भरें।');
+      showWarning('कृपया विद्यालय का नाम (हिंदी), नगर एवं प्रधानाचार्य का नाम अनिवार्य रूप से भरें।');
       return;
     }
 
@@ -152,6 +169,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       const cleanNameSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
       const fallbackPrefix = cleanCitySlug || cleanNameSlug || `branch-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
       
+      const finalPasscode = adminPasscode.trim() || generateSecurePin();
       const newSchool = await registerSchool({
         name: name.trim() || hindiName.trim(),
         hindiName: hindiName.trim(),
@@ -160,7 +178,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
         prant,
         affiliationNo: affiliationNo.trim() || `VB-${fallbackPrefix.slice(0, 3).toUpperCase()}-${new Date().getFullYear()}`,
         principalName: principalName.trim(),
-        adminPasscode: adminPasscode.trim() || '1952',
+        adminPasscode: finalPasscode,
         phone: phone.trim() || '+91 94150 00000',
         email: email.trim() || `${fallbackPrefix}@ssm.edu.in`,
         address: address.trim() || `${city}, ${state}`,
@@ -172,18 +190,19 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       });
 
       setCreatedSchool(newSchool);
+      showSuccess('शाखा सफलतापूर्वक पंजीकृत एवं सक्रिय हुई!');
       // Reset form
       setHindiName('');
       setName('');
       setCity('');
       setPrincipalName('');
-      setAdminPasscode('1952');
+      setAdminPasscode(generateSecurePin());
       setPhone('');
       setEmail('');
       setAddress('');
       setPlan('free');
     } catch (err: any) {
-      alert('त्रुटि: ' + (err.message || 'पंजीकरण विफल रहा'));
+      showError('त्रुटि: ' + (err.message || 'पंजीकरण विफल रहा'));
     } finally {
       setIsSubmitting(false);
     }
@@ -588,15 +607,23 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                         <div className="relative">
                           <input
                             type="text"
-                            placeholder="डैशबोर्ड लॉगिन हेतु (उदा. 1952)"
+                            placeholder="डैशबोर्ड लॉगिन हेतु 6-अंकीय पासकोड"
                             value={adminPasscode}
                             onChange={e => setAdminPasscode(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-stone-300 bg-stone-50/40 hover:bg-white focus:bg-white text-stone-900 font-mono font-bold focus:outline-none focus:ring-3 focus:ring-orange-500/20 focus:border-orange-500 transition shadow-2xs"
+                            className="w-full pl-11 pr-24 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-stone-300 bg-stone-50/40 hover:bg-white focus:bg-white text-stone-900 font-mono font-bold focus:outline-none focus:ring-3 focus:ring-orange-500/20 focus:border-orange-500 transition shadow-2xs"
                           />
                           <KeyRound className="w-5 h-5 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <button
+                            type="button"
+                            onClick={() => setAdminPasscode(generateSecurePin())}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-800 transition cursor-pointer"
+                            title="नया सुरक्षित पासकोड जनरेट करें"
+                          >
+                            पुनः जनरेट
+                          </button>
                         </div>
                         <span className="text-xs text-stone-500 mt-1.5 block">
-                          डिफ़ॉल्ट पासकोड 1952 है। इसे बाद में भी बदला जा सकता है।
+                          सुरक्षा हेतु 6-अंकों का सुरक्षित पासकोड स्वतः जनरेट किया गया है। आवश्यकतानुसार इसे बदल सकते हैं।
                         </span>
                       </div>
                     </div>
@@ -811,6 +838,18 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                 </div>
               </div>
 
+              {!isDeveloper && (
+                <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-950 text-xs sm:text-sm flex items-start gap-3 shadow-2xs">
+                  <Building2 className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-stone-900">शाखा व्यवस्थापक क्षेत्र (Branch-Scoped View)</span>
+                    <p className="text-stone-600 mt-0.5 leading-relaxed">
+                      आप वर्तमान में अपनी अधिकृत शाखा (<strong>{currentSchool.hindiName}</strong>) देख रहे हैं। अन्य शाखाओं का केंद्रीय प्रबंधन एवं नवीन शाखा पंजीकरण विद्या भारती संगठन स्तर (Organization Developer) पर प्रबंधित है।
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Grid of School Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredSchools.map(sch => {
@@ -890,7 +929,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                       </div>
 
                       <div className="mt-5 pt-4 border-t border-stone-200 flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <button
                             type="button"
                             onClick={() => handleExportArchive(sch.id)}
@@ -901,6 +940,22 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             <Download className="w-3.5 h-3.5 text-stone-600" />
                             <span className="hidden sm:inline">डेटा आर्काइव (JSON)</span>
                           </button>
+
+                          {isDeveloper && sch.status !== 'discontinued' && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSchoolPlan(sch.id, sch.plan)}
+                              className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1 transition cursor-pointer ${
+                                sch.plan === 'pro'
+                                  ? 'border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900'
+                                  : 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900'
+                              }`}
+                              title={`क्लिक करके सदस्यता बदलें (वर्तमान: ${sch.plan === 'pro' ? 'Pro' : 'Free'})`}
+                            >
+                              <Crown className="w-3.5 h-3.5 text-amber-600" />
+                              <span>{sch.plan === 'pro' ? 'प्लान: Pro (बदलें)' : 'प्लान: Free (बदलें)'}</span>
+                            </button>
+                          )}
 
                           {isDeveloper && sch.status !== 'discontinued' && (
                             <button

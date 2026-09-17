@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import type { Homework, Staff, Exam, Timetable, LeaveRequest } from '../../types';
 import { SSM_CLASSES } from '../../types';
 import { StaffSalarySlipModal } from '../admin/StaffSalarySlipModal';
+import { exportAttendanceToCSV } from '../../utils/csvExport';
 import {
   ArrowLeft,
   Calendar,
@@ -30,13 +31,15 @@ import {
   MessageSquare,
   Lightbulb,
   Edit2,
+  Crown,
+  Lock,
   X
 } from 'lucide-react';
 
 type TeacherTab = 'attendance' | 'homework' | 'marks' | 'timetable' | 'leaves' | 'salary';
 
 export const TeacherPortal: React.FC = () => {
-  const { currentSchool, setViewMode, students, setStudentAttendance, bulkSetAttendance, getAttendanceForDate, attendanceRecords } = useSchool();
+  const { currentSchool, setViewMode, students, setStudentAttendance, bulkSetAttendance, getAttendanceForDate, attendanceRecords, reportCards, refreshFromDb } = useSchool();
   const { showSuccess, showError, showWarning } = useToast();
   const [currentTab, setCurrentTab] = useState<TeacherTab>(() => {
     try {
@@ -81,6 +84,7 @@ export const TeacherPortal: React.FC = () => {
   const [maxMarks, setMaxMarks] = useState(100);
   const [marksSaveSuccess, setMarksSaveSuccess] = useState(false);
   const [isSavingMarks, setIsSavingMarks] = useState(false);
+  const selectedExam = exams.find(e => e.id === selectedExamId);
 
   // Timetable & Leaves state
   const [timetables, setTimetables] = useState<Timetable[]>([]);
@@ -249,6 +253,10 @@ export const TeacherPortal: React.FC = () => {
       showWarning('कृपया परीक्षा चुनें।');
       return;
     }
+    if (selectedExam.isLocked) {
+      showError('यह परीक्षा संकलित एवं लॉक (Freeze) है। अंक प्रविष्टि व संशोधन बंद है।');
+      return;
+    }
     setIsSavingMarks(true);
     setMarksSaveSuccess(false);
 
@@ -269,6 +277,7 @@ export const TeacherPortal: React.FC = () => {
 
       setMarksSaveSuccess(true);
       showSuccess('कक्षा के अंक सफलतापूर्वक सुरक्षित कर दिए गए!');
+      await refreshFromDb();
       setTimeout(() => setMarksSaveSuccess(false), 3000);
     } catch (err: any) {
       showError(err.message || 'अंक सुरक्षित करने में त्रुटि।');
@@ -302,6 +311,33 @@ export const TeacherPortal: React.FC = () => {
   };
 
   const filteredStudents = students.filter(s => s.class === selectedClass);
+
+  // Sync marksState and absentStudents from reportCards when class, exam, or subject changes
+  useEffect(() => {
+    const selectedExam = exams.find(e => e.id === selectedExamId);
+    if (!selectedExam) return;
+
+    const newMarks: Record<string, number> = {};
+    const newAbsent: Record<string, boolean> = {};
+
+    filteredStudents.forEach(stu => {
+      const rc = reportCards.find(r =>
+        r.studentId === stu.id &&
+        (r.examTerm === selectedExam.term || !selectedExam.term) &&
+        (r.academicYear === selectedExam.academicYear || !selectedExam.academicYear)
+      );
+      if (rc && Array.isArray(rc.marks)) {
+        const subMark = rc.marks.find(m => m.subject.toLowerCase() === examSubject.toLowerCase());
+        if (subMark) {
+          newMarks[stu.id] = subMark.marksObtained;
+          if (subMark.maxMarks) setMaxMarks(subMark.maxMarks);
+        }
+      }
+    });
+
+    setMarksState(newMarks);
+    setAbsentStudents(newAbsent);
+  }, [selectedClass, selectedExamId, examSubject, reportCards, exams, filteredStudents.length]);
   const activeAttendanceMap = getAttendanceForDate(attendanceDate);
 
   // Derived Attendance Stats & Filter
@@ -487,6 +523,11 @@ export const TeacherPortal: React.FC = () => {
           >
             <ClipboardList className="w-4 h-4" />
             <span>वेतन पर्ची (Salary Slip)</span>
+            {currentSchool.plan !== 'pro' && (
+              <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-500/30 text-amber-200 border border-amber-400/40">
+                PRO
+              </span>
+            )}
           </button>
         </div>
       </header>
@@ -548,10 +589,10 @@ export const TeacherPortal: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex items-center gap-2 self-end">
+                <div className="flex items-center gap-2 self-end flex-wrap">
                   <button
                     onClick={() => handleMarkAllAttendance('Present')}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition"
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
                     title="इस कक्षा के सभी विद्यार्थियों को उपस्थित अंकित करें"
                   >
                     <CheckCheck className="w-4 h-4" />
@@ -559,11 +600,23 @@ export const TeacherPortal: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleMarkAllAttendance('Absent')}
-                    className="px-3.5 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-xs rounded-xl flex items-center gap-1.5 transition"
+                    className="px-3.5 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer"
                     title="इस कक्षा के सभी विद्यार्थियों को अनुपस्थित अंकित करें"
                   >
                     <XCircle className="w-4 h-4 text-red-600" />
                     <span>सभी अनुपस्थित</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      exportAttendanceToCSV(attendanceRecords, filteredStudents, attendanceDate);
+                      showSuccess(`कक्षा ${selectedClass} की ${attendanceDate} की उपस्थिति CSV डाउनलोड हो गई!`);
+                    }}
+                    className="px-3.5 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                    title="वर्तमान कक्षा एवं दिनांक की उपस्थिति CSV डाउनलोड करें"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    <span>CSV निर्यात</span>
                   </button>
                 </div>
               </div>
@@ -982,15 +1035,32 @@ export const TeacherPortal: React.FC = () => {
                 <div className="self-end">
                   <button
                     onClick={handleBulkMarksSave}
-                    disabled={isSavingMarks}
-                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                    disabled={isSavingMarks || Boolean(selectedExam?.isLocked)}
+                    className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-stone-400 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{isSavingMarks ? 'सुरक्षित हो रहा है...' : 'अंक सुरक्षित करें'}</span>
+                    {selectedExam?.isLocked ? <Lock className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                    <span>{selectedExam?.isLocked ? 'परीक्षा परिणाम लॉक है' : isSavingMarks ? 'सुरक्षित हो रहा है...' : 'अंक सुरक्षित करें'}</span>
                   </button>
                 </div>
               </div>
             </div>
+
+            {/* Lock Banner if Exam is Frozen */}
+            {selectedExam?.isLocked && (
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex items-center gap-3 text-amber-950 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700 border border-amber-300">
+                  <Lock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-amber-950">
+                    🔒 यह परीक्षा संकलित एवं लॉक (Locked) है
+                  </h4>
+                  <p className="text-xs text-amber-800 mt-0.5">
+                    प्रशासन द्वारा इस परीक्षा के अंक संकलित व सील कर दिए गए हैं। नवीन प्रविष्टि अथवा संशोधन अक्षम कर दिया गया है।
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Quick Tip for Teachers */}
             {showTips && (
@@ -1123,7 +1193,7 @@ export const TeacherPortal: React.FC = () => {
                                 type="number"
                                 min={0}
                                 max={maxMarks}
-                                disabled={isAbsent}
+                                disabled={isAbsent || Boolean(selectedExam?.isLocked)}
                                 value={isAbsent ? '' : (marksState[st.id] ?? '')}
                                 onFocus={(e) => e.target.select()}
                                 onChange={(e) => {
@@ -1148,15 +1218,16 @@ export const TeacherPortal: React.FC = () => {
                                     if (prev) (prev as HTMLInputElement).focus();
                                   }
                                 }}
-                                placeholder={isAbsent ? 'AB' : '0'}
+                                placeholder={selectedExam?.isLocked ? '🔒' : isAbsent ? 'AB' : '0'}
                                 className={`w-20 px-3 py-1.5 rounded-xl border font-bold focus:ring-2 focus:ring-orange-500 ${
-                                  isAbsent
+                                  selectedExam?.isLocked || isAbsent
                                     ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed text-center'
                                     : 'border-stone-300 bg-white'
                                 }`}
                               />
                               <button
                                 type="button"
+                                disabled={Boolean(selectedExam?.isLocked)}
                                 onClick={() => {
                                   setAbsentStudents(prev => {
                                     const nextState = !prev[st.id];
@@ -1167,11 +1238,13 @@ export const TeacherPortal: React.FC = () => {
                                   });
                                 }}
                                 className={`px-2.5 py-1 text-[10px] font-black rounded-lg border transition ${
-                                  isAbsent
+                                  selectedExam?.isLocked
+                                    ? 'opacity-40 cursor-not-allowed bg-stone-100 text-stone-400 border-stone-200'
+                                    : isAbsent
                                     ? 'bg-red-600 text-white border-red-700 shadow-xs'
                                     : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200'
                                 }`}
-                                title={isAbsent ? 'अनुपस्थित हटाया जाएगा' : 'विद्यार्थी को अनुपस्थित (AB) अंकित करें'}
+                                title={selectedExam?.isLocked ? 'परीक्षा लॉक है' : isAbsent ? 'अनुपस्थित हटाया जाएगा' : 'विद्यार्थी को अनुपस्थित (AB) अंकित करें'}
                               >
                                 {isAbsent ? 'AB ✓' : 'AB'}
                               </button>
@@ -1464,46 +1537,66 @@ export const TeacherPortal: React.FC = () => {
 
         {/* ================= TAB 6: SALARY SLIP ================= */}
         {currentTab === 'salary' && (
-          <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-stone-900">
-                  मासिक वेतन विवरण एवं पर्ची (Salary Slip)
-                </h3>
-                <p className="text-xs text-stone-500">
-                  अपने मासिक परिलब्धियों एवं कटौतियों की अधिकृत पर्ची देखें
-                </p>
+          currentSchool.plan !== 'pro' ? (
+            <div className="bg-white rounded-3xl border-2 border-amber-200 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-xs space-y-4 animate-in fade-in">
+              <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-3xl border border-amber-300">
+                <Crown className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-stone-900">
+                आचार्य वेतन पर्ची (Staff Salary Slip) - प्रो सुविधा
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-lg mx-auto">
+                डिजिटल वेतन पर्ची, भत्ते एवं ई-हस्ताक्षरित पेरोल प्रबंधन विद्या भारती प्रो सदस्यता (Pro Feature AMC) के अंतर्गत उपलब्ध है।
+                अपनी विद्यालय शाखा को प्रो में अपग्रेड करने हेतु संस्था प्रधान अथवा विद्या भारती संगठन से संपर्क करें।
+              </p>
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold">
+                  <span>वर्तमान विद्यालय योजना: निःशुल्क (Free Tier)</span>
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-stone-900">
+                    मासिक वेतन विवरण एवं पर्ची (Salary Slip)
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    अपने मासिक परिलब्धियों एवं कटौतियों की अधिकृत पर्ची देखें
+                  </p>
+                </div>
+
+                {teacherProfile && (
+                  <button
+                    onClick={() => setShowSalarySlip(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                  >
+                    प्रिंट / डाउनलोड वेतन पर्ची 📄
+                  </button>
+                )}
               </div>
 
-              {teacherProfile && (
-                <button
-                  onClick={() => setShowSalarySlip(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-                >
-                  प्रिंट / डाउनलोड वेतन पर्ची 📄
-                </button>
+              {teacherProfile ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                    <span className="block text-stone-500 font-bold uppercase text-[10px]">मूल वेतन (Basic Pay)</span>
+                    <span className="text-xl font-black text-emerald-800">₹ {teacherProfile.basicPay || 18000}</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200">
+                    <span className="block text-stone-500 font-bold uppercase text-[10px]">भत्ते (DA / HRA)</span>
+                    <span className="text-xl font-black text-blue-800">₹ {teacherProfile.daHra || 7000}</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
+                    <span className="block text-stone-500 font-bold uppercase text-[10px]">शुद्ध देय वेतन (Net Salary)</span>
+                    <span className="text-xl font-black text-orange-800">₹ {teacherProfile.monthlySalary || 25000}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400 py-4">प्रोफ़ाइल विवरण लोड हो रहा है...</p>
               )}
             </div>
-
-            {teacherProfile ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-                  <span className="block text-stone-500 font-bold uppercase text-[10px]">मूल वेतन (Basic Pay)</span>
-                  <span className="text-xl font-black text-emerald-800">₹ {teacherProfile.basicPay || 18000}</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200">
-                  <span className="block text-stone-500 font-bold uppercase text-[10px]">भत्ते (DA / HRA)</span>
-                  <span className="text-xl font-black text-blue-800">₹ {teacherProfile.daHra || 7000}</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200">
-                  <span className="block text-stone-500 font-bold uppercase text-[10px]">शुद्ध देय वेतन (Net Salary)</span>
-                  <span className="text-xl font-black text-orange-800">₹ {teacherProfile.monthlySalary || 25000}</span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-stone-400 py-4">प्रोफ़ाइल विवरण लोड हो रहा है...</p>
-            )}
-          </div>
+          )
         )}
 
       </main>

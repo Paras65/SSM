@@ -147,6 +147,7 @@ interface SchoolContextType {
   // Notices
   notices: Notice[];
   addNotice: (notice: Omit<Notice, 'id'>) => Promise<void>;
+  updateNotice: (id: string, updates: Partial<Notice>) => Promise<void>;
   deleteNotice: (id: string) => Promise<void>;
 }
 
@@ -718,6 +719,18 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const updateNotice = async (id: string, updates: Partial<Notice>) => {
+    const snapshot = notices.find(n => n.id === id);
+    setNotices(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
+    try {
+      await api.updateNotice(id, updates);
+    } catch (err) {
+      if (snapshot) setNotices(prev => prev.map(n => n.id === id ? snapshot : n));
+      showError('सूचना अपडेट करने में त्रुटि! परिवर्तन पूर्ववत कर दिए गए हैं।');
+      console.error('Error updating notice in MongoDB:', err);
+    }
+  };
+
   return (
     <SchoolContext.Provider
       value={{
@@ -759,6 +772,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         getReportCardForStudent,
         notices,
         addNotice,
+        updateNotice,
         deleteNotice
       }}
     >

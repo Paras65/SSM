@@ -324,6 +324,7 @@ MIT — [init65.co.in](https://www.init65.co.in)
 9. ✅ **School Whitelist Validation:** Enforced `School.exists({ id: data.schoolId })` on public admission submissions, returning HTTP 400 on invalid or non-existent school IDs.
 
 ### ✅ Feature 7: Daily Homework & Notice Board — REVIEWED
+### ✅ Feature 7: Daily Homework & Notice Board — RESOLVED
 
 **Gaps:**
 1. **`window.confirm()` on homework delete (line 105 in `AdminHomeworkTab.tsx`)** — raw browser confirm; needs toast replacement.
@@ -333,6 +334,14 @@ MIT — [init65.co.in](https://www.init65.co.in)
 5. **No homework WhatsApp share** — Notice board has per-notice WhatsApp button; Homework tab has no equivalent broadcast button.
 6. **`GET /api/notices` no school-scope enforcement** — If `schoolId` query param is omitted, ALL schools' notices are returned (line 10 in `notices.js`).
 7. **No notice expiry date** — Old notices stay permanently; no validity/expiry field or auto-archiving mechanism.
+**Gaps Fixed:**
+1. **`window.confirm()` on homework delete** → replaced with custom delete confirmation modal (`homeworkToDelete` state) in `AdminHomeworkTab.tsx`.
+2. **No notice edit UI** → added Edit button per notice card + full edit modal (`editingNotice` state) calling `updateNotice()` in `AdminNoticesTab.tsx`; added `PUT /:id` route in `server/routes/notices.js`; added `updateNotice()` in `api.ts` + `SchoolContext.tsx`.
+3. **No notice delete confirmation** → replaced direct `deleteNotice()` call with `setNoticeToDelete(notice)` → custom confirmation modal in `AdminNoticesTab.tsx`.
+4. **Homework status/completion tracking** → added status pill (सक्रिय/पूर्ण/अवधि पार), toggle button calling `api.updateHomework()`, and `statusFilter` dropdown (All/Active/Completed/Overdue) with overdue logic in `AdminHomeworkTab.tsx`.
+5. **No homework WhatsApp share** → added WhatsApp broadcast button per homework card in `AdminHomeworkTab.tsx`.
+6. **`GET /api/notices` no school-scope enforcement** → enforced school scoping with `req.query.schoolId || req.userSchoolId` + `activeOnly` query filter in `server/routes/notices.js`.
+7. **No notice expiry date** → added `expiresAt: { type: String }` to `Notice` model; added `expiresAt` field in create/edit form; added Active/Expired filter in `AdminNoticesTab.tsx`; added expiry badge on notice cards; added `expiresAt?: string` to `Notice` type in `src/types/index.ts`.
 
 ### ✅ Feature 8: School Operations (Timetable, Library, Transport, Inventory) — REVIEWED
 
@@ -353,17 +362,18 @@ MIT — [init65.co.in](https://www.init65.co.in)
 14. **No inventory item edit UI** — Unit price and details cannot be edited after creation.
 15. **No inventory transaction history** — No log of stock-in/stock-out movements over time.
 
-### ✅ Feature 9: Portals & Multi-Branch / Multi-Tenancy — REVIEWED
+### ✅ Feature 9: Portals & Multi-Branch / Multi-Tenancy — RESOLVED
 
-**Gaps:**
-1. **`alert()` in `SchoolManagementModal.tsx` (lines 99, 107, 112, 118, 144, 186)** — 6 raw `alert()` calls across archive export, discontinue confirm, form validation, and registration error.
-2. **Non-developer admin visibility clarity** — Non-dev admin can access `SchoolManagementModal` in `list` mode and silently sees only 1 school without explanation.
-3. **Teacher portal marks class-change desync** — Changing class in marks tab does not re-fetch students automatically; exam and class selectors can desynchronize.
-4. **Teacher portal marks concurrency & locking** — Writes to `ReportCard` via `POST /api/exams/marks-bulk` without lock status feedback or conflict resolution.
-5. **Student portal login client-side verification** — Roll No + contact + class match is validated locally against preloaded context rather than via an isolated auth endpoint.
-6. **No teacher portal attendance export** — Teachers cannot export marked attendance to CSV.
-7. **Plan gating absent in teacher portal** — Teacher portal features are not restricted by the school's active subscription tier (`free` vs `pro`).
-8. **Default admin passcode `'1952'`** — Form defaults to `'1952'` on registration, leading to easily guessable credentials if not modified.
-9. **School discontinue hard reload** — Discontinue action triggers `window.location.reload()`, clearing client state abruptly.
-10. **No plan upgrade/downgrade UI in modal** — Displays plan badges but lacks an action flow for developers to toggle tiers between `free` and `pro`.
+**Resolved Gaps:**
+1. **`alert()` in `SchoolManagementModal.tsx` replaced** — All 6 raw `alert()` calls across archive export, discontinue confirmation, validation, and registration errors replaced with `useToast()` notifications (`showError`, `showSuccess`, `showWarning`).
+2. **Non-developer admin visibility clarity** — Added prominent informational notice banner in `SchoolManagementModal.tsx` clarifying that school-level administrators are scoped to their designated branch (`currentSchool.hindiName`), and multi-branch management is reserved for organization developer mode.
+3. **Teacher portal marks class-change desync** — Added `useEffect` hook in `TeacherPortal.tsx` syncing `marksState` and `absentStudents` directly with `reportCards` when `selectedClass`, `selectedExamId`, or `examSubject` changes, and calling `refreshFromDb()` after bulk marks submission.
+4. **Teacher portal marks concurrency & locking** — Added lock status verification before `submitBulkMarks`; displays prominent lock notification banner, disables all score inputs and AB toggles, and blocks submission with error toast if `selectedExam?.isLocked`.
+5. **Student portal login & session isolation** — Auth verified via `/auth/student-login` with robust sibling ambiguity resolution (`AMBIGUOUS_STUDENT_MATCH`), live self-data loading spinner (`isStudentDataLoading`), and clean session recovery.
+6. **Teacher portal attendance CSV export** — Integrated `exportAttendanceToCSV` in `TeacherPortal.tsx` Attendance tab header with 1-click download for selected class and date.
+7. **Plan gating in teacher portal** — Added "PRO" badge to Salary Slip tab button; displays interactive Pro AMC upgrade card when non-pro schools attempt to access staff salary slip features.
+8. **Default admin passcode '1952' eliminated** — Removed hardcoded fallback `'1952'`; new branch registrations now generate a cryptographically safe random 6-digit PIN with a "पुनः जनरेट" button and clear security guidance.
+9. **School discontinue hard reload removed** — Removed `window.location.reload()`; branch discontinuation now calls `await refreshFromDb()` to reactively refresh state and toast the user cleanly.
+10. **Plan upgrade/downgrade UI in modal** — Added developer-only interactive tier toggle button on school cards allowing organization developers to switch branches between Free and Pro tiers with instant MongoDB persistence and UI feedback.
+
 

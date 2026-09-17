@@ -6,9 +6,11 @@ import { SSM_CLASSES, type Homework } from '../../../types';
 import {
   BookOpen,
   Calendar,
+  CheckCircle2,
   Clock,
   Edit3,
   Layers,
+  MessageSquare,
   Plus,
   Search,
   Sparkles,
@@ -42,6 +44,10 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
   // Filters
   const [filterClass, setFilterClass] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'Active' | 'Completed' | 'Overdue'>('ALL');
+
+  // Delete confirmation modal
+  const [homeworkToDelete, setHomeworkToDelete] = useState<Homework | null>(null);
 
   const handleCancelForm = () => {
     setEditingHwId(null);
@@ -101,14 +107,30 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
     }
   };
 
-  const handleDeleteHomework = async (id: string) => {
-    if (!confirm('क्या आप इस गृहकार्य को हटाना चाहते हैं?')) return;
+  const handleDeleteHomework = (hw: Homework) => {
+    setHomeworkToDelete(hw);
+  };
+
+  const handleConfirmDeleteHomework = async () => {
+    if (!homeworkToDelete) return;
     try {
-      await api.deleteHomework(id);
+      await api.deleteHomework(homeworkToDelete.id);
       showSuccess('गृहकार्य सफलतापूर्वक हटा दिया गया!');
-      setHomeworkList(prev => prev.filter(h => h.id !== id));
+      setHomeworkList(prev => prev.filter(h => h.id !== homeworkToDelete.id));
+      setHomeworkToDelete(null);
     } catch (err: any) {
       showError('त्रुटि: ' + err.message);
+    }
+  };
+
+  const handleToggleStatus = async (hw: Homework) => {
+    const newStatus: Homework['status'] = hw.status === 'Active' ? 'Completed' : 'Active';
+    try {
+      await api.updateHomework(hw.id, { status: newStatus });
+      setHomeworkList(prev => prev.map(h => h.id === hw.id ? { ...h, status: newStatus } : h));
+      showSuccess(newStatus === 'Completed' ? 'गृहकार्य पूर्ण चिह्नित किया गया!' : 'गृहकार्य सक्रिय किया गया!');
+    } catch (err: any) {
+      showError('स्थिति अद्यतन में त्रुटि: ' + err.message);
     }
   };
 
@@ -134,9 +156,16 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
         }
       }
 
+      // Status / overdue filter
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isOverdue = hw.dueDate && hw.dueDate < todayStr && hw.status !== 'Completed';
+      if (statusFilter === 'Overdue' && !isOverdue) return false;
+      if (statusFilter === 'Active' && (hw.status !== 'Active' || isOverdue)) return false;
+      if (statusFilter === 'Completed' && hw.status !== 'Completed') return false;
+
       return true;
     });
-  }, [homeworkList, filterClass, searchQuery]);
+  }, [homeworkList, filterClass, searchQuery, statusFilter]);
 
   // Live KPI statistics
   const stats = useMemo(() => {
@@ -328,11 +357,23 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
           ))}
         </select>
 
-        {(searchQuery || filterClass !== 'ALL') && (
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+          className="px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white font-medium"
+        >
+          <option value="ALL">सभी स्थिति (All)</option>
+          <option value="Active">सक्रिय (Active)</option>
+          <option value="Completed">पूर्ण (Completed)</option>
+          <option value="Overdue">अवधि पार (Overdue)</option>
+        </select>
+
+        {(searchQuery || filterClass !== 'ALL' || statusFilter !== 'ALL') && (
           <button
             onClick={() => {
               setSearchQuery('');
               setFilterClass('ALL');
+              setStatusFilter('ALL');
             }}
             className="text-xs font-bold text-stone-500 hover:text-stone-700 flex items-center gap-1 cursor-pointer"
           >
@@ -355,58 +396,123 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
             <p className="text-xs text-stone-400 mt-1">ऊपर दिए गए बटन से नया गृहकार्य जोड़ें।</p>
           </div>
         ) : (
-          filteredHomework.map(hw => (
-            <div
-              key={hw.id}
-              className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs hover:border-orange-300 transition flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 bg-orange-100 text-orange-800 font-bold rounded-full text-[10px]">
-                      {hw.class}
-                    </span>
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-900 font-semibold rounded text-[10px]">
-                      {hw.subject}
+          filteredHomework.map(hw => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const isOverdue = hw.dueDate && hw.dueDate < todayStr && hw.status !== 'Completed';
+            const statusLabel = hw.status === 'Completed' ? 'पूर्ण' : isOverdue ? 'अवधि पार' : 'सक्रिय';
+            const statusClass = hw.status === 'Completed'
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+              : isOverdue
+                ? 'bg-red-100 text-red-800 border-red-200'
+                : 'bg-blue-100 text-blue-800 border-blue-200';
+
+            const handleWhatsApp = () => {
+              const text = `📚 *${currentSchool.hindiName || currentSchool.name}* — गृहकार्य सूचना\n\n🏫 कक्षा: ${hw.class} | 📖 विषय: ${hw.subject}\n📌 ${hw.title}\n\n${hw.description}\n\n⏰ अंतिम तिथि: ${hw.dueDate || 'निर्धारित नहीं'}\n👩‍🏫 आचार्य: ${hw.assignedBy || ''}`;
+              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+            };
+
+            return (
+              <div
+                key={hw.id}
+                className={`bg-white p-5 rounded-2xl border shadow-2xs transition flex flex-col justify-between ${hw.status === 'Completed' ? 'opacity-70 border-stone-200' : isOverdue ? 'border-red-300 hover:border-red-400' : 'border-stone-200 hover:border-orange-300'}`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 bg-orange-100 text-orange-800 font-bold rounded-full text-[10px]">
+                        {hw.class}
+                      </span>
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 font-semibold rounded text-[10px]">
+                        {hw.subject}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded border text-[10px] font-bold ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-rose-500" />
+                      <span>देय: {hw.dueDate}</span>
                     </span>
                   </div>
-                  <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-rose-500" />
-                    <span>देय: {hw.dueDate}</span>
+
+                  <h4 className="font-bold text-stone-900 text-sm mb-1.5">{hw.title}</h4>
+                  <p className="text-xs text-stone-600 leading-relaxed bg-stone-50 p-2.5 rounded-lg border border-stone-200 whitespace-pre-wrap">
+                    {hw.description}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500">
+                  <span>
+                    आचार्य: <strong className="text-stone-800">{hw.assignedBy}</strong>
                   </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleWhatsApp}
+                      className="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 rounded font-bold text-[10px] inline-flex items-center gap-1 transition cursor-pointer"
+                      title="व्हाट्सएप पर साझा करें"
+                    >
+                      <MessageSquare className="w-3 h-3 text-emerald-700" />
+                      <span>WA</span>
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(hw)}
+                      className={`p-1 rounded transition cursor-pointer ${hw.status === 'Completed' ? 'text-emerald-500 hover:text-blue-600' : 'text-stone-400 hover:text-emerald-600'}`}
+                      title={hw.status === 'Completed' ? 'सक्रिय करें' : 'पूर्ण चिह्नित करें'}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleStartEdit(hw)}
+                      className="text-stone-400 hover:text-orange-600 p-1 rounded transition cursor-pointer"
+                      title="संपादित करें (Edit Homework)"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteHomework(hw)}
+                      className="text-stone-400 hover:text-red-600 p-1 rounded transition cursor-pointer"
+                      title="गृहकार्य हटाएं"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-
-                <h4 className="font-bold text-stone-900 text-sm mb-1.5">{hw.title}</h4>
-                <p className="text-xs text-stone-600 leading-relaxed bg-stone-50 p-2.5 rounded-lg border border-stone-200 whitespace-pre-wrap">
-                  {hw.description}
-                </p>
               </div>
-
-              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500">
-                <span>
-                  आचार्य: <strong className="text-stone-800">{hw.assignedBy}</strong>
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleStartEdit(hw)}
-                    className="text-stone-400 hover:text-orange-600 p-1 rounded transition cursor-pointer"
-                    title="संपादित करें (Edit Homework)"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteHomework(hw.id)}
-                    className="text-stone-400 hover:text-red-600 p-1 rounded transition cursor-pointer"
-                    title="Delete Homework"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {homeworkToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-red-100 rounded-full">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="text-base font-bold text-stone-900">गृहकार्य हटाएं?</h3>
+            </div>
+            <p className="text-sm text-stone-600 mb-5">
+              क्या आप <span className="font-bold text-stone-800">"{homeworkToDelete.title}"</span> ({homeworkToDelete.class} — {homeworkToDelete.subject}) को स्थायी रूप से हटाना चाहते हैं?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setHomeworkToDelete(null)}
+                className="flex-1 py-2 rounded-lg border border-stone-300 text-stone-700 font-bold text-sm hover:bg-stone-50 cursor-pointer"
+              >
+                रद्द करें
+              </button>
+              <button
+                onClick={handleConfirmDeleteHomework}
+                className="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm cursor-pointer"
+              >
+                हाँ, हटाएं
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

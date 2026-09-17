@@ -89,6 +89,8 @@ export interface Student {
   academicYear?: string;
   status?: 'active' | 'promoted' | 'alumni' | 'transferred';
   academicHistory?: StudentAcademicHistory[];
+  transportRouteId?: string;
+  transportStop?: string;
   // UDISE+ SDMS Compliance Identifiers
   pen?: string; // Permanent Education Number (11 digits, Govt of India)
   apaarId?: string; // Automated Permanent Academic Account Registry (12 digits)
@@ -175,6 +177,7 @@ export interface Notice {
   date: string;
   content: string;
   isUrgent?: boolean;
+  expiresAt?: string;
 }
 
 export interface Prayer {

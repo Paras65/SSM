@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Timetable, DaySchedule, TimetableSlot } from '../../types';
-import { X, Clock, Plus, Save, CheckCircle2 } from 'lucide-react';
+import { X, Clock, Plus, Save, CheckCircle2, Printer } from 'lucide-react';
 
 interface TimetableManagerModalProps {
   isOpen: boolean;
@@ -34,18 +35,20 @@ const DEFAULT_SLOTS: TimetableSlot[] = [
 
 export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool } = useSchool();
+  const { showSuccess, showError } = useToast();
   const CLASSES = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
+  const SECTIONS = ['A', 'B', 'C', 'D'];
   const [selectedClass, setSelectedClass] = useState('Class 8');
+  const [selectedSection, setSelectedSection] = useState('A');
   const [selectedDay, setSelectedDay] = useState<'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'>('Monday');
   
   const [scheduleState, setScheduleState] = useState<DaySchedule[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    api.getTimetable(currentSchool.id, selectedClass)
+    api.getTimetable(currentSchool.id, selectedClass, selectedSection)
       .then(data => {
         if (data && data.length > 0 && data[0].schedule?.length > 0) {
           setScheduleState(data[0].schedule);
@@ -65,7 +68,7 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
         }));
         setScheduleState(initial);
       });
-  }, [isOpen, currentSchool.id, selectedClass]);
+  }, [isOpen, currentSchool.id, selectedClass, selectedSection]);
 
   if (!isOpen) return null;
 
@@ -88,21 +91,101 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
 
   const handleSave = async () => {
     setIsSaving(true);
-    setSaveSuccess(false);
     try {
       await api.saveTimetable({
         schoolId: currentSchool.id,
         class: selectedClass,
-        section: 'A',
+        section: selectedSection,
         schedule: scheduleState
       });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      showSuccess(`समय-सारिणी (${selectedClass} - वर्ग ${selectedSection}) सफलतापूर्वक सुरक्षित हो गई!`);
     } catch (err: any) {
-      alert(err.message || 'समय-सारिणी सुरक्षित करने में त्रुटि।');
+      showError(err.message || 'समय-सारिणी सुरक्षित करने में त्रुटि।');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) return;
+
+    const dayRows = DAYS.map(day => {
+      const daySchedule = scheduleState.find(s => s.day === day);
+      const slots = daySchedule?.slots || [];
+      const slotCells = slots.map(s => `
+        <td style="border: 1px solid #d6d3d1; padding: 6px; text-align: center;">
+          <div style="font-weight: bold; color: #1c1917; font-size: 11px;">${s.subject || '-'}</div>
+          <div style="color: #78716c; font-size: 10px;">${s.teacherName || ''}</div>
+          <div style="color: #ea580c; font-size: 9px; margin-top: 2px;">${s.startTime}-${s.endTime}</div>
+        </td>
+      `).join('');
+      return `
+        <tr>
+          <th style="border: 1px solid #d6d3d1; padding: 8px; background: #fafaf9; font-weight: bold; font-size: 11px; white-space: nowrap;">
+            ${DAY_NAMES_HINDI[day]}<br/><span style="font-size: 9px; color: #78716c;">${day}</span>
+          </th>
+          ${slotCells}
+        </tr>
+      `;
+    }).join('');
+
+    const maxPeriods = Math.max(...scheduleState.map(s => s.slots.length), 7);
+    const periodHeaders = Array.from({ length: maxPeriods }, (_, i) => `
+      <th style="border: 1px solid #d6d3d1; padding: 8px; background: #fff7ed; color: #9a3412; font-size: 11px;">
+        कालांश ${i + 1}
+      </th>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>${currentSchool.hindiName || currentSchool.name} - समय-सारिणी (${selectedClass}-${selectedSection})</title>
+          <style>
+            @page { size: landscape; margin: 12mm; }
+            body { font-family: system-ui, -apple-system, sans-serif; margin: 0; color: #1c1917; padding: 16px; }
+            .header { text-align: center; border-bottom: 2px solid #ea580c; padding-bottom: 12px; margin-bottom: 16px; }
+            .school-name { font-size: 20px; font-weight: 800; color: #c2410c; }
+            .sub-title { font-size: 14px; font-weight: 600; color: #44403c; margin-top: 4px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            .footer { margin-top: 24px; display: flex; justify-content: space-between; font-size: 11px; color: #78716c; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="school-name">🚩 ${currentSchool.hindiName || currentSchool.name} 🚩</div>
+            <div class="sub-title">साप्ताहिक आदर्श समय-सारिणी (Weekly Timetable)</div>
+            <div style="font-size: 12px; color: #57534e; margin-top: 4px;">
+              कक्षा: <strong>${selectedClass}</strong> | वर्ग (Section): <strong>${selectedSection}</strong> | जारी दिनांक: ${new Date().toLocaleDateString('hi-IN')}
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="border: 1px solid #d6d3d1; padding: 8px; background: #f5f5f4; font-size: 11px;">दिन (Day)</th>
+                ${periodHeaders}
+              </tr>
+            </thead>
+            <tbody>
+              ${dayRows}
+            </tbody>
+          </table>
+          <div class="footer">
+            <span>मुद्रण दिनांक: ${new Date().toLocaleString('hi-IN')}</span>
+            <span>हस्ताक्षर: प्रधानाचार्य / समय-सारिणी प्रभारी</span>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 300);
   };
 
   return (
@@ -134,15 +217,28 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
 
         {/* Controls & Days */}
         <div className="py-3 flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 shrink-0 text-xs font-bold">
-          <div className="flex items-center gap-2">
-            <label className="text-stone-500 uppercase text-[10px]">कक्षा चुनें:</label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border border-stone-300 bg-stone-50 font-bold"
-            >
-              {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <label className="text-stone-500 uppercase text-[10px]">कक्षा:</label>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-stone-300 bg-stone-50 font-bold"
+              >
+                {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <label className="text-stone-500 uppercase text-[10px]">वर्ग (Section):</label>
+              <select
+                value={selectedSection}
+                onChange={(e) => setSelectedSection(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-stone-300 bg-stone-50 font-bold"
+              >
+                {SECTIONS.map(sec => <option key={sec} value={sec}>वर्ग {sec}</option>)}
+              </select>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-1">
@@ -150,7 +246,7 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
               <button
                 key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`px-3 py-1.5 rounded-xl transition ${
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
                   selectedDay === day
                     ? 'bg-orange-700 text-white shadow-xs'
                     : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
@@ -161,22 +257,26 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
             ))}
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{isSaving ? 'सुरक्षित हो रहा है...' : 'समय-सारिणी सेव करें'}</span>
-          </button>
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrint}
+              className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-xl flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+              title="साप्ताहिक समय-सारिणी प्रिंट करें"
+            >
+              <Printer className="w-4 h-4 text-stone-600" />
+              <span>प्रिंट (Print)</span>
+            </button>
 
-        {saveSuccess && (
-          <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>समय-सारिणी सफलतापूर्वक सुरक्षित हो गई है!</span>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition disabled:opacity-50 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>{isSaving ? 'सुरक्षित हो रहा है...' : 'समय-सारिणी सेव करें'}</span>
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Slots Table */}
         <div className="flex-1 overflow-y-auto py-4 text-xs">

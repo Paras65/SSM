@@ -53,9 +53,11 @@ export const StudentPortal: React.FC = () => {
   const [liveFees, setLiveFees] = useState<FeeRecord[]>([]);
   const [liveReports, setLiveReports] = useState<ReportCard[]>([]);
   const [liveAttendance, setLiveAttendance] = useState<AttendanceRecord[]>([]);
+  const [isStudentDataLoading, setIsStudentDataLoading] = useState(() => Boolean(sessionStorage.getItem('ssm_student_token')));
 
   const fetchStudentSelfData = useCallback(async () => {
     if (!sessionStorage.getItem('ssm_student_token')) return;
+    setIsStudentDataLoading(true);
     try {
       const data = await api.getStudentMe();
       if (data && data.student) {
@@ -66,6 +68,8 @@ export const StudentPortal: React.FC = () => {
       }
     } catch (err) {
       console.warn('Could not fetch student self data:', err);
+    } finally {
+      setIsStudentDataLoading(false);
     }
   }, []);
 
@@ -184,7 +188,11 @@ export const StudentPortal: React.FC = () => {
       setIsStudentAuthenticated(true);
       fetchStudentSelfData();
     } catch (error: any) {
-      setLoginError(error.message || 'छात्र विवरण गलत हैं।');
+      if (error.code === 'AMBIGUOUS_STUDENT_MATCH' || error.message?.includes('सहोदर') || error.message?.includes('कक्षा')) {
+        setLoginError('समान अनुक्रमांक व मोबाइल पर एक से अधिक छात्र पंजीकृत हैं। कृपया ऊपर अपनी कक्षा का चयन करें।');
+      } else {
+        setLoginError(error.message || 'छात्र विवरण सत्यापित नहीं हो सके। कृपया अनुक्रमांक व मोबाइल की जांच करें।');
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -294,38 +302,34 @@ export const StudentPortal: React.FC = () => {
       </header>
 
       {/* Main Workspace */}
-      {!currentStudent ? (
+      {isStudentDataLoading ? (
         <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-12 flex items-center justify-center">
-          <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-orange-200 shadow-xl text-center max-w-lg space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 text-orange-700 flex items-center justify-center text-3xl mx-auto shadow-xs border border-orange-200">
-              🏫
+          <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-orange-200 shadow-xl text-center max-w-md space-y-4 animate-in fade-in">
+            <div className="w-12 h-12 rounded-full border-4 border-orange-500 border-t-transparent animate-spin mx-auto" />
+            <h3 className="text-base font-bold text-stone-900">छात्र विवरण लोड हो रहा है...</h3>
+            <p className="text-xs text-stone-500">कृपया प्रतीक्षा करें, आपकी शैक्षणिक व शुल्क जानकारी संकलित की जा रही है।</p>
+          </div>
+        </main>
+      ) : !currentStudent ? (
+        <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-12 flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-red-200 shadow-xl text-center max-w-lg space-y-5 animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center text-3xl mx-auto shadow-xs border border-red-200">
+              ⚠️
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-orange-800 bg-orange-100 px-3 py-1 rounded-full border border-orange-300">
-                {currentSchool.prant} • {currentSchool.city}
-              </span>
-              <h2 className="text-xl sm:text-2xl font-black text-stone-900 mt-2.5">
-                {currentSchool.hindiName}
+              <h2 className="text-xl font-black text-stone-900">
+                छात्र सत्र समाप्त या अमान्य
               </h2>
-              <p className="text-xs text-stone-500 font-mono mt-1">
-                {currentSchool.name}
+              <p className="text-xs text-stone-500 mt-1">
+                छात्र प्रमाणीकरण सत्र समाप्त हो चुका है अथवा रिकॉर्ड उपलब्ध नहीं है।
               </p>
             </div>
-            <div className="p-4 bg-orange-50 rounded-2xl border border-orange-200 text-xs text-stone-700 leading-relaxed">
-              इस विद्यालय शाखा में अभी कोई छात्र पंजीकृत नहीं हैं। प्रशासनिक ERP में लॉगिन करके नवीन भैया/बहिन का प्रवेश दर्ज करें।
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <div className="flex justify-center pt-2">
               <button
-                onClick={() => setViewMode('admin')}
-                className="px-5 py-2.5 bg-orange-700 hover:bg-orange-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
+                onClick={handleStudentLogout}
+                className="px-5 py-2.5 bg-orange-700 hover:bg-orange-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
               >
-                प्रशासनिक ERP खोलें →
-              </button>
-              <button
-                onClick={() => setViewMode('public')}
-                className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold transition-all border border-stone-200"
-              >
-                वेबसाइट पर लौटें
+                पुनः लॉगिन करें
               </button>
             </div>
           </div>

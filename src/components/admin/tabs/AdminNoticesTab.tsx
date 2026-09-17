@@ -5,7 +5,8 @@ import {
   AlertTriangle,
   Bell,
   CheckCircle2,
-  Layers,
+  Clock,
+  Edit2,
   MessageSquare,
   Search,
   Trash2,
@@ -13,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const AdminNoticesTabComponent: React.FC = () => {
-  const { currentSchool, notices, addNotice, deleteNotice } = useSchool();
+  const { currentSchool, notices, addNotice, updateNotice, deleteNotice } = useSchool();
 
   // New Notice form state
   const [newNoticeTitle, setNewNoticeTitle] = useState('');
@@ -22,10 +23,25 @@ const AdminNoticesTabComponent: React.FC = () => {
   >('Academics');
   const [newNoticeContent, setNewNoticeContent] = useState('');
   const [newNoticeUrgent, setNewNoticeUrgent] = useState(false);
+  const [newNoticeExpiresAt, setNewNoticeExpiresAt] = useState('');
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expiryFilter, setExpiryFilter] = useState<'ALL' | 'Active' | 'Expired'>('ALL');
+
+  // Delete confirmation modal
+  const [noticeToDelete, setNoticeToDelete] = useState<Notice | null>(null);
+
+  // Edit modal
+  const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editCategory, setEditCategory] = useState<Notice['category']>('Academics');
+  const [editContent, setEditContent] = useState('');
+  const [editUrgent, setEditUrgent] = useState(false);
+  const [editExpiresAt, setEditExpiresAt] = useState('');
+
+  const today = new Date().toISOString().split('T')[0];
 
   const handleCreateNotice = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,20 +50,53 @@ const AdminNoticesTabComponent: React.FC = () => {
       title: newNoticeTitle,
       category: newNoticeCategory,
       content: newNoticeContent,
-      date: new Date().toISOString().split('T')[0],
-      isUrgent: newNoticeUrgent
+      date: today,
+      isUrgent: newNoticeUrgent,
+      ...(newNoticeExpiresAt ? { expiresAt: newNoticeExpiresAt } : {})
     });
     setNewNoticeTitle('');
     setNewNoticeContent('');
     setNewNoticeUrgent(false);
+    setNewNoticeExpiresAt('');
+  };
+
+  const openEditModal = (notice: Notice) => {
+    setEditingNotice(notice);
+    setEditTitle(notice.title);
+    setEditCategory(notice.category);
+    setEditContent(notice.content);
+    setEditUrgent(!!notice.isUrgent);
+    setEditExpiresAt(notice.expiresAt || '');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingNotice) return;
+    await updateNotice(editingNotice.id, {
+      title: editTitle,
+      category: editCategory,
+      content: editContent,
+      isUrgent: editUrgent,
+      expiresAt: editExpiresAt || undefined
+    });
+    setEditingNotice(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!noticeToDelete) return;
+    await deleteNotice(noticeToDelete.id);
+    setNoticeToDelete(null);
   };
 
   // Filtered notices
   const filteredNotices = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return notices.filter(notice => {
-      if (selectedCategory !== 'ALL' && notice.category !== selectedCategory) {
-        return false;
+      if (selectedCategory !== 'ALL' && notice.category !== selectedCategory) return false;
+      if (expiryFilter === 'Active') {
+        if (notice.expiresAt && notice.expiresAt < today) return false;
+      } else if (expiryFilter === 'Expired') {
+        if (!notice.expiresAt || notice.expiresAt >= today) return false;
       }
       if (q) {
         const matchesTitle = notice.title.toLowerCase().includes(q);
@@ -56,15 +105,15 @@ const AdminNoticesTabComponent: React.FC = () => {
       }
       return true;
     });
-  }, [notices, selectedCategory, searchQuery]);
+  }, [notices, selectedCategory, searchQuery, expiryFilter, today]);
 
   // Notice KPI stats
   const stats = useMemo(() => {
     const total = notices.length;
     const urgent = notices.filter(n => n.isUrgent).length;
-    const categories = new Set(notices.map(n => n.category)).size;
-    return { total, urgent, categories };
-  }, [notices]);
+    const expired = notices.filter(n => n.expiresAt && n.expiresAt < today).length;
+    return { total, urgent, expired };
+  }, [notices, today]);
 
   // WhatsApp Broadcast URL
   const handleShareNoticeWhatsApp = (notice: Notice) => {
@@ -83,12 +132,12 @@ const AdminNoticesTabComponent: React.FC = () => {
             <Bell className="w-3.5 h-3.5 text-stone-400" />
           </div>
           <p className="text-xl font-black text-stone-900 mt-1">{stats.total}</p>
-          <span className="text-[11px] text-stone-500 font-medium">सूचना पट्ट पर सक्रिय</span>
+          <span className="text-[11px] text-stone-500 font-medium">सूचना पट्ट पर</span>
         </div>
 
         <div className="bg-rose-50/80 p-3.5 rounded-xl border border-rose-200 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-rose-700 uppercase">अति महत्वपूर्ण (Urgent Notices)</span>
+            <span className="text-[10px] font-bold text-rose-700 uppercase">अति महत्वपूर्ण (Urgent)</span>
             <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
           </div>
           <p className="text-xl font-black text-rose-800 mt-1">{stats.urgent}</p>
@@ -97,11 +146,11 @@ const AdminNoticesTabComponent: React.FC = () => {
 
         <div className="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200 shadow-2xs col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-amber-700 uppercase">सक्रिय श्रेणियां (Categories)</span>
-            <Layers className="w-3.5 h-3.5 text-amber-600" />
+            <span className="text-[10px] font-bold text-amber-700 uppercase">समाप्त सूचनाएं (Expired)</span>
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
           </div>
-          <p className="text-xl font-black text-amber-900 mt-1">{stats.categories}</p>
-          <span className="text-[11px] text-amber-700 font-medium">विभिन्न विभागों से जारी</span>
+          <p className="text-xl font-black text-amber-900 mt-1">{stats.expired}</p>
+          <span className="text-[11px] text-amber-700 font-medium">समाप्ति तिथि बीत चुकी</span>
         </div>
       </div>
 
@@ -161,6 +210,19 @@ const AdminNoticesTabComponent: React.FC = () => {
               />
             </div>
 
+            <div>
+              <label className="block font-semibold text-stone-700 mb-1">
+                समाप्ति तिथि (Expiry Date) — वैकल्पिक
+              </label>
+              <input
+                type="date"
+                value={newNoticeExpiresAt}
+                min={today}
+                onChange={e => setNewNoticeExpiresAt(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -187,7 +249,7 @@ const AdminNoticesTabComponent: React.FC = () => {
         <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-stone-200 shadow-2xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-200">
             <h3 className="text-base font-bold text-stone-900">
-              सक्रिय सूचना पट्ट सूची ({filteredNotices.length} सूचनाएं)
+              सूचना पट्ट सूची ({filteredNotices.length} सूचनाएं)
             </h3>
           </div>
 
@@ -217,11 +279,22 @@ const AdminNoticesTabComponent: React.FC = () => {
               <option value="Vidya Bharati">विद्या भारती</option>
             </select>
 
-            {(searchQuery || selectedCategory !== 'ALL') && (
+            <select
+              value={expiryFilter}
+              onChange={e => setExpiryFilter(e.target.value as 'ALL' | 'Active' | 'Expired')}
+              className="px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white font-medium"
+            >
+              <option value="ALL">सभी (All)</option>
+              <option value="Active">सक्रिय (Active)</option>
+              <option value="Expired">समाप्त (Expired)</option>
+            </select>
+
+            {(searchQuery || selectedCategory !== 'ALL' || expiryFilter !== 'ALL') && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('ALL');
+                  setExpiryFilter('ALL');
                 }}
                 className="text-xs font-bold text-stone-500 hover:text-stone-700 flex items-center gap-1 cursor-pointer"
               >
@@ -234,55 +307,196 @@ const AdminNoticesTabComponent: React.FC = () => {
           <div className="space-y-3">
             {filteredNotices.length === 0 ? (
               <div className="p-8 text-center text-stone-400 text-xs bg-stone-50 rounded-xl border border-stone-200">
-                {searchQuery || selectedCategory !== 'ALL'
-                  ? 'खोज एवं श्रेणी के अनुरूप कोई सूचना नहीं मिली।'
-                  : 'वर्तमान में कोई सक्रिय सूचना उपलब्ध नहीं है।'}
+                {searchQuery || selectedCategory !== 'ALL' || expiryFilter !== 'ALL'
+                  ? 'खोज एवं फ़िल्टर के अनुरूप कोई सूचना नहीं मिली।'
+                  : 'वर्तमान में कोई सूचना उपलब्ध नहीं है।'}
               </div>
             ) : (
-              filteredNotices.map(notice => (
-                <div
-                  key={notice.id}
-                  className="p-4 rounded-xl border border-stone-200 bg-stone-50 flex justify-between items-start gap-4 hover:border-orange-200 transition"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800">
-                        {notice.category}
-                      </span>
-                      <span className="text-[11px] text-stone-500">{notice.date}</span>
-                      {notice.isUrgent && (
-                        <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded border border-red-200">
-                          महत्वपूर्ण
+              filteredNotices.map(notice => {
+                const isExpired = !!notice.expiresAt && notice.expiresAt < today;
+                return (
+                  <div
+                    key={notice.id}
+                    className={`p-4 rounded-xl border flex justify-between items-start gap-4 transition ${isExpired ? 'bg-stone-100 border-stone-300 opacity-70' : 'bg-stone-50 border-stone-200 hover:border-orange-200'}`}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800">
+                          {notice.category}
                         </span>
-                      )}
+                        <span className="text-[11px] text-stone-500">{notice.date}</span>
+                        {notice.isUrgent && (
+                          <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded border border-red-200">
+                            महत्वपूर्ण
+                          </span>
+                        )}
+                        {isExpired && (
+                          <span className="text-[10px] font-bold text-stone-500 bg-stone-200 px-1.5 py-0.5 rounded border border-stone-300">
+                            समाप्त
+                          </span>
+                        )}
+                        {notice.expiresAt && !isExpired && (
+                          <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                            समाप्ति: {notice.expiresAt}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-bold text-stone-900">{notice.title}</h4>
+                      <p className="text-xs text-stone-600 mt-1 line-clamp-3 whitespace-pre-wrap">{notice.content}</p>
                     </div>
-                    <h4 className="text-sm font-bold text-stone-900">{notice.title}</h4>
-                    <p className="text-xs text-stone-600 mt-1 line-clamp-3 whitespace-pre-wrap">{notice.content}</p>
-                  </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => handleShareNoticeWhatsApp(notice)}
-                      className="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 rounded font-bold text-[10px] inline-flex items-center gap-1 shadow-2xs transition cursor-pointer"
-                      title="अभिभावकों / आचार्यों के व्हाट्सएप ग्रुप में साझा करें"
-                    >
-                      <MessageSquare className="w-3 h-3 text-emerald-700" />
-                      <span>WhatsApp</span>
-                    </button>
-                    <button
-                      onClick={() => deleteNotice(notice.id)}
-                      className="text-stone-400 hover:text-red-600 p-1.5 rounded cursor-pointer"
-                      title="सूचना हटाएं"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => handleShareNoticeWhatsApp(notice)}
+                        className="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 rounded font-bold text-[10px] inline-flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                        title="व्हाट्सएप पर साझा करें"
+                      >
+                        <MessageSquare className="w-3 h-3 text-emerald-700" />
+                        <span>WhatsApp</span>
+                      </button>
+                      <button
+                        onClick={() => openEditModal(notice)}
+                        className="text-stone-400 hover:text-orange-600 p-1.5 rounded cursor-pointer"
+                        title="सूचना संपादित करें"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setNoticeToDelete(notice)}
+                        className="text-stone-400 hover:text-red-600 p-1.5 rounded cursor-pointer"
+                        title="सूचना हटाएं"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {noticeToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-red-100 rounded-full">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <h3 className="text-base font-bold text-stone-900">सूचना हटाएं?</h3>
+            </div>
+            <p className="text-sm text-stone-600 mb-5">
+              क्या आप सूचना <span className="font-bold text-stone-800">"{noticeToDelete.title}"</span> को स्थायी रूप से हटाना चाहते हैं?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setNoticeToDelete(null)}
+                className="flex-1 py-2 rounded-lg border border-stone-300 text-stone-700 font-bold text-sm hover:bg-stone-50 cursor-pointer"
+              >
+                रद्द करें
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm cursor-pointer"
+              >
+                हाँ, हटाएं
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Notice Modal */}
+      {editingNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-200">
+              <div className="flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-orange-600" />
+                <h3 className="text-base font-bold text-stone-900">सूचना संपादित करें</h3>
+              </div>
+              <button onClick={() => setEditingNotice(null)} className="text-stone-400 hover:text-stone-700 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-stone-700 mb-1">शीर्षक (Title) *</label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-stone-700 mb-1">श्रेणी (Category)</label>
+                <select
+                  value={editCategory}
+                  onChange={e => setEditCategory(e.target.value as Notice['category'])}
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="Academics">Academics (शैक्षणिक)</option>
+                  <option value="Events">Events (उत्सव)</option>
+                  <option value="Examinations">Examinations (परीक्षा)</option>
+                  <option value="Holidays">Holidays (अवकाश)</option>
+                  <option value="Vidya Bharati">Vidya Bharati (विद्या भारती)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-stone-700 mb-1">विवरण (Content) *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-stone-700 mb-1">समाप्ति तिथि (Expiry Date)</label>
+                <input
+                  type="date"
+                  value={editExpiresAt}
+                  onChange={e => setEditExpiresAt(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="edit-urgent-check"
+                  checked={editUrgent}
+                  onChange={e => setEditUrgent(e.target.checked)}
+                  className="rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
+                />
+                <label htmlFor="edit-urgent-check" className="font-semibold text-stone-700 cursor-pointer">
+                  अति महत्वपूर्ण (Urgent Notice)
+                </label>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingNotice(null)}
+                  className="flex-1 py-2 rounded-lg border border-stone-300 text-stone-700 font-bold hover:bg-stone-50 cursor-pointer"
+                >
+                  रद्द करें
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-lg bg-orange-700 hover:bg-orange-800 text-white font-bold cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4 inline mr-1" />
+                  सहेजें (Save)
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

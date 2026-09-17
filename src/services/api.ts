@@ -401,6 +401,15 @@ export const api = {
     return handleJsonResponse<Notice>(res, 'Failed to create notice');
   },
 
+  async updateNotice(id: string, updates: Partial<Notice>): Promise<Notice> {
+    const res = await apiFetch(`/notices/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    return handleJsonResponse<Notice>(res, 'Failed to update notice');
+  },
+
   async deleteNotice(id: string): Promise<{ success: boolean; id: string }> {
     const res = await apiFetch(`/notices/${id}`, {
       method: 'DELETE'

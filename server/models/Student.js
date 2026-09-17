@@ -18,6 +18,9 @@ const studentSchema = new mongoose.Schema({
   photoUrl: { type: String, default: '' },
   academicYear: { type: String, default: '2025-26', index: true },
   status: { type: String, enum: ['active', 'promoted', 'alumni', 'transferred'], default: 'active', index: true },
+  // Transport assignment
+  transportRouteId: { type: String, default: '' },
+  transportStop: { type: String, default: '' },
   // UDISE+ & Government of India Student Identifiers
   pen: { type: String, default: '', index: true },
   apaarId: { type: String, default: '' },
