@@ -22,13 +22,10 @@ import {
   Award,
   Search,
   Share2,
-  TrendingUp,
   AlertTriangle,
-  Check,
   CheckCheck,
   XCircle,
   Sun,
-  MessageSquare,
   Lightbulb,
   Edit2,
   Crown,
@@ -337,7 +334,7 @@ export const TeacherPortal: React.FC = () => {
 
     setMarksState(newMarks);
     setAbsentStudents(newAbsent);
-  }, [selectedClass, selectedExamId, examSubject, reportCards, exams, filteredStudents.length]);
+  }, [selectedClass, selectedExamId, examSubject, reportCards, exams, filteredStudents]);
   const activeAttendanceMap = getAttendanceForDate(attendanceDate);
 
   // Derived Attendance Stats & Filter
