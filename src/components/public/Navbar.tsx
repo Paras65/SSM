@@ -184,12 +184,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ईआरपी विशेषताएं
               </a>
               <a
-                href="#notices"
-                className="hover:text-orange-600 transition-colors px-2 py-1 rounded-lg hover:bg-orange-50"
-              >
-                सूचनाएं
-              </a>
-              <a
                 href="#admissions"
                 className="hover:text-orange-600 transition-colors text-orange-700 font-bold px-2 py-1 rounded-lg bg-orange-100/60 hover:bg-orange-100"
               >
@@ -593,13 +587,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="block px-3 py-2 rounded-lg bg-orange-600 text-white font-bold"
                 >
                   📝 प्रवेश हेतु आवेदन (2026-27)
-                </a>
-                <a
-                  href="#notices"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-lg hover:bg-orange-100 text-stone-900 font-semibold"
-                >
-                  📢 सूचना पट्ट (Notices)
                 </a>
                 <a
                   href="#panchang"

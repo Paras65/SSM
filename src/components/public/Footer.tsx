@@ -64,7 +64,6 @@ export const Footer: React.FC = () => {
               <li><a href="#contact" className="hover:text-orange-400 transition-colors text-amber-300 font-medium">📞 संपर्क व ईआरपी सहायता केंद्र</a></li>
               <li><a href="#panchmukhi" className="hover:text-orange-400 transition-colors">पंचमुखी शिक्षा आयाम</a></li>
               <li><a href="#vandana" className="hover:text-orange-400 transition-colors">दैनिक सरस्वती वंदना एवं मंत्र</a></li>
-              <li><a href="#notices" className="hover:text-orange-400 transition-colors">सूचनाएं एवं परीक्षा कार्यक्रम</a></li>
               <li><a href="#admissions" className="hover:text-orange-400 transition-colors">सत्र 2026-27 प्रवेश फॉर्म</a></li>
               <li><a href="#acharyas" className="hover:text-orange-400 transition-colors">आचार्य एवं दीदी जी परिचय</a></li>
               <li>

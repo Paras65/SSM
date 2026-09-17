@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { SchoolProvider, useSchool } from './context/SchoolContext';
 import { Navbar } from './components/public/Navbar';
 import { Hero } from './components/public/Hero';
-import { NoticeBoard } from './components/public/NoticeBoard';
 import { DailyPanchang } from './components/public/DailyPanchang';
 import { AboutSection } from './components/public/AboutSection';
 import { PanchmukhiShiksha } from './components/public/PanchmukhiShiksha';
@@ -196,7 +195,6 @@ const SchoolApp: React.FC = () => {
               onOpenLogin={handleOpenLogin}
             />
             <DailyPanchang />
-            <NoticeBoard />
             <AdmissionInquiry />
             <AboutSection onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)} />
             <PanchmukhiShiksha />
