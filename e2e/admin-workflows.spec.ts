@@ -18,29 +18,36 @@ test.describe('Admin Workspace & Interactive Workflows', () => {
     await page.waitForLoadState('domcontentloaded');
   });
 
-  test('1. Tab Navigation: switches seamlessly between Overview, Students, and Fees', async ({ page }) => {
+  test('1. Tab Navigation: switches seamlessly between Overview, Students, and Fees', async ({ page, isMobile }) => {
     // Switch to Student Directory tab
-    const studentsTab = page.locator('button:has-text("छात्र पंजिका")');
-    await expect(studentsTab).toBeVisible();
-    await studentsTab.click();
+    if (isMobile) {
+      await page.locator('#mobile-admin-section').selectOption('students');
+    } else {
+      await page.locator('button:has-text("छात्र पंजिका")').click();
+    }
 
     // Verify search input in student directory
     const searchInput = page.locator('input[placeholder*="खोजें"]');
     await expect(searchInput).toBeVisible();
 
     // Switch to Fees tab
-    const feesTab = page.locator('button:has-text("शुल्क प्रबंधन")');
-    await expect(feesTab).toBeVisible();
-    await feesTab.click();
+    if (isMobile) {
+      await page.locator('#mobile-admin-section').selectOption('fees');
+    } else {
+      await page.locator('button:has-text("शुल्क प्रबंधन")').click();
+    }
 
     // Verify Fee structure header or receipt button
-    const feeHeading = page.locator('text=शुल्क').first();
+    const feeHeading = page.locator('h3:has-text("शुल्क")').first();
     await expect(feeHeading).toBeVisible();
   });
 
-  test('2. Student Search Filter: dynamically filters without errors', async ({ page }) => {
-    const studentsTab = page.locator('button:has-text("छात्र पंजिका")');
-    await studentsTab.click();
+  test('2. Student Search Filter: dynamically filters without errors', async ({ page, isMobile }) => {
+    if (isMobile) {
+      await page.locator('#mobile-admin-section').selectOption('students');
+    } else {
+      await page.locator('button:has-text("छात्र पंजिका")').click();
+    }
 
     const searchInput = page.locator('input[placeholder*="खोजें"]');
     await searchInput.fill('अंशिका');
@@ -50,9 +57,12 @@ test.describe('Admin Workspace & Interactive Workflows', () => {
     await expect(searchInput).toHaveValue('अंशिका');
   });
 
-  test('3. Timetable Section: interactive timetable renders on Overview tab', async ({ page }) => {
-    const overviewTab = page.locator('button:has-text("मुख्य पृष्ठ")');
-    await overviewTab.click();
+  test('3. Timetable Section: interactive timetable renders on Overview tab', async ({ page, isMobile }) => {
+    if (isMobile) {
+      await page.locator('#mobile-admin-section').selectOption('overview');
+    } else {
+      await page.locator('button:has-text("मुख्य पृष्ठ")').click();
+    }
 
     // Verify daily timetable header
     const timetableHeader = page.locator('text=दैनिक कक्षा समय-सारणी').first();

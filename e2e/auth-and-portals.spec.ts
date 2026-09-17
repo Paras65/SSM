@@ -26,10 +26,10 @@ test.describe('Portal Authentication & Navigation Flows', () => {
     const teacherBtn = page.locator('button:has-text("आचार्य पोर्टल")').first();
     if (await teacherBtn.isVisible()) {
       await teacherBtn.click();
-      const modal = page.locator('text=आचार्य एवं दीदी जी प्रवेश');
+      const modal = page.locator('text=आचार्य / दीदी लॉगिन');
       await expect(modal).toBeVisible();
 
-      const phoneInput = page.locator('input[type="tel"]');
+      const phoneInput = page.locator('input[placeholder="उदा. 9876543210"]');
       await expect(phoneInput).toBeVisible();
     }
   });
