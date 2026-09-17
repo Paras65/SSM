@@ -16,7 +16,7 @@ const studentSchema = new mongoose.Schema({
   pin: { type: String, default: '' },
   admissionDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
   bloodGroup: { type: String, default: 'B+' },
-  photoUrl: { type: String, default: '' },
+  photoUrl: { type: String, default: '', maxlength: 100000 },
   academicYear: { type: String, default: '2025-26', index: true },
   status: { type: String, enum: ['active', 'promoted', 'alumni', 'transferred'], default: 'active', index: true },
   // Transport assignment

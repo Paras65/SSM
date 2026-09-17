@@ -18,6 +18,8 @@ const homeworkSchema = new mongoose.Schema({
 
 homeworkSchema.index({ schoolId: 1, class: 1, date: -1 });
 homeworkSchema.index({ schoolId: 1, date: -1 });
+// TTL index: automatically prune old homework older than 120 days to prevent collection bloat
+homeworkSchema.index({ createdAt: 1 }, { expireAfterSeconds: 120 * 24 * 60 * 60 });
 
 module.exports = mongoose.model('Homework', homeworkSchema);
 
