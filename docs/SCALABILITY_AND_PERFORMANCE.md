@@ -101,11 +101,7 @@ All read operations employ `.lean()`, returning plain JavaScript objects rather 
 - Opt-in pagination (`?paginated=true&page=1&limit=50`) automatically injects standard pagination response headers: `X-Total-Count`, `X-Page`, `X-Per-Page`, `X-Total-Pages`.
 
 ### Rate Limiting & DoS Protection
-Sliding-window IP rate limiters protect authentication endpoints against brute force attacks and request floods:
-- `/api/auth/login`: 10 attempts / 15 minutes
-- `/api/auth/teacher-login`: 8 attempts / 15 minutes
-- `/api/auth/student-login`: 8 attempts / 15 minutes
-- `/api/admissions`: 20 submissions / 15 minutes
+Automated sliding-window IP rate limiting is strictly enforced across all authentication portals (Admin, Teacher, and Student) as well as public admission inquiry submission channels to safeguard the platform against automated brute-force attempts, credential stuffing, and request floods.
 
 ---
 
