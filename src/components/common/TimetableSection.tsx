@@ -31,14 +31,21 @@ const WEEKDAYS = [
 ];
 
 const CLASSES = [
+  'अरुण (Nursery)',
+  'उदय (LKG)',
+  'प्रभात (Prep)',
+  'कक्षा 1 (Class 1)',
+  'कक्षा 2 (Class 2)',
+  'कक्षा 3 (Class 3)',
+  'कक्षा 4 (Class 4)',
+  'कक्षा 5 (Class 5)',
   'कक्षा 6 (Class 6)',
   'कक्षा 7 (Class 7)',
   'कक्षा 8 (Class 8)',
   'कक्षा 9 (Class 9)',
   'कक्षा 10 (Class 10)',
-  'अरुण (Nursery)',
-  'उदय (LKG)',
-  'प्रभात (Prep)'
+  'कक्षा 11 (Class 11)',
+  'कक्षा 12 (Class 12)'
 ];
 
 export const TimetableSection: React.FC = () => {

@@ -21,7 +21,8 @@ import {
   FileSpreadsheet,
   Shield,
   Sparkles,
-  Lock
+  Lock,
+  MessageSquare
 } from 'lucide-react';
 
 interface AdminOverviewTabProps {
@@ -245,70 +246,118 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Total Students */}
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => onNavigateTab('students')}
+          className="w-full text-left bg-white p-5 rounded-2xl border border-stone-200 shadow-xs hover:border-orange-300 hover:shadow-md transition-all cursor-pointer group"
+          title="छात्र पंजिका अनुभाग खोलें"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">कुल छात्र संख्या</span>
-            <div className="p-2 rounded-xl bg-orange-100 text-orange-700">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider group-hover:text-orange-700 transition-colors">
+              कुल छात्र संख्या
+            </span>
+            <div className="p-2 rounded-xl bg-orange-100 text-orange-700 group-hover:scale-110 transition-transform">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-stone-900">{totalStudents}</span>
-            <div className="flex gap-2 text-xs text-stone-600 mt-1">
-              <span className="text-blue-700 font-semibold">{totalBhaiya} भैया</span>
-              <span>•</span>
-              <span className="text-pink-700 font-semibold">{totalBahin} बहिन</span>
+          <div className="mt-3 flex items-baseline justify-between">
+            <div>
+              <span className="text-3xl font-black text-stone-900">{totalStudents}</span>
+              <div className="flex gap-2 text-xs text-stone-600 mt-1">
+                <span className="text-blue-700 font-semibold">{totalBhaiya} भैया</span>
+                <span>•</span>
+                <span className="text-pink-700 font-semibold">{totalBahin} बहिन</span>
+              </div>
             </div>
+            <span className="text-xs font-bold text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity">
+              देखें →
+            </span>
           </div>
-        </div>
+        </button>
 
         {/* Attendance Today */}
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => onNavigateTab('attendance')}
+          className="w-full text-left bg-white p-5 rounded-2xl border border-stone-200 shadow-xs hover:border-green-300 hover:shadow-md transition-all cursor-pointer group"
+          title="दैनिक उपस्थिति अनुभाग खोलें"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">आज की उपस्थिति</span>
-            <div className="p-2 rounded-xl bg-green-100 text-green-700">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider group-hover:text-green-700 transition-colors">
+              आज की उपस्थिति
+            </span>
+            <div className="p-2 rounded-xl bg-green-100 text-green-700 group-hover:scale-110 transition-transform">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-stone-900">{attendanceRate}%</span>
-            <p className="text-xs text-stone-500 mt-1">
-              {presentCount} उपस्थित / {totalStudents} कुल नामांकित
-            </p>
+          <div className="mt-3 flex items-baseline justify-between">
+            <div>
+              <span className="text-3xl font-black text-stone-900">{attendanceRate}%</span>
+              <p className="text-xs text-stone-500 mt-1">
+                {presentCount} उपस्थित / {totalStudents} कुल नामांकित
+              </p>
+            </div>
+            <span className="text-xs font-bold text-green-600 opacity-0 group-hover:opacity-100 transition-opacity">
+              देखें →
+            </span>
           </div>
-        </div>
+        </button>
 
         {/* Fee Collection */}
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => onNavigateTab('fees')}
+          className="w-full text-left bg-white p-5 rounded-2xl border border-stone-200 shadow-xs hover:border-amber-300 hover:shadow-md transition-all cursor-pointer group"
+          title="शुल्क प्रबंधन व रसीद अनुभाग खोलें"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">शुल्क संग्रह (सत्र)</span>
-            <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider group-hover:text-amber-800 transition-colors">
+              शुल्क संग्रह (सत्र)
+            </span>
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-700 group-hover:scale-110 transition-transform">
               <Receipt className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <span className="text-2xl font-black text-orange-800">₹ {totalFeeCollected.toLocaleString()}</span>
-            <p className="text-xs text-red-600 mt-1 font-medium">
-              शेष शुल्क: ₹ {totalFeePending.toLocaleString()}
-            </p>
+          <div className="mt-3 flex items-baseline justify-between">
+            <div>
+              <span className="text-2xl font-black text-orange-800">₹ {totalFeeCollected.toLocaleString()}</span>
+              <p className="text-xs text-red-600 mt-1 font-medium">
+                शेष शुल्क: ₹ {totalFeePending.toLocaleString()}
+              </p>
+            </div>
+            <span className="text-xs font-bold text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity">
+              देखें →
+            </span>
           </div>
-        </div>
+        </button>
 
         {/* Acharyas & Didis */}
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => onNavigateTab('staff')}
+          className="w-full text-left bg-white p-5 rounded-2xl border border-stone-200 shadow-xs hover:border-purple-300 hover:shadow-md transition-all cursor-pointer group"
+          title="आचार्य एवं कर्मचारी पंजिका खोलें"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">आचार्य व दीदी गण</span>
-            <div className="p-2 rounded-xl bg-purple-100 text-purple-700">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider group-hover:text-purple-700 transition-colors">
+              आचार्य व दीदी गण
+            </span>
+            <div className="p-2 rounded-xl bg-purple-100 text-purple-700 group-hover:scale-110 transition-transform">
               <GraduationCap className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <span className="text-3xl font-black text-stone-900">{staffCount}</span>
-            <p className="text-xs text-stone-500 mt-1">
-              समर्पित शिक्षक एवं प्रशिक्षक
-            </p>
+          <div className="mt-3 flex items-baseline justify-between">
+            <div>
+              <span className="text-3xl font-black text-stone-900">{staffCount}</span>
+              <p className="text-xs text-stone-500 mt-1">
+                समर्पित शिक्षक एवं प्रशिक्षक
+              </p>
+            </div>
+            <span className="text-xs font-bold text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity">
+              देखें →
+            </span>
           </div>
-        </div>
+        </button>
 
       </div>
 
@@ -545,28 +594,57 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
                       </td>
                       <td className="p-2.5 text-stone-600">{student.class} - {student.section}</td>
                       <td className="p-2.5 text-stone-600">{student.fatherName}</td>
-                      <td className="p-2.5 text-stone-600">{student.contact}</td>
+                      <td className="p-2.5 text-stone-600">
+                        {student.contact ? (
+                          <a
+                            href={`https://wa.me/91${student.contact.replace(/\D/g, '')}?text=${encodeURIComponent(
+                              `नमस्ते जी, सरस्वती शिशु मंदिर (${currentSchool.hindiName || currentSchool.name}) से संपर्क कर रहे हैं। छात्र: ${student.name}, कक्षा: ${student.class}।`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-stone-700 hover:text-emerald-700 font-medium group/wa transition-colors"
+                            title="व्हाट्सएप पर संदेश भेजें"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-600 group-hover/wa:scale-110 transition-transform" />
+                            <span>{student.contact}</span>
+                          </a>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
                       <td className="p-2.5 text-right">
-                        <button
-                          onClick={() => {
-                            requirePro(
-                              '360° समग्र प्रगति पत्र (Report Card)',
-                              'डिजिटल प्रगति पत्र देखने एवं मुद्रण हेतु प्रो योजना सक्रिय करें।',
-                              () => {
-                                const report = reportCards.find(r => r.studentId === student.id);
-                                if (report) {
-                                  onOpenReportModal({ report, student });
-                                } else {
-                                  showInfo(`'${student.name}' का प्रगति पत्र अभी जनरेट नहीं किया गया है।`);
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onNavigateTab('fees')}
+                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-colors"
+                            title="शुल्क जमा काउंटर खोलें"
+                          >
+                            <Receipt className="w-3 h-3 text-emerald-700" />
+                            <span>शुल्क</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              requirePro(
+                                '360° समग्र प्रगति पत्र (Report Card)',
+                                'डिजिटल प्रगति पत्र देखने एवं मुद्रण हेतु प्रो योजना सक्रिय करें।',
+                                () => {
+                                  const report = reportCards.find(r => r.studentId === student.id);
+                                  if (report) {
+                                    onOpenReportModal({ report, student });
+                                  } else {
+                                    showInfo(`'${student.name}' का प्रगति पत्र अभी जनरेट नहीं किया गया है।`);
+                                  }
                                 }
-                              }
-                            );
-                          }}
-                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-orange-800 rounded font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>प्रगति पत्र</span>
-                          {!isPro && <Lock className="w-2.5 h-2.5 text-amber-700" />}
-                        </button>
+                              );
+                            }}
+                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-orange-800 border border-amber-200 rounded font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <span>प्रगति पत्र</span>
+                            {!isPro && <Lock className="w-2.5 h-2.5 text-amber-700" />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
