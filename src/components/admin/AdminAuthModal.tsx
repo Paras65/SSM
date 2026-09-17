@@ -87,18 +87,39 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
                   विद्यालय शाखा चुनें (Select School Branch)
                 </label>
                 <div className="relative">
-                  <select
-                    value={currentSchool.id}
-                    onChange={(e) => setCurrentSchoolId(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 bg-stone-50/70 focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer truncate"
-                  >
-                    {schools.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {s.hindiName || s.name} ({s.city})
-                      </option>
-                    ))}
-                  </select>
-                  <Building2 className="w-4 h-4 text-orange-600 absolute left-3 top-3 pointer-events-none" />
+                  {schools.length === 0 ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+                      <p className="font-bold mb-1">अभी कोई विद्यालय पंजीकृत नहीं है।</p>
+                      <p className="text-[11px] text-amber-700">कृपया पहले मुख्य पृष्ठ से अपना विद्यालय पंजीकृत करें।</p>
+                      {onOpenSignUp && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onOpenSignUp('free');
+                          }}
+                          className="mt-2 w-full py-1.5 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-xs transition cursor-pointer"
+                        >
+                          🚀 नया विद्यालय पंजीकृत करें
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        value={currentSchool.id}
+                        onChange={(e) => setCurrentSchoolId(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 bg-stone-50/70 focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer truncate"
+                      >
+                        {schools.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.hindiName || s.name} ({s.city})
+                          </option>
+                        ))}
+                      </select>
+                      <Building2 className="w-4 h-4 text-orange-600 absolute left-3 top-3 pointer-events-none" />
+                    </>
+                  )}
                 </div>
               </>
             )}

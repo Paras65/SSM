@@ -68,17 +68,23 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({ isOpen, onCl
             <label className="block font-bold text-stone-700 mb-1">
               विद्यालय शाखा (Branch)
             </label>
-            <select
-              value={currentSchool.id}
-              onChange={(e) => setCurrentSchoolId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-stone-300 bg-stone-50 text-stone-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              {schools.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.hindiName} ({s.city})
-                </option>
-              ))}
-            </select>
+            {schools.length === 0 ? (
+              <p className="text-xs text-stone-500 italic p-3 bg-stone-100 border border-stone-200 rounded-xl">
+                वर्तमान में कोई विद्यालय शाखा पंजीकृत नहीं है।
+              </p>
+            ) : (
+              <select
+                value={currentSchool.id}
+                onChange={(e) => setCurrentSchoolId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-stone-300 bg-stone-50 text-stone-800 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {schools.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.hindiName} ({s.city})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>

@@ -17,7 +17,16 @@ const { generateUniqueId, recordAuditLog } = require('../utils/routeHelpers');
 // GET /api/schools - List all schools (public directory)
 router.get('/', async (req, res) => {
   try {
-    const schools = await School.find().select('-adminPasscode').sort({ established: 1, createdAt: 1 }).lean();
+    const rawSchools = await School.find({ status: { $ne: 'discontinued' } })
+      .select('-adminPasscode')
+      .sort({ established: 1, createdAt: 1 })
+      .lean();
+
+    // Deduplicate schools by unique ID or matching (name + city)
+    const schools = rawSchools.filter((s, idx, arr) =>
+      idx === arr.findIndex(x => x.id === s.id || ((x.hindiName === s.hindiName || x.name === s.name) && x.city === s.city))
+    );
+
     res.json(schools);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -42,6 +51,23 @@ router.post('/', async (req, res) => {
     if (!data.hindiName || !data.city) {
       return res.status(400).json({ error: 'विद्यालय का नाम और नगर अनिवार्य है।' });
     }
+
+    // Prevent duplicate school registration in same city
+    const existing = await School.findOne({
+      $or: [
+        { hindiName: data.hindiName.trim(), city: data.city.trim() },
+        { name: data.name.trim(), city: data.city.trim() }
+      ],
+      status: { $ne: 'discontinued' }
+    }).lean();
+
+    if (existing) {
+      return res.status(409).json({
+        error: `यह विद्यालय शाखा (${data.hindiName || data.name}, ${data.city}) पहले से पंजीकृत है।`,
+        code: 'DUPLICATE_SCHOOL'
+      });
+    }
+
     if (!data.id) {
       const rawSlug = (data.name || data.city || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const citySlug = rawSlug.length > 0 ? rawSlug.slice(0, 15) : 'branch';

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import { INITIAL_ACHARYAS } from '../../data/mockData';
 import { api } from '../../services/api';
 import type { Staff } from '../../types';
 import { Users, Sparkles, Award, GraduationCap, BookOpen, Heart } from 'lucide-react';
