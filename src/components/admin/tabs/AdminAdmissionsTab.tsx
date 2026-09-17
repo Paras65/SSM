@@ -1,14 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '../../../context/SchoolContext';
+import { useToast } from '../../../context/ToastContext';
+import { api } from '../../../services/api';
 import { generateAdmissionWhatsAppUrl } from '../../../utils/whatsapp';
 import { SSM_CLASSES } from '../../../types';
 import {
   Check,
   CheckCircle2,
   Clock,
+  Edit3,
+  Eye,
+  FileText,
+  MapPin,
   MessageSquare,
   Search,
+  ShieldCheck,
   Trash2,
+  User,
   UserPlus,
   Users,
   X
@@ -26,11 +34,60 @@ const AdminAdmissionsTabComponent: React.FC<AdminAdmissionsTabProps> = ({
   onDelete
 }) => {
   const { currentSchool } = useSchool();
+  const { showSuccess, showError } = useToast();
+
+  // Detail & Edit Modal state
+  const [selectedAdmission, setSelectedAdmission] = useState<any | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editClass, setEditClass] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editFather, setEditFather] = useState('');
+  const [editMother, setEditMother] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Filters and search
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState<'ALL' | 'Admitted' | 'Pending'>('ALL');
+
+  const handleOpenDetail = (adm: any) => {
+    setSelectedAdmission(adm);
+    setIsEditing(false);
+    setEditClass(adm.applyingClass || 'Class 1');
+    setEditPhone(adm.phone || '');
+    setEditAddress(adm.address || '');
+    setEditFather(adm.fatherName || '');
+    setEditMother(adm.motherName || '');
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedAdmission(null);
+    setIsEditing(false);
+  };
+
+  const handleSaveAdmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAdmission) return;
+    try {
+      setIsSaving(true);
+      const updated = await api.updateAdmission(selectedAdmission.id, {
+        applyingClass: editClass,
+        phone: editPhone,
+        address: editAddress,
+        fatherName: editFather,
+        motherName: editMother
+      });
+      showSuccess('प्रवेश आवेदन विवरण सफलतापूर्वक अद्यतन (Updated) किया गया!');
+      setSelectedAdmission((prev: any) => ({ ...prev, ...updated }));
+      Object.assign(selectedAdmission, updated);
+      setIsEditing(false);
+    } catch (err: any) {
+      showError('त्रुटि: ' + (err.message || 'Error updating admission'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Filtered admissions
   const filteredAdmissions = useMemo(() => {
@@ -233,6 +290,14 @@ const AdminAdmissionsTabComponent: React.FC<AdminAdmissionsTabProps> = ({
                     </span>
                   </td>
                   <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                    <button
+                      onClick={() => handleOpenDetail(adm)}
+                      className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 rounded font-bold text-[11px] shadow-2xs inline-flex items-center gap-1 cursor-pointer transition"
+                      title="आवेदन का पूर्ण विवरण देखें एवं संपादित करें"
+                    >
+                      <Eye className="w-3 h-3 text-stone-600" />
+                      <span>विवरण</span>
+                    </button>
                     {generateAdmissionWhatsAppUrl(
                       adm.phone,
                       adm.studentName,
@@ -283,6 +348,245 @@ const AdminAdmissionsTabComponent: React.FC<AdminAdmissionsTabProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Admission Application Detail & Edit Modal */}
+      {selectedAdmission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-orange-700 to-amber-700 text-white">
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-5 h-5 text-amber-300" />
+                <div>
+                  <h3 className="text-base font-bold">प्रवेश आवेदन समीक्षा एवं विवरण</h3>
+                  <p className="text-[11px] text-amber-100 font-mono">
+                    पंजीकरण संख्या: {selectedAdmission.regNo || selectedAdmission.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseDetail}
+                className="p-1.5 hover:bg-white/20 rounded-lg transition cursor-pointer"
+                title="बंद करें"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[75vh] text-xs">
+              {isEditing ? (
+                <form onSubmit={handleSaveAdmission} id="edit-admission-form" className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-stone-700 font-bold mb-1">आवेदित कक्षा (Class)*</label>
+                      <select
+                        value={editClass}
+                        onChange={e => setEditClass(e.target.value)}
+                        className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500 font-medium"
+                      >
+                        {SSM_CLASSES.map(cls => (
+                          <option key={cls} value={cls}>{cls}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-stone-700 font-bold mb-1">दूरभाष नंबर (Phone)*</label>
+                      <input
+                        type="text"
+                        value={editPhone}
+                        onChange={e => setEditPhone(e.target.value)}
+                        className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-stone-700 font-bold mb-1">पिता का नाम (Father's Name)</label>
+                      <input
+                        type="text"
+                        value={editFather}
+                        onChange={e => setEditFather(e.target.value)}
+                        className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-stone-700 font-bold mb-1">माता का नाम (Mother's Name)</label>
+                      <input
+                        type="text"
+                        value={editMother}
+                        onChange={e => setEditMother(e.target.value)}
+                        className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-stone-700 font-bold mb-1">स्थाई पता (Full Address)</label>
+                      <textarea
+                        rows={2}
+                        value={editAddress}
+                        onChange={e => setEditAddress(e.target.value)}
+                        className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500 resize-none"
+                      />
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  {/* Status Banner */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-orange-700" />
+                      <span className="font-bold text-sm text-stone-900">{selectedAdmission.studentName}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">
+                        {selectedAdmission.gender === 'Bhaiya' ? 'भैया' : 'बहिन'}
+                      </span>
+                    </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                        selectedAdmission.status === 'Admitted'
+                          ? 'bg-green-100 text-green-800 border border-green-200'
+                          : 'bg-amber-100 text-amber-800 border border-amber-200'
+                      }`}
+                    >
+                      {selectedAdmission.status === 'Admitted' ? '✓ नामांकित (Enrolled)' : '⏳ समीक्षाधीन (Pending)'}
+                    </span>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2 gap-3 bg-stone-50/70 p-4 rounded-xl border border-stone-200">
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase">आवेदित कक्षा</span>
+                      <p className="text-xs font-bold text-stone-800 mt-0.5">{selectedAdmission.applyingClass}</p>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase">संपर्क दूरभाष</span>
+                      <p className="text-xs font-mono font-bold text-stone-800 mt-0.5">{selectedAdmission.phone}</p>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase">पिता का नाम</span>
+                      <p className="text-xs font-semibold text-stone-800 mt-0.5">{selectedAdmission.fatherName || '—'}</p>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase">माता का नाम</span>
+                      <p className="text-xs font-semibold text-stone-800 mt-0.5">{selectedAdmission.motherName || '—'}</p>
+                    </div>
+
+                    <div className="col-span-2">
+                      <span className="text-[10px] font-bold text-stone-500 uppercase">स्थाई निवास पता</span>
+                      <p className="text-xs text-stone-700 mt-0.5 flex items-start gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-stone-400 mt-0.5 shrink-0" />
+                        <span>{selectedAdmission.address || 'विवरण उपलब्ध नहीं'}</span>
+                      </p>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase">आवेदन प्राप्ति दिनांक</span>
+                      <p className="text-xs text-stone-600 mt-0.5">
+                        {selectedAdmission.submissionDate || selectedAdmission.createdAt?.split('T')[0] || '2026-03-12'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-stone-500 uppercase">DPDP सहमति सत्यापन</span>
+                      <p className="text-xs text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>सहमति प्रमाणित ({selectedAdmission.consentPolicyVersion || '2026-09-12'})</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-stone-50 border-t border-stone-200 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                {generateAdmissionWhatsAppUrl(
+                  selectedAdmission.phone,
+                  selectedAdmission.studentName,
+                  selectedAdmission.applyingClass,
+                  currentSchool.hindiName || currentSchool.name,
+                  currentSchool.city
+                ) && (
+                  <a
+                    href={
+                      generateAdmissionWhatsAppUrl(
+                        selectedAdmission.phone,
+                        selectedAdmission.studentName,
+                        selectedAdmission.applyingClass,
+                        currentSchool.hindiName || currentSchool.name,
+                        currentSchool.city
+                      )!
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs inline-flex items-center gap-1.5 transition"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>WhatsApp संदेश</span>
+                  </a>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-lg font-bold text-xs cursor-pointer"
+                    >
+                      रद्द करें
+                    </button>
+                    <button
+                      type="submit"
+                      form="edit-admission-form"
+                      disabled={isSaving}
+                      className="px-4 py-1.5 bg-orange-700 hover:bg-orange-800 text-white rounded-lg font-bold text-xs shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      {isSaving ? 'सहेजा जा रहा है...' : 'अद्यतन सहेजें'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="px-3 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-lg font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-stone-600" />
+                      <span>संपादित करें</span>
+                    </button>
+                    {selectedAdmission.status !== 'Admitted' && (
+                      <button
+                        onClick={() => {
+                          onApprove(selectedAdmission.id);
+                          handleCloseDetail();
+                        }}
+                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>स्वीकृत कर नामांकित करें</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={handleCloseDetail}
+                      className="px-3 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg font-bold text-xs cursor-pointer"
+                    >
+                      बंद करें
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

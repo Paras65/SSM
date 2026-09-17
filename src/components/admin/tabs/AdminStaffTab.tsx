@@ -5,16 +5,16 @@ import { api } from '../../../services/api';
 import { formatWhatsAppPhone } from '../../../utils/whatsappAlerts';
 import type { Staff } from '../../../types';
 import {
-  Crown,
   Briefcase,
-  IndianRupee,
-  Plus,
-  Sparkles,
+  Edit3,
   FileText,
-  Trash2,
+  IndianRupee,
+  MessageSquare,
+  Plus,
   Search,
-  X,
-  MessageSquare
+  Sparkles,
+  Trash2,
+  X
 } from 'lucide-react';
 
 interface AdminStaffTabProps {
@@ -22,7 +22,7 @@ interface AdminStaffTabProps {
   onRefresh: () => void;
   setStaffList: React.Dispatch<React.SetStateAction<Staff[]>>;
   onOpenSalarySlip: (staff: Staff) => void;
-  onOpenUpgradeModal: (feature: { name: string; desc?: string }) => void;
+  onOpenUpgradeModal?: (feature: { name: string; desc?: string }) => void;
 }
 
 const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
@@ -34,9 +34,9 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
 }) => {
   const { currentSchool } = useSchool();
   const { showSuccess, showError, showWarning } = useToast();
-  const isPro = currentSchool.plan === 'pro';
 
   const [showAddStaff, setShowAddStaff] = useState(false);
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [stfName, setStfName] = useState('');
   const [stfGender, setStfGender] = useState<'Acharya' | 'Didi'>('Acharya');
   const [stfDesignation, setStfDesignation] = useState('');
@@ -49,6 +49,31 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'Acharya' | 'Didi'>('ALL');
 
+  const handleCancelEdit = () => {
+    setEditingStaffId(null);
+    setStfName('');
+    setStfGender('Acharya');
+    setStfDesignation('');
+    setStfQualification('');
+    setStfSubjects('');
+    setStfPhone('');
+    setStfMonthlySalary('');
+    setShowAddStaff(false);
+  };
+
+  const handleStartEdit = (staff: Staff) => {
+    setEditingStaffId(staff.id);
+    setStfName(staff.name);
+    setStfGender((staff.gender as any) || 'Acharya');
+    setStfDesignation(staff.designation || '');
+    setStfQualification(staff.qualification || '');
+    setStfSubjects(staff.subjects || '');
+    setStfPhone(staff.phone || '');
+    setStfMonthlySalary(staff.monthlySalary || '');
+    setShowAddStaff(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stfName || !stfDesignation || !stfPhone) {
@@ -60,30 +85,40 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
       const da = Math.round(Number(stfMonthlySalary) * 0.3) || 7500;
       const pf = Math.round(Number(stfMonthlySalary) * 0.05) || 1250;
 
-      await api.createStaff({
-        schoolId: currentSchool.id,
-        name: stfName,
-        gender: stfGender,
-        designation: stfDesignation,
-        qualification: stfQualification,
-        subjects: stfSubjects,
-        phone: stfPhone,
-        monthlySalary: Number(stfMonthlySalary),
-        basicPay: basic,
-        daHra: da,
-        pfDeduction: pf,
-        samitiDeduction: 500,
-        joiningDate: new Date().toISOString().split('T')[0],
-        status: 'Active'
-      });
-      showSuccess('नए आचार्य / कर्मचारी सफलतापूर्वक जोड़े गए!');
-      setStfName('');
-      setStfDesignation('');
-      setStfQualification('');
-      setStfSubjects('');
-      setStfPhone('');
-      setStfMonthlySalary('');
-      setShowAddStaff(false);
+      if (editingStaffId) {
+        await api.updateStaff(editingStaffId, {
+          name: stfName,
+          gender: stfGender,
+          designation: stfDesignation,
+          qualification: stfQualification,
+          subjects: stfSubjects,
+          phone: stfPhone,
+          monthlySalary: Number(stfMonthlySalary) || 0,
+          basicPay: basic,
+          daHra: da,
+          pfDeduction: pf
+        });
+        showSuccess('आचार्य/कर्मचारी विवरण सफलतापूर्वक अद्यतन (Updated) किया गया!');
+      } else {
+        await api.createStaff({
+          schoolId: currentSchool.id,
+          name: stfName,
+          gender: stfGender,
+          designation: stfDesignation,
+          qualification: stfQualification,
+          subjects: stfSubjects,
+          phone: stfPhone,
+          monthlySalary: Number(stfMonthlySalary),
+          basicPay: basic,
+          daHra: da,
+          pfDeduction: pf,
+          samitiDeduction: 500,
+          joiningDate: new Date().toISOString().split('T')[0],
+          status: 'Active'
+        });
+        showSuccess('नए आचार्य / कर्मचारी सफलतापूर्वक जोड़े गए!');
+      }
+      handleCancelEdit();
       onRefresh();
     } catch (err: any) {
       showError('त्रुटि: ' + err.message);
@@ -116,41 +151,6 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
       return true;
     });
   }, [staffList, roleFilter, searchQuery]);
-
-  if (!isPro) {
-    return (
-      <div className="bg-white rounded-3xl border border-amber-200/90 p-8 sm:p-14 text-center max-w-2xl mx-auto space-y-6 shadow-sm my-6">
-        <div className="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
-          <Crown className="w-8 h-8 text-amber-600 fill-amber-500" />
-        </div>
-        <div>
-          <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider">
-            विद्या भारती प्रो फीचर (Pro ERP Suite)
-          </span>
-          <h3 className="text-xl sm:text-2xl font-black text-stone-900 mt-2">
-            आचार्य एवं वेतन प्रबंधन (Staff & Payroll)
-          </h3>
-          <p className="text-stone-600 text-xs sm:text-sm mt-2 max-w-lg mx-auto leading-relaxed">
-            शिक्षकों का संपूर्ण सेवा विवरण, मासिक वेतन पर्ची (Salary Slip PDF) जनरेशन एवं आधिकारिक पेरोल प्रबंधन केवल प्रो योजना में उपलब्ध है।
-          </p>
-        </div>
-        <div className="pt-2">
-          <button
-            onClick={() =>
-              onOpenUpgradeModal({
-                name: 'आचार्य एवं वेतन प्रबंधन (Staff & Payroll)',
-                desc: 'शिक्षकों का पूर्ण रिकॉर्ड, भत्ते एवं मासिक वेतन पर्ची (Salary Slip PDF) केवल प्रो योजना में उपलब्ध है।'
-              })
-            }
-            className="px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-500/25 inline-flex items-center gap-2 transition transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-          >
-            <Crown className="w-4 h-4 text-yellow-200 fill-yellow-300" />
-            <span>प्रो में अपग्रेड करें (Unlock Pro Plan)</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -201,7 +201,13 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
             </p>
           </div>
           <button
-            onClick={() => setShowAddStaff(!showAddStaff)}
+            onClick={() => {
+              if (showAddStaff) {
+                handleCancelEdit();
+              } else {
+                setShowAddStaff(true);
+              }
+            }}
             className="mt-3 flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -215,7 +221,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
         <div className="bg-amber-50/70 p-6 rounded-2xl border border-amber-300 animate-in fade-in duration-200">
           <h4 className="text-sm font-bold text-stone-900 mb-4 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-600" />
-            <span>नए आचार्य / कर्मचारी का विवरण भरें</span>
+            <span>{editingStaffId ? 'आचार्य / कर्मचारी विवरण संपादित करें' : 'नए आचार्य / कर्मचारी का विवरण भरें'}</span>
           </h4>
           <form onSubmit={handleCreateStaff} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
@@ -303,7 +309,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
             <div className="sm:col-span-3 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowAddStaff(false)}
+                onClick={handleCancelEdit}
                 className="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-lg font-bold cursor-pointer"
               >
                 रद्द करें
@@ -312,7 +318,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
                 type="submit"
                 className="px-5 py-2 bg-orange-700 hover:bg-orange-800 text-white rounded-lg font-bold shadow-xs cursor-pointer"
               >
-                आचार्य जोड़ें (Save Staff)
+                {editingStaffId ? 'अद्यतन सहेजें (Update)' : 'आचार्य जोड़ें (Save Staff)'}
               </button>
             </div>
           </form>
@@ -426,6 +432,13 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
                           <span>WhatsApp</span>
                         </a>
                       )}
+                      <button
+                        onClick={() => handleStartEdit(member)}
+                        className="p-1 text-stone-400 hover:text-orange-600 rounded transition cursor-pointer"
+                        title="आचार्य विवरण संपादित करें (Edit Staff Details)"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => onOpenSalarySlip(member)}
                         className="px-2.5 py-1 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-950 border border-orange-300 rounded font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition cursor-pointer"
