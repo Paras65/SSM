@@ -124,11 +124,11 @@ function rateLimitEndpoint(maxAttempts = 10) {
   });
 }
 
-app.use('/api/auth/login', rateLimitEndpoint(10));
-app.use('/api/auth/student-login', rateLimitEndpoint(8));
-app.use('/api/auth/teacher-login', rateLimitEndpoint(8));
-app.use('/api/admissions', rateLimitEndpoint(20));
-app.post('/api/schools', rateLimitEndpoint(10));
+app.use('/api/auth/login', rateLimitEndpoint(30));
+app.use('/api/auth/student-login', rateLimitEndpoint(120));
+app.use('/api/auth/teacher-login', rateLimitEndpoint(120));
+app.use('/api/admissions', rateLimitEndpoint(60));
+app.post('/api/schools', rateLimitEndpoint(20));
 
 // API Routes
 app.use('/api', apiRoutes);
@@ -185,7 +185,7 @@ async function startServer() {
     console.log('🔄 Connecting to MongoDB...');
     await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 8000,
-      maxPoolSize: 10, // Optimizes free tier Atlas M0 connection limit (500 max across cluster)
+      maxPoolSize: process.env.MONGO_MAX_POOL_SIZE ? parseInt(process.env.MONGO_MAX_POOL_SIZE, 10) : 30, // Supports multi-branch concurrent traffic
       minPoolSize: 2
     });
     console.log('✅ Connected successfully to MongoDB!');

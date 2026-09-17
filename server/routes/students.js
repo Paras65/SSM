@@ -120,7 +120,7 @@ router.post('/bulk', requireAdminAuth, requireSchoolScope, async (req, res) => {
 
     const docs = rawStudents.map((s, idx) => ({
       ...s,
-      id: s.id || `ssm-${timestamp}-${randomSuffix}-${idx + 1}`,
+      id: s.id || `ssm-${targetSchoolId}-${timestamp}-${randomSuffix}-${idx + 1}`,
       schoolId: targetSchoolId,
       rollNo: s.rollNo ? s.rollNo.toString() : (101 + idx).toString(),
       name: s.name || `छात्र ${idx + 1}`,

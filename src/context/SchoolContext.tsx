@@ -229,6 +229,16 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [schools, setSchools] = useState<School[]>([]);
   const [currentSchoolId, setCurrentSchoolIdState] = useState<string>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const branchParam = params.get('branch') || params.get('school');
+        if (branchParam) {
+          window.localStorage.setItem('ssm_current_school_id', branchParam);
+          return branchParam;
+        }
+      }
+    } catch {}
     return readStorage('ssm_current_school_id') || '';
   });
 
@@ -275,6 +285,17 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const dbSchools = await api.getSchools().catch(() => []);
         if (dbSchools.length > 0) {
           setSchools(dbSchools);
+          if (typeof window !== 'undefined') {
+            try {
+              const params = new URLSearchParams(window.location.search);
+              const branchParam = params.get('branch') || params.get('school');
+              if (branchParam && dbSchools.some((s: School) => s.id === branchParam)) {
+                setCurrentSchoolIdState(branchParam);
+                localStorage.setItem('ssm_current_school_id', branchParam);
+                schoolIdToFetch = branchParam;
+              }
+            } catch {}
+          }
         } else {
           setSchools([]);
         }
