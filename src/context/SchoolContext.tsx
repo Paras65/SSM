@@ -286,7 +286,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Fetch schools list first (publicly accessible)
         const dbSchools = await api.getSchools().catch(() => []);
         if (dbSchools.length > 0) {
-          setSchools(dbSchools);
+          const uniqueSchools = dbSchools.filter((s: School, idx: number, arr: School[]) =>
+            idx === arr.findIndex(x => x.id === s.id || ((x.hindiName === s.hindiName || x.name === s.name) && x.city === s.city))
+          );
+          setSchools(uniqueSchools);
           if (typeof window !== 'undefined') {
             try {
               const params = new URLSearchParams(window.location.search);
