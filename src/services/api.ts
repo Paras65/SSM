@@ -395,6 +395,15 @@ export const api = {
     return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete admission');
   },
 
+  async updateAdmission(id: string, updates: any): Promise<any> {
+    const res = await apiFetch(`/admissions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    return handleJsonResponse<any>(res, 'Failed to update admission');
+  },
+
   // Public admission submission (no auth needed)
   async submitAdmission(data: {
     schoolId?: string;
@@ -493,6 +502,33 @@ export const api = {
       method: 'DELETE'
     });
     return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete staff member');
+  },
+
+  // ================= SALARY SLIPS =================
+  async getSalarySlips(schoolId?: string, staffId?: string, month?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (schoolId) params.append('schoolId', schoolId);
+    if (staffId) params.append('staffId', staffId);
+    if (month) params.append('month', month);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiFetch(`/salary-slips${qs}`);
+    return handleJsonResponse<any[]>(res, 'Failed to fetch salary slips');
+  },
+
+  async createSalarySlip(slip: any): Promise<any> {
+    const res = await apiFetch('/salary-slips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(slip)
+    });
+    return handleJsonResponse<any>(res, 'Failed to save salary slip');
+  },
+
+  async deleteSalarySlip(id: string): Promise<{ success: boolean; id: string }> {
+    const res = await apiFetch(`/salary-slips/${id}`, {
+      method: 'DELETE'
+    });
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete salary slip');
   },
 
   // ================= EXAMS & MARKS =================

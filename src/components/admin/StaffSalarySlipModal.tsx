@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { X, Printer, IndianRupee, FileText, CheckCircle } from 'lucide-react';
+import { X, Printer, IndianRupee, FileText, CheckCircle, Save } from 'lucide-react';
 import type { Staff } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 
 interface StaffSalarySlipModalProps {
   staff: Staff;
@@ -10,7 +12,10 @@ interface StaffSalarySlipModalProps {
 
 export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staff, onClose }) => {
   const { currentSchool } = useSchool();
+  const { showSuccess, showError } = useToast();
   const [selectedMonth, setSelectedMonth] = useState('सितम्बर 2026');
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const basicPay = staff.basicPay || Math.round(staff.monthlySalary * 0.65);
   const daHra = staff.daHra || Math.round(staff.monthlySalary * 0.35);
@@ -22,7 +27,40 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
 
   const netSalary = grossPay - totalDeductions;
 
-  const handlePrint = () => {
+  const saveSalarySlipToDb = async () => {
+    try {
+      setIsSaving(true);
+      await api.createSalarySlip({
+        schoolId: currentSchool.id,
+        staffId: staff.id,
+        staffName: staff.name,
+        designation: staff.designation,
+        month: selectedMonth,
+        academicYear: currentSchool.currentAcademicYear || '2025-26',
+        basicPay,
+        daHra,
+        grossPay,
+        pfDeduction: pf,
+        samitiDeduction: samitiKosh,
+        totalDeductions,
+        netSalary,
+        paymentStatus: 'Disbursed',
+        paymentMode: 'Bank Transfer (NEFT/RTGS)',
+        disbursedDate: new Date().toISOString().split('T')[0]
+      });
+      setIsSaved(true);
+      showSuccess(`माह ${selectedMonth} की वेतन पर्ची डेटाबेस में सुरक्षित हो गई!`);
+    } catch (err: any) {
+      showError('वेतन पर्ची सहेजने में त्रुटि: ' + (err.message || 'Error'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!isSaved) {
+      await saveSalarySlipToDb();
+    }
     window.print();
   };
 
@@ -49,8 +87,19 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
               <option value="जून 2026">जून 2026</option>
             </select>
             <button
+              onClick={saveSalarySlipToDb}
+              disabled={isSaving || isSaved}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow ${
+                isSaved ? 'bg-emerald-600 text-white' : 'bg-emerald-700 hover:bg-emerald-600 text-white cursor-pointer'
+              }`}
+              title="वेतन पर्ची डेटाबेस में सुरक्षित करें"
+            >
+              {isSaved ? <CheckCircle className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+              <span>{isSaved ? 'सुरक्षित (Saved)' : isSaving ? 'सहेज रहे हैं...' : 'डेटाबेस में सहेजें'}</span>
+            </button>
+            <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-saffron-950 rounded-lg text-xs font-bold transition shadow"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-saffron-950 rounded-lg text-xs font-bold transition shadow cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               प्रिंट करें

@@ -13,6 +13,7 @@ const noticeRoutes = require('./notices');
 const admissionRoutes = require('./admissions');
 const homeworkRoutes = require('./homework');
 const staffRoutes = require('./staff');
+const salarySlipRoutes = require('./salarySlips');
 const examRoutes = require('./exams');
 const operationRoutes = require('./operations');
 
@@ -44,6 +45,7 @@ router.use('/notices', noticeRoutes);
 router.use('/admissions', admissionRoutes);
 router.use('/homework', homeworkRoutes);
 router.use('/staff', staffRoutes);
+router.use('/salary-slips', salarySlipRoutes);
 router.use('/exams', examRoutes);
 router.use('/', operationRoutes); // Timetable, Leaves, Transport, Library, Inventory, Audit Logs
 

@@ -50,6 +50,29 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/admissions/:id - Update admission inquiry details
+router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const updatePayload = { ...req.body };
+    delete updatePayload.id;
+    delete updatePayload._id;
+    delete updatePayload.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updatePayload.schoolId;
+    }
+
+    const admission = await Admission.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      updatePayload,
+      { returnDocument: 'after', runValidators: true }
+    );
+    if (!admission) return res.status(404).json({ error: 'Admission not found' });
+    res.json(admission);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // PUT /api/admissions/:id/approve - Approve admission inquiry
 router.put('/:id/approve', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {

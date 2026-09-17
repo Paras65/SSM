@@ -7,6 +7,7 @@ import {
   BookOpen,
   Calendar,
   Clock,
+  Edit3,
   Layers,
   Plus,
   Search,
@@ -30,6 +31,7 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
   const { showSuccess, showError, showWarning } = useToast();
 
   const [showAddHomework, setShowAddHomework] = useState(false);
+  const [editingHwId, setEditingHwId] = useState<string | null>(null);
   const [hwClass, setHwClass] = useState('Class 8');
   const [hwSubject, setHwSubject] = useState('');
   const [hwTitle, setHwTitle] = useState('');
@@ -41,6 +43,26 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
   const [filterClass, setFilterClass] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const handleCancelForm = () => {
+    setEditingHwId(null);
+    setHwSubject('');
+    setHwTitle('');
+    setHwDescription('');
+    setShowAddHomework(false);
+  };
+
+  const handleStartEdit = (hw: Homework) => {
+    setEditingHwId(hw.id);
+    setHwClass(hw.class);
+    setHwSubject(hw.subject);
+    setHwTitle(hw.title);
+    setHwDescription(hw.description);
+    setHwAssignedBy(hw.assignedBy || '');
+    setHwDueDate(hw.dueDate || new Date().toISOString().split('T')[0]);
+    setShowAddHomework(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleCreateHomework = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hwSubject || !hwTitle || !hwDescription) {
@@ -48,22 +70,31 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
       return;
     }
     try {
-      await api.createHomework({
-        schoolId: currentSchool.id,
-        class: hwClass,
-        subject: hwSubject,
-        title: hwTitle,
-        description: hwDescription,
-        assignedBy: hwAssignedBy || 'आचार्य जी',
-        dueDate: hwDueDate,
-        date: new Date().toISOString().split('T')[0],
-        status: 'Active'
-      });
-      showSuccess('गृहकार्य सफलतापूर्वक प्रेषित किया गया!');
-      setHwSubject('');
-      setHwTitle('');
-      setHwDescription('');
-      setShowAddHomework(false);
+      if (editingHwId) {
+        await api.updateHomework(editingHwId, {
+          class: hwClass,
+          subject: hwSubject,
+          title: hwTitle,
+          description: hwDescription,
+          assignedBy: hwAssignedBy || 'आचार्य जी',
+          dueDate: hwDueDate
+        });
+        showSuccess('गृहकार्य सफलतापूर्वक अद्यतन (Updated) किया गया!');
+      } else {
+        await api.createHomework({
+          schoolId: currentSchool.id,
+          class: hwClass,
+          subject: hwSubject,
+          title: hwTitle,
+          description: hwDescription,
+          assignedBy: hwAssignedBy || 'आचार्य जी',
+          dueDate: hwDueDate,
+          date: new Date().toISOString().split('T')[0],
+          status: 'Active'
+        });
+        showSuccess('गृहकार्य सफलतापूर्वक प्रेषित किया गया!');
+      }
+      handleCancelForm();
       onRefresh();
     } catch (err: any) {
       showError('त्रुटि: ' + err.message);
@@ -131,7 +162,13 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
         </div>
 
         <button
-          onClick={() => setShowAddHomework(!showAddHomework)}
+          onClick={() => {
+            if (showAddHomework) {
+              handleCancelForm();
+            } else {
+              setShowAddHomework(true);
+            }
+          }}
           className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition transform active:scale-95 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
@@ -174,7 +211,7 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
         <div className="bg-amber-50/70 p-6 rounded-2xl border border-amber-300 animate-in fade-in duration-200">
           <h4 className="text-sm font-bold text-stone-900 mb-4 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-600" />
-            <span>नया दैनिक गृहकार्य प्रेषित करें</span>
+            <span>{editingHwId ? 'गृहकार्य विवरण संपादित करें (Edit Assignment)' : 'नया दैनिक गृहकार्य प्रेषित करें'}</span>
           </h4>
           <form onSubmit={handleCreateHomework} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
@@ -251,7 +288,7 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
             <div className="sm:col-span-3 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowAddHomework(false)}
+                onClick={handleCancelForm}
                 className="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-lg font-bold cursor-pointer"
               >
                 रद्द करें
@@ -260,7 +297,7 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
                 type="submit"
                 className="px-5 py-2 bg-orange-700 hover:bg-orange-800 text-white rounded-lg font-bold shadow-xs cursor-pointer"
               >
-                गृहकार्य जारी करें (Publish)
+                {editingHwId ? 'अद्यतन सहेजें (Update)' : 'गृहकार्य जारी करें (Publish)'}
               </button>
             </div>
           </form>
@@ -349,13 +386,22 @@ const AdminHomeworkTabComponent: React.FC<AdminHomeworkTabProps> = ({
                 <span>
                   आचार्य: <strong className="text-stone-800">{hw.assignedBy}</strong>
                 </span>
-                <button
-                  onClick={() => handleDeleteHomework(hw.id)}
-                  className="text-stone-400 hover:text-red-600 p-1 rounded transition cursor-pointer"
-                  title="Delete Homework"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleStartEdit(hw)}
+                    className="text-stone-400 hover:text-orange-600 p-1 rounded transition cursor-pointer"
+                    title="संपादित करें (Edit Homework)"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteHomework(hw.id)}
+                    className="text-stone-400 hover:text-red-600 p-1 rounded transition cursor-pointer"
+                    title="Delete Homework"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))

@@ -20,6 +20,8 @@ const Student = require('../../server/models/Student.js');
 const Fee = require('../../server/models/Fee.js');
 const Admission = require('../../server/models/Admission.js');
 const Notice = require('../../server/models/Notice.js');
+const SalarySlip = require('../../server/models/SalarySlip.js');
+const Homework = require('../../server/models/Homework.js');
 
 let mongoServer: MongoMemoryServer;
 let schoolAToken: string;
@@ -42,7 +44,9 @@ describe('Advanced Operational Scenarios & Real-World Edge Cases Suite', () => {
       Student.deleteMany({}),
       Fee.deleteMany({}),
       Admission.deleteMany({}),
-      Notice.deleteMany({})
+      Notice.deleteMany({}),
+      SalarySlip.deleteMany({}),
+      Homework.deleteMany({})
     ]);
 
     // Seed School A
@@ -414,6 +418,148 @@ describe('Advanced Operational Scenarios & Real-World Edge Cases Suite', () => {
       const categories = allRes.body.map((n: any) => n.category);
       expect(categories).toContain('Holidays');
       expect(categories).toContain('Examinations');
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* Scenario 6: Salary Slip Cloud Persistence & Multi-Tenant Upsert           */
+  /* -------------------------------------------------------------------------- */
+  describe('Scenario 6: Salary Slip Cloud Persistence & Upsert', () => {
+    it('6.1 should persist, upsert, and isolate staff salary slips', async () => {
+      const slipPayload = {
+        staffId: 'stf-101',
+        staffName: 'आचार्य रमेश चंद्र शास्त्री',
+        designation: 'वरिष्ठ आचार्य (Senior Teacher)',
+        month: '2026-09',
+        academicYear: '2025-26',
+        basicPay: 20000,
+        daHra: 5000,
+        grossPay: 25000,
+        pfDeduction: 1800,
+        samitiDeduction: 500,
+        totalDeductions: 2300,
+        netSalary: 22700,
+        paymentStatus: 'Disbursed',
+        paymentMode: 'Bank Transfer (NEFT/RTGS)'
+      };
+
+      // 1. Create slip
+      const createRes = await request(app)
+        .post('/api/salary-slips')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send(slipPayload);
+
+      expect(createRes.status).toBe(201);
+      expect(createRes.body.netSalary).toBe(22700);
+
+      // 2. Query slip for staff
+      const getRes = await request(app)
+        .get('/api/salary-slips?staffId=stf-101')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.length).toBe(1);
+      expect(getRes.body[0].month).toBe('2026-09');
+
+      // 3. Upsert with updated daHra and netSalary
+      const updateRes = await request(app)
+        .post('/api/salary-slips')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({ ...slipPayload, daHra: 6000, grossPay: 26000, netSalary: 23700 });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.daHra).toBe(6000);
+      expect(updateRes.body.netSalary).toBe(23700);
+
+      // Verify total slips count is still 1 (upserted, not duplicated)
+      const afterUpsertRes = await request(app)
+        .get('/api/salary-slips?staffId=stf-101')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+      expect(afterUpsertRes.body.length).toBe(1);
+
+      // 4. Cross-school isolation (School B cannot see School A salary slip)
+      const schoolBRes = await request(app)
+        .get('/api/salary-slips?staffId=stf-101')
+        .set('Authorization', `Bearer ${schoolBToken}`);
+      expect(schoolBRes.body.length).toBe(0);
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* Scenario 7: General Admission Updates                                      */
+  /* -------------------------------------------------------------------------- */
+  describe('Scenario 7: General Admission Details Update', () => {
+    it('7.1 should update applicant details and status via PUT /api/admissions/:id', async () => {
+      // 1. Submit admission
+      const admRes = await request(app)
+        .post('/api/admissions')
+        .send({
+          schoolId: 'ssm-school-a',
+          studentName: 'सुमित कुमार',
+          gender: 'Bhaiya',
+          applyingClass: 'Class 6',
+          fatherName: 'राजेश कुमार',
+          motherName: 'सुनीता देवी',
+          phone: '+91 98765 43210',
+          address: 'सिविल लाइन्स, गोरखपुर',
+          guardianConsent: true,
+          consentPolicyVersion: '2026-09-12'
+        });
+
+      expect(admRes.status).toBe(201);
+      const admId = admRes.body.id;
+
+      // 2. Update admission details
+      const updateRes = await request(app)
+        .put(`/api/admissions/${admId}`)
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          applyingClass: 'Class 7',
+          status: 'Admitted',
+          address: 'गोरखनाथ मंदिर मार्ग, गोरखपुर'
+        });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.applyingClass).toBe('Class 7');
+      expect(updateRes.body.status).toBe('Admitted');
+      expect(updateRes.body.address).toBe('गोरखनाथ मंदिर मार्ग, गोरखपुर');
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* Scenario 8: Homework Editing & In-line Updates                            */
+  /* -------------------------------------------------------------------------- */
+  describe('Scenario 8: Homework Editing & In-line Updates', () => {
+    it('8.1 should update homework assignment details via PUT /api/homework/:id', async () => {
+      // 1. Create homework
+      const hwRes = await request(app)
+        .post('/api/homework')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          class: 'Class 8',
+          subject: 'गणित',
+          title: 'प्रश्नावली 3.1 हल करें',
+          description: 'सभी 10 प्रश्न हल करें',
+          assignedBy: 'आचार्य रमेश जी',
+          dueDate: '2026-09-20'
+        });
+
+      expect(hwRes.status).toBe(201);
+      const hwId = hwRes.body.id;
+
+      // 2. Update homework
+      const updateRes = await request(app)
+        .put(`/api/homework/${hwId}`)
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          title: 'प्रश्नावली 3.1 एवं 3.2 हल करें',
+          dueDate: '2026-09-22'
+        });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.title).toBe('प्रश्नावली 3.1 एवं 3.2 हल करें');
+      expect(updateRes.body.dueDate).toBe('2026-09-22');
+      expect(updateRes.body.subject).toBe('गणित');
     });
   });
 });
