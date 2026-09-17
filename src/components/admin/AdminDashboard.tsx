@@ -294,9 +294,7 @@ export const AdminDashboard: React.FC = () => {
   }, [currentTab]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('ssm_admin_authenticated');
-    sessionStorage.removeItem('ssm_admin_school_id');
-    sessionStorage.removeItem('ssm_admin_role');
+    api.logoutAdmin();
     setViewMode('public');
   };
 

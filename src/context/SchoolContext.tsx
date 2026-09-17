@@ -269,7 +269,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCurrentSchoolIdState(id);
     localStorage.setItem('ssm_current_school_id', id);
     // Reset session authentication so admin re-authenticates with that school's passcode if needed
-    sessionStorage.removeItem('ssm_admin_authenticated');
+    if (sessionStorage.getItem('ssm_admin_role') !== 'developer') {
+      api.logoutAdmin();
+      api.logoutTeacher();
+    }
   };
 
   // Fetch all collections from MongoDB for the active school
@@ -312,13 +315,22 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
         }).catch(() => {});
 
-        // Check if user has admin or teacher token before querying protected collections
-        const hasAuth = Boolean(
-          sessionStorage.getItem('ssm_admin_token') ||
-          sessionStorage.getItem('ssm_teacher_token')
+        // Only fetch protected collections if user is actively authenticated for this school or has developer privileges
+        const adminRole = sessionStorage.getItem('ssm_admin_role');
+        const adminToken = sessionStorage.getItem('ssm_admin_token');
+        const isAdminAuth = sessionStorage.getItem('ssm_admin_authenticated') === 'true' && Boolean(adminToken);
+        const adminSchoolId = sessionStorage.getItem('ssm_admin_school_id');
+
+        const teacherToken = sessionStorage.getItem('ssm_teacher_token');
+        const teacherSchoolId = sessionStorage.getItem('ssm_teacher_school_id');
+        const isTeacherAuth = Boolean(teacherToken);
+
+        const isAuthorizedForSchool = (
+          (isAdminAuth && (adminRole === 'developer' || !adminSchoolId || adminSchoolId === schoolIdToFetch)) ||
+          (isTeacherAuth && (!teacherSchoolId || teacherSchoolId === schoolIdToFetch))
         );
 
-        if (hasAuth) {
+        if (isAuthorizedForSchool) {
           // Fetch records filtered by active school safely using allSettled
           const [studentsRes, attRes, feesRes, repRes] = await Promise.allSettled([
             api.getStudents(schoolIdToFetch),
@@ -343,6 +355,11 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           if (repRes.status === 'fulfilled' && Array.isArray(repRes.value)) {
             setReportCards(repRes.value);
           }
+        } else {
+          setStudents([]);
+          setAttendanceRecords([]);
+          setFeeRecords([]);
+          setReportCards([]);
         }
       } else {
         setDbStatus('offline');

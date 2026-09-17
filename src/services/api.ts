@@ -24,9 +24,12 @@ const API_BASE = import.meta.env.VITE_API_BASE || '/api';
  * Returns Bearer token header if admin, teacher or student is authenticated
  */
 function getAuthHeaders(): Record<string, string> {
-  const token = sessionStorage.getItem('ssm_admin_token') || 
-                sessionStorage.getItem('ssm_teacher_token') || 
-                sessionStorage.getItem('ssm_student_token');
+  const adminToken = sessionStorage.getItem('ssm_admin_authenticated') === 'true'
+    ? sessionStorage.getItem('ssm_admin_token')
+    : null;
+  const teacherToken = sessionStorage.getItem('ssm_teacher_token');
+  const studentToken = sessionStorage.getItem('ssm_student_token');
+  const token = adminToken || teacherToken || studentToken;
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
@@ -64,6 +67,18 @@ async function handleJsonResponse<T>(res: Response, defaultError = 'अनपे
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      sessionStorage.removeItem('ssm_admin_token');
+      sessionStorage.removeItem('ssm_admin_authenticated');
+      sessionStorage.removeItem('ssm_admin_role');
+      sessionStorage.removeItem('ssm_admin_school_id');
+      sessionStorage.removeItem('ssm_teacher_token');
+      sessionStorage.removeItem('ssm_teacher_id');
+      sessionStorage.removeItem('ssm_teacher_name');
+      sessionStorage.removeItem('ssm_teacher_school_id');
+      sessionStorage.removeItem('ssm_student_token');
+      sessionStorage.removeItem('ssm_student_id');
+    }
     const message = data?.error || data?.message || defaultError;
     throw new Error(message);
   }
@@ -96,6 +111,7 @@ export const api = {
       sessionStorage.setItem('ssm_admin_token', data.token);
       sessionStorage.setItem('ssm_admin_authenticated', 'true');
       sessionStorage.setItem('ssm_admin_role', data.role || 'admin');
+      sessionStorage.setItem('ssm_admin_school_id', schoolId);
     }
     return data;
   },
@@ -144,6 +160,7 @@ export const api = {
     sessionStorage.setItem('ssm_teacher_token', data.token);
     sessionStorage.setItem('ssm_teacher_id', data.teacher.id);
     sessionStorage.setItem('ssm_teacher_name', data.teacher.name || '');
+    sessionStorage.setItem('ssm_teacher_school_id', schoolId);
     return data;
   },
 
@@ -152,18 +169,21 @@ export const api = {
     sessionStorage.removeItem('ssm_teacher_id');
     sessionStorage.removeItem('ssm_teacher_name');
     sessionStorage.removeItem('ssm_teacher_tab');
+    sessionStorage.removeItem('ssm_teacher_school_id');
   },
 
   logoutAdmin(): void {
     sessionStorage.removeItem('ssm_admin_token');
     sessionStorage.removeItem('ssm_admin_authenticated');
     sessionStorage.removeItem('ssm_admin_role');
+    sessionStorage.removeItem('ssm_admin_school_id');
     sessionStorage.removeItem('ssm_student_token');
     sessionStorage.removeItem('ssm_student_id');
     sessionStorage.removeItem('ssm_teacher_token');
     sessionStorage.removeItem('ssm_teacher_id');
     sessionStorage.removeItem('ssm_teacher_name');
     sessionStorage.removeItem('ssm_teacher_tab');
+    sessionStorage.removeItem('ssm_teacher_school_id');
   },
 
   // ================= SCHOOLS =================
