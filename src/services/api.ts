@@ -299,11 +299,11 @@ export const api = {
     return handleJsonResponse<FeeRecord[]>(res, 'Failed to fetch fees');
   },
 
-  async payFee(feeId: string, paymentMode: string): Promise<FeeRecord> {
+  async payFee(feeId: string, paymentMode: string, paidAmount?: number): Promise<FeeRecord> {
     const res = await apiFetch(`/fees/${feeId}/pay`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paymentMode })
+      body: JSON.stringify({ paymentMode, paidAmount })
     });
     return handleJsonResponse<FeeRecord>(res, 'Failed to process fee payment');
   },

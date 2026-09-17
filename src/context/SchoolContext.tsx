@@ -133,7 +133,7 @@ interface SchoolContextType {
 
   // Fees
   feeRecords: FeeRecord[];
-  markFeePaid: (feeId: string, paymentMode: string) => Promise<void>;
+  markFeePaid: (feeId: string, paymentMode: string, customPaidAmount?: number) => Promise<void>;
   addFeeRecord: (record: Omit<FeeRecord, 'id'>) => Promise<void>;
   deleteFeeRecord: (feeId: string) => Promise<void>;
 
@@ -562,15 +562,19 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // Fee actions (MongoDB + Optimistic)
-  const markFeePaid = async (feeId: string, paymentMode: string) => {
+  const markFeePaid = async (feeId: string, paymentMode: string, customPaidAmount?: number) => {
     const prevFee = feeRecords.find(f => f.id === feeId);
     const schoolSuffix = (currentSchool.id || 'SSM').slice(-4).toUpperCase();
     setFeeRecords(prev => prev.map(fee => {
       if (fee.id === feeId) {
+        const targetAmount = typeof customPaidAmount === 'number' && customPaidAmount > 0
+          ? Math.min(fee.totalAmount, customPaidAmount)
+          : fee.totalAmount;
+        const newStatus = targetAmount >= fee.totalAmount ? 'Paid' : 'Partial';
         return {
           ...fee,
-          paidAmount: fee.totalAmount,
-          status: 'Paid',
+          paidAmount: targetAmount,
+          status: newStatus,
           paidDate: new Date().toISOString().split('T')[0],
           receiptNo: fee.receiptNo || `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`,
           paymentMode
@@ -580,7 +584,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }));
 
     try {
-      await api.payFee(feeId, paymentMode);
+      await api.payFee(feeId, paymentMode, customPaidAmount);
     } catch (err) {
       if (prevFee) {
         setFeeRecords(prev => prev.map(f => f.id === feeId ? prevFee : f));

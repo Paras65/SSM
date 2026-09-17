@@ -3,7 +3,7 @@ import { useSchool } from '../../../context/SchoolContext';
 import { useToast } from '../../../context/ToastContext';
 import { exportStudentsToCSV } from '../../../utils/csvExport';
 import { downloadUdisePlusCSV } from '../../../utils/udiseExport';
-import type { Student, ReportCard } from '../../../types';
+import { SSM_CLASSES, type Student, type ReportCard } from '../../../types';
 import {
   Search,
   Download,
@@ -64,7 +64,10 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
         student.name.toLowerCase().includes(q) ||
         student.rollNo.toLowerCase().includes(q) ||
         student.fatherName.toLowerCase().includes(q);
-      const matchesClass = selectedClass === 'ALL' || student.class.includes(selectedClass);
+      const matchesClass =
+        selectedClass === 'ALL' ||
+        student.class === selectedClass ||
+        student.class.startsWith(selectedClass + ' ');
       const matchesGender = selectedGender === 'ALL' || student.gender === selectedGender;
       return matchesSearch && matchesClass && matchesGender;
     });
@@ -98,18 +101,12 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
           <select
             value={selectedClass}
             onChange={e => setSelectedClass(e.target.value)}
-            className="px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white"
+            className="px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white font-medium"
           >
-            <option value="ALL">सभी कक्षाएं</option>
-            <option value="Arun">अरुण (Nursery)</option>
-            <option value="Uday">उदय (LKG)</option>
-            <option value="Prabhat">प्रभात (Prep)</option>
-            <option value="Class 5">Class 5</option>
-            <option value="Class 6">Class 6</option>
-            <option value="Class 7">Class 7</option>
-            <option value="Class 8">Class 8</option>
-            <option value="Class 9">Class 9</option>
-            <option value="Class 10">Class 10</option>
+            <option value="ALL">सभी कक्षाएं (All Classes)</option>
+            {SSM_CLASSES.map(cls => (
+              <option key={cls} value={cls}>{cls}</option>
+            ))}
           </select>
 
           <select

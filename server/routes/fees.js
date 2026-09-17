@@ -54,15 +54,16 @@ router.post('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
 // PUT /api/fees/:id/pay - Mark fee as paid
 router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const { paymentMode } = req.body;
+    const { paymentMode, paidAmount } = req.body;
     const fee = await Fee.findOne({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!fee) return res.status(404).json({ error: 'Fee record not found' });
 
-    fee.paidAmount = fee.totalAmount;
-    fee.status = 'Paid';
+    const collectedAmount = typeof paidAmount === 'number' && paidAmount > 0 ? Math.min(fee.totalAmount, paidAmount) : fee.totalAmount;
+    fee.paidAmount = collectedAmount;
+    fee.status = fee.paidAmount >= fee.totalAmount ? 'Paid' : 'Partial';
     fee.paidDate = new Date().toISOString().split('T')[0];
     const schoolSuffix = (fee.schoolId || 'SSM').slice(-4).toUpperCase();
-    fee.receiptNo = `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`;
+    fee.receiptNo = fee.receiptNo || `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`;
     fee.paymentMode = paymentMode || 'Online UPI';
 
     await fee.save();
@@ -70,7 +71,7 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
       schoolId: fee.schoolId,
       actorType: req.user?.role || 'admin',
       action: 'FEE_PAYMENT_COLLECTED',
-      description: `शुल्क भुगतान प्राप्त: छात्र #${fee.studentId} - रसीद संख्या: ${fee.receiptNo}, राशि: ₹${fee.paidAmount}, माध्यम: ${fee.paymentMode}`,
+      description: `शुल्क भुगतान प्राप्त: छात्र #${fee.studentId} - रसीद संख्या: ${fee.receiptNo}, राशि: ₹${fee.paidAmount} (${fee.status}), माध्यम: ${fee.paymentMode}`,
       req
     });
     res.json(fee);
