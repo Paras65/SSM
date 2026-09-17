@@ -8,20 +8,23 @@ const installListeners: Set<InstallCallback> = new Set();
 const onlineListeners: Set<OnlineCallback> = new Set();
 
 export const registerServiceWorker = () => {
+  if (import.meta.env.DEV) {
+    // In development, unregister any existing service workers to avoid stale caching and white screens with Vite HMR
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (const reg of registrations) {
+          reg.unregister();
+        }
+      }).catch(() => {});
+    }
+    return;
+  }
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/sw.js')
-        .then(reg => {
-          if (import.meta.env.DEV) {
-            console.log('✅ [PWA] Service Worker registered with scope:', reg.scope);
-          }
-        })
-        .catch(err => {
-          if (import.meta.env.DEV) {
-            console.warn('⚠️ [PWA] Service Worker registration failed:', err);
-          }
-        });
+        .catch(() => {});
     });
   }
 
