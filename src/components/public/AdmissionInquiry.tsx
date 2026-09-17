@@ -3,12 +3,14 @@ import { Sparkles, CheckCircle2, UserPlus, FileText, Phone, Send, ShieldCheck } 
 import { api } from '../../services/api';
 import { useSchool } from '../../context/SchoolContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useToast } from '../../context/ToastContext';
 import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 import { SSM_CLASSES } from '../../types';
 
 export const AdmissionInquiry: React.FC = () => {
   const { schools, publicSchool, currentSchool } = useSchool();
   const { t } = useLanguage();
+  const { showWarning, showError, showSuccess } = useToast();
   const [selectedSchoolId, setSelectedSchoolId] = useState(publicSchool?.id || '');
 
   useEffect(() => {
@@ -40,15 +42,18 @@ export const AdmissionInquiry: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSchoolId) {
-      alert(t('selectBranch'));
+      showWarning(t('selectBranch'));
+      setSubmitError(t('selectBranch'));
       return;
     }
     if (!formData.studentName || !formData.phone) {
-      alert(t('enterRequiredDetails'));
+      showWarning(t('enterRequiredDetails'));
+      setSubmitError(t('enterRequiredDetails'));
       return;
     }
     if (!guardianConsent) {
-      alert(t('consentRequired'));
+      showWarning(t('consentRequired'));
+      setSubmitError(t('consentRequired'));
       return;
     }
 
@@ -63,8 +68,10 @@ export const AdmissionInquiry: React.FC = () => {
       });
       setInquiryId(res.regNo);
       setSubmitted(true);
+      showSuccess('प्रवेश आवेदन सफलतापूर्वक जमा हो गया!');
     } catch {
       setSubmitError(t('applicationFailed'));
+      showError(t('applicationFailed'));
     } finally {
       setIsSubmitting(false);
     }
