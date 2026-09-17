@@ -29,7 +29,7 @@ router.get('/status', (req, res) => {
   res.json({
     status: 'ok',
     database: states[state] || 'unknown',
-    databaseHost: mongoose.connection.host || 'none',
+    databaseHost: state === 1 ? 'MongoDB Cloud' : 'none',
     timestamp: new Date().toISOString()
   });
 });

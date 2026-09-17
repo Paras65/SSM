@@ -189,7 +189,6 @@ async function startServer() {
       minPoolSize: 2
     });
     console.log('✅ Connected successfully to MongoDB!');
-    console.log(`📡 Database Host: ${mongoose.connection.host}`);
 
     app.listen(PORT, () => {
       console.log(`🚀 Saraswati Shishu Mandir Backend running at: http://localhost:${PORT}`);
