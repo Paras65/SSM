@@ -32,6 +32,8 @@ export const StudentPortal: React.FC = () => {
   const {
     setViewMode,
     currentSchool,
+    schools,
+    setCurrentSchoolId,
     students,
     setSelectedStudentId,
     feeRecords,
@@ -45,6 +47,7 @@ export const StudentPortal: React.FC = () => {
   const [rollNo, setRollNo] = useState('');
   const [contact, setContact] = useState('');
   const [studentClass, setStudentClass] = useState('');
+  const [selectedBranchId, setSelectedBranchId] = useState(() => currentSchool.id);
   const [pin, setPin] = useState('');
   const [dob, setDob] = useState('');
   const [showSecurityFields, setShowSecurityFields] = useState(false);
@@ -185,8 +188,9 @@ export const StudentPortal: React.FC = () => {
     setIsLoggingIn(true);
     setLoginError('');
     try {
+      const branchIdToUse = selectedBranchId || currentSchool.id;
       const result = await api.loginStudent(
-        currentSchool.id,
+        branchIdToUse,
         rollNo,
         contact,
         studentClass || undefined,
@@ -233,8 +237,27 @@ export const StudentPortal: React.FC = () => {
           </div>
           {loginError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{loginError}</div>}
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">विद्यालय शाखा</label>
-            <div className="px-3 py-2.5 rounded-xl border border-stone-300 bg-stone-50 text-sm font-semibold text-stone-800">{currentSchool.hindiName} ({currentSchool.city})</div>
+            <label className="block text-xs font-bold text-stone-700 mb-1">विद्यालय शाखा (School Branch)</label>
+            {schools.length > 1 ? (
+              <select
+                value={selectedBranchId || currentSchool.id}
+                onChange={e => {
+                  setSelectedBranchId(e.target.value);
+                  setCurrentSchoolId(e.target.value);
+                }}
+                className="w-full px-3 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold text-stone-800 bg-white"
+              >
+                {schools.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.hindiName || s.name} ({s.city})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="px-3 py-2.5 rounded-xl border border-stone-300 bg-stone-50 text-sm font-semibold text-stone-800">
+                {currentSchool.hindiName || currentSchool.name} ({currentSchool.city})
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

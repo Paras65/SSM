@@ -10,7 +10,8 @@ interface TCVerificationModalProps {
 }
 
 export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen, onClose }) => {
-  const { students, publicSchool } = useSchool();
+  const { students, schools, publicSchool } = useSchool();
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -36,6 +37,9 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
 
     // 1. Check local in-memory student state or sampleChips first (instant & synchronous)
     let found = students.find(s => {
+      if (selectedBranchId && s.schoolId && s.schoolId !== selectedBranchId) {
+        return false;
+      }
       const roll = (s.rollNo || '').toLowerCase();
       const pen = (s.pen || '').toLowerCase();
       const name = (s.name || '').toLowerCase();
@@ -53,6 +57,9 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
 
     if (!found) {
       found = sampleChips.find(s => {
+        if (selectedBranchId && s.schoolId && s.schoolId !== selectedBranchId) {
+          return false;
+        }
         const roll = (s.rollNo || '').toLowerCase();
         const pen = (s.pen || '').toLowerCase();
         const name = (s.name || '').toLowerCase();
@@ -69,7 +76,7 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
     // 2. If not found in memory/sampleChips, query live MongoDB database asynchronously
     setIsSearching(true);
     try {
-      const liveMatch = await api.verifyStudentTc(q, publicSchool.id);
+      const liveMatch = await api.verifyStudentTc(q, selectedBranchId || undefined);
       if (liveMatch && liveMatch.id) {
         setMatchedStudent(liveMatch);
       } else {
@@ -82,6 +89,7 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
     }
   };
 
+  const issuingSchool = (matchedStudent?.schoolId && schools.find(s => s.id === matchedStudent.schoolId)) || publicSchool;
   const currentYear = new Date().getFullYear();
   const generatedTcNo = matchedStudent
     ? `SSM/${currentYear}/${(matchedStudent.rollNo || '001').replace(/[^0-9]/g, '').slice(-3) || '001'}`
@@ -120,6 +128,25 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
           
           {/* Search Box */}
           <div className="bg-amber-50/70 border border-orange-200 rounded-2xl p-4 space-y-3">
+            {schools.length > 1 && (
+              <div>
+                <label className="block text-[11px] font-bold text-orange-950 mb-1">
+                  शाखा चयन (वैकल्पिक / Branch Filter):
+                </label>
+                <select
+                  value={selectedBranchId}
+                  onChange={e => setSelectedBranchId(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-orange-300 rounded-xl text-xs font-semibold text-stone-800 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                >
+                  <option value="">सभी शाखाएं (All Branches / Central Registry)</option>
+                  {schools.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.hindiName || s.name} ({s.city})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <label className="block text-xs font-bold text-orange-950">
               टीसी संख्या (TC No.), स्थायी शिक्षा संख्या (PEN), अथवा छात्र अनुक्रमांक दर्ज करें:
             </label>
@@ -249,9 +276,9 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
                   {/* Issuing Authority Seal */}
                   <div className="bg-amber-100/60 border border-amber-300 rounded-xl p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-[11px] font-bold text-orange-950">जारीकर्ता संस्था:</p>
-                      <p className="text-xs font-extrabold text-stone-900">{publicSchool.hindiName}</p>
-                      <p className="text-[10px] text-stone-600">UDISE: {publicSchool.udiseCode} • सम्बद्ध: {publicSchool.affiliate}</p>
+                      <p className="text-[11px] font-bold text-orange-950">जारीकर्ता संस्था (Issuing Branch):</p>
+                      <p className="text-xs font-extrabold text-stone-900">{issuingSchool.hindiName || issuingSchool.name}</p>
+                      <p className="text-[10px] text-stone-600">UDISE: {issuingSchool.udiseCode} • सम्बद्ध: {issuingSchool.affiliate}</p>
                     </div>
                     <div className="text-center shrink-0">
                       <div className="w-12 h-12 rounded-full border-2 border-dashed border-orange-600 flex items-center justify-center text-[9px] font-black text-orange-800 leading-tight">
