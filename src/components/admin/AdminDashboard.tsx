@@ -89,15 +89,11 @@ export const AdminDashboard: React.FC = () => {
 
   const { showSuccess, showError, showInfo } = useToast();
 
-  const isPro = currentSchool.plan === 'pro';
+  const isPro = true; // All onboarded schools have full ERP feature access
   const [upgradeModalFeature, setUpgradeModalFeature] = useState<{ name: string; desc?: string } | null>(null);
 
-  const requirePro = (featureName: string, featureDesc: string, onAllowed: () => void) => {
-    if (isPro) {
-      onAllowed();
-    } else {
-      setUpgradeModalFeature({ name: featureName, desc: featureDesc });
-    }
+  const requirePro = (_featureName: string, _featureDesc: string, onAllowed: () => void) => {
+    onAllowed();
   };
 
   const [currentTab, setCurrentTab] = useState<AdminTab>(() => {
@@ -109,6 +105,7 @@ export const AdminDashboard: React.FC = () => {
     return 'overview';
   });
   const [showMobileModules, setShowMobileModules] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
@@ -653,15 +650,17 @@ export const AdminDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Proposal Print Button */}
-            <button
-              onClick={() => setShowProposalModal(true)}
-              className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
-              title="प्रधानाचार्य / प्रबंधक हेतु आधिकारिक A4 प्रस्ताव पत्र व कोटेशन प्रिंट करें"
-            >
-              <Printer className="w-3.5 h-3.5 text-yellow-200" />
-              <span className="hidden sm:inline">प्रस्ताव पत्र</span>
-            </button>
+            {/* Proposal Print Button (Developer Only) */}
+            {isDeveloper && (
+              <button
+                onClick={() => setShowProposalModal(true)}
+                className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+                title="प्रधानाचार्य / प्रबंधक हेतु आधिकारिक A4 प्रस्ताव पत्र व कोटेशन प्रिंट करें"
+              >
+                <Printer className="w-3.5 h-3.5 text-yellow-200" />
+                <span className="hidden sm:inline">प्रस्ताव पत्र</span>
+              </button>
+            )}
 
             {/* 1-Click Full Backup Button */}
             <button
@@ -694,15 +693,17 @@ export const AdminDashboard: React.FC = () => {
               <span>डेटा रीस्टोर (फ़ाइल से)</span>
             </button>
 
-            {/* Pitching Demo Seeder Button */}
-            <button
-              onClick={handleSeedDemoData}
-              className="hidden xl:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 text-yellow-300 text-[11px] font-bold border border-orange-800/80 transition-colors shrink-0 cursor-pointer"
-              title="पिचिंग एवं लाइव डेमो हेतु 12 छात्र, उपस्थिति, शुल्क एवं 360° रिपोर्ट कार्ड लोड करें"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-              <span>डेमो लोड</span>
-            </button>
+            {/* Pitching Demo Seeder Button (Developer Only) */}
+            {isDeveloper && (
+              <button
+                onClick={handleSeedDemoData}
+                className="hidden xl:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 text-yellow-300 text-[11px] font-bold border border-orange-800/80 transition-colors shrink-0 cursor-pointer"
+                title="पिचिंग एवं लाइव डेमो हेतु 12 छात्र, उपस्थिति, शुल्क एवं 360° रिपोर्ट कार्ड लोड करें"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+                <span>डेमो लोड</span>
+              </button>
+            )}
 
             <span className="hidden lg:inline-block px-2.5 py-1 bg-orange-950 rounded-full border border-orange-800 text-amber-200 shrink-0">
               प्रधानाचार्य: {currentSchool.principalName}
@@ -861,13 +862,7 @@ export const AdminDashboard: React.FC = () => {
             शुल्क प्रबंधन व रसीद (Fees)
           </button>
           <button
-            onClick={() => {
-              requirePro(
-                '360° समग्र प्रगति पत्र (Holistic Report Cards)',
-                'NEP 2020 एवं विद्या भारती 5 आधार विषयों (योग, शारीरिक, संगीत, संस्कृत, नैतिक शिक्षा) सहित समग्र प्रगति पत्र केवल प्रो योजना में उपलब्ध है।',
-                () => setCurrentTab('reports')
-              );
-            }}
+            onClick={() => setCurrentTab('reports')}
             className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap inline-flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'reports'
                 ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
@@ -875,12 +870,6 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             <span>प्रगति पत्र (Report Cards)</span>
-            {!isPro && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 border border-amber-400/50 text-[9px] font-black text-yellow-300 inline-flex items-center gap-0.5 uppercase">
-                <Lock className="w-2.5 h-2.5 text-yellow-300" />
-                <span>PRO</span>
-              </span>
-            )}
           </button>
           <button
             onClick={() => setCurrentTab('homework')}
@@ -893,13 +882,7 @@ export const AdminDashboard: React.FC = () => {
             दैनिक गृहकार्य ({homeworkList.length})
           </button>
           <button
-            onClick={() => {
-              requirePro(
-                'आचार्य एवं वेतन प्रबंधन (Staff & Payroll)',
-                'शिक्षकों का पूर्ण रिकॉर्ड, भत्ते एवं मासिक वेतन पर्ची (Salary Slip PDF) केवल प्रो योजना में उपलब्ध है।',
-                () => setCurrentTab('staff')
-              );
-            }}
+            onClick={() => setCurrentTab('staff')}
             className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap inline-flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'staff'
                 ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
@@ -907,12 +890,6 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             <span>आचार्य एवं वेतन ({staffList.length})</span>
-            {!isPro && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 border border-amber-400/50 text-[9px] font-black text-yellow-300 inline-flex items-center gap-0.5 uppercase">
-                <Lock className="w-2.5 h-2.5 text-yellow-300" />
-                <span>PRO</span>
-              </span>
-            )}
           </button>
           <button
             onClick={() => setCurrentTab('admissions')}
@@ -935,68 +912,103 @@ export const AdminDashboard: React.FC = () => {
             सूचना प्रसारण (Notices)
           </button>
           <div className="h-5 w-px bg-orange-700/60 self-center" />
-          <button
-            onClick={() => setShowExamModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>📝 परीक्षा व अंक</span>
-          </button>
-          <button
-            onClick={() => setShowTabulationModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-            title="कक्षावार समग्र परीक्षा परिणाम सारणी (Tabulation Register)"
-          >
-            <span>📋 टैबुलेशन रजिस्टर (TR)</span>
-          </button>
-          <button
-            onClick={() => setShowTimetableModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>🕒 समय सारिणी</span>
-          </button>
-          <button
-            onClick={() => setShowLeaveModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>🌴 अवकाश समीक्षा</span>
-          </button>
-          <button
-            onClick={() => setShowTransportModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>🚌 बस परिवहन</span>
-          </button>
-          <button
-            onClick={() => setShowLibraryModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>📚 पुस्तकालय</span>
-          </button>
-          <button
-            onClick={() => setShowInventoryModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>🎒 भंडार स्टॉक</span>
-          </button>
-          <button
-            onClick={() => setShowBulkNotificationModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-emerald-300 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>📢 संदेश प्रसारण</span>
-          </button>
-          <button
-            onClick={() => setShowAuditLogModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-cyan-200 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-            title="विद्यालय सुरक्षा एवं कार्यालय गतिविधि रजिस्टर"
-          >
-            <span>🛡️ गतिविधि रजिस्टर</span>
-          </button>
-          <button
-            onClick={() => setShowSessionManagementModal(true)}
-            className="py-3 px-2.5 border-b-2 border-transparent text-amber-300 hover:text-white whitespace-nowrap font-bold hover:bg-orange-800/30 transition flex items-center gap-1 cursor-pointer"
-          >
-            <span>🎓 सत्र व प्रोन्नति</span>
-          </button>
+          {/* Grouped Secondary Utilities Dropdown */}
+          <div className="relative self-center my-1">
+            <button
+              type="button"
+              onClick={() => setShowMoreMenu(prev => !prev)}
+              className="py-1.5 px-3 rounded-xl bg-orange-950/90 hover:bg-orange-900 text-amber-200 hover:text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-orange-700/60 shadow-xs"
+              title="अतिरिक्त विद्यालय सेवाएं (परीक्षा, समय-सारणी, बस, पुस्तकालय, भंडार, सत्र)"
+            >
+              <span>⚙️ अन्य सुविधाएं (More)</span>
+              <span className="text-[9px]">{showMoreMenu ? '▲' : '▼'}</span>
+            </button>
+            {showMoreMenu && (
+              <div
+                className="absolute left-0 sm:right-0 top-full mt-1.5 w-60 bg-stone-900 border border-orange-700 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-stone-800 text-xs animate-in fade-in zoom-in-95 duration-100"
+                onMouseLeave={() => setShowMoreMenu(false)}
+              >
+                <div className="py-1 px-1">
+                  <button
+                    type="button"
+                    onClick={() => { setShowExamModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>📝</span>
+                    <span>परीक्षा व अंक तालिका (Exams)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowTabulationModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>📋</span>
+                    <span>टैबुलेशन रजिस्टर (TR Sheet)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowTimetableModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>🕒</span>
+                    <span>समय सारिणी (Timetable)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowLeaveModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>🌴</span>
+                    <span>अवकाश समीक्षा (Leaves)</span>
+                  </button>
+                </div>
+                <div className="py-1 px-1">
+                  <button
+                    type="button"
+                    onClick={() => { setShowTransportModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>🚌</span>
+                    <span>बस परिवहन (Transport)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowLibraryModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>📚</span>
+                    <span>पुस्तकालय (Library)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowInventoryModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>🎒</span>
+                    <span>गणवेश व भंडार (Store)</span>
+                  </button>
+                </div>
+                <div className="py-1 px-1">
+                  <button
+                    type="button"
+                    onClick={() => { setShowSessionManagementModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>🎓</span>
+                    <span>सत्र व प्रोन्नति (Promotion)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowAuditLogModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-cyan-300 hover:bg-orange-950 hover:text-cyan-200 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>🛡️</span>
+                    <span>सुरक्षा गतिविधि रजिस्टर</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowHelpGuideModal(true)}
             className="my-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 hover:text-white border border-amber-400/50 whitespace-nowrap font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
