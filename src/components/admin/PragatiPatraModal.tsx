@@ -198,7 +198,7 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
                 {currentSchool.name}
               </p>
               <p className="text-[10px] text-stone-500 mt-0.5">
-                {currentSchool.address} • {currentSchool.affiliate}
+                {currentSchool.address} • {currentSchool.affiliate} • UDISE: {currentSchool.udiseCode || '09510100101'}
               </p>
 
               <div className="mt-2 inline-flex items-center gap-2 px-3.5 py-1 bg-orange-100 border border-orange-400 rounded-full text-xs font-bold text-orange-950">
@@ -237,6 +237,14 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
                 <div>
                   <span className="text-stone-500 text-[11px]">माता का नाम: </span>
                   <span className="font-bold text-stone-900">{student.motherName || 'श्रीमती अभिभावक'}</span>
+                </div>
+                <div>
+                  <span className="text-stone-500 text-[11px]">PEN (शिक्षा संख्या): </span>
+                  <span className="font-bold font-mono text-emerald-800">{student.pen || 'अप्राप्त'}</span>
+                </div>
+                <div>
+                  <span className="text-stone-500 text-[11px]">APAAR ID: </span>
+                  <span className="font-bold font-mono text-purple-800">{student.apaarId || '9876-5432-1098'}</span>
                 </div>
               </div>
 

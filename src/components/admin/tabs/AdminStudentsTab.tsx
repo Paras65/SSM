@@ -241,6 +241,14 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
                               PEN: —
                             </span>
                           )}
+                          {student.apaarId && (
+                            <span
+                              className="px-1.5 py-0.2 rounded bg-purple-50 text-purple-800 border border-purple-200 font-mono font-bold"
+                              title="APAAR ID (12-अंक, भारत सरकार)"
+                            >
+                              APAAR: {student.apaarId}
+                            </span>
+                          )}
                           {student.socialCategory && (
                             <span
                               className="px-1 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200 font-semibold"

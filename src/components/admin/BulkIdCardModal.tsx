@@ -158,6 +158,12 @@ export const BulkIdCardModal: React.FC<BulkIdCardModalProps> = ({
                       )}
                     </div>
 
+                    {std.pen && (
+                      <div className="text-stone-600 font-mono text-[10px]">
+                        PEN: <span className="font-bold text-emerald-800">{std.pen}</span>
+                      </div>
+                    )}
+
                     {std.fatherName && (
                       <div className="text-stone-600 truncate">
                         पिता: <span className="font-semibold text-stone-800">{std.fatherName}</span>

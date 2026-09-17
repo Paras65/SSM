@@ -11,6 +11,7 @@ const admissionSchema = new mongoose.Schema({
   motherName: { type: String },
   phone: { type: String, required: true },
   address: { type: String },
+  pen: { type: String, default: '' },
   guardianConsent: { type: Boolean, required: true },
   consentTimestamp: { type: Date, required: true },
   consentPolicyVersion: { type: String, required: true },

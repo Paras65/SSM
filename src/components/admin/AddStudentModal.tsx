@@ -36,8 +36,10 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
     admissionDate: studentToEdit?.admissionDate || new Date().toISOString().split('T')[0],
     bloodGroup: studentToEdit?.bloodGroup || 'B+',
     pen: studentToEdit?.pen || '',
+    apaarId: studentToEdit?.apaarId || '',
     socialCategory: (studentToEdit?.socialCategory || 'General') as SocialCategory,
-    cwsn: studentToEdit?.cwsn || false
+    cwsn: studentToEdit?.cwsn || false,
+    bpl: studentToEdit?.bpl || false
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -281,7 +283,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
               <span className="text-[10px] text-blue-600 font-semibold">भारत सरकार पोर्टल अनुरूप</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-stone-700 mb-1">
                   PEN (11 अंक)
@@ -292,6 +294,20 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
                   placeholder="उदा. 21098765431"
                   value={formData.pen}
                   onChange={e => setFormData({ ...formData, pen: e.target.value.replace(/\D/g, '') })}
+                  className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-stone-300 focus:ring-2 focus:ring-blue-500 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-stone-700 mb-1">
+                  APAAR ID (12 अंक)
+                </label>
+                <input
+                  type="text"
+                  maxLength={14}
+                  placeholder="उदा. 9876-5432-1098"
+                  value={formData.apaarId}
+                  onChange={e => setFormData({ ...formData, apaarId: e.target.value })}
                   className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-stone-300 focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
@@ -312,7 +328,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
                 </select>
               </div>
 
-              <div className="flex flex-col justify-end pb-1.5">
+              <div className="flex flex-col justify-end gap-1 pb-1">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700">
                   <input
                     type="checkbox"
@@ -320,7 +336,16 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
                     onChange={e => setFormData({ ...formData, cwsn: e.target.checked })}
                     className="w-4 h-4 text-blue-600 rounded border-stone-300 focus:ring-blue-500"
                   />
-                  <span>दिव्यांग (CWSN) छात्र</span>
+                  <span>दिव्यांग (CWSN)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={formData.bpl}
+                    onChange={e => setFormData({ ...formData, bpl: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded border-stone-300 focus:ring-blue-500"
+                  />
+                  <span>गरीबी रेखा (BPL / EWS)</span>
                 </label>
               </div>
             </div>

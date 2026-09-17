@@ -440,6 +440,16 @@ export const StudentPortal: React.FC = () => {
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300">
                   अनुक्रमांक: {currentStudent.rollNo}
                 </span>
+                {currentStudent.pen && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-50 text-blue-800 border border-blue-200" title="स्थायी शिक्षा संख्या (Govt of India PEN)">
+                    PEN: {currentStudent.pen}
+                  </span>
+                )}
+                {currentStudent.apaarId && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-purple-50 text-purple-800 border border-purple-200" title="APAAR ID (One Nation One Student ID)">
+                    APAAR: {currentStudent.apaarId}
+                  </span>
+                )}
               </div>
 
               <p className="text-sm font-semibold text-orange-800">

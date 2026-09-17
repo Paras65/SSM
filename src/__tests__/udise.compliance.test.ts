@@ -109,5 +109,35 @@ describe('UDISE+ SDMS Compliance & Government Export Suite', () => {
     expect(studentRow).toContain('General');
     expect(studentRow).toContain('NO'); // CWSN
   });
+
+  it('correctly includes APAAR ID in batch CSV when provided', () => {
+    const studentWithApaar: Student = {
+      id: 'std-apaar',
+      rollNo: '501',
+      name: 'भैया केशव झा',
+      gender: 'Bhaiya',
+      class: 'Class 8',
+      section: 'B',
+      fatherName: 'श्री दिनेश झा',
+      motherName: 'श्रीमती आशा झा',
+      contact: '9876543210',
+      address: 'गोरखपुर',
+      dob: '2012-08-14',
+      admissionDate: '2018-07-01',
+      bloodGroup: 'B+',
+      pen: '21098765499',
+      apaarId: '9876-5432-1098',
+      cwsn: true,
+      bpl: true
+    };
+
+    const csv = generateUdisePlusCSV([studentWithApaar], mockSchool);
+    const lines = csv.replace(/^\uFEFF/, '').split('\r\n');
+    const studentRow = lines[1];
+
+    expect(studentRow).toContain('9876-5432-1098');
+    expect(studentRow).toContain('21098765499');
+    expect(studentRow).toContain('YES'); // CWSN is true
+  });
 });
 

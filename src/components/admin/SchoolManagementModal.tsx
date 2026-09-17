@@ -79,6 +79,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [udiseCode, setUdiseCode] = useState('');
   const [plan, setPlan] = useState<'free' | 'pro'>(initialPlan);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdSchool, setCreatedSchool] = useState<School | null>(null);
@@ -186,6 +187,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
         affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान',
         established: new Date().getFullYear().toString(),
         timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
+        udiseCode: udiseCode.trim() || undefined,
         plan
       });
 
@@ -200,6 +202,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       setPhone('');
       setEmail('');
       setAddress('');
+      setUdiseCode('');
       setPlan('free');
     } catch (err: any) {
       showError('त्रुटि: ' + (err.message || 'पंजीकरण विफल रहा'));
@@ -556,7 +559,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                         />
                       </div>
 
-                      <div className="lg:col-span-3">
+                      <div className="lg:col-span-2">
                         <label className="block font-semibold text-stone-700 mb-1.5 text-xs sm:text-sm">
                           संबद्धता क्रमांक (Affiliation No.)
                         </label>
@@ -566,6 +569,20 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                           value={affiliationNo}
                           onChange={e => setAffiliationNo(e.target.value)}
                           className="w-full px-4 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-stone-300 bg-stone-50/40 hover:bg-white focus:bg-white text-stone-900 font-mono focus:outline-none focus:ring-3 focus:ring-orange-500/20 focus:border-orange-500 transition shadow-2xs placeholder:text-stone-400"
+                        />
+                      </div>
+
+                      <div className="lg:col-span-1">
+                        <label className="block font-semibold text-stone-700 mb-1.5 text-xs sm:text-sm">
+                          UDISE कोड (11-अंक, भारत सरकार)
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={11}
+                          placeholder="उदा. 09520100101"
+                          value={udiseCode}
+                          onChange={e => setUdiseCode(e.target.value.replace(/\D/g, ''))}
+                          className="w-full px-4 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-stone-300 bg-stone-50/40 hover:bg-white focus:bg-white text-stone-900 font-mono font-bold focus:outline-none focus:ring-3 focus:ring-orange-500/20 focus:border-orange-500 transition shadow-2xs placeholder:text-stone-400"
                         />
                       </div>
                     </div>
@@ -924,6 +941,14 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             </span>
                             <span className="text-stone-300">•</span>
                             <span className="font-mono text-stone-500 text-xs">{sch.affiliationNo}</span>
+                            {sch.udiseCode && (
+                              <>
+                                <span className="text-stone-300">•</span>
+                                <span className="font-mono text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 text-[10px] font-bold">
+                                  UDISE: {sch.udiseCode}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

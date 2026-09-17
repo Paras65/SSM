@@ -12,6 +12,7 @@ const schoolSchema = new mongoose.Schema({
   city: { type: String, required: true },
   state: { type: String, required: true },
   prant: { type: String, required: true }, // e.g. गोरक्ष प्रांत, दिल्ली प्रांत, काशी प्रांत
+  udiseCode: { type: String, default: '09510100101' },
   phone: { type: String, required: true },
   email: { type: String, required: true },
   timings: { type: String, default: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)' },
