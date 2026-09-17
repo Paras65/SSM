@@ -1,301 +1,216 @@
-# SSM School ERP
-
-> **Saraswati Shishu Mandir (SSM) School Management & ERP System**
-> Built by [init65.co.in](https://www.init65.co.in) for Vidya Bharati affiliated schools.
-
-A full-stack, paperless school management platform built to replace manual paperwork with intuitive digital tools — honoring the values of Vidya Bharati and Panchmukhi Shiksha.
+# 🏫 Saraswati Shishu Mandir (SSM) School ERP
+### Enterprise School Management & Digital Empowerment Platform
+*Built with reverence and precision by [init65.co.in](https://www.init65.co.in) for Vidya Bharati affiliated schools across India.*
 
 ---
 
-## 🌟 Developer Vision
+<div align="center">
 
-> *"As a full-stack developer at init65.co.in, I built this school management ERP to solve the real, everyday challenges faced by Saraswati Shishu Mandir (SSM) schools, Acharyas (teachers), and students. By replacing tedious manual paperwork with intuitive digital tools, eliminating expensive SMS charges with zero-cost WhatsApp alerts, and honoring the timeless values of Vidya Bharati and Panchmukhi Shiksha, this platform empowers schools to become truly paperless, transparent, and digitally empowered."*
+[![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge&logo=checkmarx)](https://init65.co.in)
+[![NEP 2020 Compliant](https://img.shields.io/badge/Compliance-NEP%202020%20%26%20UDISE%2B-blue?style=for-the-badge&logo=google)](https://udiseplus.gov.in)
+[![Panchmukhi Shiksha](https://img.shields.io/badge/Curriculum-Panchmukhi%20Shiksha-orange?style=for-the-badge)](https://init65.co.in)
+[![Multi-Branch Architecture](https://img.shields.io/badge/Architecture-Multi--Branch%20Tenant%20Isolation-purple?style=for-the-badge)](https://init65.co.in)
+[![Zero-Cost WhatsApp Alerts](https://img.shields.io/badge/Communication-1--Click%20WhatsApp%20Broadcaster-25D366?style=for-the-badge&logo=whatsapp)](https://init65.co.in)
 
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, TypeScript, Vite 8 |
-| Styling | Tailwind CSS 4 |
-| Backend | Express 5, Node.js |
-| Database | MongoDB + Mongoose 9 |
-| Auth | JWT (jsonwebtoken) |
-| Security | Helmet, CORS, NoSQL sanitization, express-rate-limit |
-| PWA | Service worker + offline app shell |
-| Testing | Vitest (unit/integration), Playwright (E2E) |
-| Linting | oxlint |
+</div>
 
 ---
 
-## 🏫 Features
+## 🌟 Developer Vision & Philosophy
 
-### Admin Portal
-| Module | Description |
-|---|---|
-| 📋 Student Management | Add, edit, delete, search students; bulk CSV import |
-| 💰 Fee Management | Fee records, payment collection, receipts, arrear tracking |
-| 📅 Attendance | Daily attendance marking and reports |
-| 📝 Exam Management | Create exams, record marks, lock results |
-| 📊 Tabulation Register | Class-wise result sheets |
-| 📄 Pragati Patra | Progress report cards |
-| 🏫 Session Management | Academic session handling, student promotion/detention |
-| 🕒 Timetable Manager | Class-wise timetable creation |
-| 📚 Library Management | Book inventory, issue/return tracking |
-| 🚌 Transport Management | Route and vehicle management |
-| 🏪 Inventory Management | School inventory and stock tracking |
-| 🏖️ Leave Management | Staff/student leave applications |
-| 🎓 Certificates | Transfer Certificate (TC), Bonafide, Character Certificate |
-| 🪪 ID Cards | Student ID cards, Bulk ID card generation |
-| 🧾 Admit Cards | Exam admit card generation |
-| 💼 Staff Salary Slips | Staff payroll and salary slip generation |
-| 📢 Bulk Notifications | WhatsApp-based bulk parent notifications |
-| 🏛️ School Management | Multi-branch school settings and configuration |
-| 🔍 Audit Logs | Full security and activity audit trail |
-| 🔒 Pro Upgrade | Branch-level plan management |
-| 💡 Help Guide | In-app 1-minute guide for non-technical staff |
-
-### Teacher Portal
-- Secure login with branch selector
-- Daily attendance marking (30s bulk mark) with CSV export
-- Exam marks entry with lock concurrency protection
-- Homework assignment and diary management
-- Timetable view and staff salary slip access (Pro)
-
-### Student / Parent Portal
-- Passwordless login (Roll No + Contact) with sibling disambiguation
-- Multi-branch selection dropdown for multi-school environments
-- Optional 4-digit PIN and DOB security verification
-- Official UDISE+ PEN and APAAR ID badges
-- Real-time attendance ledger, homework diary, fee ledger & receipts
-- 360° NEP 2020 progress report, admit card, TC, Bonafide & Character certificates
-
-### Public Landing Page
-- School information, Vedic heritage, daily panchang, and photo gallery
-- Online admission enquiry form (2026-27) with transfer PEN support
-- Central Registry & branch-filtered online TC verification with dynamic official seal
-- Multi-branch school locator and 1-click live demo
+> *"As a full-stack developer at init65.co.in, I built this school management ERP to solve the real, everyday challenges faced by Saraswati Shishu Mandir (SSM) schools, Acharyas (teachers), and students. By replacing tedious manual paperwork with intuitive digital tools, eliminating expensive third-party SMS costs with instant WhatsApp notifications, and honoring the timeless values of Vidya Bharati and Panchmukhi Shiksha, this platform empowers schools to become truly paperless, transparent, and digitally self-reliant."*
+>
+> — **Lead Engineer**, [init65.co.in](https://www.init65.co.in)
 
 ---
 
-## 🗄️ Database Models
+## 🏛️ System Architecture & Portal Ecosystem
 
-18 Mongoose models: `Student`, `Staff`, `School`, `Exam`, `Fee`, `Attendance`, `ReportCard`, `Timetable`, `Book`, `BookIssue`, `InventoryItem`, `Transport`, `Leave`, `Notice`, `Homework`, `Admission`, `SalarySlip`, `AuditLog`
+SSM ERP operates on a unified, high-performance architecture delivering tailored experiences across four dedicated portals while strictly safeguarding data privacy and multi-branch tenant isolation.
 
----
+```mermaid
+flowchart TD
+    subgraph Portals["👥 Dedicated Stakeholder Portals"]
+        P1["🏛️ Administrator Portal<br/>(Full Operational & Financial Control)"]
+        P2["👨‍🏫 Acharya / Teacher Portal<br/>(Attendance, Marks & Daily Diary)"]
+        P3["👨‍👩‍👧 Student & Parent Portal<br/>(Ledger, 360° Reports, ID & Admit Cards)"]
+        P4["🌐 Public Portal & Admissions<br/>(Online Enquiries & TC Verification)"]
+    end
 
-## 🚀 Performance & Scalability
+    subgraph Core["⚡ Centralized ERP Engine"]
+        M1["📋 Student & Academic Progression"]
+        M2["📅 Real-Time Attendance & Leave"]
+        M3["💰 Fee Counter & Lifetime Financial Ledger"]
+        M4["📝 Exam Schedules, Marks Matrix & Locking"]
+        M5["🚌 Transport, Library & Store Inventory"]
+        M6["📢 1-Click WhatsApp Communication Hub"]
+    end
 
-- **Bundle size:** 206 KB initial JS (64.6% reduction via `React.lazy` route-level code splitting)
-- **Concurrency:** 50 simultaneous parallel reads → 100% success rate in < 280ms
-- **Bulk ingestion:** 200 student records batch insert in ~31ms
-- **Rate limiting:** Automated rate limiting across all portal authentication and public inquiry channels
-- **Security:** Strict input sanitization, secure token authentication, secure HTTP headers, and tenant data isolation
+    subgraph Compliance["🇮🇳 Government & Educational Standards"]
+        G1["🏛️ UDISE+ SDMS 21-Column Batch Export"]
+        G2["🪪 Permanent Education Number (PEN) & APAAR ID"]
+        G3["🌸 Vidya Bharati Panchmukhi Shiksha Framework"]
+        G4["📜 Central Registry Online TC Verification"]
+    end
 
-Full details: [docs/SCALABILITY_AND_PERFORMANCE.md](docs/SCALABILITY_AND_PERFORMANCE.md)
-
----
-
-## 🧪 Testing
-
-```bash
-# Unit & integration tests (213+ tests across 17 test suites)
-npm test
-
-# E2E browser tests (Playwright — Desktop, Pixel 7, iPhone 14)
-npm run test:e2e
+    Portals <--> Core
+    Core --> Compliance
 ```
 
-**Test coverage:**
-- 213+ unit/integration tests across 17 test suites (100% pass rate)
-- 24 E2E Playwright tests (Desktop Chrome, Pixel 7, iPhone 14)
-- Includes: UDISE+ SDMS compliance, active record cascades & orphan cleanup, security hardening, NoSQL injection, DPDP Act 2023 compliance, multi-tenant isolation, scalability, negative testing, audit logging
+---
+
+## 🏫 Stakeholder Portals Showcase
+
+| Portal | Primary Audience | Key Capabilities |
+|---|---|---|
+| **🏛️ Admin Portal** | Principals & Office Administrators | Complete school governance, admission approvals, fee demands & multi-mode collections, staff payroll slips, timetable management, certificate generation, and security audit logs. |
+| **👨‍🏫 Acharya Portal** | Teachers & Subject Faculty | Rapid 30-second class attendance, homework diary broadcasting, tabular marks entry matrix with exam lock verification, timetable view, and salary slip access. |
+| **👨‍👩‍👧 Student & Parent Portal** | Students & Guardians | Multi-branch login with sibling disambiguation, official PEN & APAAR ID badges, live attendance stats, fee payment history & digital receipts, 360° progress reports, and downloadable admit/ID cards. |
+| **🌐 Public Portal** | Prospective Parents & Institutions | School history & Vedic heritage, online admission enquiry intake, and instant Transfer Certificate (TC) verification with dynamic digital school seals. |
 
 ---
 
-## ⚙️ Local Development
+## 🌸 Vidya Bharati Panchmukhi Shiksha & NEP 2020
 
-### 1. Install dependencies
+The platform natively implements the **Panchmukhi Shiksha (Five-Dimensional Education)** framework of Vidya Bharati, evaluating the child's holistic growth alongside standard scholastic subjects:
+
+```mermaid
+graph TD
+    Root["🌸 Vidya Bharati Panchmukhi Shiksha (NEP 2020 Holistic Evaluation)"]
+    Root --> P1["🏃 1. शारीरिक शिक्षा (Physical)<br/>Sports, Surya Namaskar, Physical Fitness"]
+    Root --> P2["🧘 2. योग व प्राणायाम (Yoga)<br/>Mindfulness, Asanas, Concentration"]
+    Root --> P3["🎵 3. संगीत व कला (Music & Arts)<br/>Vandana, Patriotic Anthems, Fine Arts"]
+    Root --> P4["📜 4. संस्कृत व संस्कृति (Heritage)<br/>Vedic Chanting, Subhashita, Cultural Roots"]
+    Root --> P5["🙏 5. नैतिक व आध्यात्मिक (Spiritual)<br/>Integrity, Service, Respect for Elders"]
+```
+
+---
+
+## 🚀 Core Production-Hardened Modules
+
+### 1. 📋 Student Lifecycle & Admissions
+- **End-to-End Onboarding**: Manage student profiles with automatic roll number sequencing, class-section allocation, blood groups, and guardian records.
+- **Online Admission Workflow**: Public inquiry form with dynamic academic session selection, parental consent tracking, and printable admission acknowledgement slips.
+- **Bulk CSV Ingestion**: High-throughput student directory import with instant validation.
+
+### 2. 📅 Attendance & Absentee Management
+- **Dual Perspective Views**: Switch effortlessly between daily roll-call marking and aggregated monthly/custom date-range attendance summaries.
+- **Automated Low Attendance Alerts**: Real-time identification of students falling below 75% attendance threshold.
+- **1-Click WhatsApp Notices**: Instant parent notification links pre-filled with student absentee summaries.
+
+### 3. 💰 Fee Counter & Financial Ledger
+- **Demand Generation**: Create recurring and term-based fee demands per academic year with transparent fee head breakdowns.
+- **Multi-Mode Collection**: Instant receipt generation supporting Cash, UPI, Bank Transfer (NEFT/RTGS), and Cheques.
+- **Lifetime Financial Ledger**: Complete audit ledger showing total billed, paid, and outstanding balances with one-click past receipt reprints.
+- **Automated Arrears Rollover**: Effortless year-end rollover of pending balances into the new academic session with idempotent duplication protection.
+
+### 4. 📝 Examinations & 360° Evaluation
+- **Flexible Examination Scheduling**: Date sheets, maximum marks, and room number assignments configured per session.
+- **Marks Matrix**: High-speed tabular marks entry for teachers with automatic grade (`A+` to `D`) and percentage computation.
+- **Result Freezing (`Lock`)**: Administrative result locking mechanism to safeguard verified marks against alteration.
+- **360° NEP 2020 Progress Reports**: Multi-dimensional report cards combining scholastic achievements with Panchmukhi Shiksha co-scholastic grades.
+
+### 5. 🚌 Operations, Library & Inventory
+- **Multi-Section Timetables**: Weekly class schedule planner supporting multiple sections per grade with clean print layouts.
+- **Library Cataloging**: Accession registry, book issue/return tracking, and overdue fine management.
+- **Fleet Management**: Bus route creation, stop pickup/drop timings, driver details, and student route assignments.
+- **Store & Uniform Inventory**: Stock transaction ledgers with low-stock warning alerts.
+
+### 6. 🇮🇳 Government UDISE+ & Digital Identity Compliance
+- **UDISE+ SDMS 21-Column Export**: Standardized UTF-8 BOM CSV batch export fully compatible with `udiseplus.gov.in`.
+- **Permanent Education Number (PEN)**: Tracking the 11-digit national student ID across profiles, transfers, and certificates.
+- **APAAR ID (One Nation, One Student ID)**: Seamless capture of the 12-digit digital registry ID with prominent badges on reports and student portals.
+- **Institutional UDISE Code**: Official 11-digit school code integration with certified digital seals on all documents.
+
+---
+
+## 🪪 Interactive UI & Document Previews
+
+### 📱 Student & Parent Portal Dashboard
+```text
++-------------------------------------------------------------------------------+
+|  🏛️ सरस्वती शिशु मंदिर | 👤 छात्र: आदित्य कुमार (कक्षा: 8-A, अनुक्रमांक: 104)      |
+|  [PEN: 21098765432]   [APAAR ID: 9876 5432 1098]   [उपस्थिति: 94.2% 🟢 उत्तम]  |
++-------------------------------------------------------------------------------+
+|  [📅 दैनिक उपस्थिति]   [📝 गृहकार्य डायरी]   [💰 शुल्क व रसीदें]   [📊 360° प्रगति पत्र] |
++-------------------------------------------------------------------------------+
+|  📌 आज का गृहकार्य: गणित - अभ्यास 4.2 (परिमेय संख्याएँ प्रश्न 1 से 5 हल करें)      |
+|  💳 शुल्क स्थिति: ₹0 देय (सत्र 2026-27 पूर्ण चुकता)  [🖨️ रसीद डाउनलोड करें]     |
+|  📜 त्वरित प्रमाण पत्र: [🪪 परिचय पत्र]  [🎟️ प्रवेश पत्र]  [📜 Bonafide]  [🎓 TC]  |
++-------------------------------------------------------------------------------+
+```
+
+### 🪪 Standardized Student Identity Card (8-per-A4 Print Ready)
+```text
++-------------------------------------------------------------+
+|                सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक            |
+|                  शास्त्री नगर शाखा, गोरखपुर                 |
++-------------------------------------------------------------+
+|  +-------+  नाम: आदित्य कुमार         कक्षा: 8-A  रोल: 104   |
+|  |       |  पिता: श्री राजेश कुमार    रक्त समूह: B+         |
+|  | [फोटो] |  जन्म: 14/08/2012         मोबाइल: 9876543210    |
+|  |       |  PEN: 21098765432        APAAR: 9876 5432 1098  |
+|  +-------+  पता: 42, आर्यनगर, गोरखपुर                      |
++-------------------------------------------------------------+
+|  [QR Barcode]                              (प्राचार्य मुहर) |
++-------------------------------------------------------------+
+```
+
+---
+
+## 🛡️ Enterprise Security & Multi-Tenancy
+
+- **Airtight Multi-Tenant Branch Isolation**: Complete logical and database-level separation of school branch data ensuring records never co-mingle across campuses.
+- **Role-Based Portal Access Control**: Discrete permission layers governing Administrators, Acharyas, Students, and Public visitors.
+- **Relational Integrity & Cascades**: Real-time propagation of student profile updates across active attendance, fees, and leave records.
+- **Session Protection**: Sliding-window rate limiting protecting all authentication portals against automated brute-force attacks.
+- **Comprehensive Audit Trail**: Tamper-resistant activity logs tracking logins, marks submissions, leave decisions, and administrative actions.
+
+---
+
+## ⚡ Technology Highlights
+
+| Dimension | Standard / Capability |
+|---|---|
+| **Modern Frontend** | High-performance React 19, TypeScript, and Vite with responsive Tailwind CSS |
+| **Progressive Web App** | Service worker caching with resilient offline state preservation |
+| **Document Processing** | Print-optimized A4 CSS layouts for certificates, fee receipts, and ID cards |
+| **Bilingual Localization** | Native Hindi vocabulary with accessible English equivalents |
+| **Communication Layer** | Direct client-side WhatsApp Web messaging with zero external SMS cost |
+
+---
+
+## 🚀 Getting Started
+
+### Local Setup
+
 ```bash
+# 1. Clone repository
+git clone https://github.com/Paras65/SSM.git
+
+# 2. Install dependencies
 npm install
-```
 
-### 2. Configure environment
-```bash
+# 3. Configure environment
 cp .env.example .env
-# Fill in your values
-```
 
-### 3. Start backend
-```bash
-npm run server
-```
-
-### 4. Start frontend
-```bash
-npm run dev
-```
-
-### 5. Open in browser
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000/api
-
-Or run both together:
-```bash
+# 4. Launch full-stack application
 npm run dev:all
 ```
 
----
-
-## 🔐 Configuration
-
-Copy `.env.example` to `.env` and set your local environment values (database connection string, port, and security tokens).
-
-> **Security Note**: Never commit actual database credentials, tokens, or security keys to version control. Always configure production secrets via secure hosting environment dashboards.
+- **Frontend Application**: `http://localhost:5173`
+- **Backend Service**: `http://localhost:5000`
 
 ---
 
-## ☁️ Deployment
+## 📖 Operational Documentation
 
-### Frontend → Vercel
-
-1. Import project into Vercel
-2. Set framework: **Vite**
-3. Add environment variable:
-   ```env
-   VITE_API_BASE=https://your-render-app.onrender.com/api
-   ```
-4. Deploy
-
-### Backend → Render
-
-1. Create a new **Web Service** on Render
-2. Set runtime command:
-   ```bash
-   node server/index.js
-   ```
-3. Add environment variables:
-   ```env
-   PORT=5000
-   MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/ssm_school
-   JWT_SECRET=your_secure_secret
-   DEVELOPER_ADMIN_PASSCODE=your_private_passcode
-   CORS_ORIGIN=https://your-vercel-app.vercel.app
-   ```
-4. Deploy
+For in-depth operational walkthroughs, step-by-step role guides, and institutional workflows, explore the complete manual:
+- [📘 Complete User Manual (संपूर्ण उपयोगकर्ता मार्गदर्शिका)](docs/USER_MANUAL.md)
 
 ---
 
-## 📁 Project Structure
+## 📜 License & Intellectual Property
 
-```
-ssm/
-├── src/
-│   ├── components/
-│   │   ├── admin/       # 29 admin feature modals + dashboard
-│   │   ├── teacher/     # Teacher portal components
-│   │   ├── student/     # Student/parent portal components
-│   │   ├── public/      # Landing page sections
-│   │   └── common/      # Shared UI components
-│   ├── context/         # React context (SchoolContext, AuthContext, etc.)
-│   ├── services/        # API client (api.ts)
-│   ├── types/           # TypeScript type definitions
-│   ├── utils/           # CSV export, WhatsApp alerts, UDISE export, etc.
-│   └── __tests__/       # Vitest unit & integration tests
-├── server/
-│   ├── index.js         # Express app entry point
-│   ├── routes/api.js    # API routes (TODO: split by domain)
-│   ├── models/          # 17 Mongoose models
-│   ├── middleware/      # Auth, sanitization middleware
-│   ├── utils/           # Server-side utilities
-│   └── seed.js          # Database seeding script
-├── e2e/                 # Playwright E2E tests
-├── public/              # Static assets, PWA manifest
-├── docs/                # Technical documentation
-└── .github/workflows/   # CI (GitHub Actions)
-```
-
----
-
-## 📝 Notes
-
-- `localStorage` is used **only** for lightweight UI preferences (language selection, current branch ID). All application data is persisted via the MongoDB-backed API.
-- Local development proxies the frontend to the local Express backend.
-- The CI pipeline (`npm test`) runs on every push and pull request via GitHub Actions.
-
----
-
-## 📜 License
-
-MIT — [init65.co.in](https://www.init65.co.in)
-
----
-
-## 🚀 Production Hardened Feature Modules
-
-> A comprehensive overview of core enterprise modules powering the Saraswati Shishu Mandir ERP.
-
-### 📋 1. Student Management & Onboarding
-- **In-line Student Management**: Complete student lifecycle management with profile editing, contact records, and class assignments.
-- **Unrestricted Reporting**: Full access to student directory data, ID cards, Transfer Certificates, and progress reports.
-- **Responsive Feedback**: Non-intrusive notification banners and confirmations replacing intrusive browser popups.
-
-### 📅 2. Attendance Management
-- **Flexible Views**: Toggle between daily roll-call marking and aggregated monthly or custom date-range attendance summaries.
-- **Absentee Tracking & Communication**: Filter absentees with low attendance (<75%) flags, export absent student lists, and trigger instant parent alerts.
-- **Seamless Portals**: Quick-mark attendance for teachers with multi-class scoping and offline resilience.
-
-### 💰 3. Fee Counter & Financial Records
-- **Demand Generation**: Create and issue student fee demands with customizable terms and academic session presets.
-- **Session Filtering & Ledger**: Comprehensive lifetime student ledger with historical billing vs payment tracking and instant receipt printing.
-- **Automated Arrears Rollover**: Seamless year-end rollover of outstanding balances with idempotent duplication safeguards.
-- **Safe Confirmations**: Styled in-app confirmation modals for financial record modifications.
-
-### 📝 4. Examinations & Evaluation
-- **Exam Lifecycle**: Dynamic scheduling with session defaults, flexible subject configuration, and marks entry matrices.
-- **Lock & Freezing**: Result freezing to prevent tampering after official declaration.
-- **NEP 2020 Holistic Progress Reports**: 360-degree student evaluation including scholastic and co-scholastic domains.
-- **Direct Sharing**: Automated progress report summaries shareable directly with parents.
-
-### 💼 5. Staff & Payroll
-- **Roster & Status Tracking**: Complete staff directory supporting active, on-leave, and resigned personnel tracking.
-- **Automated Salary Slips**: Dynamic monthly salary slip calculation with historical disbursement ledgers and payment mode recording.
-- **Leave Synchronization**: Integrated staff leave approvals with automatic duty status synchronization.
-- **Bulk Payroll Export**: Comprehensive salary report downloads for institutional accounting.
-
-### 🏫 6. Online Admissions
-- **Public Inquiry Portal**: Streamlined application intake with dynamic academic session selection and guardian consent.
-- **Application Processing**: Review, approve, or reject admission applications with class-aware sequential roll number assignment.
-- **Formal Acknowledgement**: Printable admission acknowledgement slips with institutional branding and checklist verification.
-- **Abuse Prevention**: Automated submission rate limiting and branch verification to block automated spam.
-
-### 📢 7. Daily Homework & Notice Board
-- **Homework Diary**: Class-specific assignment broadcasting, status tracking, and parent communication.
-- **Institutional Notices**: Expiry-aware announcement board with active status filters and multi-branch isolation.
-- **Protected Actions**: Dedicated confirmation dialogs to prevent accidental deletion of critical announcements.
-
-### 🕒 8. School Operations (Timetable, Library, Transport, Inventory)
-- **Multi-Section Timetables**: Weekly class schedule creator supporting multiple sections per grade with clean print layouts.
-- **Library Circulation**: Catalog management, book issue/return tracking, and overdue fine calculations.
-- **Fleet & Transport**: Route configuration, vehicle tracking, stop definitions, and student route assignments.
-- **Inventory Ledger**: Asset inventory tracking with minimum stock alerts and transparent movement transaction history.
-
-### 🏛️ 9. Multi-Branch Architecture & Portals
-- **Isolated Multi-Tenancy**: Complete data partitioning across independent branches and campuses.
-- **Dedicated Portals**: Tailored interfaces for administrators, acharyas (teachers), and students/parents.
-- **Robust Authentication**: Dynamic branch selection, multi-factor credential verification, and random security keys for newly registered branches.
-- **Real-Time Synchronization**: Instant state synchronization across teacher marks submission and student portals.
-
-### 🔒 10. Data Integrity & Consistency
-- **Cascading Updates**: Automatic propagation of student profile updates across active attendance and leave records.
-- **Relational Integrity**: Complete cleanup of dependent historical records upon verified student removal.
-- **Multi-Credential Verification**: Enhanced security with optional parent PINs and date-of-birth verification.
-
-### 🇮🇳 11. Government UDISE+ & NEP 2020 Compliance
-- **UDISE+ SDMS 21-Column Export**: Standardized UTF-8 CSV exports fully formatted for the national `udiseplus.gov.in` portal.
-- **Permanent Education Number (PEN) & APAAR ID**: Integration with the Ministry of Education's 12-digit One Nation One Student ID registry across admissions, profiles, and reports.
-- **Institutional Verification**: 11-digit school UDISE code validation and centralized Transfer Certificate (TC) verification with authentic digital seals.
-
-
-
+- **Copyright**: © 2026 [init65.co.in](https://www.init65.co.in). All Rights Reserved.
+- **License**: MIT License — Built for Vidya Bharati and educational institutions nationwide.
