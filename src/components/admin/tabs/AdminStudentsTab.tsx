@@ -12,7 +12,7 @@ import {
   IdCard,
   Plus,
   Camera,
-  Lock,
+  Edit3,
   Trash2
 } from 'lucide-react';
 
@@ -21,6 +21,7 @@ interface AdminStudentsTabProps {
   totalBahin: number;
   requirePro: (featureName: string, featureDesc: string, onAllowed: () => void) => void;
   onOpenAddStudent: () => void;
+  onOpenEditStudent?: (student: Student) => void;
   onOpenBulkImport: () => void;
   onOpenBulkIdCard: () => void;
   onOpenPhotoUpload: (student: Student) => void;
@@ -36,6 +37,7 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
   totalBahin,
   requirePro,
   onOpenAddStudent,
+  onOpenEditStudent,
   onOpenBulkImport,
   onOpenBulkIdCard,
   onOpenPhotoUpload,
@@ -121,18 +123,14 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
 
           <button
             onClick={() => {
-              requirePro(
-                'छात्र पंजिका CSV / Excel डेटा निर्यात',
-                'समस्त छात्रों का पूर्ण रिकॉर्ड एक्सेल / CSV प्रारूप में बैकअप व निर्यात केवल प्रो योजना में उपलब्ध है।',
-                () => exportStudentsToCSV(filteredStudents.length > 0 ? filteredStudents : students)
-              );
+              exportStudentsToCSV(filteredStudents.length > 0 ? filteredStudents : students);
+              showSuccess('छात्र पंजिका CSV / Excel सफलतापूर्वक डाउनलोड हो गई है।');
             }}
-            className="flex items-center gap-1 px-3 py-1.5 bg-stone-700 hover:bg-stone-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1.5 bg-stone-700 hover:bg-stone-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
             title="Export Student Directory to CSV / Excel"
           >
             <Download className="w-3.5 h-3.5 text-green-400" />
             <span>CSV निर्यात</span>
-            {!isPro && <Lock className="w-2.5 h-2.5 text-amber-300 ml-0.5" />}
           </button>
 
           <button
@@ -277,56 +275,45 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
                       <Camera className="w-3 h-3 text-amber-700" />
                       <span>फोटो</span>
                     </button>
+                    {onOpenEditStudent && (
+                      <button
+                        onClick={() => onOpenEditStudent(student)}
+                        className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition"
+                        title="Edit Student Details (छात्र विवरण संपादित करें)"
+                      >
+                        <Edit3 className="w-3 h-3 text-stone-600" />
+                        <span>संपादन</span>
+                      </button>
+                    )}
                     <button
-                      onClick={() => {
-                        requirePro(
-                          'छात्र परिचय पत्र (Student ID Card)',
-                          'बारकोड युक्त बहु-रंगी डिजिटल छात्र पहचान पत्र प्रिंटिंग केवल प्रो योजना में उपलब्ध है।',
-                          () => onOpenIdCard(student)
-                        );
-                      }}
-                      className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-orange-950 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                      onClick={() => onOpenIdCard(student)}
+                      className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 text-orange-950 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition"
                       title="Print Student ID Card"
                     >
                       <IdCard className="w-3 h-3 text-orange-700" />
                       <span>परिचय पत्र</span>
-                      {!isPro && <Lock className="w-2.5 h-2.5 text-amber-700 ml-0.5" />}
                     </button>
                     <button
-                      onClick={() => {
-                        requirePro(
-                          'स्थानांतरण प्रमाण पत्र (Transfer Certificate / TC)',
-                          'आधिकारिक स्थानांतरण प्रमाण पत्र (TC) जेनरेशन एवं प्रिंटिंग केवल प्रो योजना में उपलब्ध है।',
-                          () => onOpenTc(student)
-                        );
-                      }}
-                      className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                      onClick={() => onOpenTc(student)}
+                      className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition"
                       title="Print Transfer Certificate (स्थानांतरण प्रमाण पत्र)"
                     >
                       <FileText className="w-3 h-3 text-orange-700" />
                       <span>टी.सी. (TC)</span>
-                      {!isPro && <Lock className="w-2.5 h-2.5 text-amber-700 ml-0.5" />}
                     </button>
                     <button
                       onClick={() => {
-                        requirePro(
-                          '360° समग्र प्रगति पत्र (Report Card)',
-                          'डिजिटल प्रगति पत्र देखने एवं मुद्रण हेतु प्रो योजना सक्रिय करें।',
-                          () => {
-                            const report = reportCards.find(r => r.studentId === student.id);
-                            if (report) {
-                              onOpenReportModal({ report, student });
-                            } else {
-                              showInfo(`'${student.name}' का प्रगति पत्र अभी जनरेट नहीं किया गया है।`);
-                            }
-                          }
-                        );
+                        const report = reportCards.find(r => r.studentId === student.id);
+                        if (report) {
+                          onOpenReportModal({ report, student });
+                        } else {
+                          showInfo(`'${student.name}' का प्रगति पत्र अभी जनरेट नहीं किया गया है।`);
+                        }
                       }}
-                      className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-orange-900 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-orange-900 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition"
                       title="View Report Card"
                     >
                       <span>प्रगति पत्र</span>
-                      {!isPro && <Lock className="w-2.5 h-2.5 text-amber-700 ml-0.5" />}
                     </button>
                     <button
                       onClick={() => onOpenCharacterCertificate(student)}

@@ -14,7 +14,8 @@ const admissionSchema = new mongoose.Schema({
   guardianConsent: { type: Boolean, required: true },
   consentTimestamp: { type: Date, required: true },
   consentPolicyVersion: { type: String, required: true },
-  status: { type: String, enum: ['Pending', 'Reviewed', 'Admitted'], default: 'Pending' },
+  status: { type: String, enum: ['Pending', 'Reviewed', 'Admitted', 'Rejected'], default: 'Pending' },
+  rejectionReason: { type: String },
   submissionDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
 }, {
   timestamps: true

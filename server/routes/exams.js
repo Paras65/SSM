@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Exam = require('../models/Exam');
 const ReportCard = require('../models/ReportCard');
-const { requireAdminAuth, requireTeacherAuth, requireSchoolScope } = require('../middleware/auth');
+const { requireAdminAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope } = require('../middleware/auth');
 const { calculateCurrentAcademicYear } = require('../utils/sessionHelper');
 const { recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
 
 // GET /api/exams - List exams
-router.get('/', async (req, res) => {
+router.get('/', requirePortalAuth, requireSchoolScope, async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
+    const filter = req.user?.role === 'developer' && req.query.schoolId
+      ? { schoolId: req.query.schoolId }
+      : { schoolId: req.userSchoolId };
     if (req.query.term) filter.term = req.query.term;
     if (req.query.academicYear) filter.academicYear = req.query.academicYear;
     await executeSafeQuery(Exam, filter, req, res, { startDate: 1 });

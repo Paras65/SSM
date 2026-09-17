@@ -135,6 +135,7 @@ interface SchoolContextType {
   feeRecords: FeeRecord[];
   markFeePaid: (feeId: string, paymentMode: string, customPaidAmount?: number) => Promise<void>;
   addFeeRecord: (record: Omit<FeeRecord, 'id'>) => Promise<void>;
+  updateFeeRecord: (feeId: string, updates: Partial<FeeRecord>) => Promise<void>;
   deleteFeeRecord: (feeId: string) => Promise<void>;
 
   // Report Cards
@@ -631,6 +632,19 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const updateFeeRecord = async (feeId: string, updates: Partial<FeeRecord>) => {
+    const prevFee = feeRecords.find(f => f.id === feeId);
+    setFeeRecords(prev => prev.map(f => f.id === feeId ? { ...f, ...updates } : f));
+
+    try {
+      await api.updateFee(feeId, updates);
+    } catch (err) {
+      if (prevFee) setFeeRecords(prev => prev.map(f => f.id === feeId ? prevFee : f));
+      showError('शुल्क रिकॉर्ड संशोधित करने में त्रुटि!');
+      console.error('Error updating fee record in MongoDB:', err);
+    }
+  };
+
   const deleteFeeRecord = async (feeId: string) => {
     const snapshot = feeRecords.find(f => f.id === feeId);
     setFeeRecords(prev => prev.filter(f => f.id !== feeId));
@@ -737,6 +751,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         feeRecords,
         markFeePaid,
         addFeeRecord,
+        updateFeeRecord,
         deleteFeeRecord,
         reportCards,
         addOrUpdateReportCard,

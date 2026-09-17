@@ -8,10 +8,11 @@ const { generateUniqueId, recordAuditLog, executeSafeQuery } = require('../utils
 // GET /api/staff/public - Public directory of active teachers/staff
 router.get('/public', async (req, res) => {
   try {
-    const filter = { status: 'Active' };
-    if (req.query.schoolId) {
-      filter.schoolId = cleanStringParam(req.query.schoolId);
+    const schoolId = req.query.schoolId ? cleanStringParam(req.query.schoolId) : null;
+    if (!schoolId) {
+      return res.status(400).json({ error: 'विद्यालय पहचान (schoolId) आवश्यक है।' });
     }
+    const filter = { schoolId, status: 'Active' };
     const staff = await Staff.find(filter)
       .select('id schoolId name gender designation qualification subjects joiningDate status')
       .sort({ createdAt: 1 })

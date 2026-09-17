@@ -264,10 +264,13 @@ export const api = {
   },
 
   // ================= ATTENDANCE =================
-  async getAttendance(date?: string, schoolId?: string): Promise<AttendanceRecord[]> {
+  async getAttendance(date?: string, schoolId?: string, options?: { startDate?: string; endDate?: string; class?: string }): Promise<AttendanceRecord[]> {
     const params = new URLSearchParams();
     if (date) params.append('date', date);
     if (schoolId) params.append('schoolId', schoolId);
+    if (options?.startDate) params.append('startDate', options.startDate);
+    if (options?.endDate) params.append('endDate', options.endDate);
+    if (options?.class) params.append('class', options.class);
     const queryString = params.toString();
     const url = queryString ? `/attendance?${queryString}` : '/attendance';
     const res = await apiFetch(url);
@@ -290,6 +293,13 @@ export const api = {
       body: JSON.stringify({ updates, schoolId })
     });
     return handleJsonResponse<AttendanceRecord[]>(res, 'Failed to save bulk attendance');
+  },
+
+  async deleteAttendance(id: string): Promise<{ success: boolean; id: string }> {
+    const res = await apiFetch(`/attendance/${id}`, {
+      method: 'DELETE'
+    });
+    return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete attendance record');
   },
 
   // ================= FEES =================
@@ -317,11 +327,35 @@ export const api = {
     return handleJsonResponse<FeeRecord>(res, 'Failed to create fee record');
   },
 
+  async updateFee(id: string, updates: Partial<FeeRecord>): Promise<FeeRecord> {
+    const res = await apiFetch(`/fees/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    return handleJsonResponse<FeeRecord>(res, 'Failed to update fee record');
+  },
+
   async deleteFee(id: string): Promise<{ success: boolean; id: string }> {
     const res = await apiFetch(`/fees/${id}`, {
       method: 'DELETE'
     });
     return handleJsonResponse<{ success: boolean; id: string }>(res, 'Failed to delete fee record');
+  },
+
+  async rolloverArrears(payload: { schoolId?: string; fromAcademicYear: string; toAcademicYear: string }): Promise<{
+    success: boolean;
+    message: string;
+    rolledOverCount: number;
+    totalArrearsAmount: number;
+    arrears: FeeRecord[];
+  }> {
+    const res = await apiFetch('/fees/rollover-arrears', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return handleJsonResponse(res, 'Failed to rollover arrears');
   },
 
   // ================= REPORT CARDS =================
@@ -381,11 +415,22 @@ export const api = {
     return handleJsonResponse<any[]>(res, 'Failed to fetch admissions');
   },
 
-  async approveAdmission(id: string): Promise<{ success: boolean; admission: any; student: any }> {
+  async approveAdmission(id: string, options?: { section?: string; bloodGroup?: string; rollNo?: string }): Promise<{ success: boolean; admission: any; student: any }> {
     const res = await apiFetch(`/admissions/${id}/approve`, {
-      method: 'PUT'
+      method: 'PUT',
+      headers: options ? { 'Content-Type': 'application/json' } : undefined,
+      body: options ? JSON.stringify(options) : undefined
     });
     return handleJsonResponse<{ success: boolean; admission: any; student: any }>(res, 'Failed to approve admission');
+  },
+
+  async rejectAdmission(id: string, reason?: string): Promise<{ success: boolean; admission: any }> {
+    const res = await apiFetch(`/admissions/${id}/reject`, {
+      method: 'PUT',
+      headers: reason ? { 'Content-Type': 'application/json' } : undefined,
+      body: reason ? JSON.stringify({ reason }) : undefined
+    });
+    return handleJsonResponse<{ success: boolean; admission: any }>(res, 'Failed to reject admission');
   },
 
   async deleteAdmission(id: string): Promise<{ success: boolean; id: string }> {

@@ -9,7 +9,11 @@ const { executeSafeQuery } = require('../utils/routeHelpers');
 router.get('/', requireTeacherAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = {};
-    if (req.query.date) filter.date = req.query.date;
+    if (req.query.startDate && req.query.endDate) {
+      filter.date = { $gte: req.query.startDate, $lte: req.query.endDate };
+    } else if (req.query.date) {
+      filter.date = req.query.date;
+    }
     if (req.query.schoolId) filter.schoolId = req.query.schoolId;
     if (req.query.studentId) filter.studentId = req.query.studentId;
     if (req.query.academicYear) filter.academicYear = req.query.academicYear;
@@ -104,5 +108,20 @@ router.post('/bulk', requireTeacherAuth, requireSchoolScope, async (req, res) =>
   }
 });
 
+// DELETE /api/attendance/:id - Delete an attendance record
+router.delete('/:id', requireTeacherAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const deleted = await Attendance.findOneAndDelete({
+      id: req.params.id,
+      ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
+    if (!deleted) return res.status(404).json({ error: 'Attendance record not found' });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
+
 

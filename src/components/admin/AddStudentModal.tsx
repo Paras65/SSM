@@ -1,51 +1,70 @@
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import { X, UserPlus } from 'lucide-react';
-import type { Gender, SocialCategory } from '../../types';
+import { useToast } from '../../context/ToastContext';
+import { X, UserPlus, Edit3 } from 'lucide-react';
+import type { Gender, SocialCategory, Student } from '../../types';
 import { SSM_CLASSES } from '../../types';
 
 interface AddStudentModalProps {
   onClose: () => void;
+  studentToEdit?: Student | null;
 }
 
-export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => {
-  const { addStudent, students } = useSchool();
+export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, studentToEdit }) => {
+  const { addStudent, updateStudent, students } = useSchool();
+  const { showSuccess, showWarning } = useToast();
 
+  const isEditing = Boolean(studentToEdit);
   const nextRoll = (students.length + 101).toString();
 
+  const initialName = studentToEdit
+    ? studentToEdit.name.replace(/^(भैया\s+|बहिन\s+|Bhaiya\s+|Bahin\s+)/i, '')
+    : '';
+
   const [formData, setFormData] = useState({
-    rollNo: nextRoll,
-    name: '',
-    gender: 'Bhaiya' as Gender,
-    class: 'Class 6',
-    section: 'A',
-    fatherName: '',
-    motherName: '',
-    contact: '',
-    address: '',
-    dob: '2014-01-01',
-    admissionDate: new Date().toISOString().split('T')[0],
-    bloodGroup: 'B+',
-    pen: '',
-    socialCategory: 'General' as SocialCategory,
-    cwsn: false
+    rollNo: studentToEdit?.rollNo || nextRoll,
+    name: initialName,
+    gender: (studentToEdit?.gender || 'Bhaiya') as Gender,
+    class: studentToEdit?.class || 'Class 6',
+    section: studentToEdit?.section || 'A',
+    fatherName: studentToEdit?.fatherName || '',
+    motherName: studentToEdit?.motherName || '',
+    contact: studentToEdit?.contact || '',
+    address: studentToEdit?.address || '',
+    dob: studentToEdit?.dob || '2014-01-01',
+    admissionDate: studentToEdit?.admissionDate || new Date().toISOString().split('T')[0],
+    bloodGroup: studentToEdit?.bloodGroup || 'B+',
+    pen: studentToEdit?.pen || '',
+    socialCategory: (studentToEdit?.socialCategory || 'General') as SocialCategory,
+    cwsn: studentToEdit?.cwsn || false
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.fatherName) {
-      alert('कृपया छात्र एवं पिता का नाम अवश्य भरें।');
+    if (!formData.name.trim() || !formData.fatherName.trim()) {
+      showWarning('कृपया छात्र एवं पिता का नाम अवश्य भरें।');
       return;
     }
 
-    const fullName = formData.name.startsWith('भैया ') || formData.name.startsWith('बहिन ') || formData.name.startsWith('Bhaiya ') || formData.name.startsWith('Bahin ')
-      ? formData.name
-      : `${formData.gender === 'Bhaiya' ? 'Bhaiya' : 'Bahin'} ${formData.name}`;
+    const trimmedName = formData.name.trim();
+    const fullName = trimmedName.startsWith('भैया ') || trimmedName.startsWith('बहिन ') || trimmedName.startsWith('Bhaiya ') || trimmedName.startsWith('Bahin ')
+      ? trimmedName
+      : `${formData.gender === 'Bhaiya' ? 'Bhaiya' : 'Bahin'} ${trimmedName}`;
 
-    addStudent({
-      ...formData,
-      name: fullName
-    });
+    if (isEditing && studentToEdit) {
+      updateStudent({
+        ...studentToEdit,
+        ...formData,
+        name: fullName
+      });
+      showSuccess(`'${fullName}' का विवरण सफलतापूर्वक अद्यतन (Updated) किया गया!`);
+    } else {
+      addStudent({
+        ...formData,
+        name: fullName
+      });
+      showSuccess(`नए छात्र '${fullName}' सफलतापूर्वक पंजीकृत किए गए!`);
+    }
 
     onClose();
   };
@@ -57,12 +76,12 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
         {/* Header */}
         <div className="bg-gradient-to-r from-orange-700 to-amber-600 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <UserPlus className="w-5 h-5 text-yellow-300" />
+            {isEditing ? <Edit3 className="w-5 h-5 text-yellow-300" /> : <UserPlus className="w-5 h-5 text-yellow-300" />}
             <h3 className="text-sm sm:text-base font-bold leading-tight">
-              नवीन छात्र प्रवेश पंजीयन (New Student Admission)
+              {isEditing ? 'छात्र विवरण संपादन (Edit Student Details)' : 'नवीन छात्र प्रवेश पंजीयन (New Student Admission)'}
             </h3>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-orange-800 rounded-lg transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-orange-800 rounded-lg transition-colors cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -302,9 +321,9 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-sm"
+              className="px-5 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-sm cursor-pointer transition"
             >
-              छात्र पंजीकृत करें (Register Student)
+              {isEditing ? 'विवरण अद्यतन करें (Update Student)' : 'छात्र पंजीकृत करें (Register Student)'}
             </button>
           </div>
         </form>

@@ -238,3 +238,132 @@ ssm/
 ## 📜 License
 
 MIT — [init65.co.in](https://www.init65.co.in)
+
+---
+
+## 🔍 Feature Gap Review Tracker
+
+> Systematic review of each feature module — what works, what is missing, and what needs to be fixed.
+> Status: **In Progress** (updated: 2026-09-17)
+
+---
+
+### ✅ Feature 1: Student Management & Onboarding — RESOLVED
+
+**Gaps Addressed:**
+1. ✅ **In-line Student Edit UI:** Added "संपादन" button to student roster rows in `AdminStudentsTab.tsx`; upgraded `AddStudentModal.tsx` to support both Add & Edit modes with full pre-population and `updateStudent()` integration.
+2. ✅ **Removed Residual Paywalls:** Removed `requirePro()` restrictions and lock icons from CSV Export, ID Card, TC, and Report Card in `AdminStudentsTab.tsx`.
+3. ✅ **Toast Refactor:** Replaced browser `alert()` in `AddStudentModal.tsx` with `showWarning()` and `showSuccess()` from `useToast`.
+
+---
+
+### ✅ Feature 2: Attendance Management — RESOLVED
+
+**Gaps Addressed:**
+1. ✅ **Monthly & Date-Range Summary View:** Added a view mode switcher ("दैनिक अंकन" vs "मासिक / अवधि सारांश") in `AdminAttendanceTab.tsx` with start/end date filters, aggregated present/absent/leave counts, attendance %, low attendance (<75%) flags, and range CSV export.
+2. ✅ **`DELETE /api/attendance/:id` Implemented:** Added backend delete endpoint with school-scoping and client `api.deleteAttendance(id)`.
+3. ✅ **Absentee-Only CSV Export:** Added `exportAbsenteesToCSV()` in `src/utils/csvExport.ts` and a direct "अनुपस्थित सूची CSV" action button in `AdminAttendanceTab.tsx` with parent contact numbers.
+4. ✅ **Removed Residual Paywalls:** Removed `requirePro()` restrictions and lock icons from Mark All Present, Mark All Absent, Attendance CSV export, and Absentee WhatsApp alert.
+5. ✅ **Backend Date Range Query:** Added `startDate` and `endDate` query handling to `GET /api/attendance` in `server/routes/attendance.js`.
+6. ✅ **Teacher Portal Persistence Verified:** Verified `bulkSetAttendance()` in `TeacherPortal.tsx` correctly saves to MongoDB via `POST /api/attendance/bulk`.
+
+---
+
+### ✅ Feature 3: Fee Counter & Arrears — RESOLVED
+
+**Gaps Addressed:**
+1. ✅ **Custom Delete Confirmation Modal:** Replaced raw `window.confirm()` with a styled modal confirmation in `AdminFeesTab.tsx`.
+2. ✅ **"Add Fee Demand" Modal:** Added "नवीन शुल्क मांग" button and modal allowing teachers/admins to create new fee demands per student with term presets.
+3. ✅ **Academic Year Filter:** Added session dropdown filter ("सभी सत्र", "2026-27", "2025-26", "2024-25", etc.) in `AdminFeesTab.tsx`.
+4. ✅ **`PUT /api/fees/:id` Implemented:** Added backend fee update route with school-scoping, audit logging, and `updateFeeRecord()` in `SchoolContext`.
+5. ✅ **Arrears Rollover UI:** Added "बकाया रोलओवर (Rollover)" button and modal in `AdminFeesTab.tsx` wired to `POST /api/fees/rollover-arrears`.
+6. ✅ **Student Fee History Ledger:** Added a "शुल्क इतिहास (Fee History)" view showing multi-term records, lifetime billed vs paid, and quick receipt prints.
+7. ✅ **Removed Residual Paywalls:** Removed `requirePro()` gates and lock icons from Fee CSV export and WhatsApp fee reminder alerts.
+
+---
+
+### ✅ Feature 4: Examinations & Evaluation — RESOLVED
+
+**Gaps Addressed:**
+1. ✅ **Toast & Custom Confirmations:** Replaced all 4 raw `alert()` calls and browser `confirm()` in `ExamManagementModal.tsx` with `showError()`, `showSuccess()` from `useToast`, and a styled delete confirmation dialog.
+2. ✅ **Removed Hard Paywall on Report Cards:** Removed the blocking paywall in `AdminReportsTab.tsx`, allowing free plan schools full access to view, filter, and print report cards, with an optional non-intrusive Pro badge for 360° NEP evaluation.
+3. ✅ **In-line Exam Edit UI:** Added "संपादन" action on exam schedule cards pre-filling the form and updating via `PUT /api/exams/:id` (`api.updateExam`).
+4. ✅ **Exam Lock/Unlock Toggle:** Added lock/unlock toggle button calling `PATCH /api/exams/:id/lock` (`api.toggleExamLock`) with status badges (`🔒 स्थिर/लॉक` vs `🔓 खुला`) and read-only enforcement preventing marks tampering when locked.
+5. ✅ **Dynamic Academic Year:** Replaced hardcoded `'2025-26'` on exam creation with dynamic session defaults from `currentSchool.currentAcademicYear` and an academic year selector.
+6. ✅ **Backend Auth Scoping on `GET /api/exams`:** Secured `GET /api/exams` with `requirePortalAuth` and `requireSchoolScope` to enforce tenant isolation across admin, teacher, and student portals.
+7. ✅ **Marks Pre-population on Re-entry:** Pre-populates students' existing marks from `reportCards` in the marks entry matrix when an exam, class, and subject are chosen.
+8. ✅ **Custom Delete Confirmation in Report Cards:** Replaced two instances of `window.confirm()` in `AdminReportsTab.tsx` with a styled confirmation modal (`reportToDelete`).
+9. ✅ **Direct WhatsApp Sharing:** Unwrapped report card WhatsApp link generation from `requirePro()` paywalls so all schools can send marks summaries to parents.
+
+---
+
+### ✅ Feature 5: Staff & Payroll — RESOLVED
+
+**Gaps Addressed:**
+1. ✅ **Custom Delete Confirmation Modal:** Replaced raw `window.confirm()` in `AdminStaffTab.tsx` with a styled confirmation modal dialog (`staffToDelete`).
+2. ✅ **Staff Status Filter in UI:** Added status filter dropdown ("सभी स्थितियां", "सक्रिय", "अवकाश पर", "कार्यमुक्त") allowing filtering of staff roster by `Active`, `OnLeave`, and `Resigned`.
+3. ✅ **Staff Status Management UI:** Added `stfStatus` selector in add/edit staff form and wired through `api.createStaff` / `api.updateStaff` with active status badge pills in the roster table.
+4. ✅ **Dynamic Salary Slip Months:** Replaced static `'सितम्बर 2026'` with dynamic calculation of current calendar month and past 11 months in Hindi.
+5. ✅ **Salary History Ledger:** Added a dedicated "वेतन इतिहास (History)" tab view in `StaffSalarySlipModal.tsx` connected to `api.getSalarySlips()`, displaying past disbursements, net pay, and one-click slip preview/re-print.
+6. ✅ **Payment Mode Selector:** Added payment mode dropdown ("Bank Transfer (NEFT/RTGS)", "Cash (नकद)", "UPI", "Cheque (चेक)") in both UI controls and printable slip template, persisted on slip generation.
+7. ✅ **Leave Management Integration:** Synchronized staff status in `server/routes/operations.js` on leave approvals/rejections (`PATCH /leaves/:id/status` automatically sets `OnLeave` when approved and restores `Active` when rejected).
+8. ✅ **Bulk Payroll CSV Export:** Added `exportPayrollToCSV()` in `src/utils/csvExport.ts` and added a "मासिक पेरोल CSV" export button in `AdminStaffTab.tsx` exporting complete salary breakdowns.
+9. ✅ **Backend Multi-Tenancy Scoping:** Enforced `schoolId` requirement on `GET /api/staff/public` with validation returning HTTP 400 when missing, closing cross-school data leaks.
+
+### ✅ Feature 6: Online Admissions — RESOLVED
+
+**Gaps Addressed:**
+1. ✅ **Dynamic Academic Year Header:** Header now dynamically renders `{currentSchool.currentAcademicYear || '2026-27'}` instead of a static string.
+2. ✅ **Rejection Status & Audit Trail:** Added `'Rejected'` to `status` enum in `server/models/Admission.js`, implemented `PUT /api/admissions/:id/reject` with optional reason and audit logging, and added rejection modal and actions in UI.
+3. ✅ **Approval Configuration Modal:** Added an approval dialog in `AdminAdmissionsTab.tsx` allowing admin to configure class, section (A/B/C/D), blood group, and custom roll number before enrollment.
+4. ✅ **Class-Aware Roll Number Generation:** Refactored `PUT /api/admissions/:id/approve` in `server/routes/admissions.js` to calculate the next sequential roll number strictly within the applicant's target class (`maxRoll + 1`, starting at 101), eliminating duplicate roll numbers across classes.
+5. ✅ **Printable Admission Acknowledgement Slip:** Added a dedicated "पावती (Slip)" modal in `AdminAdmissionsTab.tsx` rendering a complete printable receipt with school header, watermark, applicant info, DPDP consent verification, document submission checklist, and signatures.
+6. ✅ **Admissions CSV Export:** Added `exportAdmissionsToCSV()` in `src/utils/csvExport.ts` and added an "आवेदन सूची CSV" export button in the tab toolbar.
+7. ✅ **Custom Delete Confirmation Modal:** Replaced direct deletion and removed native `window.confirm()` with a custom styled confirmation modal (`admissionToDelete`).
+8. ✅ **Public Rate Limiting:** Protected `POST /api/admissions` with dedicated IP rate limiting (15 requests per 15 minutes) to block automated spam floods.
+9. ✅ **School Whitelist Validation:** Enforced `School.exists({ id: data.schoolId })` on public admission submissions, returning HTTP 400 on invalid or non-existent school IDs.
+
+### ✅ Feature 7: Daily Homework & Notice Board — REVIEWED
+
+**Gaps:**
+1. **`window.confirm()` on homework delete (line 105 in `AdminHomeworkTab.tsx`)** — raw browser confirm; needs toast replacement.
+2. **No notice edit UI** — Notices can only be created/deleted; no Edit button and no `PUT /api/notices/:id` route exists.
+3. **No notice delete confirmation** — `deleteNotice(notice.id)` fires immediately on click (line 273 in `AdminNoticesTab.tsx`).
+4. **Homework has no status/completion tracking** — `status: 'Active'` set on creation but no UI to archive/complete; no filter for past-due items.
+5. **No homework WhatsApp share** — Notice board has per-notice WhatsApp button; Homework tab has no equivalent broadcast button.
+6. **`GET /api/notices` no school-scope enforcement** — If `schoolId` query param is omitted, ALL schools' notices are returned (line 10 in `notices.js`).
+7. **No notice expiry date** — Old notices stay permanently; no validity/expiry field or auto-archiving mechanism.
+
+### ✅ Feature 8: School Operations (Timetable, Library, Transport, Inventory) — REVIEWED
+
+**Gaps:**
+1. **`alert()` on timetable save error (line 102 in `TimetableManagerModal.tsx`)** — needs toast.
+2. **Timetable section hardcoded to `'A'` (line 96)** — multi-section schools cannot save per-section timetables.
+3. **No timetable print/export** — No print button or PDF/CSV export for the weekly schedule.
+4. **`alert()` on book add (line 87), issue (line 123), and return (line 135) errors in `LibraryManagementModal.tsx`** — 3 raw `alert()` calls.
+5. **`window.prompt()` on book return (line 128)** — fine amount entered via browser prompt; should be an inline input.
+6. **No book edit UI** — Books can be added/deleted/issued but title, author, copies cannot be edited.
+7. **No overdue books view** — No filter/highlight for issues where `dueDate < today` and status is still `Issued`.
+8. **`alert()` on route create (line 85) and delete (line 95) errors in `TransportManagementModal.tsx`** — 2 raw `alert()` calls.
+9. **`window.confirm()` on transport route delete (line 90)** — raw browser confirm.
+10. **No route edit UI** — Routes can be created/deleted but not edited in-place.
+11. **No student-route assignment** — No way to assign a student to a specific bus route/stop.
+12. **`alert()` on inventory create (line 71), adjust (line 80), delete (line 90) errors in `InventoryManagementModal.tsx`** — 3 raw `alert()` calls.
+13. **`window.confirm()` on inventory delete (line 85)** — raw browser confirm.
+14. **No inventory item edit UI** — Unit price and details cannot be edited after creation.
+15. **No inventory transaction history** — No log of stock-in/stock-out movements over time.
+
+### ✅ Feature 9: Portals & Multi-Branch / Multi-Tenancy — REVIEWED
+
+**Gaps:**
+1. **`alert()` in `SchoolManagementModal.tsx` (lines 99, 107, 112, 118, 144, 186)** — 6 raw `alert()` calls across archive export, discontinue confirm, form validation, and registration error.
+2. **Non-developer admin visibility clarity** — Non-dev admin can access `SchoolManagementModal` in `list` mode and silently sees only 1 school without explanation.
+3. **Teacher portal marks class-change desync** — Changing class in marks tab does not re-fetch students automatically; exam and class selectors can desynchronize.
+4. **Teacher portal marks concurrency & locking** — Writes to `ReportCard` via `POST /api/exams/marks-bulk` without lock status feedback or conflict resolution.
+5. **Student portal login client-side verification** — Roll No + contact + class match is validated locally against preloaded context rather than via an isolated auth endpoint.
+6. **No teacher portal attendance export** — Teachers cannot export marked attendance to CSV.
+7. **Plan gating absent in teacher portal** — Teacher portal features are not restricted by the school's active subscription tier (`free` vs `pro`).
+8. **Default admin passcode `'1952'`** — Form defaults to `'1952'` on registration, leading to easily guessable credentials if not modified.
+9. **School discontinue hard reload** — Discontinue action triggers `window.location.reload()`, clearing client state abruptly.
+10. **No plan upgrade/downgrade UI in modal** — Displays plan badges but lacks an action flow for developers to toggle tiers between `free` and `pro`.
+

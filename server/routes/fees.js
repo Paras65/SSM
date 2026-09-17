@@ -80,6 +80,38 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
   }
 });
 
+// PUT /api/fees/:id - Update fee demand record
+router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const updatePayload = { ...req.body };
+    delete updatePayload.id;
+    delete updatePayload._id;
+    delete updatePayload.createdAt;
+    if (!req.user || req.user.role !== 'developer') {
+      delete updatePayload.schoolId;
+    }
+
+    const fee = await Fee.findOneAndUpdate(
+      { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
+      updatePayload,
+      { returnDocument: 'after', runValidators: true }
+    );
+    if (!fee) return res.status(404).json({ error: 'Fee record not found' });
+
+    await recordAuditLog({
+      schoolId: fee.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: 'FEE_RECORD_UPDATED',
+      description: `शुल्क रिकॉर्ड #${fee.id} संशोधित किया गया: छात्र #${fee.studentId}, कुल देय: ₹${fee.totalAmount}, अवधि: ${fee.term} (${fee.academicYear})`,
+      req
+    });
+
+    res.json(fee);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // DELETE /api/fees/:id - Delete fee record
 router.delete('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {

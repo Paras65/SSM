@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Printer, IndianRupee, FileText, CheckCircle, Save } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Printer, IndianRupee, FileText, CheckCircle, Save, History, CreditCard, Clock } from 'lucide-react';
 import type { Staff } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
@@ -10,12 +10,29 @@ interface StaffSalarySlipModalProps {
   onClose: () => void;
 }
 
+const HINDI_MONTHS = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितम्बर', 'अक्टूबर', 'नवम्बर', 'दिसम्बर'];
+
+const generateMonthOptions = (): string[] => {
+  const options: string[] = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    options.push(`${HINDI_MONTHS[d.getMonth()]} ${d.getFullYear()}`);
+  }
+  return options;
+};
+
 export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staff, onClose }) => {
   const { currentSchool } = useSchool();
   const { showSuccess, showError } = useToast();
-  const [selectedMonth, setSelectedMonth] = useState('सितम्बर 2026');
+  const monthOptions = useMemo(() => generateMonthOptions(), []);
+  const [selectedMonth, setSelectedMonth] = useState(monthOptions[0] || 'सितम्बर 2026');
+  const [paymentMode, setPaymentMode] = useState('Bank Transfer (NEFT/RTGS)');
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeView, setActiveView] = useState<'slip' | 'history'>('slip');
+  const [historySlips, setHistorySlips] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const basicPay = staff.basicPay || Math.round(staff.monthlySalary * 0.65);
   const daHra = staff.daHra || Math.round(staff.monthlySalary * 0.35);
@@ -26,6 +43,24 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
   const totalDeductions = pf + samitiKosh;
 
   const netSalary = grossPay - totalDeductions;
+
+  const loadHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const slips = await api.getSalarySlips(currentSchool.id, staff.id);
+      setHistorySlips(slips || []);
+    } catch (err: any) {
+      showError('वेतन इतिहास लोड करने में विफल: ' + (err.message || 'Error'));
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeView === 'history') {
+      loadHistory();
+    }
+  }, [activeView]);
 
   const saveSalarySlipToDb = async () => {
     try {
@@ -45,7 +80,7 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
         totalDeductions,
         netSalary,
         paymentStatus: 'Disbursed',
-        paymentMode: 'Bank Transfer (NEFT/RTGS)',
+        paymentMode,
         disbursedDate: new Date().toISOString().split('T')[0]
       });
       setIsSaved(true);
@@ -69,52 +104,185 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 print:max-h-none print:shadow-none print:border-none print:overflow-visible print:w-full">
         
         {/* Header - Screen only */}
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-saffron-800 via-saffron-700 to-amber-700 text-white print:hidden">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-amber-300" />
-            <h3 className="text-lg font-bold">आचार्य / कर्मचारी मासिक वेतन पर्ची (Salary Slip)</h3>
-          </div>
+        <div className="flex flex-wrap items-center justify-between px-6 py-3 bg-gradient-to-r from-saffron-800 via-saffron-700 to-amber-700 text-white gap-2 print:hidden">
           <div className="flex items-center gap-3">
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              aria-label="वेतन माह चुनें"
-              className="bg-saffron-900/80 text-white text-xs px-3 py-1.5 rounded-lg border border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-amber-300"
-            >
-              <option value="सितम्बर 2026">सितम्बर 2026</option>
-              <option value="अगस्त 2026">अगस्त 2026</option>
-              <option value="जुलाई 2026">जुलाई 2026</option>
-              <option value="जून 2026">जून 2026</option>
-            </select>
-            <button
-              onClick={saveSalarySlipToDb}
-              disabled={isSaving || isSaved}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow ${
-                isSaved ? 'bg-emerald-600 text-white' : 'bg-emerald-700 hover:bg-emerald-600 text-white cursor-pointer'
-              }`}
-              title="वेतन पर्ची डेटाबेस में सुरक्षित करें"
-            >
-              {isSaved ? <CheckCircle className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-              <span>{isSaved ? 'सुरक्षित (Saved)' : isSaving ? 'सहेज रहे हैं...' : 'डेटाबेस में सहेजें'}</span>
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-saffron-950 rounded-lg text-xs font-bold transition shadow cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              प्रिंट करें
-            </button>
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-amber-300" />
+              <h3 className="text-base md:text-lg font-bold">आचार्य / कर्मचारी वेतन प्रबंधन</h3>
+            </div>
+            {/* View tabs */}
+            <div className="flex bg-saffron-950/40 p-0.5 rounded-lg text-xs font-semibold">
+              <button
+                onClick={() => setActiveView('slip')}
+                className={`px-3 py-1 rounded-md transition ${
+                  activeView === 'slip' ? 'bg-amber-400 text-saffron-950 shadow font-bold' : 'text-stone-200 hover:text-white'
+                }`}
+              >
+                वेतन पर्ची (Slip)
+              </button>
+              <button
+                onClick={() => setActiveView('history')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
+                  activeView === 'history' ? 'bg-amber-400 text-saffron-950 shadow font-bold' : 'text-stone-200 hover:text-white'
+                }`}
+              >
+                <History className="w-3.5 h-3.5" />
+                <span>वेतन इतिहास (History)</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activeView === 'slip' && (
+              <>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    setSelectedMonth(e.target.value);
+                    setIsSaved(false);
+                  }}
+                  aria-label="वेतन माह चुनें"
+                  className="bg-saffron-900/90 text-white text-xs px-2.5 py-1.5 rounded-lg border border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer"
+                >
+                  {monthOptions.map((m) => (
+                    <option key={m} value={m} className="bg-stone-900 text-white">
+                      {m}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={paymentMode}
+                  onChange={(e) => {
+                    setPaymentMode(e.target.value);
+                    setIsSaved(false);
+                  }}
+                  aria-label="भुगतान माध्यम चुनें"
+                  className="bg-saffron-900/90 text-white text-xs px-2 py-1.5 rounded-lg border border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer"
+                >
+                  <option value="Bank Transfer (NEFT/RTGS)" className="bg-stone-900 text-white">Bank Transfer (NEFT/RTGS)</option>
+                  <option value="Cash" className="bg-stone-900 text-white">Cash (नकद)</option>
+                  <option value="UPI" className="bg-stone-900 text-white">UPI</option>
+                  <option value="Cheque" className="bg-stone-900 text-white">Cheque (चेक)</option>
+                </select>
+
+                <button
+                  onClick={saveSalarySlipToDb}
+                  disabled={isSaving || isSaved}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow ${
+                    isSaved ? 'bg-emerald-600 text-white' : 'bg-emerald-700 hover:bg-emerald-600 text-white cursor-pointer'
+                  }`}
+                  title="वेतन पर्ची डेटाबेस में सुरक्षित करें"
+                >
+                  {isSaved ? <CheckCircle className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>{isSaved ? 'सुरक्षित' : isSaving ? 'सहेज रहे...' : 'डेटाबेस सहेजें'}</span>
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-saffron-950 rounded-lg text-xs font-bold transition shadow cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  प्रिंट करें
+                </button>
+              </>
+            )}
             <button
               onClick={onClose}
               aria-label="बंद करें"
-              className="p-1 rounded-lg hover:bg-white/10 text-white transition"
+              className="p-1.5 rounded-lg hover:bg-white/10 text-white transition"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Printable Slip Content */}
+        {/* Content Area */}
+        {activeView === 'history' ? (
+          <div className="p-6 overflow-y-auto max-h-[70vh]">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-stone-200">
+              <div>
+                <h4 className="text-base font-bold text-stone-800">
+                  {staff.name} — जारी वेतन पर्चियों का इतिहास
+                </h4>
+                <p className="text-xs text-stone-500">
+                  {staff.designation} • {staff.phone}
+                </p>
+              </div>
+              <button
+                onClick={loadHistory}
+                disabled={loadingHistory}
+                className="text-xs font-semibold text-saffron-700 hover:text-saffron-800 flex items-center gap-1 cursor-pointer"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>{loadingHistory ? 'रिफ्रेश हो रहा है...' : 'रिफ्रेश करें'}</span>
+              </button>
+            </div>
+
+            {loadingHistory ? (
+              <div className="py-12 text-center text-sm text-stone-500">
+                वेतन इतिहास लोड हो रहा है...
+              </div>
+            ) : historySlips.length === 0 ? (
+              <div className="py-12 text-center bg-stone-50 rounded-xl border border-dashed border-stone-300">
+                <History className="w-10 h-10 text-stone-400 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-stone-700">कोई वेतन पर्ची रिकॉर्ड उपलब्ध नहीं है</p>
+                <p className="text-xs text-stone-500 mt-1">
+                  इस कर्मचारी के लिए &quot;वेतन पर्ची&quot; टैब में जाकर &quot;डेटाबेस सहेजें&quot; बटन दबाएं।
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-stone-200">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-stone-100 text-stone-700 font-bold border-b border-stone-200">
+                    <tr>
+                      <th className="py-2.5 px-3">माह (Month)</th>
+                      <th className="py-2.5 px-3">भुगतान तिथि</th>
+                      <th className="py-2.5 px-3 text-right">सकल (Gross)</th>
+                      <th className="py-2.5 px-3 text-right">कटौती (Deductions)</th>
+                      <th className="py-2.5 px-3 text-right">शुद्ध वेतन (Net)</th>
+                      <th className="py-2.5 px-3">भुगतान विधि</th>
+                      <th className="py-2.5 px-3 text-center">क्रिया</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100 bg-white">
+                    {historySlips.map((slip) => (
+                      <tr key={slip._id || slip.id} className="hover:bg-amber-50/50 transition">
+                        <td className="py-2.5 px-3 font-bold text-stone-900">{slip.month}</td>
+                        <td className="py-2.5 px-3 text-stone-600 font-mono">{slip.disbursedDate || '—'}</td>
+                        <td className="py-2.5 px-3 text-right font-mono">₹{(slip.grossPay || 0).toLocaleString('en-IN')}</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-rose-600">₹{(slip.totalDeductions || 0).toLocaleString('en-IN')}</td>
+                        <td className="py-2.5 px-3 text-right font-bold font-mono text-emerald-700">
+                          ₹{(slip.netSalary || 0).toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-700 px-2 py-0.5 rounded text-[11px]">
+                            <CreditCard className="w-3 h-3 text-stone-500" />
+                            {slip.paymentMode || 'Bank Transfer'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <button
+                            onClick={() => {
+                              setSelectedMonth(slip.month);
+                              if (slip.paymentMode) setPaymentMode(slip.paymentMode);
+                              setIsSaved(true);
+                              setActiveView('slip');
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-saffron-700 hover:text-saffron-900 bg-amber-100/60 hover:bg-amber-100 px-2 py-1 rounded transition cursor-pointer"
+                          >
+                            <FileText className="w-3 h-3" />
+                            पर्ची लोड करें
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : (
+        /* Printable Slip Content */
         <div className="p-6 md:p-8 overflow-y-auto print:p-0 print:m-0 print:overflow-visible">
           <div className="border-2 border-saffron-800/80 rounded-xl p-6 bg-amber-50/20 relative">
             {/* Watermark */}
@@ -231,7 +399,7 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
                   शुद्ध संदेय वेतन (Net Payable Amount)
                 </span>
                 <p className="text-xs text-stone-700 italic mt-0.5">
-                  खाते में अंतरित / Paid by Bank Transfer
+                  भुगतान माध्यम: {paymentMode} / Paid via {paymentMode}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-2xl md:text-3xl font-black text-saffron-950">
@@ -267,22 +435,25 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
             </div>
           </div>
         </div>
+        )}
 
         {/* Footer actions */}
         <div className="px-6 py-3 bg-stone-100 border-t border-stone-200 flex justify-end gap-2 print:hidden">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition"
+            className="px-4 py-2 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition cursor-pointer"
           >
             बंद करें (Close)
           </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-saffron-700 hover:bg-saffron-800 rounded-lg shadow transition"
-          >
-            <Printer className="w-4 h-4" />
-            प्रिंट वेतन पर्ची (Print Slip)
-          </button>
+          {activeView === 'slip' && (
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-saffron-700 hover:bg-saffron-800 rounded-lg shadow transition cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              प्रिंट वेतन पर्ची (Print Slip)
+            </button>
+          )}
         </div>
 
       </div>

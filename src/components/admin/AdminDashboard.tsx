@@ -107,6 +107,7 @@ export const AdminDashboard: React.FC = () => {
   const [showMobileModules, setShowMobileModules] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
+  const [activeEditStudent, setActiveEditStudent] = useState<Student | null>(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
@@ -226,6 +227,7 @@ export const AdminDashboard: React.FC = () => {
   const isAnyModalOpen = Boolean(
     upgradeModalFeature ||
     showAddStudent ||
+    activeEditStudent ||
     showBulkImport ||
     showSchoolModal ||
     activeFeeModal ||
@@ -256,6 +258,7 @@ export const AdminDashboard: React.FC = () => {
   const closeAllModals = useCallback(() => {
     setUpgradeModalFeature(null);
     setShowAddStudent(false);
+    setActiveEditStudent(null);
     setShowBulkImport(false);
     setShowSchoolModal(false);
     setActiveFeeModal(null);
@@ -410,9 +413,9 @@ export const AdminDashboard: React.FC = () => {
     loadDeveloperMetrics().catch(error => console.error('Error loading developer metrics:', error));
   }, [isDeveloper, schools]);
 
-  const handleApproveAdmission = async (id: string) => {
+  const handleApproveAdmission = async (id: string, options?: { section?: string; bloodGroup?: string; rollNo?: string }) => {
     try {
-      const res = await api.approveAdmission(id);
+      const res = await api.approveAdmission(id, options);
       if (res.success) {
         showSuccess(`प्रवेश स्वीकृत हुआ! ${res.student.name} को छात्र पंजिका में जोड़ दिया गया है।`);
         await refreshFromDb();
@@ -424,8 +427,20 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleRejectAdmission = async (id: string, reason?: string) => {
+    try {
+      const res = await api.rejectAdmission(id, reason);
+      if (res.success) {
+        showSuccess('प्रवेश आवेदन अस्वीकृत (Rejected) के रूप में चिन्हित किया गया।');
+        const updatedAdmissions = await api.getAdmissions();
+        setAdmissions(updatedAdmissions);
+      }
+    } catch (err: any) {
+      showError('त्रुटि: ' + err.message);
+    }
+  };
+
   const handleDeleteAdmission = async (id: string) => {
-    if (!confirm('क्या आप इस प्रवेश आवेदन को हटाना चाहते हैं?')) return;
     try {
       await api.deleteAdmission(id);
       showSuccess('प्रवेश आवेदन सफलतापूर्वक हटाया गया!');
@@ -1092,6 +1107,7 @@ export const AdminDashboard: React.FC = () => {
               totalBahin={totalBahin}
               requirePro={requirePro}
               onOpenAddStudent={() => setShowAddStudent(true)}
+              onOpenEditStudent={setActiveEditStudent}
               onOpenBulkImport={() => setShowBulkImport(true)}
               onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
               onOpenPhotoUpload={setActivePhotoStudent}
@@ -1141,6 +1157,7 @@ export const AdminDashboard: React.FC = () => {
             <AdminAdmissionsTab
               admissions={admissions}
               onApprove={handleApproveAdmission}
+              onReject={handleRejectAdmission}
               onDelete={handleDeleteAdmission}
             />
           </TabErrorBoundary>
@@ -1197,8 +1214,14 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Lazy-Loaded Modals */}
       <Suspense fallback={null}>
-        {showAddStudent && (
-          <AddStudentModal onClose={() => setShowAddStudent(false)} />
+        {(showAddStudent || activeEditStudent) && (
+          <AddStudentModal
+            studentToEdit={activeEditStudent}
+            onClose={() => {
+              setShowAddStudent(false);
+              setActiveEditStudent(null);
+            }}
+          />
         )}
 
         {activeFeeModal && (

@@ -1,4 +1,4 @@
-import type { Student, FeeRecord, AttendanceRecord } from '../types';
+import type { Student, FeeRecord, AttendanceRecord, Staff } from '../types';
 
 /**
  * Sanitizes a CSV cell to prevent formula injection (OWASP CSV Injection)
@@ -154,6 +154,25 @@ export function exportAttendanceToCSV(attendance: AttendanceRecord[], students: 
   downloadCSV(csv, filename);
 }
 
+export function exportAbsenteesToCSV(attendance: AttendanceRecord[], students: Student[], date: string) {
+  const filtered = attendance.filter(a => a.date === date && a.status === 'Absent');
+  const headers = ['Date', 'Roll No', 'Student Name', 'Class', 'Section', 'Parent Contact', 'Status'];
+  const rows = filtered.map(a => {
+    const student = students.find(s => s.id === a.studentId);
+    return [
+      sanitizeCsvCell(a.date),
+      sanitizeCsvCell(student ? student.rollNo : 'N/A'),
+      sanitizeCsvCell(student ? student.name : 'Unknown'),
+      sanitizeCsvCell(student ? student.class : 'N/A'),
+      sanitizeCsvCell(student ? student.section : 'A'),
+      sanitizeCsvCell(student ? student.contact : 'N/A'),
+      sanitizeCsvCell('Absent')
+    ];
+  });
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV(csv, `SSM_Absentees_${date}.csv`);
+}
+
 export function downloadStudentCsvTemplate(): void {
   const headers = [
     'Roll No',
@@ -179,4 +198,90 @@ export function downloadStudentCsvTemplate(): void {
 
   const csv = [headers.join(','), ...sampleRows.map(row => row.map(sanitizeCsvCell).join(','))].join('\n');
   downloadCSV(csv, 'SSM_Chhatra_Panjika_Sample_Template.csv');
+}
+
+export function exportPayrollToCSV(staffList: Staff[], schoolName: string, month: string): void {
+  const headers = [
+    'Staff ID',
+    'Name',
+    'Designation',
+    'Gender',
+    'Phone',
+    'Monthly Salary (Rs)',
+    'Basic Pay (Rs)',
+    'DA + HRA (Rs)',
+    'PF Deduction (Rs)',
+    'Samiti Kosh (Rs)',
+    'Net Payable (Rs)',
+    'Status'
+  ];
+
+  const rows = staffList.map(s => {
+    const basic = s.basicPay || Math.round((s.monthlySalary || 0) * 0.65);
+    const daHra = s.daHra || Math.round((s.monthlySalary || 0) * 0.35);
+    const pf = s.pfDeduction || Math.round(basic * 0.1);
+    const samiti = s.samitiDeduction || 500;
+    const net = (s.monthlySalary || 0) - (pf + samiti);
+
+    return [
+      sanitizeCsvCell(s.id),
+      sanitizeCsvCell(s.name),
+      sanitizeCsvCell(s.designation),
+      sanitizeCsvCell(s.gender === 'Acharya' ? 'आचार्य जी' : 'दीदी जी'),
+      sanitizeCsvCell(s.phone),
+      sanitizeCsvCell(s.monthlySalary || 0),
+      sanitizeCsvCell(basic),
+      sanitizeCsvCell(daHra),
+      sanitizeCsvCell(pf),
+      sanitizeCsvCell(samiti),
+      sanitizeCsvCell(net),
+      sanitizeCsvCell(s.status || 'Active')
+    ];
+  });
+
+  const csv = [
+    sanitizeCsvCell(`SSM Monthly Payroll Sheet - ${month}`),
+    sanitizeCsvCell(`School: ${schoolName}`),
+    headers.join(','),
+    ...rows.map(r => r.join(','))
+  ].join('\n');
+
+  downloadCSV(csv, `SSM_Payroll_${month.replace(/\s+/g, '_')}.csv`);
+}
+
+export function exportAdmissionsToCSV(admissions: any[], schoolName: string): void {
+  const headers = [
+    'Registration No',
+    'Student Name',
+    'Gender',
+    'Applying Class',
+    'Father Name',
+    'Mother Name',
+    'Phone',
+    'Address',
+    'Status',
+    'Submission Date'
+  ];
+
+  const rows = admissions.map(adm => [
+    sanitizeCsvCell(adm.regNo || adm.id),
+    sanitizeCsvCell(adm.studentName),
+    sanitizeCsvCell(adm.gender === 'Bhaiya' ? 'भैया' : 'बहिन'),
+    sanitizeCsvCell(adm.applyingClass),
+    sanitizeCsvCell(adm.fatherName || 'N/A'),
+    sanitizeCsvCell(adm.motherName || 'N/A'),
+    sanitizeCsvCell(adm.phone),
+    sanitizeCsvCell(adm.address || 'N/A'),
+    sanitizeCsvCell(adm.status),
+    sanitizeCsvCell(adm.submissionDate || (adm.createdAt ? new Date(adm.createdAt).toISOString().split('T')[0] : 'N/A'))
+  ]);
+
+  const csv = [
+    sanitizeCsvCell(`SSM Online Admissions List`),
+    sanitizeCsvCell(`School: ${schoolName}`),
+    headers.join(','),
+    ...rows.map(r => r.join(','))
+  ].join('\n');
+
+  downloadCSV(csv, `SSM_Admissions_List_${new Date().toISOString().split('T')[0]}.csv`);
 }

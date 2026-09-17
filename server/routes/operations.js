@@ -7,6 +7,7 @@ const Book = require('../models/Book');
 const BookIssue = require('../models/BookIssue');
 const InventoryItem = require('../models/InventoryItem');
 const AuditLog = require('../models/AuditLog');
+const Staff = require('../models/Staff');
 const { requireAdminAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope } = require('../middleware/auth');
 const { cleanStringParam, escapeRegex } = require('../middleware/sanitize');
 const { recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
@@ -87,6 +88,22 @@ router.patch('/leaves/:id/status', requireTeacherAuth, requireSchoolScope, async
       { returnDocument: 'after', runValidators: true }
     );
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+
+    // Synchronize staff status when a staff leave is approved or rejected
+    if (leave.applicantType === 'Staff' && leave.applicantId) {
+      if (status === 'Approved') {
+        await Staff.findOneAndUpdate(
+          { id: leave.applicantId, schoolId: leave.schoolId },
+          { status: 'OnLeave' }
+        );
+      } else if (status === 'Rejected') {
+        await Staff.findOneAndUpdate(
+          { id: leave.applicantId, schoolId: leave.schoolId, status: 'OnLeave' },
+          { status: 'Active' }
+        );
+      }
+    }
+
     res.json(leave);
   } catch (err) {
     res.status(400).json({ error: err.message });
