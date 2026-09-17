@@ -98,12 +98,12 @@ export const StudentPortal: React.FC = () => {
   const [completedHw, setCompletedHw] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!currentStudent) return;
+    if (!isStudentAuthenticated || !currentStudent) return;
 
     api.getHomework(currentSchool.id, currentStudent.class)
       .then(data => setHomeworkList(data))
       .catch(() => {});
-  }, [currentSchool.id, currentStudent?.class, currentStudent?.id]);
+  }, [isStudentAuthenticated, currentSchool.id, currentStudent?.class, currentStudent?.id]);
 
   const toggleHwCompleted = (hwId: string) => {
     setCompletedHw(prev => ({
@@ -173,7 +173,7 @@ export const StudentPortal: React.FC = () => {
   }, [isAnyStudentModalOpen, closeAllStudentModals, setViewMode]);
 
   useEffect(() => {
-    if (!currentSchool.id) return;
+    if (!isStudentAuthenticated || !currentSchool.id) return;
     api.getExams(currentSchool.id)
       .then(exams => {
         if (exams && exams.length > 0) {
@@ -181,7 +181,7 @@ export const StudentPortal: React.FC = () => {
         }
       })
       .catch(() => {});
-  }, [currentSchool.id]);
+  }, [isStudentAuthenticated, currentSchool.id]);
 
   const handleStudentLogin = async (event: React.FormEvent) => {
     event.preventDefault();

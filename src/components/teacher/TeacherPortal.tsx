@@ -127,32 +127,45 @@ export const TeacherPortal: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [showSalarySlip, showAddHw, currentTab, setViewMode]);
 
-  const fetchInitialData = useCallback(async () => {
+  const fetchTeacherCommonData = useCallback(async () => {
     try {
-      const [teacherMe, hwData, examData, ttData, leaveData] = await Promise.all([
+      const [teacherMe, examData, leaveData] = await Promise.all([
         api.getTeacherMe().catch(() => null),
-        api.getHomework(currentSchool.id, selectedClass).catch(() => []),
         api.getExams(currentSchool.id).catch(() => []),
-        api.getTimetable(currentSchool.id, selectedClass).catch(() => []),
         api.getLeaves(currentSchool.id, 'staff', teacherId).catch(() => [])
       ]);
 
       if (teacherMe) setTeacherProfile(teacherMe);
-      setHomeworkList(hwData);
       setExams(examData);
-      if (examData.length > 0 && !selectedExamId) {
-        setSelectedExamId(examData[0].id);
+      if (examData.length > 0) {
+        setSelectedExamId(prev => prev || examData[0].id);
       }
-      setTimetables(ttData);
       setLeaves(leaveData);
     } catch (err) {
-      console.error('Error loading teacher portal data:', err);
+      console.error('Error loading teacher common data:', err);
     }
-  }, [currentSchool.id, selectedClass, teacherId, selectedExamId]);
+  }, [currentSchool.id, teacherId]);
+
+  const fetchClassData = useCallback(async () => {
+    try {
+      const [hwData, ttData] = await Promise.all([
+        api.getHomework(currentSchool.id, selectedClass).catch(() => []),
+        api.getTimetable(currentSchool.id, selectedClass).catch(() => [])
+      ]);
+      setHomeworkList(hwData);
+      setTimetables(ttData);
+    } catch (err) {
+      console.error('Error loading class data:', err);
+    }
+  }, [currentSchool.id, selectedClass]);
 
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    fetchTeacherCommonData();
+  }, [fetchTeacherCommonData]);
+
+  useEffect(() => {
+    fetchClassData();
+  }, [fetchClassData]);
 
   // Persist active tab so it survives page reload
   useEffect(() => {

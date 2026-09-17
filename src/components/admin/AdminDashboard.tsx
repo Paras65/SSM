@@ -355,11 +355,15 @@ export const AdminDashboard: React.FC = () => {
   const [admissions, setAdmissions] = useState<any[]>([]);
 
   useEffect(() => {
-    api.getAdmissions().then(res => setAdmissions(res)).catch(() => {});
-  }, []);
+    if (!currentSchool?.id) return;
+    api.getAdmissions(currentSchool.id).then(res => setAdmissions(res)).catch(() => {});
+  }, [currentSchool?.id]);
+
+  const lastLoadedSchoolCountRef = useRef<number>(-1);
 
   useEffect(() => {
-    if (!isDeveloper || schools.length === 0) return;
+    if (!isDeveloper || schools.length === 0 || currentTab !== 'overview') return;
+    if (lastLoadedSchoolCountRef.current === schools.length) return;
 
     const loadDeveloperMetrics = async () => {
       const today = new Date().toISOString().split('T')[0];
@@ -408,10 +412,11 @@ export const AdminDashboard: React.FC = () => {
         pending: totals.pending,
         admissions: totals.admissions
       });
+      lastLoadedSchoolCountRef.current = schools.length;
     };
 
     loadDeveloperMetrics().catch(error => console.error('Error loading developer metrics:', error));
-  }, [isDeveloper, schools]);
+  }, [isDeveloper, schools, currentTab]);
 
   const handleApproveAdmission = async (id: string, options?: { section?: string; bloodGroup?: string; rollNo?: string }) => {
     try {
@@ -419,7 +424,7 @@ export const AdminDashboard: React.FC = () => {
       if (res.success) {
         showSuccess(`प्रवेश स्वीकृत हुआ! ${res.student.name} को छात्र पंजिका में जोड़ दिया गया है।`);
         await refreshFromDb();
-        const updatedAdmissions = await api.getAdmissions();
+        const updatedAdmissions = await api.getAdmissions(currentSchool.id);
         setAdmissions(updatedAdmissions);
       }
     } catch (err: any) {
@@ -432,7 +437,7 @@ export const AdminDashboard: React.FC = () => {
       const res = await api.rejectAdmission(id, reason);
       if (res.success) {
         showSuccess('प्रवेश आवेदन अस्वीकृत (Rejected) के रूप में चिन्हित किया गया।');
-        const updatedAdmissions = await api.getAdmissions();
+        const updatedAdmissions = await api.getAdmissions(currentSchool.id);
         setAdmissions(updatedAdmissions);
       }
     } catch (err: any) {
