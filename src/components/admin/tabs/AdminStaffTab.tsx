@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSchool } from '../../../context/SchoolContext';
 import { useToast } from '../../../context/ToastContext';
 import { api } from '../../../services/api';
+import { formatWhatsAppPhone } from '../../../utils/whatsappAlerts';
 import type { Staff } from '../../../types';
 import {
   Crown,
@@ -10,7 +11,10 @@ import {
   Plus,
   Sparkles,
   FileText,
-  Trash2
+  Trash2,
+  Search,
+  X,
+  MessageSquare
 } from 'lucide-react';
 
 interface AdminStaffTabProps {
@@ -40,6 +44,10 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
   const [stfSubjects, setStfSubjects] = useState('');
   const [stfPhone, setStfPhone] = useState('');
   const [stfMonthlySalary, setStfMonthlySalary] = useState<number | ''>('');
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'Acharya' | 'Didi'>('ALL');
 
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +101,22 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     }
   };
 
+  // Filtered staff list
+  const filteredStaff = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return staffList.filter(s => {
+      if (roleFilter !== 'ALL' && s.gender !== roleFilter) return false;
+      if (q) {
+        const matchesName = s.name.toLowerCase().includes(q);
+        const matchesPhone = s.phone && s.phone.includes(q);
+        const matchesDesig = s.designation && s.designation.toLowerCase().includes(q);
+        const matchesSub = s.subjects && s.subjects.toLowerCase().includes(q);
+        if (!matchesName && !matchesPhone && !matchesDesig && !matchesSub) return false;
+      }
+      return true;
+    });
+  }, [staffList, roleFilter, searchQuery]);
+
   if (!isPro) {
     return (
       <div className="bg-white rounded-3xl border border-amber-200/90 p-8 sm:p-14 text-center max-w-2xl mx-auto space-y-6 shadow-sm my-6">
@@ -132,7 +156,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     <div className="space-y-6">
       {/* Header & KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
               कुल शिक्षक एवं कर्मचारी
@@ -150,7 +174,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
               मासिक कुल वेतन दायित्व
@@ -167,7 +191,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs flex flex-col justify-between">
           <div>
             <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
               कर्मचारी प्रबंधन
@@ -178,7 +202,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           </div>
           <button
             onClick={() => setShowAddStaff(!showAddStaff)}
-            className="mt-3 flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+            className="mt-3 flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>{showAddStaff ? 'फॉर्म बंद करें' : 'नए आचार्य/कर्मचारी जोड़ें'}</span>
@@ -211,7 +235,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
               <select
                 value={stfGender}
                 onChange={e => setStfGender(e.target.value as 'Acharya' | 'Didi')}
-                className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500"
+                className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500 font-medium"
               >
                 <option value="Acharya">आचार्य जी (Acharya)</option>
                 <option value="Didi">दीदी जी (Didi)</option>
@@ -295,11 +319,48 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
         </div>
       )}
 
+      {/* Staff Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="नाम, दूरभाष, पद या विषय से खोजें..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-stone-200 bg-stone-50 focus:bg-white focus:ring-1 focus:ring-orange-500 focus:outline-none"
+          />
+        </div>
+
+        <select
+          value={roleFilter}
+          onChange={e => setRoleFilter(e.target.value as any)}
+          className="px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white font-medium"
+        >
+          <option value="ALL">सभी वर्ग (Acharya & Didi)</option>
+          <option value="Acharya">केवल आचार्य जी</option>
+          <option value="Didi">केवल दीदी जी</option>
+        </select>
+
+        {(searchQuery || roleFilter !== 'ALL') && (
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setRoleFilter('ALL');
+            }}
+            className="text-xs font-bold text-stone-500 hover:text-stone-700 flex items-center gap-1 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>फ़िल्टर हटाएं</span>
+          </button>
+        )}
+      </div>
+
       {/* Staff Roster Table */}
-      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-xs">
+      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-2xs">
         <div className="p-4 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
           <h4 className="font-bold text-stone-900 text-xs uppercase tracking-wider">
-            आचार्य एवं कर्मचारी विवरण सूची ({staffList.length} पद)
+            आचार्य एवं कर्मचारी विवरण सूची ({filteredStaff.length} पद)
           </h4>
           <span className="text-[11px] text-stone-500">
             सत्र 2025-26 • {currentSchool.name}
@@ -321,15 +382,17 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {staffList.length === 0 ? (
+              {filteredStaff.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-stone-500">
-                    कोई कर्मचारी रिकॉर्ड उपलब्ध नहीं है।
+                    {searchQuery || roleFilter !== 'ALL'
+                      ? 'खोज एवं फ़िल्टर के अनुरूप कोई कर्मचारी रिकॉर्ड नहीं मिला।'
+                      : 'कोई कर्मचारी रिकॉर्ड उपलब्ध नहीं है।'}
                   </td>
                 </tr>
               ) : (
-                staffList.map(member => (
-                  <tr key={member.id} className="hover:bg-stone-50/80">
+                filteredStaff.map(member => (
+                  <tr key={member.id} className="hover:bg-stone-50/80 transition">
                     <td className="p-3 font-mono font-bold text-orange-950 uppercase">{member.id}</td>
                     <td className="p-3 font-bold text-stone-900">
                       {member.name}
@@ -351,13 +414,25 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
                       ₹{member.monthlySalary?.toLocaleString('en-IN')}
                     </td>
                     <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                      {member.phone && (
+                        <a
+                          href={`https://api.whatsapp.com/send?phone=${formatWhatsAppPhone(member.phone)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 rounded font-bold text-[10px] inline-flex items-center gap-1 shadow-2xs transition"
+                          title="आचार्य/दीदी से सीधे व्हाट्सएप पर संवाद करें"
+                        >
+                          <MessageSquare className="w-3 h-3 text-emerald-700" />
+                          <span>WhatsApp</span>
+                        </a>
+                      )}
                       <button
                         onClick={() => onOpenSalarySlip(member)}
-                        className="px-2.5 py-1 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-950 border border-orange-300 rounded font-bold text-[11px] inline-flex items-center gap-1 shadow-xs transition cursor-pointer"
+                        className="px-2.5 py-1 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-950 border border-orange-300 rounded font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition cursor-pointer"
                         title="Generate Official Monthly Salary Slip (मासिक वेतन पर्ची)"
                       >
                         <FileText className="w-3 h-3 text-orange-700" />
-                        <span>वेतन पर्ची (Slip)</span>
+                        <span>वेतन पर्ची</span>
                       </button>
                       <button
                         onClick={() => handleDeleteStaff(member.id)}
