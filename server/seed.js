@@ -5,7 +5,7 @@ const Fee = require('./models/Fee');
 const ReportCard = require('./models/ReportCard');
 const Notice = require('./models/Notice');
 const Homework = require('./models/Homework');
-const Staff = require('./models/Staff');
+const Staff = require('./models/Staff'); 
 
 const INITIAL_SCHOOLS = [
   {
