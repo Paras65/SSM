@@ -202,6 +202,46 @@ export interface PanchmukhiEvaluation {
   naitik: PanchmukhiDimension;
 }
 
+export interface SelfAssessment {
+  strengths: string;
+  interests: string;
+  myGoals: string;
+  learningEnjoyment: string;
+}
+
+export interface PeerAssessment {
+  peerName: string;
+  collaborationGrade: string;
+  empathyAndRespect: string;
+  teamworkRemarks: string;
+}
+
+export interface ParentObservation {
+  homeDiscipline: string;
+  curiosityAndReading: string;
+  parentRemarks: string;
+}
+
+export interface TwentyFirstCenturySkill {
+  grade: string; // 'O' | 'A+' | 'A' | 'B';
+  descriptor: string;
+}
+
+export interface TwentyFirstCenturySkills {
+  criticalThinking: TwentyFirstCenturySkill;
+  problemSolving: TwentyFirstCenturySkill;
+  creativity: TwentyFirstCenturySkill;
+  communication: TwentyFirstCenturySkill;
+  digitalAwareness: TwentyFirstCenturySkill;
+}
+
+export interface HolisticEvaluation {
+  selfAssessment?: SelfAssessment;
+  peerAssessment?: PeerAssessment;
+  parentObservation?: ParentObservation;
+  twentyFirstCenturySkills?: TwentyFirstCenturySkills;
+}
+
 export interface ReportCard {
   id: string;
   schoolId?: string;
@@ -217,6 +257,7 @@ export interface ReportCard {
   attendancePercentage: number;
   moralConduct: string; // 'उत्तम' | 'अति उत्तम' | 'श्रेष्ठ'
   panchmukhiEvaluation?: PanchmukhiEvaluation;
+  holisticEvaluation?: HolisticEvaluation;
 }
 
 export interface Notice {

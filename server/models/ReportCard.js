@@ -48,6 +48,47 @@ const reportCardSchema = new mongoose.Schema({
       skills: { type: String, default: 'मातृ-पितृ भक्ति, अनुशासन, सेवाभाव' },
       remarks: { type: String, default: 'आदर्श संस्कारयुक्त व्यवहार' }
     }
+  },
+  holisticEvaluation: {
+    selfAssessment: {
+      strengths: { type: String, default: 'तार्किक चिंतन, चित्रकला एवं नियमित स्वाध्याय' },
+      interests: { type: String, default: 'विज्ञान प्रयोग, गणितीय पहेलियाँ, खेलकूद' },
+      myGoals: { type: String, default: 'गणित में गति बढ़ाना व संस्कृत श्लोक कंठस्थ करना' },
+      learningEnjoyment: { type: String, default: 'समूह गतिविधि एवं प्रायोगिक कार्य' }
+    },
+    peerAssessment: {
+      peerName: { type: String, default: 'सहपाठी' },
+      collaborationGrade: { type: String, default: 'A+' },
+      empathyAndRespect: { type: String, default: 'मित्रों की सहायता, विनम्रता एवं निष्पक्षता' },
+      teamworkRemarks: { type: String, default: 'समूह कार्य में सक्रिय सहयोग एवं प्रोत्साहन' }
+    },
+    parentObservation: {
+      homeDiscipline: { type: String, default: 'प्रातः जागरण, वंदना एवं नियमित समय सारिणी' },
+      curiosityAndReading: { type: String, default: 'पुस्तकालय पुस्तकों में रुचि एवं नए प्रश्न पूछना' },
+      parentRemarks: { type: String, default: 'संस्कारवान आचरण, घर पर स्वाध्याय में स्वावलंबन' }
+    },
+    twentyFirstCenturySkills: {
+      criticalThinking: {
+        grade: { type: String, default: 'A+' },
+        descriptor: { type: String, default: 'तथ्यों का विश्लेषण एवं स्वतंत्र विचार' }
+      },
+      problemSolving: {
+        grade: { type: String, default: 'A+' },
+        descriptor: { type: String, default: 'कठिन समस्याओं में धैर्य एवं वैकल्पिक समाधान' }
+      },
+      creativity: {
+        grade: { type: String, default: 'O' },
+        descriptor: { type: String, default: 'कला, हस्तशिल्प एवं मौलिक अभिव्यक्ति' }
+      },
+      communication: {
+        grade: { type: String, default: 'A+' },
+        descriptor: { type: String, default: 'स्पष्ट, आत्मविश्वासपूर्ण एवं प्रभावी संवाद' }
+      },
+      digitalAwareness: {
+        grade: { type: String, default: 'A' },
+        descriptor: { type: String, default: 'कंप्यूटर प्रयोग एवं वैज्ञानिक दृष्टिकोण' }
+      }
+    }
   }
 }, {
   timestamps: true

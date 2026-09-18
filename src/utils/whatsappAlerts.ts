@@ -94,6 +94,11 @@ export function generateReportCardWhatsAppMessage(params: {
     sanskritGrade?: string;
     naitikGrade?: string;
   };
+  holistic?: {
+    selfStrength?: string;
+    peerCollab?: string;
+    twentyFirstCentury?: string;
+  };
   schoolName: string;
 }): string {
   return (
@@ -112,12 +117,17 @@ export function generateReportCardWhatsAppMessage(params: {
 • अंतिम श्रेणी: *${params.grade}*
 • नैतिक एवं संस्कार आचरण: *${params.moralConduct}*
 ${params.panchmukhi ? `
-🌟 *पंचमुखी शिक्षा सर्वांगीण मूल्यांकन (NEP 2020 HPC):*
+🌟 *पंचमुखी शिक्षा सर्वांगीण मूल्यांकन (Panchmukhi Pillars):*
 • शारीरिक विकास: *${params.panchmukhi.sharirikGrade || 'A+'}*
 • योग एवं प्राणायाम: *${params.panchmukhi.yogGrade || 'A+'}*
 • संगीत एवं घोष: *${params.panchmukhi.sangeetGrade || 'A'}*
 • संस्कृत संभाषण व श्लोक: *${params.panchmukhi.sanskritGrade || 'O'}*
 • नैतिक एवं आध्यात्मिक: *${params.panchmukhi.naitikGrade || 'O'}*` : ''}
+${params.holistic ? `
+🎯 *360° समग्र प्रगति पत्र (NEP 2020 HPC Highlights):*
+• स्व-मूल्यांकन प्रमुख ताकत: *${params.holistic.selfStrength || 'तार्किक चिंतन व स्वाध्याय'}*
+• सहपाठी सहयोग स्तर: *${params.holistic.peerCollab || 'उत्कृष्ट (A+)'}*
+• 21वीं सदी के कौशल: *${params.holistic.twentyFirstCentury || 'अग्रणी (Proficient)'}*` : ''}
 
 ✍️ *कक्षाचार्य सम्मति:*
 "${params.acharyaRemarks}"
@@ -143,6 +153,11 @@ export function generateReportCardWhatsAppLink(params: {
     sangeetGrade?: string;
     sanskritGrade?: string;
     naitikGrade?: string;
+  };
+  holistic?: {
+    selfStrength?: string;
+    peerCollab?: string;
+    twentyFirstCentury?: string;
   };
   schoolName: string;
   phone: string;
