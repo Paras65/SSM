@@ -41,7 +41,7 @@ interface ScannedRow {
 
 export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onClose }) => {
   const { addStudent, students } = useSchool();
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const [activeTab, setActiveTab] = useState<'camera' | 'upload' | 'grid'>('camera');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
 
-  // API Key management
+  // API Key management (Advanced / Optional)
   const [apiKey, setApiKey] = useState<string>(() => {
     return localStorage.getItem('ssm_gemini_api_key') || (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
   });
@@ -61,6 +61,24 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
   const [rows, setRows] = useState<ScannedRow[]>([]);
   const [defaultClass, setDefaultClass] = useState<string>('Class 6');
   const [defaultSection, setDefaultSection] = useState<string>('A');
+
+  // Helper to generate starter blank rows for seamless fast-typing without AI dependency
+  const createDefaultRows = (count: number = 5): ScannedRow[] => {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `fast-entry-${Date.now()}-${i}`,
+      rollNo: String(i + 1),
+      name: '',
+      gender: 'Bhaiya' as Gender,
+      class: defaultClass,
+      section: defaultSection,
+      fatherName: '',
+      motherName: '',
+      contact: '',
+      dob: '2014-01-01',
+      address: '',
+      pin: ''
+    }));
+  };
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -145,7 +163,7 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
     reader.readAsDataURL(file);
   };
 
-  // AI Extraction logic using Gemini Vision
+  // AI Extraction logic using Gemini Vision with seamless fast-entry fallback
   const processImageWithAI = async (imageDataUrl: string) => {
     setIsScanning(true);
     setActiveTab('grid');
@@ -153,12 +171,13 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
     const cleanBase64 = imageDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
     const mimeType = imageDataUrl.match(/^data:(image\/[a-z]+);base64,/)?.[1] || 'image/jpeg';
 
-    const effectiveKey = apiKey.trim() || localStorage.getItem('ssm_gemini_api_key') || '';
+    const effectiveKey = apiKey.trim() || localStorage.getItem('ssm_gemini_api_key') || (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 
+    // If no API key configured, directly provide the split-screen fast entry mode
     if (!effectiveKey) {
       setIsScanning(false);
-      showWarning('Google Gemini API Key आवश्यक है। कृपया कुंजी दर्ज करें अथवा डेमो डेटा का उपयोग करें।');
-      setShowKeyInput(true);
+      setRows(prev => (prev.length === 0 ? createDefaultRows(5) : prev));
+      showInfo('📸 फोटो लोड हो गई है! बाईं ओर फोटो देखकर दाईं ओर त्वरित प्रविष्टि करें।');
       return;
     }
 
@@ -237,12 +256,13 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
         setRows(formattedRows);
         showSuccess(`✨ AI ने सफलतापूर्वक ${formattedRows.length} छात्रों का विवरण रजिस्टर से पढ़ लिया है!`);
       } else {
-        showWarning('रजिस्टर में कोई स्पष्ट छात्र पंक्ति नहीं पहचानी जा सकी। कृपया पुनः स्पष्ट फोटो लें।');
+        setRows(prev => (prev.length === 0 ? createDefaultRows(5) : prev));
+        showInfo('📸 फोटो लोड हो गई है। आप स्क्रीन पर रजिस्टर देखकर दाईं ओर त्वरित प्रविष्टि कर सकते हैं।');
       }
     } catch (err: unknown) {
-      console.error('Scan failed:', err);
-      const errMsg = err instanceof Error ? err.message : 'स्कैनिंग विफल रही';
-      showError(`स्कैनिंग त्रुटि: ${errMsg}`);
+      console.warn('Scan AI unavailable, falling back to split-screen fast entry:', err);
+      setRows(prev => (prev.length === 0 ? createDefaultRows(5) : prev));
+      showInfo('📸 फोटो लोड हो गई है! आप स्क्रीन पर रजिस्टर देखकर दाईं ओर त्वरित प्रविष्टि कर सकते हैं।');
     } finally {
       setIsScanning(false);
     }
@@ -427,15 +447,6 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowKeyInput(!showKeyInput)}
-              className="p-1.5 text-stone-300 hover:text-white hover:bg-stone-700/60 rounded-lg text-xs flex items-center gap-1 cursor-pointer transition"
-              title="Google Gemini API Key कॉन्फ़िगर करें"
-            >
-              <Key className="w-4 h-4 text-amber-400" />
-              <span className="hidden md:inline text-[11px]">API Key</span>
-            </button>
-            <button
-              type="button"
               onClick={onClose}
               className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-700/60 rounded-lg cursor-pointer transition"
             >
@@ -443,47 +454,6 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
             </button>
           </div>
         </div>
-
-        {/* API Key Banner/Form */}
-        {showKeyInput && (
-          <div className="bg-stone-800 text-white p-3 border-b border-stone-700 flex flex-wrap items-center justify-between gap-2 shrink-0">
-            <div className="flex items-center gap-2 text-xs">
-              <Key className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>Google Gemini API Key:</span>
-              <input
-                type="password"
-                placeholder="AIzaSy..."
-                value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
-                className="px-2 py-1 bg-stone-900 border border-stone-600 rounded text-xs w-64 text-amber-200 font-mono"
-              />
-              <button
-                type="button"
-                onClick={handleSaveApiKey}
-                className="px-3 py-1 bg-amber-600 hover:bg-amber-700 font-bold rounded text-xs cursor-pointer"
-              >
-                सुरक्षित करें
-              </button>
-            </div>
-            <div className="text-[11px] text-stone-400 flex items-center gap-3">
-              <a
-                href="https://aistudio.google.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-amber-400 underline"
-              >
-                निःशुल्क API Key प्राप्त करें ↗
-              </a>
-              <button
-                type="button"
-                onClick={loadDemoData}
-                className="px-2 py-0.5 bg-stone-700 hover:bg-stone-600 rounded text-stone-200 font-medium"
-              >
-                डेमो डेटा लोड करें
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Mode Selector Tabs */}
         <div className="bg-stone-100 border-b border-stone-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -794,11 +764,25 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                               </td>
                               <td className="p-1">
                                 <input
+                                  id={`scan-name-${idx}`}
                                   type="text"
-                                  placeholder="छात्र नाम"
+                                  placeholder="छात्र नाम *"
                                   value={row.name}
                                   onChange={e => handleRowChange(row.id, 'name', e.target.value)}
-                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white font-medium text-stone-900"
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (idx === rows.length - 1) {
+                                        handleAddRow();
+                                        setTimeout(() => {
+                                          document.getElementById(`scan-name-${idx + 1}`)?.focus();
+                                        }, 40);
+                                      } else {
+                                        document.getElementById(`scan-name-${idx + 1}`)?.focus();
+                                      }
+                                    }
+                                  }}
+                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white font-medium text-stone-900 focus:ring-1 focus:ring-orange-500"
                                 />
                               </td>
                               <td className="p-1">
@@ -836,11 +820,25 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                               </td>
                               <td className="p-1">
                                 <input
+                                  id={`scan-father-${idx}`}
                                   type="text"
-                                  placeholder="पिता का नाम"
+                                  placeholder="पिता का नाम *"
                                   value={row.fatherName}
                                   onChange={e => handleRowChange(row.id, 'fatherName', e.target.value)}
-                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white text-stone-800"
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (idx === rows.length - 1) {
+                                        handleAddRow();
+                                        setTimeout(() => {
+                                          document.getElementById(`scan-father-${idx + 1}`)?.focus();
+                                        }, 40);
+                                      } else {
+                                        document.getElementById(`scan-father-${idx + 1}`)?.focus();
+                                      }
+                                    }
+                                  }}
+                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white text-stone-800 focus:ring-1 focus:ring-orange-500"
                                 />
                               </td>
                               <td className="p-1">
@@ -894,9 +892,44 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
           )}
         </div>
 
+        {/* Advanced Optional AI Key Settings (Collapsible) */}
+        {showKeyInput && (
+          <div className="bg-stone-800 text-white px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-3 shrink-0 border-t border-stone-700">
+            <div className="flex flex-wrap items-center gap-2">
+              <Key className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-stone-300 font-medium">Google Gemini API Key (वैकल्पिक):</span>
+              <input
+                type="password"
+                placeholder="AIzaSy..."
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                className="px-2 py-1 bg-stone-900 border border-stone-600 rounded text-xs w-64 text-amber-200 font-mono"
+              />
+              <button
+                type="button"
+                onClick={handleSaveApiKey}
+                className="px-3 py-1 bg-amber-600 hover:bg-amber-700 font-bold rounded text-xs cursor-pointer transition"
+              >
+                सुरक्षित करें
+              </button>
+            </div>
+            <div className="text-[11px] text-stone-400 flex items-center gap-3">
+              <a
+                href="https://aistudio.google.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-amber-400 underline hover:text-amber-300"
+              >
+                निःशुल्क Key प्राप्त करें ↗
+              </a>
+              <span>(सामान्य प्रविष्टि हेतु यह अनिवार्य नहीं है)</span>
+            </div>
+          </div>
+        )}
+
         {/* Footer Actions */}
         <div className="bg-stone-50 border-t border-stone-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div className="text-xs text-stone-600">
+          <div className="flex items-center gap-3 text-xs text-stone-600">
             {rows.length > 0 && (
               <span className="font-semibold text-stone-700">
                 वैध पंक्तियाँ:{' '}
@@ -906,6 +939,15 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                 / {rows.length}
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => setShowKeyInput(prev => !prev)}
+              className="text-[11px] text-stone-500 hover:text-stone-800 flex items-center gap-1 cursor-pointer transition ml-1"
+              title="उन्नत AI Google Gemini API Key कॉन्फ़िगर करें"
+            >
+              <Key className="w-3 h-3 text-stone-400" />
+              <span>{showKeyInput ? '⚙️ AI सेटिंग्स छिपाएं' : '⚙️ उन्नत AI सेटिंग्स (वैकल्पिक)'}</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
