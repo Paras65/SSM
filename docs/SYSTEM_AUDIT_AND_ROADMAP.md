@@ -265,5 +265,6 @@ const parentSchema = new mongoose.Schema({
 | **Phase 1 (Immediate)** | **Security & Integrity** | • Salted `scrypt` password/PIN hashing<br>• Lock down `verify-tc` public route<br>• Eliminate post-bulk attendance full-table query<br>• Rate limiting on authentication routes | **COMPLETED & LIVE** ✅ |
 | **Phase 2 (Short-Term)** | **Financial Ledger & RBAC** | • Independent `FeePaymentTransaction` model<br>• Cumulative partial fee payment handling<br>• Class-teacher scoped authorization middleware<br>• Dedicated Parent account model & sibling aggregation | **COMPLETED & LIVE** ✅ |
 | **Phase 3 (Medium-Term)** | **Compliance & Edge Cases** | • Full 42-column official UDISE+ SDMS export<br>• Custody restriction and authorized pickup profiles<br>• Sibling family grouping and concession automation (25%/50%)<br>• Cheque/DD clearance lifecycle with bounce recovery | **COMPLETED & LIVE** ✅ |
+| **Phase 4 (Statutory Ledger)** | **Permanent Records** | • Official 16-column Dakhil-Kharij (S.R.) Register<br>• Automated DOB to Hindi legal words converter<br>• Active/Withdrawn/Class filter & live search<br>• Landscape A4/Legal print & UTF-8 BOM CSV export | **COMPLETED & LIVE** ✅ |
 
 
