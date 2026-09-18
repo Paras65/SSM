@@ -17,7 +17,12 @@ const { generateUniqueId, recordAuditLog } = require('../utils/routeHelpers');
 // GET /api/schools - List all schools (public directory)
 router.get('/', async (req, res) => {
   try {
-    const rawSchools = await School.find({ status: { $ne: 'discontinued' } })
+    const dummySchoolIds = ['ssm-demo', 'ssm-gorakhpur', 'ssm-delhi', 'ssm-varanasi'];
+    const rawSchools = await School.find({
+      status: { $nin: ['discontinued', 'demo'] },
+      isDemo: { $ne: true },
+      id: { $nin: dummySchoolIds }
+    })
       .select('-adminPasscode')
       .sort({ established: 1, createdAt: 1 })
       .lean();

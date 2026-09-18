@@ -533,13 +533,13 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 <div className="flex justify-between py-1 border-b border-stone-100">
                   <span className="text-stone-500">निःशुल्क सेवा (Free Seva Tier):</span>
                   <span className="font-bold text-stone-800">
-                    {schools.filter(s => s.plan !== 'pro' && s.id !== 'ssm-gorakhpur').length} शाखाएं
+                    {schools.filter(s => s.plan !== 'pro').length} शाखाएं
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-stone-100">
                   <span className="text-stone-500">उन्नत प्रो ईआरपी (Pro Features AMC):</span>
                   <span className="font-bold text-amber-800">
-                    {schools.filter(s => s.plan === 'pro' || s.id === 'ssm-gorakhpur').length} शाखाएं
+                    {schools.filter(s => s.plan === 'pro').length} शाखाएं
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-stone-100">
@@ -621,7 +621,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 ) : (
                   filteredSchools.map(sch => {
                     const isDiscontinued = sch.status === 'discontinued';
-                    const isPro = sch.plan === 'pro' || (sch.id === 'ssm-gorakhpur' && !sch.plan);
+                    const isPro = sch.plan === 'pro';
 
                     return (
                       <tr key={sch.id} className={`hover:bg-stone-50/80 ${isDiscontinued ? 'bg-red-50/20' : ''}`}>

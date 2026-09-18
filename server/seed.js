@@ -9,63 +9,6 @@ const Staff = require('./models/Staff');
 
 const INITIAL_SCHOOLS = [
   {
-    id: 'ssm-gorakhpur',
-    name: 'Saraswati Shishu Mandir Senior Secondary School, Gorakhpur',
-    hindiName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय, गोरखपुर',
-    tagline: 'सा विद्या या विमुक्तये (That is knowledge which liberates)',
-    affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान एवं CBSE',
-    affiliationNo: 'VB-UP-1952-001',
-    established: '1952',
-    address: 'विद्या भारती मार्ग, सिविल लाइंस, गोरखपुर, उत्तर प्रदेश - 273001',
-    city: 'गोरखपुर',
-    state: 'उत्तर प्रदेश',
-    prant: 'गोरक्ष प्रांत',
-    phone: '+91 551 2345678',
-    email: 'gorakhpur@ssm.edu.in',
-    timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
-    principalName: 'आचार्य राम नारायण शुक्ला',
-    adminPasscode: '1952',
-    plan: 'pro'
-  },
-  {
-    id: 'ssm-delhi',
-    name: 'Saraswati Bal Mandir, Keshav Kunj, New Delhi',
-    hindiName: 'सरस्वती बाल मंदिर, केशव कुंज, नई दिल्ली',
-    tagline: 'संस्कार युक्त शिक्षा, राष्ट्र समर्पित जीवन',
-    affiliate: 'सम्बद्ध: विद्या भारती दिल्ली प्रांत एवं CBSE',
-    affiliationNo: 'VB-DL-1965-014',
-    established: '1965',
-    address: 'झंडेवालान, केशव कुंज, देशबंधु गुप्ता मार्ग, नई दिल्ली - 110055',
-    city: 'नई दिल्ली',
-    state: 'दिल्ली',
-    prant: 'दिल्ली प्रांत',
-    phone: '+91 11 23556789',
-    email: 'delhi@ssm.edu.in',
-    timings: 'प्रातः 8:00 बजे से दोपहर 2:00 बजे तक (सोम-शनि)',
-    principalName: 'आचार्य देवेन्द्र कुमार शास्त्री',
-    adminPasscode: '1965',
-    plan: 'free'
-  },
-  {
-    id: 'ssm-varanasi',
-    name: 'Saraswati Vidya Mandir, Kashi, Varanasi',
-    hindiName: 'सरस्वती विद्या मंदिर, काशी, वाराणसी',
-    tagline: 'विद्या ददाति विनयं, विनयाद्याति पात्रताम्',
-    affiliate: 'सम्बद्ध: विद्या भारती काशी प्रांत',
-    affiliationNo: 'VB-UP-1972-028',
-    established: '1972',
-    address: 'कबीर चौरा, काशी हिंदू विश्वविद्यालय मार्ग, वाराणसी, उत्तर प्रदेश - 221001',
-    city: 'वाराणसी',
-    state: 'उत्तर प्रदेश',
-    prant: 'काशी प्रांत',
-    phone: '+91 542 2233445',
-    email: 'kashi@ssm.edu.in',
-    timings: 'प्रातः 7:45 बजे से दोपहर 1:45 बजे तक (सोम-शनि)',
-    principalName: 'आचार्य विष्णु दत्त त्रिपाठी',
-    adminPasscode: '1972',
-    plan: 'free'
-  },
-  {
     id: 'ssm-demo',
     name: 'Saraswati Shishu Mandir Senior Secondary School (Demo Sandbox)',
     hindiName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय (लाइव डेमो)',
@@ -82,7 +25,9 @@ const INITIAL_SCHOOLS = [
     timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक',
     principalName: 'आचार्य देवव्रत शास्त्री',
     adminPasscode: '1952',
-    plan: 'pro'
+    plan: 'pro',
+    status: 'demo',
+    isDemo: true
   }
 ];
 
@@ -535,17 +480,22 @@ const INITIAL_HOMEWORK = [
 
 async function seedDatabase() {
   try {
-    // 1. Ensure all initial schools exist in MongoDB (without overwriting user custom edits)
+    // 1. Ensure demo sandbox school exists in MongoDB
     for (const school of INITIAL_SCHOOLS) {
       await School.updateOne(
         { id: school.id },
-        { $setOnInsert: school },
+        { $set: school },
         { upsert: true }
       );
     }
-    console.log('✅ Initial schools verified/synced in MongoDB.');
+    console.log('✅ Demo Sandbox school verified in MongoDB.');
 
-    // 2. Migration: Isolate any existing seed records from actual schools (e.g. ssm-gorakhpur) strictly to 'ssm-demo'
+    // 2. Remove legacy dummy seed schools from live schools database
+    const dummySchoolIds = ['ssm-gorakhpur', 'ssm-delhi', 'ssm-varanasi'];
+    await School.deleteMany({ id: { $in: dummySchoolIds } });
+    console.log('✅ Cleaned up dummy seed schools from live database.');
+
+    // 3. Migration: Isolate any existing seed records from actual schools strictly to 'ssm-demo'
     const seedStudentIds = ['ssm-001', 'ssm-002', 'ssm-003', 'ssm-004', 'ssm-005', 'ssm-006', 'ssm-007', 'ssm-008'];
     const seedFeeIds = ['fee-001', 'fee-002', 'fee-003', 'fee-004', 'fee-005', 'fee-006'];
     const seedReportIds = ['rep-001', 'rep-002'];
@@ -554,31 +504,31 @@ async function seedDatabase() {
     const seedHomeworkIds = ['hw-001', 'hw-002', 'hw-003', 'hw-004'];
 
     await Student.updateMany(
-      { $or: [{ id: { $in: seedStudentIds } }, { id: { $regex: /^ssm-gorakhpur-std-/ } }, { schoolId: { $exists: false } }] },
+      { $or: [{ id: { $in: seedStudentIds } }, { id: { $regex: /^ssm-gorakhpur-std-/ } }, { schoolId: { $in: dummySchoolIds } }, { schoolId: { $exists: false } }] },
       { $set: { schoolId: 'ssm-demo' } }
     );
     await Fee.updateMany(
-      { $or: [{ id: { $in: seedFeeIds } }, { studentId: { $in: seedStudentIds } }, { schoolId: { $exists: false } }] },
+      { $or: [{ id: { $in: seedFeeIds } }, { studentId: { $in: seedStudentIds } }, { schoolId: { $in: dummySchoolIds } }, { schoolId: { $exists: false } }] },
       { $set: { schoolId: 'ssm-demo' } }
     );
     await Attendance.updateMany(
-      { $or: [{ studentId: { $in: seedStudentIds } }, { id: { $regex: /^att-.*ssm-00/ } }, { schoolId: { $exists: false } }] },
+      { $or: [{ studentId: { $in: seedStudentIds } }, { id: { $regex: /^att-.*ssm-00/ } }, { schoolId: { $in: dummySchoolIds } }, { schoolId: { $exists: false } }] },
       { $set: { schoolId: 'ssm-demo' } }
     );
     await ReportCard.updateMany(
-      { $or: [{ id: { $in: seedReportIds } }, { studentId: { $in: seedStudentIds } }, { schoolId: { $exists: false } }] },
+      { $or: [{ id: { $in: seedReportIds } }, { studentId: { $in: seedStudentIds } }, { schoolId: { $in: dummySchoolIds } }, { schoolId: { $exists: false } }] },
       { $set: { schoolId: 'ssm-demo' } }
     );
     await Notice.updateMany(
-      { $or: [{ id: { $in: seedNoticeIds } }, { schoolId: { $exists: false } }] },
+      { $or: [{ id: { $in: seedNoticeIds } }, { schoolId: { $in: dummySchoolIds } }, { schoolId: { $exists: false } }] },
       { $set: { schoolId: 'ssm-demo' } }
     );
     await Staff.updateMany(
-      { $or: [{ id: { $in: seedStaffIds } }, { schoolId: { $exists: false } }] },
+      { $or: [{ id: { $in: seedStaffIds } }, { schoolId: { $in: dummySchoolIds } }, { schoolId: { $exists: false } }] },
       { $set: { schoolId: 'ssm-demo' } }
     );
     await Homework.updateMany(
-      { $or: [{ id: { $in: seedHomeworkIds } }, { schoolId: { $exists: false } }] },
+      { $or: [{ id: { $in: seedHomeworkIds } }, { schoolId: { $in: dummySchoolIds } }, { schoolId: { $exists: false } }] },
       { $set: { schoolId: 'ssm-demo' } }
     );
 

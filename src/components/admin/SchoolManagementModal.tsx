@@ -898,7 +898,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300 text-[11px] font-bold shadow-2xs">
                                 <span>सेवा विसर्जित (Discontinued)</span>
                               </span>
-                            ) : (sch.plan === 'pro' || (sch.id === 'ssm-gorakhpur' && !sch.plan)) ? (
+                            ) : sch.plan === 'pro' ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold shadow-2xs">
                                 <Crown className="w-3 h-3 text-amber-600 fill-amber-500" />
                                 <span>तकनीकी सहयोग (Tech Support)</span>

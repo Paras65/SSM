@@ -48,28 +48,6 @@ const PUBLIC_BRAND_SCHOOL: School = {
   website: SCHOOL_INFO.website
 };
 
-const HISTORIC_GORAKHPUR_BRANCH: School = {
-  id: 'ssm-gorakhpur',
-  name: 'Saraswati Shishu Mandir Senior Secondary School, Gorakhpur',
-  hindiName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय, गोरखपुर',
-  tagline: 'सा विद्या या विमुक्तये (That is knowledge which liberates)',
-  affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान एवं CBSE',
-  affiliationNo: 'VB-UP-1952-001',
-  established: '1952',
-  address: 'विद्या भारती मार्ग, सिविल लाइंस, गोरखपुर, उत्तर प्रदेश - 273001',
-  city: 'गोरखपुर',
-  state: 'उत्तर प्रदेश',
-  prant: 'गोरक्ष प्रांत',
-  phone: '+91 551 2345678',
-  email: 'gorakhpur@ssm.edu.in',
-  timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक (सोम-शनि)',
-  principalName: 'आचार्य राम नारायण शुक्ला',
-  adminPasscode: '1952',
-  plan: 'free',
-  udiseCode: '09510100101',
-  website: 'https://www.init65.co.in'
-};
-
 export const DEMO_SANDBOX_SCHOOL: School = {
   id: 'ssm-demo',
   name: 'Saraswati Shishu Mandir Senior Secondary School (Demo Sandbox)',
@@ -289,8 +267,11 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Fetch schools list first (publicly accessible)
         const dbSchools = await api.getSchools().catch(() => []);
         if (dbSchools.length > 0) {
+          const dummySchoolIds = ['ssm-demo', 'ssm-gorakhpur', 'ssm-delhi', 'ssm-varanasi'];
           const uniqueSchools = dbSchools.filter((s: School, idx: number, arr: School[]) =>
-            s.id !== 'ssm-demo' &&
+            !dummySchoolIds.includes(s.id) &&
+            (s as any).status !== 'demo' &&
+            !(s as any).isDemo &&
             idx === arr.findIndex(x => x.id === s.id || ((x.hindiName === s.hindiName || x.name === s.name) && x.city === s.city))
           );
           setSchools(uniqueSchools);
@@ -298,10 +279,15 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             try {
               const params = new URLSearchParams(window.location.search);
               const branchParam = params.get('branch') || params.get('school');
-              if (branchParam && dbSchools.some((s: School) => s.id === branchParam)) {
+              if (branchParam && uniqueSchools.some((s: School) => s.id === branchParam)) {
                 setCurrentSchoolIdState(branchParam);
                 localStorage.setItem('ssm_current_school_id', branchParam);
                 schoolIdToFetch = branchParam;
+              } else if (uniqueSchools.length > 0 && (!currentSchoolId || dummySchoolIds.includes(currentSchoolId) || !uniqueSchools.some((s: School) => s.id === currentSchoolId))) {
+                const defaultRealId = uniqueSchools[0].id;
+                setCurrentSchoolIdState(defaultRealId);
+                localStorage.setItem('ssm_current_school_id', defaultRealId);
+                schoolIdToFetch = defaultRealId;
               }
             } catch {}
           }
@@ -460,7 +446,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setIsDemoMode(false);
     setViewMode('public');
-    const resetSchoolId = currentSchoolId === 'ssm-demo' ? 'ssm-gorakhpur' : currentSchoolId;
+    const resetSchoolId = (currentSchoolId === 'ssm-demo' || !currentSchoolId)
+      ? (schools.find(s => s.id !== 'ssm-demo')?.id || '')
+      : currentSchoolId;
     setCurrentSchoolIdState(resetSchoolId);
     try {
       localStorage.setItem('ssm_current_school_id', resetSchoolId);

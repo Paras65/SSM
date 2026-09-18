@@ -12,6 +12,14 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
+// Clean up any legacy dummy school IDs from previous versions
+try {
+  const staleId = localStorage.getItem('ssm_current_school_id');
+  if (staleId && ['ssm-gorakhpur', 'ssm-delhi', 'ssm-varanasi', 'ssm-demo'].includes(staleId)) {
+    localStorage.removeItem('ssm_current_school_id');
+  }
+} catch {}
+
 registerServiceWorker();
 
 createRoot(document.getElementById('root')!).render(

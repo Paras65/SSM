@@ -1,5 +1,5 @@
 // Cache version — bump this string on every production deploy to invalidate old caches
-const CACHE_VERSION = 'ssm-pwa-v3';
+const CACHE_VERSION = 'ssm-pwa-v4';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 
