@@ -25,7 +25,8 @@ import {
   BookOpen,
   CheckSquare,
   Square,
-  Clock
+  Clock,
+  LogOut
 } from 'lucide-react';
 
 export const StudentPortal: React.FC = () => {
@@ -228,8 +229,8 @@ export const StudentPortal: React.FC = () => {
 
   if (!isStudentAuthenticated) {
     return (
-      <div className="min-h-screen bg-amber-50/40 flex items-center justify-center p-4">
-        <form onSubmit={handleStudentLogin} className="bg-white w-full max-w-md rounded-3xl border-2 border-orange-200 shadow-xl p-6 sm:p-8 space-y-5">
+      <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4">
+        <form onSubmit={handleStudentLogin} className="bg-white w-full max-w-md rounded-2xl border border-stone-200 shadow-lg p-6 sm:p-8 space-y-5">
           <div className="text-center">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center text-3xl">🪷</div>
             <h1 className="text-xl font-black text-stone-900 mt-3">छात्र एवं अभिभावक पोर्टल</h1>
@@ -334,49 +335,76 @@ export const StudentPortal: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-amber-50/40 text-stone-900 flex flex-col w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col w-full max-w-full overflow-x-hidden">
       
-      {/* Header */}
-      <header className="bg-gradient-to-r from-orange-800 via-amber-700 to-orange-900 text-white shadow-md sticky top-0 z-30 w-full max-w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-16 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <button
-              onClick={handleStudentLogout}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition-colors shrink-0 cursor-pointer shadow-xs"
-              title="मुख्य वेबसाइट पर लौटें / लॉगआउट"
-            >
-              <ArrowLeft className="w-4 h-4 shrink-0" />
-              <span>वेबसाइट पर लौटें</span>
-            </button>
-            <div className="h-5 w-px bg-orange-700 hidden sm:block shrink-0" />
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg sm:text-xl shrink-0">🪷</span>
-              <div className="min-w-0">
-                <h1 className="text-xs sm:text-sm font-bold text-amber-100 truncate">
-                  छात्र एवं अभिभावक पोर्टल
-                </h1>
-                <span className="text-[10px] text-orange-200 hidden sm:block truncate">
-                  {currentSchool.hindiName}
-                </span>
+      {/* Top Bar for Student */}
+      <header className="bg-orange-900 text-white sticky top-0 z-30 shadow-md w-full max-w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2 sm:min-h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
+          
+          {/* Brand & Left Actions */}
+          <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
+            <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+              <button
+                onClick={handleStudentLogout}
+                className="p-1 rounded-lg bg-orange-800/80 hover:bg-orange-700 text-amber-200 hover:text-white transition flex items-center justify-center shrink-0 cursor-pointer"
+                title="मुख्य वेबसाइट पर लौटें / लॉगआउट"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl shrink-0">🚩</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h1 className="text-sm sm:text-base font-black tracking-tight text-amber-100 truncate">
+                      {currentSchool.hindiName || currentSchool.name}
+                    </h1>
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[9px] text-yellow-300 font-bold border border-yellow-400/40 shrink-0">
+                      छात्र पोर्टल
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-orange-300 font-medium hidden sm:block truncate">
+                    {currentStudent ? `${currentStudent.name} • ${currentStudent.class} (अनुक्रमांक: ${currentStudent.rollNo})` : 'छात्र एवं अभिभावक पटल'} • सत्र 2025-26
+                  </span>
+                </div>
               </div>
+            </div>
+
+            {/* Mobile-only Logout button */}
+            <div className="flex items-center gap-1.5 sm:hidden shrink-0">
+              <button
+                onClick={handleStudentLogout}
+                className="p-1.5 rounded-lg bg-red-800/80 hover:bg-red-700 text-white text-xs font-bold shrink-0 cursor-pointer"
+                title="लॉगआउट"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
-          {/* Authenticated student identity */}
-          {currentStudent && (
-            <div className="flex items-center gap-2 text-xs shrink-0 ml-auto">
-              <span className="px-2.5 sm:px-3 py-1 rounded-lg bg-orange-950 border border-orange-700 text-amber-100 text-[11px] sm:text-xs font-semibold truncate max-w-[130px] sm:max-w-none">
+          {/* Desktop Controls */}
+          <div className="hidden sm:flex items-center justify-end gap-2 text-xs">
+            {currentStudent && (
+              <span className="px-2.5 sm:px-3 py-1 rounded-lg bg-orange-950/80 border border-orange-800/60 text-amber-200 text-[11px] sm:text-xs font-bold truncate max-w-[200px]">
                 {currentStudent.name} ({currentStudent.class})
               </span>
-            </div>
-          )}
+            )}
+            <button
+              onClick={handleStudentLogout}
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg bg-red-800/80 hover:bg-red-700 text-white font-bold transition shadow-xs text-xs shrink-0 cursor-pointer"
+              title="लॉगआउट"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>लॉगआउट</span>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main Workspace */}
       {isStudentDataLoading ? (
         <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-12 flex items-center justify-center">
-          <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-orange-200 shadow-xl text-center max-w-md space-y-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl p-8 sm:p-10 border border-stone-200 shadow-xs text-center max-w-md space-y-4 animate-in fade-in">
             <div className="w-12 h-12 rounded-full border-4 border-orange-500 border-t-transparent animate-spin mx-auto" />
             <h3 className="text-base font-bold text-stone-900">छात्र विवरण लोड हो रहा है...</h3>
             <p className="text-xs text-stone-500">कृपया प्रतीक्षा करें, आपकी शैक्षणिक व शुल्क जानकारी संकलित की जा रही है।</p>
@@ -384,7 +412,7 @@ export const StudentPortal: React.FC = () => {
         </main>
       ) : !currentStudent ? (
         <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-12 flex items-center justify-center">
-          <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-red-200 shadow-xl text-center max-w-lg space-y-5 animate-in fade-in">
+          <div className="bg-white rounded-2xl p-8 sm:p-10 border border-red-200 shadow-xs text-center max-w-lg space-y-5 animate-in fade-in">
             <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center text-3xl mx-auto shadow-xs border border-red-200">
               ⚠️
             </div>
@@ -410,7 +438,7 @@ export const StudentPortal: React.FC = () => {
         <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-5 sm:space-y-6 overflow-x-hidden">
         
         {/* Student Profile Card */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-200 shadow-md">
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200 shadow-xs w-full max-w-full overflow-hidden">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             
             <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 p-1 shadow-md shrink-0 overflow-hidden">
@@ -526,7 +554,7 @@ export const StudentPortal: React.FC = () => {
         </div>
 
         {/* Daily Homework & Diary Card */}
-        <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200 shadow-xs w-full max-w-full overflow-hidden">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-stone-100">
             <div>
               <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">

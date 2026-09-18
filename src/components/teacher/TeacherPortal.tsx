@@ -447,53 +447,82 @@ export const TeacherPortal: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-orange-800 via-amber-800 to-orange-900 text-white shadow-lg sticky top-0 z-30 w-full max-w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-16 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <button
-              onClick={() => {
-                if (currentTab !== 'attendance') {
-                  setCurrentTab('attendance');
-                } else {
-                  setViewMode('public');
-                }
-              }}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/80 hover:bg-orange-900 text-xs font-semibold text-amber-200 transition shrink-0 cursor-pointer shadow-xs"
-              title={currentTab !== 'attendance' ? 'उपस्थिति पटल पर वापस जाएं' : 'मुख्य वेबसाइट पर लौटें'}
-            >
-              <ArrowLeft className="w-4 h-4 shrink-0" />
-              <span>{currentTab !== 'attendance' ? 'उपस्थिति पटल' : 'मुख्य वेबसाइट'}</span>
-            </button>
-            <div className="h-5 w-px bg-orange-700 hidden sm:block shrink-0" />
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg sm:text-xl shrink-0">🪷</span>
-              <div className="min-w-0">
-                <h1 className="text-xs sm:text-sm font-bold text-amber-100 flex items-center gap-1.5 truncate">
-                  <span className="truncate max-w-[130px] xs:max-w-[200px] sm:max-w-none">{currentSchool.hindiName}</span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[9px] text-yellow-300 font-bold border border-yellow-400/40 shrink-0">
-                    आचार्य
+      {/* Top Bar for Teacher */}
+      <header className="bg-orange-900 text-white sticky top-0 z-30 shadow-md w-full max-w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2 sm:min-h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
+          
+          {/* Brand & Left Actions */}
+          <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
+            <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+              <button
+                onClick={() => {
+                  if (currentTab !== 'attendance') {
+                    setCurrentTab('attendance');
+                  } else {
+                    setViewMode('public');
+                  }
+                }}
+                className="p-1 rounded-lg bg-orange-800/80 hover:bg-orange-700 text-amber-200 hover:text-white transition flex items-center justify-center shrink-0 cursor-pointer"
+                title={currentTab !== 'attendance' ? "उपस्थिति पटल पर वापस जाएं" : "सार्वजनिक पोर्टल पर जाएं"}
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl shrink-0">🚩</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h1 className="text-sm sm:text-base font-black tracking-tight text-amber-100 truncate">
+                      {currentSchool.hindiName || currentSchool.name}
+                    </h1>
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[9px] text-yellow-300 font-bold border border-yellow-400/40 shrink-0">
+                      आचार्य पोर्टल
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-orange-300 font-medium hidden sm:block truncate">
+                    {teacherProfile ? `${teacherProfile.gender === 'Acharya' ? 'आचार्य' : 'दीदी'} ${teacherProfile.name}` : teacherName} • {teacherProfile?.designation || 'शिक्षक'} • सत्र 2025-26
                   </span>
-                </h1>
-                <p className="text-[10px] text-orange-200 truncate hidden xs:block">
-                  {teacherProfile ? `${teacherProfile.gender === 'Acharya' ? 'आचार्य' : 'दीदी'} ${teacherProfile.name}` : teacherName} • {teacherProfile?.designation || 'शिक्षक'}
-                </p>
+                </div>
               </div>
+            </div>
+
+            {/* Mobile-only Quick Buttons */}
+            <div className="flex items-center gap-1.5 sm:hidden shrink-0">
+              <button
+                onClick={() => {
+                  setShowChangePinModal(true);
+                  setPinChangeError('');
+                  setCurrentPinInput('');
+                  setNewPinInput('');
+                  setConfirmPinInput('');
+                }}
+                className="p-1.5 rounded-lg bg-orange-800/80 hover:bg-orange-700 text-amber-200 text-xs font-bold shrink-0 cursor-pointer"
+                title="पिन बदलें"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-lg bg-red-800/80 hover:bg-red-700 text-white text-xs font-bold shrink-0 cursor-pointer"
+                title="लॉगआउट"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs shrink-0 ml-auto">
+          {/* Desktop Controls */}
+          <div className="hidden sm:flex items-center justify-end gap-2 text-xs">
             <button
               onClick={() => setShowTips(!showTips)}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs shrink-0 ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition shadow-xs shrink-0 cursor-pointer ${
                 showTips
                   ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40 hover:bg-amber-500/30'
-                  : 'bg-orange-900/60 text-orange-200 hover:bg-orange-900'
+                  : 'bg-orange-950/80 text-orange-200 hover:bg-orange-900 border border-orange-800/60'
               }`}
-              title="आचार्य त्वरित सुझाव देखें या छुपाएं"
             >
               <Lightbulb className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">{showTips ? 'सुझाव सक्रिय' : 'सुझाव देखें'}</span>
+              <span>{showTips ? 'सुझाव सक्रिय' : 'सुझाव देखें'}</span>
             </button>
 
             <button
@@ -504,31 +533,49 @@ export const TeacherPortal: React.FC = () => {
                 setNewPinInput('');
                 setConfirmPinInput('');
               }}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/60 hover:bg-orange-900 text-amber-200 font-bold transition shadow-xs text-xs shrink-0 cursor-pointer"
-              title="सुरक्षा पिन बदलें"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 border border-orange-800/60 text-amber-200 font-bold transition shadow-xs text-xs shrink-0 cursor-pointer"
             >
               <KeyRound className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">पिन बदलें</span>
+              <span>पिन बदलें</span>
             </button>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-800 hover:bg-red-700 text-white font-bold transition shadow-xs text-xs shrink-0"
-              title="लॉगआउट"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg bg-red-800/80 hover:bg-red-700 text-white font-bold transition shadow-xs text-xs shrink-0 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">लॉगआउट</span>
+              <span>लॉगआउट</span>
             </button>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 overflow-x-auto text-xs font-medium border-t border-orange-700/50">
+        {/* Mobile Tab Navigation */}
+        <div className="sm:hidden px-3 py-2 bg-orange-900/95 border-t border-orange-800/60">
+          <div className="flex items-center gap-2">
+            <label htmlFor="mobile-teacher-section" className="sr-only">वर्तमान अनुभाग चुनें</label>
+            <select
+              id="mobile-teacher-section"
+              value={currentTab}
+              onChange={(e) => setCurrentTab(e.target.value as TeacherTab)}
+              className="min-w-0 flex-1 rounded-lg border border-orange-700 bg-orange-950 px-3 py-2 text-xs font-bold text-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+            >
+              <option value="attendance">दैनिक उपस्थिति (Classroom Attendance)</option>
+              <option value="homework">दैनिक गृहकार्य (Homework)</option>
+              <option value="marks">परीक्षा अंक प्रविष्टि (Marks Entry)</option>
+              <option value="timetable">समय-सारिणी (Timetable)</option>
+              <option value="leaves">अवकाश आवेदन (Leaves)</option>
+              <option value="salary">वेतन पर्ची (Salary Slip) {currentSchool.plan !== 'pro' ? '(PRO)' : ''}</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Desktop Tab Navigation */}
+        <div className="hidden sm:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-wrap gap-x-1 sm:gap-x-2 gap-y-0.5 overflow-x-visible text-xs font-medium border-t border-orange-800/60 w-full max-w-full">
           <button
             onClick={() => setCurrentTab('attendance')}
-            className={`py-3 px-3 border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'attendance'
-                ? 'border-amber-400 text-amber-300 font-bold bg-orange-900/40'
+                ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
                 : 'border-transparent text-orange-200 hover:text-white'
             }`}
           >
@@ -537,9 +584,9 @@ export const TeacherPortal: React.FC = () => {
           </button>
           <button
             onClick={() => setCurrentTab('homework')}
-            className={`py-3 px-3 border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'homework'
-                ? 'border-amber-400 text-amber-300 font-bold bg-orange-900/40'
+                ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
                 : 'border-transparent text-orange-200 hover:text-white'
             }`}
           >
@@ -548,20 +595,20 @@ export const TeacherPortal: React.FC = () => {
           </button>
           <button
             onClick={() => setCurrentTab('marks')}
-            className={`py-3 px-3 border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'marks'
-                ? 'border-amber-400 text-amber-300 font-bold bg-orange-900/40'
+                ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
                 : 'border-transparent text-orange-200 hover:text-white'
             }`}
           >
             <Award className="w-4 h-4" />
-            <span>परीक्षा अंक प्रविष्टि (Marks Entry)</span>
+            <span>परीक्षा अंक प्रविष्टि (Marks)</span>
           </button>
           <button
             onClick={() => setCurrentTab('timetable')}
-            className={`py-3 px-3 border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'timetable'
-                ? 'border-amber-400 text-amber-300 font-bold bg-orange-900/40'
+                ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
                 : 'border-transparent text-orange-200 hover:text-white'
             }`}
           >
@@ -570,9 +617,9 @@ export const TeacherPortal: React.FC = () => {
           </button>
           <button
             onClick={() => setCurrentTab('leaves')}
-            className={`py-3 px-3 border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'leaves'
-                ? 'border-amber-400 text-amber-300 font-bold bg-orange-900/40'
+                ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
                 : 'border-transparent text-orange-200 hover:text-white'
             }`}
           >
@@ -581,14 +628,14 @@ export const TeacherPortal: React.FC = () => {
           </button>
           <button
             onClick={() => setCurrentTab('salary')}
-            className={`py-3 px-3 border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-3 px-3 border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentTab === 'salary'
-                ? 'border-amber-400 text-amber-300 font-bold bg-orange-900/40'
+                ? 'border-amber-400 text-amber-300 font-bold bg-orange-800/40'
                 : 'border-transparent text-orange-200 hover:text-white'
             }`}
           >
             <ClipboardList className="w-4 h-4" />
-            <span>वेतन पर्ची (Salary Slip)</span>
+            <span>वेतन पर्ची (Salary)</span>
             {currentSchool.plan !== 'pro' && (
               <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-500/30 text-amber-200 border border-amber-400/40">
                 PRO
@@ -603,13 +650,13 @@ export const TeacherPortal: React.FC = () => {
 
         {/* Sub-tab In-line Back Navigation Bar */}
         {currentTab !== 'attendance' && (
-          <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-amber-200 shadow-2xs">
+          <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-orange-200/80 shadow-2xs">
             <button
               type="button"
               onClick={() => setCurrentTab('attendance')}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold text-xs border border-amber-200 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-950 font-bold text-xs border border-orange-200 transition cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4 text-amber-800 shrink-0" />
+              <ArrowLeft className="w-4 h-4 text-orange-700 shrink-0" />
               <span>← दैनिक उपस्थिति पर वापस (Back to Attendance)</span>
             </button>
             <span className="text-xs font-semibold text-stone-500 capitalize hidden sm:inline">
@@ -622,7 +669,7 @@ export const TeacherPortal: React.FC = () => {
         {currentTab === 'attendance' && (
           <div className="space-y-4">
             {/* Top Control Header */}
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
                   <UserCheck className="w-5 h-5 text-orange-600" />
@@ -759,7 +806,7 @@ export const TeacherPortal: React.FC = () => {
             </div>
 
             {/* Attendance Table */}
-            <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-x-auto">
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider text-[11px]">
@@ -842,7 +889,7 @@ export const TeacherPortal: React.FC = () => {
         {/* ================= TAB 2: HOMEWORK ================= */}
         {currentTab === 'homework' && (
           <div className="space-y-4">
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex items-center justify-between gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-stone-900">
                   दैनिक गृहकार्य प्रबंधन ({selectedClass})
@@ -894,7 +941,7 @@ export const TeacherPortal: React.FC = () => {
             )}
 
             {showAddHw && (
-              <form onSubmit={handleSaveHomework} className="bg-white p-5 rounded-3xl border-2 border-orange-300 shadow-md space-y-4 text-xs">
+              <form onSubmit={handleSaveHomework} className="bg-white p-5 rounded-2xl border-2 border-orange-300 shadow-md space-y-4 text-xs">
                 <h4 className="font-bold text-stone-900 text-sm">
                   {editingHw ? 'गृहकार्य विवरण संशोधित करें (Edit Homework)' : 'नवीन गृहकार्य प्रविष्टि'}
                 </h4>
@@ -984,7 +1031,7 @@ export const TeacherPortal: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {homeworkList.length === 0 ? (
-                <div className="col-span-full p-8 text-center bg-white rounded-3xl border border-stone-200 text-stone-400">
+                <div className="col-span-full p-8 text-center bg-white rounded-2xl border border-stone-200 text-stone-400">
                   इस कक्षा के लिए अभी कोई गृहकार्य जारी नहीं किया गया है। ऊपर दिए गए बटन से नया गृहकार्य जोड़ें।
                 </div>
               ) : (
@@ -1041,7 +1088,7 @@ export const TeacherPortal: React.FC = () => {
         {currentTab === 'marks' && (
           <div className="space-y-4">
             {/* Top Control Bar */}
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
                   <FileSpreadsheet className="w-5 h-5 text-orange-600" />
@@ -1208,7 +1255,7 @@ export const TeacherPortal: React.FC = () => {
             )}
 
             {/* Marks Table */}
-            <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-x-auto">
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider text-[11px]">
@@ -1349,7 +1396,7 @@ export const TeacherPortal: React.FC = () => {
         {/* ================= TAB 4: TIMETABLE ================= */}
         {currentTab === 'timetable' && (
           <div className="space-y-4">
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-orange-600" />
@@ -1392,7 +1439,7 @@ export const TeacherPortal: React.FC = () => {
             )}
 
             {/* Today's Priority Schedule Banner */}
-            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/50 p-5 rounded-3xl shadow-xs space-y-3">
+            <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/50 p-5 rounded-2xl shadow-xs space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-xl bg-orange-600 text-white font-bold text-xs shadow-xs">
@@ -1502,7 +1549,7 @@ export const TeacherPortal: React.FC = () => {
         {/* ================= TAB 5: LEAVES ================= */}
         {currentTab === 'leaves' && (
           <div className="space-y-4">
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs">
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
               <h3 className="text-base font-bold text-stone-900 mb-1">
                 आचार्य अवकाश आवेदन (Leave Application)
               </h3>
@@ -1566,7 +1613,7 @@ export const TeacherPortal: React.FC = () => {
             </div>
 
             {/* Leave History */}
-            <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs">
+            <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
               <h4 className="text-sm font-bold text-stone-900 mb-3">पूर्व अवकाश इतिहास (My Leave Requests)</h4>
               <div className="space-y-3">
                 {leaves.length === 0 ? (
@@ -1604,7 +1651,7 @@ export const TeacherPortal: React.FC = () => {
         {/* ================= TAB 6: SALARY SLIP ================= */}
         {currentTab === 'salary' && (
           currentSchool.plan !== 'pro' ? (
-            <div className="bg-white rounded-3xl border-2 border-amber-200 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-xs space-y-4 animate-in fade-in">
+            <div className="bg-white rounded-2xl border-2 border-amber-200 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-xs space-y-4 animate-in fade-in">
               <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-3xl border border-amber-300">
                 <Crown className="w-8 h-8 text-amber-600" />
               </div>
@@ -1622,7 +1669,7 @@ export const TeacherPortal: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold text-stone-900">
@@ -1670,7 +1717,7 @@ export const TeacherPortal: React.FC = () => {
       {/* Change PIN Modal */}
       {showChangePinModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-orange-200 relative animate-in zoom-in-95">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border-2 border-orange-200 relative animate-in zoom-in-95">
             <button
               onClick={() => setShowChangePinModal(false)}
               className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition cursor-pointer"
