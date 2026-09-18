@@ -25,7 +25,8 @@ import {
   ArrowRight,
   Sparkles,
   Command,
-  CornerDownLeft
+  CornerDownLeft,
+  Camera
 } from 'lucide-react';
 
 export interface CommandPaletteModalProps {
@@ -167,6 +168,16 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       icon: <PlusCircle className="w-4 h-4 text-emerald-600" />,
       keywords: ['add', 'student', 'new', 'admission', 'प्रवेश', 'नया', 'दाखिला'],
       execute: () => onTriggerQuickAction('add-student')
+    },
+    {
+      id: 'action-scan-register',
+      category: 'quick-action',
+      title: 'Direct Scan Hard Copy Register',
+      hindiTitle: '📷 रजिस्टर डायरेक्ट स्कैन (AI Camera OCR)',
+      subtitle: 'भौतिक रजिस्टर या फॉर्म की फोटो खींचकर सीधे AI से छात्र तालिका भरें',
+      icon: <Camera className="w-4 h-4 text-orange-600" />,
+      keywords: ['scan', 'camera', 'ocr', 'register', 'hardcopy', 'स्कैन', 'कैमरा', 'रजिस्टर', 'डायरेक्ट'],
+      execute: () => onTriggerQuickAction('scan-register')
     },
     {
       id: 'action-bulk-import',

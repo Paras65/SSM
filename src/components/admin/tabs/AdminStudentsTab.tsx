@@ -32,6 +32,7 @@ interface AdminStudentsTabProps {
   onOpenCharacterCertificate: (student: Student) => void;
   onOpenBonafideCertificate: (student: Student) => void;
   onOpenDakhilKharij?: () => void;
+  onOpenRegisterScanner?: () => void;
 }
 
 const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
@@ -48,7 +49,8 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
   onOpenReportModal,
   onOpenCharacterCertificate,
   onOpenBonafideCertificate,
-  onOpenDakhilKharij
+  onOpenDakhilKharij,
+  onOpenRegisterScanner
 }) => {
   const { students, currentSchool, deleteStudent, reportCards } = useSchool();
   const { showSuccess, showInfo } = useToast();
@@ -176,6 +178,17 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
             <IdCard className="w-3.5 h-3.5 text-yellow-200" />
             <span>बल्क आईडी कार्ड</span>
           </button>
+
+          {onOpenRegisterScanner && (
+            <button
+              onClick={onOpenRegisterScanner}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition active:scale-95"
+              title="हार्ड कॉपी रजिस्टर या फॉर्म की फोटो खींचकर सीधे AI से छात्र जोड़ें (Direct Scan)"
+            >
+              <Camera className="w-3.5 h-3.5 text-yellow-200" />
+              <span>रजिस्टर डायरेक्ट स्कैन</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenAddStudent}

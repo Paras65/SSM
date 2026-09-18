@@ -33,6 +33,7 @@ const BulkIdCardModal = React.lazy(() => import('./BulkIdCardModal').then(m => (
 const DakhilKharijRegisterModal = React.lazy(() => import('./DakhilKharijRegisterModal').then(m => ({ default: m.DakhilKharijRegisterModal })));
 const DeveloperDashboard = React.lazy(() => import('./DeveloperDashboard').then(m => ({ default: m.DeveloperDashboard })));
 const CommandPaletteModal = React.lazy(() => import('../common/CommandPaletteModal').then(m => ({ default: m.CommandPaletteModal })));
+const RegisterScannerModal = React.lazy(() => import('./RegisterScannerModal').then(m => ({ default: m.RegisterScannerModal })));
 
 // Tab Subcomponents (Phase 2 Monolith Decomposition)
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
@@ -160,6 +161,7 @@ export const AdminDashboard: React.FC = () => {
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showBulkIdCardModal, setShowBulkIdCardModal] = useState(false);
   const [showDakhilKharijModal, setShowDakhilKharijModal] = useState(false);
+  const [showRegisterScannerModal, setShowRegisterScannerModal] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -262,6 +264,7 @@ export const AdminDashboard: React.FC = () => {
     showProposalModal ||
     showBulkIdCardModal ||
     showDakhilKharijModal ||
+    showRegisterScannerModal ||
     activeAdmitCard ||
     activeCharacterStudent ||
     activeBonafideStudent
@@ -295,6 +298,7 @@ export const AdminDashboard: React.FC = () => {
     setShowProposalModal(false);
     setShowBulkIdCardModal(false);
     setShowDakhilKharijModal(false);
+    setShowRegisterScannerModal(false);
     setActiveAdmitCard(null);
     setActiveCharacterStudent(null);
     setActiveBonafideStudent(null);
@@ -527,6 +531,9 @@ export const AdminDashboard: React.FC = () => {
     switch (actionKey) {
       case 'add-student':
         setShowAddStudent(true);
+        break;
+      case 'scan-register':
+        setShowRegisterScannerModal(true);
         break;
       case 'bulk-import':
         setShowBulkImport(true);
@@ -1280,6 +1287,7 @@ export const AdminDashboard: React.FC = () => {
               onOpenCharacterCertificate={setActiveCharacterStudent}
               onOpenBonafideCertificate={setActiveBonafideStudent}
               onOpenDakhilKharij={() => setShowDakhilKharijModal(true)}
+              onOpenRegisterScanner={() => setShowRegisterScannerModal(true)}
             />
           </TabErrorBoundary>
         )}
@@ -1385,6 +1393,7 @@ export const AdminDashboard: React.FC = () => {
               setShowAddStudent(false);
               setActiveEditStudent(null);
             }}
+            onOpenScanner={() => setShowRegisterScannerModal(true)}
           />
         )}
 
@@ -1550,6 +1559,12 @@ export const AdminDashboard: React.FC = () => {
           <DakhilKharijRegisterModal
             onClose={() => setShowDakhilKharijModal(false)}
             onOpenTc={setActiveTcStudent}
+          />
+        )}
+
+        {showRegisterScannerModal && (
+          <RegisterScannerModal
+            onClose={() => setShowRegisterScannerModal(false)}
           />
         )}
 

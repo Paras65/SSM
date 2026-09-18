@@ -1,13 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
-import { X, UserPlus, Edit3, Sparkles, Save, AlertCircle } from 'lucide-react';
+import { X, UserPlus, Edit3, Sparkles, Save, AlertCircle, Camera } from 'lucide-react';
 import type { Gender, SocialCategory, Student } from '../../types';
 import { SSM_CLASSES } from '../../types';
 
 interface AddStudentModalProps {
   onClose: () => void;
   studentToEdit?: Student | null;
+  onOpenScanner?: () => void;
 }
 
 const getNextRollForClassSection = (cls: string, sec: string, studentList: Student[]): string => {
@@ -18,7 +19,7 @@ const getNextRollForClassSection = (cls: string, sec: string, studentList: Stude
   return numbers.length > 0 ? (Math.max(...numbers) + 1).toString() : '1';
 };
 
-export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, studentToEdit }) => {
+export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, studentToEdit, onOpenScanner }) => {
   const { addStudent, updateStudent, students } = useSchool();
   const { showSuccess, showWarning } = useToast();
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -176,9 +177,25 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
               {isEditing ? 'छात्र विवरण संपादन (Edit Student Details)' : 'नवीन छात्र प्रवेश पंजीयन (New Student Admission)'}
             </h3>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-orange-800 rounded-lg transition-colors cursor-pointer">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {!isEditing && onOpenScanner && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenScanner();
+                }}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-200 border border-amber-300/30 rounded-lg text-xs font-bold cursor-pointer transition shrink-0"
+                title="हार्ड कॉपी रजिस्टर या फॉर्म की फोटो खींचकर सीधे AI से स्वतः भरें"
+              >
+                <Camera className="w-3.5 h-3.5 text-yellow-300" />
+                <span className="hidden sm:inline">रजिस्टर डायरेक्ट स्कैन</span>
+              </button>
+            )}
+            <button onClick={onClose} className="p-1 hover:bg-orange-800 rounded-lg transition-colors cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Form Body */}
