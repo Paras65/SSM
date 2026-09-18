@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Fee = require('../models/Fee');
 const FeePaymentTransaction = require('../models/FeePaymentTransaction');
+const Student = require('../models/Student');
 const { requireAdminAuth, requireSchoolScope } = require('../middleware/auth');
 const { cleanStringParam } = require('../middleware/sanitize');
 const { calculateCurrentAcademicYear } = require('../utils/sessionHelper');
@@ -53,13 +54,47 @@ router.post('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
     if (!feeData.academicYear) {
       feeData.academicYear = calculateCurrentAcademicYear();
     }
+
+    // Automated Sibling Concession Calculation
+    if (feeData.studentId && (feeData.applySiblingConcession || feeData.applySiblingConcession === undefined)) {
+      try {
+        const student = await Student.findOne({ id: feeData.studentId, schoolId: feeData.schoolId }).lean();
+        if (student && student.familyId) {
+          const siblings = await Student.find({
+            schoolId: feeData.schoolId,
+            familyId: student.familyId,
+            status: { $in: ['active', 'promoted'] }
+          }).sort({ admissionDate: 1, createdAt: 1 }).lean();
+
+          if (siblings.length > 1) {
+            const siblingIndex = siblings.findIndex(s => s.id === student.id);
+            if (siblingIndex === 1) {
+              // 2nd sibling gets 25% concession
+              const discount = Math.round((Number(feeData.totalAmount || 0) * 25) / 100);
+              feeData.concession = discount;
+              feeData.concessionReason = feeData.concessionReason || 'सहोदर छात्र छूट (2nd Sibling 25%)';
+              feeData.totalAmount = Math.max(0, Number(feeData.totalAmount || 0) - discount);
+            } else if (siblingIndex >= 2) {
+              // 3rd or subsequent sibling gets 50% concession
+              const discount = Math.round((Number(feeData.totalAmount || 0) * 50) / 100);
+              feeData.concession = discount;
+              feeData.concessionReason = feeData.concessionReason || `सहोदर छात्र छूट (${siblingIndex + 1}rd Sibling 50%)`;
+              feeData.totalAmount = Math.max(0, Number(feeData.totalAmount || 0) - discount);
+            }
+          }
+        }
+      } catch (siblingErr) {
+        console.warn('Failed to calculate sibling concession:', siblingErr.message);
+      }
+    }
+
     const fee = new Fee(feeData);
     await fee.save();
     await recordAuditLog({
       schoolId: fee.schoolId,
       actorType: req.user?.role || 'admin',
       action: 'FEE_DEMAND_CREATED',
-      description: `शुल्क मांग #${fee.id} सृजित: छात्र #${fee.studentId} के लिए ₹${fee.totalAmount || 0} (${fee.feeType || 'वार्षिक/मासिक शुल्क'}, सत्र: ${fee.academicYear})`,
+      description: `शुल्क मांग #${fee.id} सृजित: छात्र #${fee.studentId} के लिए ₹${fee.totalAmount || 0} (${fee.feeType || 'वार्षिक/मासिक शुल्क'}, सत्र: ${fee.academicYear}${fee.concession ? `, छूट: ₹${fee.concession}` : ''})`,
       req
     });
     res.status(201).json(fee);
@@ -68,10 +103,10 @@ router.post('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
   }
 });
 
-// PUT /api/fees/:id/pay - Mark fee as paid
+// PUT /api/fees/:id/pay - Mark fee as paid / record installment
 router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
-    const { paymentMode, paidAmount } = req.body;
+    const { paymentMode, paidAmount, instrumentNo, bankName, status: requestedStatus } = req.body;
     const fee = await Fee.findOne({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!fee) return res.status(404).json({ error: 'Fee record not found' });
 
@@ -83,7 +118,17 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
     const installmentAmount = Math.max(0, collectedAmount - currentPaid);
 
     fee.paidAmount = collectedAmount;
-    fee.status = fee.paidAmount >= fee.totalAmount ? 'Paid' : 'Partial';
+    
+    // Cheque / DD lifecycle handling
+    const isInstrumentPayment = ['Cheque', 'DD', 'Bank Draft'].includes(paymentMode);
+    const isUnderClearance = requestedStatus === 'Under Clearance' || (isInstrumentPayment && requestedStatus !== 'Paid' && requestedStatus !== 'Cleared');
+
+    if (isUnderClearance) {
+      fee.status = 'Under Clearance';
+    } else {
+      fee.status = fee.paidAmount >= fee.totalAmount ? 'Paid' : 'Partial';
+    }
+
     fee.paidDate = new Date().toISOString().split('T')[0];
     const schoolSuffix = (fee.schoolId || 'SSM').slice(-4).toUpperCase();
     const receipt = `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`;
@@ -104,8 +149,9 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
 
     await fee.save();
 
+    let tx = null;
     try {
-      const tx = new FeePaymentTransaction({
+      tx = new FeePaymentTransaction({
         id: generateUniqueId('tx-fee'),
         schoolId: fee.schoolId,
         feeId: fee.id,
@@ -115,7 +161,10 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
         receiptNo: receipt,
         collectedBy: req.user?.schoolName || req.user?.role || 'Admin',
         academicYear: fee.academicYear,
-        transactionDate: fee.paidDate
+        transactionDate: fee.paidDate,
+        status: isUnderClearance ? 'Under Clearance' : 'Success',
+        instrumentNo: instrumentNo || '',
+        bankName: bankName || ''
       });
       await tx.save();
     } catch (txErr) {
@@ -126,12 +175,61 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
       schoolId: fee.schoolId,
       actorType: req.user?.role || 'admin',
       action: 'FEE_PAYMENT_COLLECTED',
-      description: `शुल्क भुगतान प्राप्त: छात्र #${fee.studentId} - रसीद संख्या: ${fee.receiptNo}, राशि: ₹${fee.paidAmount} (${fee.status}), माध्यम: ${fee.paymentMode}`,
+      description: `शुल्क भुगतान प्राप्त: छात्र #${fee.studentId} - रसीद संख्या: ${fee.receiptNo}, राशि: ₹${fee.paidAmount} (${fee.status}), माध्यम: ${fee.paymentMode}${instrumentNo ? `, इंस्ट्रूमेंट नं: ${instrumentNo}` : ''}`,
       req
     });
     res.json(fee);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// PATCH /api/fees/transactions/:id/clearance - Update cheque/DD clearance lifecycle
+router.patch('/transactions/:id/clearance', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const { status, clearingDate } = req.body;
+    if (!['Cleared', 'Bounced', 'Refunded'].includes(status)) {
+      return res.status(400).json({ error: 'अमान्य क्लीयरेंस स्थिति (Cleared, Bounced, या Refunded मान्य हैं)' });
+    }
+
+    const tx = await FeePaymentTransaction.findOne({
+      id: req.params.id,
+      ...(req.user?.role === 'developer' ? {} : { schoolId: req.userSchoolId })
+    });
+    if (!tx) return res.status(404).json({ error: 'लेनदेन रिकॉर्ड नहीं मिला (Transaction not found)' });
+
+    const prevStatus = tx.status;
+    tx.status = status;
+    if (clearingDate) tx.clearingDate = clearingDate;
+    await tx.save();
+
+    const fee = await Fee.findOne({ id: tx.feeId, schoolId: tx.schoolId });
+    if (fee) {
+      if (status === 'Bounced' && prevStatus !== 'Bounced') {
+        fee.paidAmount = Math.max(0, (fee.paidAmount || 0) - tx.amount);
+        fee.status = fee.paidAmount <= 0 ? 'Pending' : 'Partial';
+        await fee.save();
+      } else if (status === 'Cleared') {
+        fee.status = fee.paidAmount >= fee.totalAmount ? 'Paid' : 'Partial';
+        await fee.save();
+      } else if (status === 'Refunded' && prevStatus !== 'Refunded') {
+        fee.paidAmount = Math.max(0, (fee.paidAmount || 0) - tx.amount);
+        fee.status = 'Refunded';
+        await fee.save();
+      }
+    }
+
+    await recordAuditLog({
+      schoolId: tx.schoolId,
+      actorType: req.user?.role || 'admin',
+      action: `FEE_TRANSACTION_${status.toUpperCase()}`,
+      description: `शुल्क लेनदेन #${tx.id} स्थिति परिवर्तित: '${status}'. छात्र #${tx.studentId}, राशि: ₹${tx.amount}`,
+      req
+    });
+
+    res.json({ success: true, transaction: tx, fee });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

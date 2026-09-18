@@ -33,6 +33,28 @@ const studentSchema = new mongoose.Schema({
     ep: { type: Boolean, default: false },
     fp: { type: Boolean, default: false }
   },
+  // Family & Sibling linkage
+  familyId: { type: String, default: '', index: true },
+  // Legal Guardianship, Custody & Authorized Pickup
+  guardianship: {
+    primaryGuardian: { type: String, enum: ['Mother', 'Father', 'Legal Guardian', 'Other', ''], default: 'Father' },
+    guardianName: { type: String, default: '' },
+    authorizedPickupPersons: [{
+      name: { type: String, default: '' },
+      relation: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      photoUrl: { type: String, default: '' }
+    }],
+    custodyAlert: {
+      hasRestriction: { type: Boolean, default: false },
+      remarks: { type: String, default: '' },
+      alertStaffOnPickup: { type: Boolean, default: false }
+    }
+  },
+  // Extended UDISE+ Demographic Fields
+  motherTongue: { type: String, default: 'Hindi' },
+  minorityGroup: { type: String, default: 'NA' },
+  disabilityType: { type: String, default: 'None' },
   academicHistory: [{
     academicYear: { type: String, required: true },
     class: { type: String, required: true },
@@ -52,6 +74,7 @@ studentSchema.index({ schoolId: 1, rollNo: 1 });
 studentSchema.index({ schoolId: 1, status: 1 });
 studentSchema.index({ schoolId: 1, academicYear: 1 });
 studentSchema.index({ schoolId: 1, pen: 1 });
+studentSchema.index({ schoolId: 1, familyId: 1 });
 
 module.exports = mongoose.model('Student', studentSchema);
 

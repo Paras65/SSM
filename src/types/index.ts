@@ -92,12 +92,33 @@ export interface Student {
   academicHistory?: StudentAcademicHistory[];
   transportRouteId?: string;
   transportStop?: string;
+  // Family & Sibling linkage
+  familyId?: string;
+  // Legal Guardianship, Custody & Authorized Pickup
+  guardianship?: {
+    primaryGuardian?: 'Mother' | 'Father' | 'Legal Guardian' | 'Other';
+    guardianName?: string;
+    authorizedPickupPersons?: {
+      name: string;
+      relation: string;
+      phone: string;
+      photoUrl?: string;
+    }[];
+    custodyAlert?: {
+      hasRestriction: boolean;
+      remarks?: string;
+      alertStaffOnPickup?: boolean;
+    };
+  };
   // UDISE+ SDMS Compliance Identifiers
   pen?: string; // Permanent Education Number (11 digits, Govt of India)
   apaarId?: string; // Automated Permanent Academic Account Registry (12 digits)
   socialCategory?: SocialCategory;
   cwsn?: boolean; // Children with Special Needs
   bpl?: boolean; // Below Poverty Line
+  motherTongue?: string;
+  minorityGroup?: string;
+  disabilityType?: string;
   udiseStatus?: {
     gp: boolean; // General Profile
     ep: boolean; // Enrollment Profile
@@ -125,10 +146,29 @@ export interface FeeRecord {
   academicYear: string;
   totalAmount: number;
   paidAmount: number;
-  status: 'Paid' | 'Pending' | 'Partial';
+  status: 'Paid' | 'Pending' | 'Partial' | 'Under Clearance' | 'Cleared' | 'Bounced' | 'Refunded';
+  concession?: number;
+  concessionReason?: string;
   paidDate?: string;
   receiptNo?: string;
   paymentMode?: string;
+}
+
+export interface FeePaymentTransactionRecord {
+  id: string;
+  schoolId: string;
+  feeId: string;
+  studentId: string;
+  amount: number;
+  paymentMode: string;
+  receiptNo: string;
+  collectedBy: string;
+  academicYear?: string;
+  transactionDate: string;
+  status?: 'Success' | 'Under Clearance' | 'Cleared' | 'Bounced' | 'Refunded';
+  instrumentNo?: string;
+  bankName?: string;
+  clearingDate?: string;
 }
 
 export interface SubjectMarks {

@@ -10,7 +10,15 @@ const feePaymentTransactionSchema = new mongoose.Schema({
   receiptNo: { type: String, required: true, index: true },
   collectedBy: { type: String, default: 'Admin' },
   academicYear: { type: String, index: true },
-  transactionDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
+  status: { 
+    type: String, 
+    enum: ['Success', 'Under Clearance', 'Cleared', 'Bounced', 'Refunded'], 
+    default: 'Success',
+    index: true 
+  },
+  instrumentNo: { type: String, default: '' },
+  bankName: { type: String, default: '' },
+  clearingDate: { type: String, default: '' }
 }, {
   timestamps: true
 });

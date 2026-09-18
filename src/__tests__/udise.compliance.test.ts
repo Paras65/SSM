@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateUdisePlusCSV } from '../utils/udiseExport';
+import { generateUdisePlusCSV, generateUdisePlus42ColumnCSV, UDISE_PLUS_42_HEADERS } from '../utils/udiseExport';
 import { generateRichDemoData } from '../utils/demoDataSeeder';
 import type { School, Student } from '../types';
 
@@ -138,6 +138,37 @@ describe('UDISE+ SDMS Compliance & Government Export Suite', () => {
     expect(studentRow).toContain('9876-5432-1098');
     expect(studentRow).toContain('21098765499');
     expect(studentRow).toContain('YES'); // CWSN is true
+  });
+
+  it('exports official 42-column UDISE+ SDMS Master CSV with all mandatory government fields', () => {
+    const demo = generateRichDemoData(mockSchool.id, mockSchool.city);
+    const csv = generateUdisePlus42ColumnCSV(demo.students, mockSchool);
+
+    // Byte Order Mark
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
+
+    const lines = csv.replace(/^\uFEFF/, '').split('\r\n');
+    const headerRow = lines[0].split(',');
+
+    expect(headerRow.length).toBe(42);
+    expect(UDISE_PLUS_42_HEADERS.length).toBe(42);
+    expect(headerRow).toContain('School_UDISE_Code');
+    expect(headerRow).toContain('Student_PEN');
+    expect(headerRow).toContain('APAAR_ID');
+    expect(headerRow).toContain('Scholar_Admission_No');
+    expect(headerRow).toContain('Guardian_Name');
+    expect(headerRow).toContain('Aadhaar_Number_Student');
+    expect(headerRow).toContain('Name_As_Per_Aadhaar');
+    expect(headerRow).toContain('Mother_Tongue');
+    expect(headerRow).toContain('Medium_Of_Instruction');
+    expect(headerRow).toContain('Days_Attended_School_Previous_Year');
+    expect(headerRow).toContain('Admission_Type');
+
+    // Data row check
+    const row1 = lines[1];
+    expect(row1).toContain('09510100101');
+    expect(row1).toContain('XXXXXXXXXXXX'); // DPDP masked Aadhaar
+    expect(row1).toContain('Hindi'); // Mother Tongue
   });
 });
 

@@ -22,6 +22,7 @@ const Admission = require('../../server/models/Admission.js');
 const Notice = require('../../server/models/Notice.js');
 const SalarySlip = require('../../server/models/SalarySlip.js');
 const Homework = require('../../server/models/Homework.js');
+const FeePaymentTransaction = require('../../server/models/FeePaymentTransaction.js');
 
 let mongoServer: MongoMemoryServer;
 let schoolAToken: string;
@@ -43,6 +44,7 @@ describe('Advanced Operational Scenarios & Real-World Edge Cases Suite', () => {
       School.deleteMany({}),
       Student.deleteMany({}),
       Fee.deleteMany({}),
+      FeePaymentTransaction.deleteMany({}),
       Admission.deleteMany({}),
       Notice.deleteMany({}),
       SalarySlip.deleteMany({}),
@@ -560,6 +562,192 @@ describe('Advanced Operational Scenarios & Real-World Edge Cases Suite', () => {
       expect(updateRes.body.title).toBe('प्रश्नावली 3.1 एवं 3.2 हल करें');
       expect(updateRes.body.dueDate).toBe('2026-09-22');
       expect(updateRes.body.subject).toBe('गणित');
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* Scenario 9: Sibling Concession Automation & Child Custody Profiles        */
+  /* -------------------------------------------------------------------------- */
+  describe('Scenario 9: Sibling Concession Automation & Child Custody Profiles', () => {
+    it('9.1 should enforce custody restrictions and authorized pickup profile on Student', async () => {
+      const studentRes = await request(app)
+        .post('/api/students')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          id: 'std-custody-test',
+          name: 'भैया आरव सिंह',
+          gender: 'Bhaiya',
+          class: 'Class 3',
+          section: 'A',
+          rollNo: '301',
+          fatherName: 'श्री विक्रम सिंह',
+          motherName: 'श्रीमती सीमा सिंह',
+          contact: '9876543210',
+          guardianship: {
+            primaryGuardian: 'Mother',
+            guardianName: 'श्रीमती सीमा सिंह',
+            authorizedPickupPersons: [
+              { name: 'श्री रमेश सिंह (मामा)', relation: 'Maternal Uncle', phone: '9876500000' }
+            ],
+            custodyAlert: {
+              hasRestriction: true,
+              remarks: 'Court order: Father not authorized for school pickup',
+              alertStaffOnPickup: true
+            }
+          }
+        });
+
+      expect(studentRes.status).toBe(201);
+      expect(studentRes.body.guardianship.primaryGuardian).toBe('Mother');
+      expect(studentRes.body.guardianship.custodyAlert.hasRestriction).toBe(true);
+      expect(studentRes.body.guardianship.custodyAlert.alertStaffOnPickup).toBe(true);
+      expect(studentRes.body.guardianship.authorizedPickupPersons.length).toBe(1);
+    });
+
+    it('9.2 should automatically calculate 25% concession for 2nd sibling in same family', async () => {
+      // 1. Create first sibling (1st child)
+      await Student.create({
+        id: 'std-sib-1',
+        schoolId: 'ssm-school-a',
+        rollNo: '101',
+        name: 'भैया रोहन शर्मा',
+        gender: 'Bhaiya',
+        class: 'Class 5',
+        section: 'A',
+        fatherName: 'श्री सुनील शर्मा',
+        contact: '9876543211',
+        familyId: 'fam-sharma-99',
+        admissionDate: '2022-04-01',
+        status: 'active'
+      });
+
+      // 2. Create second sibling (2nd child)
+      await Student.create({
+        id: 'std-sib-2',
+        schoolId: 'ssm-school-a',
+        rollNo: '102',
+        name: 'बहिन रिया शर्मा',
+        gender: 'Bahin',
+        class: 'Class 2',
+        section: 'A',
+        fatherName: 'श्री सुनील शर्मा',
+        contact: '9876543211',
+        familyId: 'fam-sharma-99',
+        admissionDate: '2024-04-01',
+        status: 'active'
+      });
+
+      // 3. Fee demand for first child -> 100% full fee (₹10,000)
+      const feeRes1 = await request(app)
+        .post('/api/fees')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          studentId: 'std-sib-1',
+          term: 'वार्षिक शुल्क',
+          totalAmount: 10000,
+          applySiblingConcession: true
+        });
+
+      expect(feeRes1.status).toBe(201);
+      expect(feeRes1.body.totalAmount).toBe(10000);
+      expect(feeRes1.body.concession || 0).toBe(0);
+
+      // 4. Fee demand for second child -> 25% automated discount (₹7,500 net, ₹2,500 concession)
+      const feeRes2 = await request(app)
+        .post('/api/fees')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          studentId: 'std-sib-2',
+          term: 'वार्षिक शुल्क',
+          totalAmount: 10000,
+          applySiblingConcession: true
+        });
+
+      expect(feeRes2.status).toBe(201);
+      expect(feeRes2.body.concession).toBe(2500);
+      expect(feeRes2.body.totalAmount).toBe(7500);
+      expect(feeRes2.body.concessionReason).toContain('सहोदर छात्र छूट (2nd Sibling 25%)');
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* Scenario 10: Cheque / DD Clearance Lifecycle & Bounce Recovery            */
+  /* -------------------------------------------------------------------------- */
+  describe('Scenario 10: Cheque / DD Clearance Lifecycle & Bounce Recovery', () => {
+    it('10.1 should handle cheque payment under clearance and transition to bounced / cleared', async () => {
+      // 1. Create fee record
+      const fee = await Fee.create({
+        id: 'fee-chq-test',
+        schoolId: 'ssm-school-a',
+        studentId: 'std-chq-student',
+        term: 'द्वितीय सत्र',
+        academicYear: '2025-26',
+        totalAmount: 8000,
+        paidAmount: 0,
+        status: 'Pending'
+      });
+
+      // 2. Pay via Cheque (Under Clearance)
+      const payRes = await request(app)
+        .put(`/api/fees/${fee.id}/pay`)
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          paymentMode: 'Cheque',
+          paidAmount: 8000,
+          instrumentNo: 'CHQ-998877',
+          bankName: 'State Bank of India',
+          status: 'Under Clearance'
+        });
+
+      expect(payRes.status).toBe(200);
+      expect(payRes.body.status).toBe('Under Clearance');
+      expect(payRes.body.paidAmount).toBe(8000);
+
+      // Check transaction ledger created
+      const tx = await FeePaymentTransaction.findOne({ feeId: fee.id });
+      expect(tx).not.toBeNull();
+      expect(tx.status).toBe('Under Clearance');
+      expect(tx.instrumentNo).toBe('CHQ-998877');
+      expect(tx.bankName).toBe('State Bank of India');
+
+      // 3. Mark cheque as Bounced
+      const bounceRes = await request(app)
+        .patch(`/api/fees/transactions/${tx.id}/clearance`)
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          status: 'Bounced'
+        });
+
+      expect(bounceRes.status).toBe(200);
+      expect(bounceRes.body.transaction.status).toBe('Bounced');
+      expect(bounceRes.body.fee.status).toBe('Pending');
+      expect(bounceRes.body.fee.paidAmount).toBe(0); // Rollback verified
+
+      // 4. Pay again and Mark as Cleared
+      await request(app)
+        .put(`/api/fees/${fee.id}/pay`)
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          paymentMode: 'Cheque',
+          paidAmount: 8000,
+          instrumentNo: 'CHQ-998878',
+          bankName: 'Punjab National Bank',
+          status: 'Under Clearance'
+        });
+
+      const tx2 = await FeePaymentTransaction.findOne({ instrumentNo: 'CHQ-998878' });
+      const clearRes = await request(app)
+        .patch(`/api/fees/transactions/${tx2.id}/clearance`)
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          status: 'Cleared',
+          clearingDate: '2026-09-19'
+        });
+
+      expect(clearRes.status).toBe(200);
+      expect(clearRes.body.transaction.status).toBe('Cleared');
+      expect(clearRes.body.fee.status).toBe('Paid');
+      expect(clearRes.body.fee.paidAmount).toBe(8000);
     });
   });
 });

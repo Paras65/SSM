@@ -8,7 +8,13 @@ const feeSchema = new mongoose.Schema({
   academicYear: { type: String, required: true },
   totalAmount: { type: Number, required: true, min: [0, 'कुल राशि नकारात्मक नहीं हो सकती (Total amount cannot be negative)'] },
   paidAmount: { type: Number, default: 0, min: [0, 'भुगतान राशि नकारात्मक नहीं हो सकती (Paid amount cannot be negative)'] },
-  status: { type: String, enum: ['Paid', 'Pending', 'Partial'], default: 'Pending' },
+  status: { 
+    type: String, 
+    enum: ['Paid', 'Pending', 'Partial', 'Under Clearance', 'Cleared', 'Bounced', 'Refunded'], 
+    default: 'Pending' 
+  },
+  concession: { type: Number, default: 0, min: 0 },
+  concessionReason: { type: String, default: '' },
   paidDate: { type: String },
   receiptNo: { type: String },
   paymentMode: { type: String },
