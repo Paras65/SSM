@@ -38,9 +38,11 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
     pen: studentToEdit?.pen || '',
     apaarId: studentToEdit?.apaarId || '',
     socialCategory: (studentToEdit?.socialCategory || 'General') as SocialCategory,
+    familyId: studentToEdit?.familyId || '',
     cwsn: studentToEdit?.cwsn || false,
     bpl: studentToEdit?.bpl || false
   });
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,6 +185,35 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
+                जन्मतिथि (Date of Birth) *
+              </label>
+              <input
+                type="date"
+                required
+                value={formData.dob}
+                onChange={e => setFormData({ ...formData, dob: e.target.value })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
+                प्रवेश तिथि (Admission Date) *
+              </label>
+              <input
+                type="date"
+                required
+                value={formData.admissionDate}
+                onChange={e => setFormData({ ...formData, admissionDate: e.target.value })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500 bg-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
             <div>
               <label className="block text-xs font-semibold text-stone-700 mb-1">
                 पिता का नाम *
@@ -328,26 +359,40 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
                 </select>
               </div>
 
-              <div className="flex flex-col justify-end gap-1 pb-1">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700">
-                  <input
-                    type="checkbox"
-                    checked={formData.cwsn}
-                    onChange={e => setFormData({ ...formData, cwsn: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded border-stone-300 focus:ring-blue-500"
-                  />
-                  <span>दिव्यांग (CWSN)</span>
+              <div>
+                <label className="block text-[11px] font-semibold text-stone-700 mb-1">
+                  सहोदर परिवार कोड (Family ID)
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700">
-                  <input
-                    type="checkbox"
-                    checked={formData.bpl}
-                    onChange={e => setFormData({ ...formData, bpl: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded border-stone-300 focus:ring-blue-500"
-                  />
-                  <span>गरीबी रेखा (BPL / EWS)</span>
-                </label>
+                <input
+                  type="text"
+                  placeholder="उदा. FAM-1001"
+                  value={formData.familyId}
+                  onChange={e => setFormData({ ...formData, familyId: e.target.value.trim().toUpperCase() })}
+                  className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-stone-300 focus:ring-2 focus:ring-blue-500 bg-white"
+                  title="सहोदर 25%/50% स्वचालित शुल्क छूट लिंकिंग हेतु"
+                />
               </div>
+            </div>
+
+            <div className="flex items-center gap-6 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700">
+                <input
+                  type="checkbox"
+                  checked={formData.cwsn}
+                  onChange={e => setFormData({ ...formData, cwsn: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded border-stone-300 focus:ring-blue-500"
+                />
+                <span>दिव्यांग (CWSN)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700">
+                <input
+                  type="checkbox"
+                  checked={formData.bpl}
+                  onChange={e => setFormData({ ...formData, bpl: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded border-stone-300 focus:ring-blue-500"
+                />
+                <span>गरीबी रेखा (BPL / EWS)</span>
+              </label>
             </div>
           </div>
 

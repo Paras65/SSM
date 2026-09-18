@@ -1,7 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import type { Student } from '../../types';
+import { convertDateToHindiWords } from '../../utils/dakhilKharijExport';
 import { Printer, X, Award, ShieldCheck, Download } from 'lucide-react';
+
 
 interface TransferCertificateModalProps {
   student: Student;
@@ -12,7 +15,8 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
   student,
   onClose
 }) => {
-  const { currentSchool } = useSchool();
+  const { currentSchool, updateStudent } = useSchool();
+  const { showSuccess } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
 
   // TC dynamic details
@@ -24,6 +28,28 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
   const [presentDays, setPresentDays] = useState('212');
   const [duesCleared, setDuesCleared] = useState('हाँ, मार्च 2026 तक पूर्ण');
   const [promotedTo, setPromotedTo] = useState('अगली उच्च कक्षा हेतु योग्य (Promoted)');
+  const [isWithdrawn, setIsWithdrawn] = useState(student.status === 'transferred' || student.status === 'alumni');
+
+  const handleIssueAndWithdraw = () => {
+    updateStudent({
+      ...student,
+      status: 'transferred',
+      academicHistory: [
+        ...(student.academicHistory || []),
+        {
+          academicYear: currentSchool.currentAcademicYear || '2025-26',
+          class: student.class,
+          section: student.section,
+          rollNo: student.rollNo,
+          status: 'transferred',
+          promotedAt: issueDate,
+          remarks: `TC निर्गमित: क्रमांक ${tcNumber}, कारण: ${leavingReason}`
+        }
+      ]
+    });
+    setIsWithdrawn(true);
+    showSuccess(`टी.सी. क्रमांक ${tcNumber} सफलतापूर्वक जारी! छात्र दाखिल-खारिज पंजिका में 'खारिज (Withdrawn)' के रूप में अद्यतन हुआ।`);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -48,6 +74,22 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
           </div>
 
           <div className="flex items-center gap-2">
+            {!isWithdrawn ? (
+              <button
+                type="button"
+                onClick={handleIssueAndWithdraw}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="टी.सी. जारी करें एवं छात्र का नाम दाखिल-खारिज पंजिका में 'खारिज' करें"
+              >
+                <Award className="w-3.5 h-3.5 text-yellow-300" />
+                <span>टी.सी. निर्गमन व नाम पृथक करें</span>
+              </button>
+            ) : (
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-800 text-emerald-100 rounded-lg text-xs font-bold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                <span>टी.सी. निर्गमित (खारिज)</span>
+              </span>
+            )}
             <button
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs"
@@ -63,6 +105,7 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
             </button>
           </div>
         </div>
+
 
         {/* Quick Customization Options (Hidden during print) */}
         <div className="bg-amber-50/80 border-b border-amber-200 p-3 sm:px-6 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs print:hidden shrink-0">
@@ -212,9 +255,10 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
               <div className="flex items-baseline border-b border-dotted border-stone-300 pb-1">
                 <span className="w-64 font-bold text-stone-700">५. जन्म तिथि (Date of Birth):</span>
                 <span className="flex-1 font-semibold text-stone-900">
-                  {student.dob || '15/07/2012'} (शब्दों में: पंद्रह जुलाई दो हज़ार बारह)
+                  {student.dob || '15/07/2012'} (शब्दों में: {convertDateToHindiWords(student.dob || '2012-07-15')})
                 </span>
               </div>
+
 
               <div className="flex items-baseline border-b border-dotted border-stone-300 pb-1">
                 <span className="w-64 font-bold text-stone-700">६. प्रथम प्रवेश तिथि एवं कक्षा:</span>

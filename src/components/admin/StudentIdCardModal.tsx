@@ -117,10 +117,23 @@ export const StudentIdCardModal: React.FC<StudentIdCardModalProps> = ({ student,
                   <span className="text-stone-500">आपातकालीन संपर्क:</span>
                   <span className="font-bold text-orange-900">{student.contact}</span>
                 </div>
+                {student.pen && (
+                  <div className="flex justify-between font-mono text-[10px]">
+                    <span className="text-stone-500">PEN:</span>
+                    <span className="font-bold text-emerald-800">{student.pen}</span>
+                  </div>
+                )}
+                {student.apaarId && (
+                  <div className="flex justify-between font-mono text-[10px]">
+                    <span className="text-stone-500">APAAR ID:</span>
+                    <span className="font-bold text-blue-800">{student.apaarId}</span>
+                  </div>
+                )}
                 <div className="text-[10px] text-stone-600 pt-0.5 border-t border-orange-200 truncate">
                   पता: {student.address || currentSchool.address}
                 </div>
               </div>
+
 
               {/* Barcode & Signature */}
               <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
