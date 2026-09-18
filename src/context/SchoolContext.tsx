@@ -116,7 +116,7 @@ interface SchoolContextType {
   // Database status
   dbStatus: 'connected' | 'connecting' | 'offline';
   dbHost: string;
-  refreshFromDb: () => Promise<void>;
+  refreshFromDb: (schoolIdToFetch?: string) => Promise<void>;
 
   // Students
   students: Student[];

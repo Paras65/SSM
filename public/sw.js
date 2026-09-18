@@ -1,5 +1,5 @@
 // Cache version — bump this string on every production deploy to invalidate old caches
-const CACHE_VERSION = 'ssm-pwa-v2';
+const CACHE_VERSION = 'ssm-pwa-v3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 
@@ -7,18 +7,19 @@ const API_CACHE = `${CACHE_VERSION}-api`;
 const API_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  '/icons/icon-512.svg',
+  '/icon-192.svg',
+  '/icon-512.svg',
+  '/favicon.svg'
 ];
 
-// ── Install: pre-cache app shell ──────────────────────────────────────────────
+// ── Install: pre-cache static assets (manifest, icons) ───────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(cache => cache.addAll(STATIC_ASSETS).catch(() => {}))
       .then(() => self.skipWaiting())
   );
 });
@@ -47,7 +48,6 @@ function isFresh(response) {
 async function cacheApiResponse(request, response) {
   if (!response || response.status !== 200) return response;
   const cache = await caches.open(API_CACHE);
-  // Clone response and inject a cache timestamp header
   const headers = new Headers(response.headers);
   headers.set('sw-cached-at', String(Date.now()));
   const stamped = new Response(await response.clone().arrayBuffer(), {
@@ -75,7 +75,6 @@ self.addEventListener('fetch', event => {
         .catch(async () => {
           const cached = await caches.match(request);
           if (cached && isFresh(cached)) return cached;
-          // Expired or missing — return a structured offline error
           return new Response(
             JSON.stringify({ offline: true, error: 'Network unavailable. Cached data may be outdated.' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -85,25 +84,68 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. App Shell & Static Assets — Stale-While-Revalidate
+  // 2. Navigation / HTML Requests — NETWORK-FIRST
+  // Critical fix: Never serve stale index.html via Stale-While-Revalidate.
+  // When online, always fetch fresh index.html with up-to-date chunk hashes.
+  const isHtmlRequest = request.mode === 'navigate' ||
+    (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) ||
+    url.pathname === '/' ||
+    url.pathname === '/index.html';
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(STATIC_CACHE).then(cache => cache.put('/index.html', copy));
+          }
+          return response;
+        })
+        .catch(async () => {
+          // Offline fallback
+          const cached = await caches.match('/index.html') || await caches.match('/');
+          if (cached) return cached;
+          return new Response(
+            '<!DOCTYPE html><html><body><h1>सरस्वती शिशु मंदिर</h1><p>इंटरनेट कनेक्शन अनुपलब्ध है। कृपया नेटवर्क जांचें।</p></body></html>',
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        })
+    );
+    return;
+  }
+
+  // 3. Hashed Static Assets (/assets/*) — Cache-First
+  // Hashed Vite assets are content-addressed and immutable
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached;
+        return fetch(request).then(response => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(STATIC_CACHE).then(cache => cache.put(request, copy));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // 4. Other Static Assets (manifest, icons, images) — Stale-While-Revalidate
   event.respondWith(
     caches.match(request).then(cached => {
       const networkFetch = fetch(request)
         .then(response => {
           if (response && response.status === 200) {
-            caches.open(STATIC_CACHE).then(cache => cache.put(request, response.clone()));
+            const copy = response.clone();
+            caches.open(STATIC_CACHE).then(cache => cache.put(request, copy));
           }
           return response;
         })
-        .catch(() => {
-          // Offline + navigation request → serve cached app shell
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          return cached;
-        });
+        .catch(() => cached);
 
-      // Return cached immediately; revalidate in background
       return cached || networkFetch;
     })
   );

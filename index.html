@@ -87,13 +87,33 @@
         </div>
         <div style="width: 28px; height: 28px; border: 3px solid #fed7aa; border-top-color: #ea580c; border-radius: 50%; animation: ssm-spin 0.8s linear infinite; margin-bottom: 0.75rem;"></div>
         <div style="font-size: 1rem; font-weight: 800; color: #7c2d12; margin-bottom: 0.25rem;">सरस्वती शिशु मंदिर ईआरपी</div>
-        <div style="font-size: 0.75rem; color: #a8a29e;">पोर्टल लोड हो रहा है, कृपया प्रतीक्षा करें...</div>
+        <div id="ssm-load-msg" style="font-size: 0.75rem; color: #a8a29e;">पोर्टल लोड हो रहा है, कृपया प्रतीक्षा करें...</div>
+        <button id="ssm-reload-btn" onclick="(function(){ if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function(regs){ for (var i = 0; i < regs.length; i++) regs[i].unregister(); window.location.reload(); }); } else { window.location.reload(); } })()" style="display: none; margin-top: 0.75rem; padding: 0.4rem 0.9rem; font-size: 0.75rem; font-weight: 700; color: #fff; background-color: #ea580c; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🔄 पुनः लोड करें (Reload)</button>
       </div>
       <style>
         @keyframes ssm-spin {
           to { transform: rotate(360deg); }
         }
       </style>
+      <script>
+        setTimeout(function() {
+          var btn = document.getElementById('ssm-reload-btn');
+          var text = document.getElementById('ssm-load-msg');
+          if (btn && text) {
+            text.innerText = 'लोड होने में समय लग रहा है...';
+            btn.style.display = 'inline-block';
+            if (!sessionStorage.getItem('ssm_auto_recovered')) {
+              sessionStorage.setItem('ssm_auto_recovered', 'true');
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                  for (var i = 0; i < regs.length; i++) regs[i].unregister();
+                  setTimeout(function() { window.location.reload(); }, 300);
+                });
+              }
+            }
+          }
+        }, 4000);
+      </script>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
