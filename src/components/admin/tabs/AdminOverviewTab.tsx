@@ -136,7 +136,7 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
           </span>
         </div>
         <div className="w-full max-w-full overflow-x-auto">
-          <TimetableSection />
+          <TimetableSection onOpenTimetableModal={onOpenTimetableModal} />
         </div>
       </section>
       

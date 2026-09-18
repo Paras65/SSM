@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
-import type { Timetable, DaySchedule, TimetableSlot } from '../../types';
+import { SSM_CLASSES, type Timetable, type DaySchedule, type TimetableSlot } from '../../types';
 import { X, Clock, Plus, Save, CheckCircle2, Printer } from 'lucide-react';
 
 interface TimetableManagerModalProps {
@@ -36,14 +36,22 @@ const DEFAULT_SLOTS: TimetableSlot[] = [
 export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool } = useSchool();
   const { showSuccess, showError } = useToast();
-  const CLASSES = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
+  const CLASSES = SSM_CLASSES;
   const SECTIONS = ['A', 'B', 'C', 'D'];
-  const [selectedClass, setSelectedClass] = useState('Class 8');
+  const [selectedClass, setSelectedClass] = useState<string>('Class 8');
   const [selectedSection, setSelectedSection] = useState('A');
   const [selectedDay, setSelectedDay] = useState<'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'>('Monday');
   
   const [scheduleState, setScheduleState] = useState<DaySchedule[]>([]);
+  const [schoolStaff, setSchoolStaff] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !currentSchool.id) return;
+    api.getStaff(currentSchool.id)
+      .then(staff => setSchoolStaff(staff || []))
+      .catch(() => setSchoolStaff([]));
+  }, [isOpen, currentSchool.id]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -98,6 +106,9 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
         section: selectedSection,
         schedule: scheduleState
       });
+      window.dispatchEvent(new CustomEvent('ssm_timetable_updated', {
+        detail: { schoolId: currentSchool.id, class: selectedClass, section: selectedSection }
+      }));
       showSuccess(`समय-सारिणी (${selectedClass} - वर्ग ${selectedSection}) सफलतापूर्वक सुरक्षित हो गई!`);
     } catch (err: any) {
       showError(err.message || 'समय-सारिणी सुरक्षित करने में त्रुटि।');
@@ -280,6 +291,13 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
 
         {/* Slots Table */}
         <div className="flex-1 overflow-y-auto py-4 text-xs">
+          <datalist id="school-staff-list">
+            {schoolStaff.map(s => (
+              <option key={s.id || s._id} value={s.name}>
+                {s.name} ({s.designation || 'आचार्य / दीदी जी'})
+              </option>
+            ))}
+          </datalist>
           <div className="border border-stone-200 rounded-2xl overflow-x-auto bg-white">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -327,6 +345,7 @@ export const TimetableManagerModal: React.FC<TimetableManagerModalProps> = ({ is
                         onChange={(e) => handleUpdateSlot(idx, 'teacherName', e.target.value)}
                         className="w-full px-2.5 py-1 border border-stone-300 rounded-lg text-stone-700"
                         placeholder="आचार्य नाम"
+                        list="school-staff-list"
                       />
                     </td>
                   </tr>
