@@ -22,13 +22,15 @@ interface AdminReportsTabProps {
   onOpenReportModal: (modal: { report: ReportCard; student: Student }) => void;
   onOpenTabulationModal: () => void;
   onOpenUpgradeModal: (feature: { name: string; desc?: string }) => void;
+  onOpenBulkReportCard?: () => void;
 }
 
 const AdminReportsTabComponent: React.FC<AdminReportsTabProps> = ({
   requirePro,
   onOpenReportModal,
   onOpenTabulationModal,
-  onOpenUpgradeModal
+  onOpenUpgradeModal,
+  onOpenBulkReportCard
 }) => {
   const { students, currentSchool, reportCards, deleteReportCard } = useSchool();
   const isPro = currentSchool.plan === 'pro';
@@ -157,12 +159,23 @@ const AdminReportsTabComponent: React.FC<AdminReportsTabProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {onOpenBulkReportCard && (
+            <button
+              onClick={onOpenBulkReportCard}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              title="PTM हेतु कक्षावार सभी छात्रों के 360° समग्र प्रगति पत्रक एक क्लिक में बल्क प्रिंट करें"
+            >
+              <Printer className="w-4 h-4" />
+              <span>🖨️ बल्क प्रगति पत्र (Bulk HPC)</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenTabulationModal}
-            className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
             title="कक्षावार समग्र परीक्षा परिणाम सारणी देखें व प्रिंट करें"
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <FileSpreadsheet className="w-4 h-4 text-orange-400" />
             <span>समग्र परीक्षा परिणाम सारणी (TR Sheet)</span>
           </button>
         </div>

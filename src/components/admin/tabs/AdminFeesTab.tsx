@@ -4,11 +4,13 @@ import { useToast } from '../../../context/ToastContext';
 import { api } from '../../../services/api';
 import { exportFeesToCSV } from '../../../utils/csvExport';
 import { SSM_CLASSES, type Student, type FeeRecord } from '../../../types';
+import { DailyCashRegisterModal } from '../DailyCashRegisterModal';
 import {
   AlertCircle,
   AlertTriangle,
   ArrowRightCircle,
   Banknote,
+  BookOpen,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -24,7 +26,8 @@ import {
   Search,
   Trash2,
   User,
-  X
+  X,
+  Zap
 } from 'lucide-react';
 
 interface WhatsAppAlertPayload {
@@ -100,6 +103,9 @@ export const AdminFeesTabComponent: React.FC<AdminFeesTabProps> = ({
 
   // Student Fee History Modal State
   const [historyStudent, setHistoryStudent] = useState<Student | null>(null);
+
+  // Daily Cash Register (DCR) Modal State
+  const [showDcrModal, setShowDcrModal] = useState(false);
 
   // Delete Confirmation Modal State
   const [deletingFee, setDeletingFee] = useState<{ fee: FeeRecord; studentName: string } | null>(null);
@@ -202,6 +208,41 @@ export const AdminFeesTabComponent: React.FC<AdminFeesTabProps> = ({
       paymentMode: 'Cash',
       referenceNo: ''
     });
+  };
+
+  // ⚡ Fast Roll / Name lookup on Enter key press
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return;
+
+      const pendingFees = filteredFees.filter(f => f.status !== 'Paid');
+
+      // 1. Check exact roll number or SR number match
+      const exactMatch = pendingFees.find(f => {
+        const s = studentMap.get(f.studentId);
+        return s && (s.rollNo.toLowerCase() === q || s.id.toLowerCase() === q);
+      });
+
+      if (exactMatch) {
+        const targetStudent = studentMap.get(exactMatch.studentId);
+        if (targetStudent) {
+          handleOpenCollectModal(exactMatch, targetStudent);
+          showInfo(`⚡ त्वरित काउंटर: अनुक्रमांक ${targetStudent.rollNo} (${targetStudent.name}) का शुल्क फॉर्म खोला गया।`);
+          return;
+        }
+      }
+
+      // 2. If single pending match in current filter
+      if (pendingFees.length === 1) {
+        const targetFee = pendingFees[0];
+        const targetStudent = studentMap.get(targetFee.studentId);
+        if (targetStudent) {
+          handleOpenCollectModal(targetFee, targetStudent);
+          showInfo(`⚡ त्वरित काउंटर: ${targetStudent.name} (कक्षा: ${targetStudent.class}) का शुल्क फॉर्म खोला गया।`);
+        }
+      }
+    }
   };
 
   // Handle submit payment
@@ -391,6 +432,15 @@ export const AdminFeesTabComponent: React.FC<AdminFeesTabProps> = ({
           </button>
 
           <button
+            onClick={() => setShowDcrModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg font-bold shadow-xs cursor-pointer transition"
+            title="दैनिक रोकड़ बही (DCR) एवं भौतिक नोट मिलान पंजी"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-orange-400" />
+            <span>📖 दैनिक रोकड़ बही (DCR)</span>
+          </button>
+
+          <button
             onClick={() => {
               exportFeesToCSV(filteredFees.length > 0 ? filteredFees : feeRecords, students);
               showSuccess('शुल्क रजिस्टर CSV / Excel सफलतापूर्वक डाउनलोड हो गया!');
@@ -447,16 +497,20 @@ export const AdminFeesTabComponent: React.FC<AdminFeesTabProps> = ({
 
       {/* Filter and Search Bar */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
+        {/* Search & Fast Roll Lookup */}
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="छात्र का नाम, अनुक्रमांक, पिता का नाम, या रसीद सं..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-stone-200 bg-stone-50 focus:bg-white focus:ring-1 focus:ring-orange-500 focus:outline-none"
+            onKeyDown={handleSearchKeyDown}
+            placeholder="छात्र नाम, अनुक्रमांक, पिता का नाम (अनुक्रमांक लिखकर ↵ Enter दबाएं)..."
+            className="w-full pl-8 pr-16 py-1.5 text-xs rounded-lg border border-stone-200 bg-stone-50 focus:bg-white focus:ring-1 focus:ring-orange-500 focus:outline-none"
           />
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-stone-400 bg-stone-200/60 px-1.5 py-0.5 rounded pointer-events-none">
+            ↵ Enter
+          </span>
         </div>
 
         {/* Academic Year Filter */}
@@ -1233,6 +1287,15 @@ export const AdminFeesTabComponent: React.FC<AdminFeesTabProps> = ({
           </div>
         </div>
       )}
+
+      {/* Daily Cash Register (DCR) & Denomination Reconciliation Modal */}
+      <DailyCashRegisterModal
+        isOpen={showDcrModal}
+        onClose={() => setShowDcrModal(false)}
+        feeRecords={feeRecords}
+        students={students}
+        currentSchool={currentSchool}
+      />
     </div>
   );
 };

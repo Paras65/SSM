@@ -30,10 +30,12 @@ const TabulationRegisterModal = React.lazy(() => import('./TabulationRegisterMod
 const HelpGuideModal = React.lazy(() => import('./HelpGuideModal').then(m => ({ default: m.HelpGuideModal })));
 const SchoolProposalModal = React.lazy(() => import('./SchoolProposalModal').then(m => ({ default: m.SchoolProposalModal })));
 const BulkIdCardModal = React.lazy(() => import('./BulkIdCardModal').then(m => ({ default: m.BulkIdCardModal })));
+const BulkReportCardModal = React.lazy(() => import('./BulkReportCardModal').then(m => ({ default: m.BulkReportCardModal })));
 const DakhilKharijRegisterModal = React.lazy(() => import('./DakhilKharijRegisterModal').then(m => ({ default: m.DakhilKharijRegisterModal })));
 const DeveloperDashboard = React.lazy(() => import('./DeveloperDashboard').then(m => ({ default: m.DeveloperDashboard })));
 const CommandPaletteModal = React.lazy(() => import('../common/CommandPaletteModal').then(m => ({ default: m.CommandPaletteModal })));
 const RegisterScannerModal = React.lazy(() => import('./RegisterScannerModal').then(m => ({ default: m.RegisterScannerModal })));
+const PrintableBlankFormsModal = React.lazy(() => import('./PrintableBlankFormsModal').then(m => ({ default: m.PrintableBlankFormsModal })));
 
 // Tab Subcomponents (Phase 2 Monolith Decomposition)
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
@@ -160,8 +162,10 @@ export const AdminDashboard: React.FC = () => {
   const [showTabulationModal, setShowTabulationModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showBulkIdCardModal, setShowBulkIdCardModal] = useState(false);
+  const [showBulkReportCardModal, setShowBulkReportCardModal] = useState(false);
   const [showDakhilKharijModal, setShowDakhilKharijModal] = useState(false);
   const [showRegisterScannerModal, setShowRegisterScannerModal] = useState(false);
+  const [printableFormsConfig, setPrintableFormsConfig] = useState<{ isOpen: boolean; initialMode: 'admission' | 'attendance' } | null>(null);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -263,8 +267,10 @@ export const AdminDashboard: React.FC = () => {
     showTabulationModal ||
     showProposalModal ||
     showBulkIdCardModal ||
+    showBulkReportCardModal ||
     showDakhilKharijModal ||
     showRegisterScannerModal ||
+    Boolean(printableFormsConfig?.isOpen) ||
     activeAdmitCard ||
     activeCharacterStudent ||
     activeBonafideStudent
@@ -297,8 +303,10 @@ export const AdminDashboard: React.FC = () => {
     setShowTabulationModal(false);
     setShowProposalModal(false);
     setShowBulkIdCardModal(false);
+    setShowBulkReportCardModal(false);
     setShowDakhilKharijModal(false);
     setShowRegisterScannerModal(false);
+    setPrintableFormsConfig(null);
     setActiveAdmitCard(null);
     setActiveCharacterStudent(null);
     setActiveBonafideStudent(null);
@@ -546,6 +554,15 @@ export const AdminDashboard: React.FC = () => {
         break;
       case 'bulk-id-card':
         setShowBulkIdCardModal(true);
+        break;
+      case 'bulk-report-card':
+        setShowBulkReportCardModal(true);
+        break;
+      case 'blank-admission':
+        setPrintableFormsConfig({ isOpen: true, initialMode: 'admission' });
+        break;
+      case 'attendance-sheet':
+        setPrintableFormsConfig({ isOpen: true, initialMode: 'attendance' });
         break;
       case 'school-settings':
         setSchoolModalMode('settings');
@@ -1288,6 +1305,7 @@ export const AdminDashboard: React.FC = () => {
               onOpenBonafideCertificate={setActiveBonafideStudent}
               onOpenDakhilKharij={() => setShowDakhilKharijModal(true)}
               onOpenRegisterScanner={() => setShowRegisterScannerModal(true)}
+              onOpenPrintableAdmissionForm={() => setPrintableFormsConfig({ isOpen: true, initialMode: 'admission' })}
             />
           </TabErrorBoundary>
         )}
@@ -1297,6 +1315,7 @@ export const AdminDashboard: React.FC = () => {
             <AdminAttendanceTab
               requirePro={requirePro}
               onOpenWhatsAppAlert={setActiveWhatsAppAlert}
+              onOpenPrintableAttendanceSheet={() => setPrintableFormsConfig({ isOpen: true, initialMode: 'attendance' })}
             />
           </TabErrorBoundary>
         )}
@@ -1320,6 +1339,7 @@ export const AdminDashboard: React.FC = () => {
               onOpenReportModal={setActiveReportModal}
               onOpenTabulationModal={() => setShowTabulationModal(true)}
               onOpenUpgradeModal={setUpgradeModalFeature}
+              onOpenBulkReportCard={() => setShowBulkReportCardModal(true)}
             />
           </TabErrorBoundary>
         )}
@@ -1489,6 +1509,10 @@ export const AdminDashboard: React.FC = () => {
               setShowExamModal(false);
               setActiveAdmitCard({ student, exam });
             }}
+            onOpenBulkReportCard={() => {
+              setShowExamModal(false);
+              setShowBulkReportCardModal(true);
+            }}
           />
         )}
 
@@ -1588,6 +1612,26 @@ export const AdminDashboard: React.FC = () => {
           <BulkIdCardModal
             isOpen={showBulkIdCardModal}
             onClose={() => setShowBulkIdCardModal(false)}
+            students={students}
+            school={currentSchool}
+          />
+        )}
+
+        {showBulkReportCardModal && (
+          <BulkReportCardModal
+            isOpen={showBulkReportCardModal}
+            onClose={() => setShowBulkReportCardModal(false)}
+            students={students}
+            reportCards={reportCards}
+            school={currentSchool}
+          />
+        )}
+
+        {printableFormsConfig?.isOpen && (
+          <PrintableBlankFormsModal
+            isOpen={printableFormsConfig.isOpen}
+            onClose={() => setPrintableFormsConfig(null)}
+            mode={printableFormsConfig.initialMode}
             students={students}
             school={currentSchool}
           />

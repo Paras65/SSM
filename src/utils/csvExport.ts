@@ -148,6 +148,33 @@ export function exportFeesToCSV(fees: FeeRecord[], students: Student[]) {
   downloadCSV(csv, filename);
 }
 
+export function generateDailyCashRegisterCSV(dailyFees: FeeRecord[], students: Student[], date: string): string {
+  const headers = ['S.No.', 'Receipt No.', 'Date', 'Roll No.', 'Student Name', 'Class', 'Section', 'Fee Head', 'Payment Mode', 'Ref / Txn No.', 'Amount (INR)'];
+  const rows = dailyFees.map((f, idx) => {
+    const student = students.find(s => s.id === f.studentId);
+    return [
+      sanitizeCsvCell(idx + 1),
+      sanitizeCsvCell(f.receiptNo || 'N/A'),
+      sanitizeCsvCell(f.paidDate || date),
+      sanitizeCsvCell(student ? student.rollNo : 'N/A'),
+      sanitizeCsvCell(student ? student.name : 'Unknown'),
+      sanitizeCsvCell(student ? student.class : 'N/A'),
+      sanitizeCsvCell(student ? student.section : 'A'),
+      sanitizeCsvCell(f.term),
+      sanitizeCsvCell(f.paymentMode || 'Cash'),
+      sanitizeCsvCell(f.receiptNo || ''),
+      sanitizeCsvCell(f.paidAmount || 0)
+    ];
+  });
+  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+}
+
+export function exportDailyCashRegisterToCSV(dailyFees: FeeRecord[], students: Student[], date: string) {
+  const csv = generateDailyCashRegisterCSV(dailyFees, students, date);
+  const filename = `SSM_Daily_Cash_Register_DCR_${date}.csv`;
+  downloadCSV(csv, filename);
+}
+
 export function exportAttendanceToCSV(attendance: AttendanceRecord[], students: Student[], date: string) {
   const csv = generateAttendanceCSV(attendance, students, date);
   const filename = `SSM_Attendance_${date}.csv`;

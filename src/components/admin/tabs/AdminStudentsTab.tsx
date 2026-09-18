@@ -14,7 +14,8 @@ import {
   Camera,
   Edit3,
   Trash2,
-  BookOpen
+  BookOpen,
+  Printer
 } from 'lucide-react';
 
 interface AdminStudentsTabProps {
@@ -33,6 +34,7 @@ interface AdminStudentsTabProps {
   onOpenBonafideCertificate: (student: Student) => void;
   onOpenDakhilKharij?: () => void;
   onOpenRegisterScanner?: () => void;
+  onOpenPrintableAdmissionForm?: () => void;
 }
 
 const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
@@ -50,7 +52,8 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
   onOpenCharacterCertificate,
   onOpenBonafideCertificate,
   onOpenDakhilKharij,
-  onOpenRegisterScanner
+  onOpenRegisterScanner,
+  onOpenPrintableAdmissionForm
 }) => {
   const { students, currentSchool, deleteStudent, reportCards } = useSchool();
   const { showSuccess, showInfo } = useToast();
@@ -187,6 +190,17 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
             >
               <Camera className="w-3.5 h-3.5 text-yellow-200" />
               <span>रजिस्टर डायरेक्ट स्कैन</span>
+            </button>
+          )}
+
+          {onOpenPrintableAdmissionForm && (
+            <button
+              onClick={onOpenPrintableAdmissionForm}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-lg text-xs font-bold shadow-xs cursor-pointer transition active:scale-95"
+              title="ऑफलाइन प्रवेश हेतु रिक्त A4 छात्र प्रवेश प्रपत्र प्रिंट करें"
+            >
+              <Printer className="w-3.5 h-3.5 text-orange-600" />
+              <span>रिक्त प्रवेश प्रपत्र</span>
             </button>
           )}
 

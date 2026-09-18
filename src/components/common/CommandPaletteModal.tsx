@@ -26,7 +26,9 @@ import {
   Sparkles,
   Command,
   CornerDownLeft,
-  Camera
+  Camera,
+  Printer,
+  FileText
 } from 'lucide-react';
 
 export interface CommandPaletteModalProps {
@@ -218,6 +220,46 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       icon: <IdCard className="w-4 h-4 text-purple-600" />,
       keywords: ['id', 'card', 'identity', 'परिचय', 'पहचान', 'आईडी'],
       execute: () => onTriggerQuickAction('bulk-id-card')
+    },
+    {
+      id: 'action-bulk-report-card',
+      category: 'quick-action',
+      title: 'Bulk 360 HPC Report Cards Print',
+      hindiTitle: '🖨️ कक्षावार समग्र प्रगति पत्र (Bulk 360° HPC)',
+      subtitle: 'PTM हेतु संपूर्ण कक्षा के NEP 2020 रिपोर्ट कार्ड एक क्लिक में प्रिंट करें',
+      icon: <Award className="w-4 h-4 text-orange-600" />,
+      keywords: ['report', 'card', 'hpc', 'bulk', 'ptm', 'pragati', 'patra', 'प्रगति', 'पत्र', 'रिजल्ट', 'बल्क'],
+      execute: () => onTriggerQuickAction('bulk-report-card')
+    },
+    {
+      id: 'action-dcr',
+      category: 'quick-action',
+      title: 'Daily Cash Register DCR',
+      hindiTitle: '📖 दैनिक रोकड़ बही एवं नकद मिलान (DCR Register)',
+      subtitle: 'काउंटर नकद दराज व ऑनलाइन बैंक संग्रह का दैनिक मिलान व A4 मुद्रण',
+      icon: <BookOpen className="w-4 h-4 text-amber-600" />,
+      keywords: ['dcr', 'cash', 'register', 'fee', 'daily', 'रोकड़', 'बही', 'दैनिक', 'नकद'],
+      execute: () => onTriggerQuickAction('dcr')
+    },
+    {
+      id: 'action-blank-admission',
+      category: 'quick-action',
+      title: 'Printable Blank Admission Form A4',
+      hindiTitle: '📄 रिक्त छात्र प्रवेश प्रपत्र (A4 Blank Form)',
+      subtitle: 'ऑफ़लाइन नवीन प्रवेश हेतु खाली A4 छात्र आवेदन पत्र प्रिंट करें',
+      icon: <FileText className="w-4 h-4 text-emerald-600" />,
+      keywords: ['blank', 'admission', 'form', 'print', 'paper', 'रिक्त', 'प्रवेश', 'प्रपत्र', 'फॉर्म'],
+      execute: () => onTriggerQuickAction('blank-admission')
+    },
+    {
+      id: 'action-attendance-sheet',
+      category: 'quick-action',
+      title: '31-Day Attendance Register Sheet A4',
+      hindiTitle: '📋 31-दिवसीय उपस्थिति पंजिका शीट (Attendance Sheet)',
+      subtitle: 'कक्षावार 1 से 31 तारीख तक भौतिक उपस्थिति रजिस्टर शीट A4 पर प्रिंट करें',
+      icon: <Printer className="w-4 h-4 text-indigo-600" />,
+      keywords: ['attendance', 'register', 'sheet', 'monthly', '31', 'उपस्थिति', 'पंजिका', 'शीट', 'रजिस्टर'],
+      execute: () => onTriggerQuickAction('attendance-sheet')
     },
     {
       id: 'action-settings',

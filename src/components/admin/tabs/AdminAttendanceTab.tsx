@@ -7,7 +7,8 @@ import {
   downloadCSV,
   sanitizeCsvCell
 } from '../../../utils/csvExport';
-import { SSM_CLASSES, type AttendanceStatus } from '../../../types';
+import { SSM_CLASSES, type AttendanceStatus, type Student } from '../../../types';
+import { formatWhatsAppPhone } from '../../../utils/whatsappAlerts';
 import {
   AlertTriangle,
   BarChart3,
@@ -21,7 +22,10 @@ import {
   Users,
   UserX,
   X,
-  XCircle
+  XCircle,
+  Send,
+  Check,
+  Printer
 } from 'lucide-react';
 
 interface WhatsAppAlertPayload {
@@ -35,10 +39,12 @@ interface WhatsAppAlertPayload {
 interface AdminAttendanceTabProps {
   requirePro?: (featureName: string, featureDesc: string, onAllowed: () => void) => void;
   onOpenWhatsAppAlert: (payload: WhatsAppAlertPayload) => void;
+  onOpenPrintableAttendanceSheet?: () => void;
 }
 
 const AdminAttendanceTabComponent: React.FC<AdminAttendanceTabProps> = ({
-  onOpenWhatsAppAlert
+  onOpenWhatsAppAlert,
+  onOpenPrintableAttendanceSheet
 }) => {
   const {
     students,
@@ -59,6 +65,9 @@ const AdminAttendanceTabComponent: React.FC<AdminAttendanceTabProps> = ({
   );
   const [attendanceClass, setAttendanceClass] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showBatchAbsenteeModal, setShowBatchAbsenteeModal] = useState(false);
+  const [sentStudentIds, setSentStudentIds] = useState<Record<string, boolean>>({});
+  const [customAbsentNote, setCustomAbsentNote] = useState('');
 
   // Date Range Controls for Summary View (defaults to current month)
   const [rangeStart, setRangeStart] = useState<string>(() => {
@@ -193,6 +202,46 @@ const AdminAttendanceTabComponent: React.FC<AdminAttendanceTabProps> = ({
     showSuccess(`दिनांक ${attendanceDate} की अनुपस्थित छात्रों की सूची CSV डाउनलोड हो गई!`);
   };
 
+  const absentStudentsList = useMemo(() => {
+    return filteredStudents.filter(s => (todayAttendance[s.id] || 'Present') === 'Absent');
+  }, [filteredStudents, todayAttendance]);
+
+  const handleSendSingleAbsentee = (student: Student) => {
+    const cleanPhone = formatWhatsAppPhone(student.contact);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      showError(`छात्र '${student.name}' का 10-अंकीय मोबाइल नंबर उपलब्ध नहीं है।`);
+      return;
+    }
+
+    const noteText = customAbsentNote.trim() ? `\n📌 *विशेष निर्देश:* ${customAbsentNote.trim()}\n` : '';
+    const text = 
+`🚩 *सादर नमस्ते जी* 🚩
+*${currentSchool.hindiName || currentSchool.name}*
+--------------------------------
+*दैनिक अनुपस्थिति सूचना:*
+आपके पाल्य/पाल्या *${student.name}* (कक्षा: ${student.class} - ${student.section}, रोल नं: ${student.rollNo}) आज दिनांक *${attendanceDate}* को विद्यालय में अनुपस्थित रहे हैं।
+${noteText}
+कृपया अस्वस्थता अथवा अनुपस्थिति का कारण विद्यालय डायरी में दर्ज करें अथवा संपर्क करने की कृपा करें।
+
+धन्यवाद!
+— प्रधानाचार्य कार्यालय, ${currentSchool.hindiName || currentSchool.name}`;
+
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+
+    setSentStudentIds(prev => ({ ...prev, [student.id]: true }));
+    showSuccess(`'${student.name}' के अभिभावक को WhatsApp अलर्ट प्रेषित!`);
+  };
+
+  const handleSendNextPending = () => {
+    const nextPending = absentStudentsList.find(s => !sentStudentIds[s.id]);
+    if (nextPending) {
+      handleSendSingleAbsentee(nextPending);
+    } else {
+      showInfo('सभी अनुपस्थित छात्रों के अभिभावकों को WhatsApp भेजा जा चुका है!');
+    }
+  };
+
   const handleExportRangeSummaryCSV = () => {
     const headers = [
       'Roll No',
@@ -310,6 +359,16 @@ const AdminAttendanceTabComponent: React.FC<AdminAttendanceTabProps> = ({
                 <XCircle className="w-3.5 h-3.5 text-red-600" />
                 <span>सभी अनुपस्थित</span>
               </button>
+              {absentStudentsList.length > 0 && (
+                <button
+                  onClick={() => setShowBatchAbsenteeModal(true)}
+                  className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:from-emerald-800 active:to-teal-800 text-white rounded-lg text-xs font-bold shadow-xs inline-flex items-center gap-1.5 cursor-pointer transition active:scale-95 animate-pulse"
+                  title={`आज अनुपस्थित ${absentStudentsList.length} छात्रों के अभिभावकों को WhatsApp संदेश भेजें`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-emerald-200" />
+                  <span>अनुपस्थित व्हाट्सएप प्रसारण ({absentStudentsList.length})</span>
+                </button>
+              )}
               <button
                 onClick={handleExportDailyCSV}
                 className="flex items-center gap-1 px-3 py-1.5 bg-stone-700 hover:bg-stone-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
@@ -326,6 +385,16 @@ const AdminAttendanceTabComponent: React.FC<AdminAttendanceTabProps> = ({
                 <UserX className="w-3.5 h-3.5 text-rose-200" />
                 <span>अनुपस्थित सूची CSV</span>
               </button>
+              {onOpenPrintableAttendanceSheet && (
+                <button
+                  onClick={onOpenPrintableAttendanceSheet}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition active:scale-95"
+                  title="कक्षा अनुसार 31-दिवसीय खाली/भरा हुआ उपस्थिति रजिस्टर (A4) प्रिंट करें"
+                >
+                  <Printer className="w-3.5 h-3.5 text-indigo-200" />
+                  <span>31-दिवसीय पंजिका शीट</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -720,6 +789,159 @@ const AdminAttendanceTabComponent: React.FC<AdminAttendanceTabProps> = ({
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Absentee WhatsApp Broadcaster Modal */}
+      {showBatchAbsenteeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-2xl w-full border border-stone-200 overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-700 to-teal-700 text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm sm:text-base font-bold text-white">
+                    दैनिक अनुपस्थिति WhatsApp प्रसारण (Absentee Broadcaster)
+                  </h4>
+                  <p className="text-xs text-emerald-100">
+                    दिनांक: {attendanceDate} • कुल अनुपस्थित: {absentStudentsList.length} • प्रेषित: {Object.keys(sentStudentIds).filter(id => absentStudentsList.some(s => s.id === id)).length}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBatchAbsenteeModal(false)}
+                className="p-1 hover:bg-white/20 rounded-lg transition cursor-pointer"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Optional Custom Note Input */}
+              <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-1.5">
+                <label className="block text-xs font-bold text-stone-700">
+                  अतिरिक्त निर्देश / टिप्पणी (वैकल्पिक):
+                </label>
+                <input
+                  type="text"
+                  placeholder="उदा. कल चिकित्सा प्रमाण पत्र / अवकाश पत्र अवश्य भेजें"
+                  value={customAbsentNote}
+                  onChange={e => setCustomAbsentNote(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500"
+                />
+                <span className="text-[10px] text-stone-500">
+                  यह निर्देश सभी अभिभावकों के संदेश में स्वतः जुड़ जाएगा।
+                </span>
+              </div>
+
+              {/* Action Quick Button */}
+              <div className="flex items-center justify-between pb-1 border-b border-stone-200">
+                <span className="text-xs font-bold text-stone-700">
+                  अनुपस्थित छात्र सूची ({absentStudentsList.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSendNextPending}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition active:scale-95"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>अगला प्रेषित करें (Send Next)</span>
+                </button>
+              </div>
+
+              {/* Student Cards List */}
+              <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+                {absentStudentsList.length === 0 ? (
+                  <p className="p-6 text-center text-xs text-stone-500">
+                    वर्तमान कक्षा में कोई छात्र अनुपस्थित नहीं है।
+                  </p>
+                ) : (
+                  absentStudentsList.map(st => {
+                    const isSent = Boolean(sentStudentIds[st.id]);
+                    const cleanPhone = formatWhatsAppPhone(st.contact);
+                    const hasValidPhone = cleanPhone && cleanPhone.length >= 10;
+
+                    return (
+                      <div
+                        key={st.id}
+                        className={`p-3 rounded-xl border transition flex items-center justify-between gap-3 ${
+                          isSent
+                            ? 'bg-emerald-50/70 border-emerald-300'
+                            : 'bg-white border-stone-200 hover:border-stone-300'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded">
+                              रोल {st.rollNo}
+                            </span>
+                            <span className="text-xs font-bold text-stone-900 truncate">
+                              {st.name}
+                            </span>
+                            <span className="text-[11px] text-stone-500">
+                              ({st.class} - {st.section})
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-stone-600 mt-0.5 flex items-center gap-2">
+                            <span>पिता: {st.fatherName || 'अभिभावक'}</span>
+                            <span>•</span>
+                            <span className={hasValidPhone ? 'font-mono text-stone-700' : 'text-red-500 font-semibold'}>
+                              {hasValidPhone ? `📱 ${st.contact}` : '⚠️ नंबर उपलब्ध नहीं'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {isSent && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
+                              <Check className="w-3 h-3" />
+                              <span>प्रेषित</span>
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleSendSingleAbsentee(st)}
+                            disabled={!hasValidPhone}
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs cursor-pointer ${
+                              isSent
+                                ? 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            } disabled:opacity-40 disabled:cursor-not-allowed`}
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>{isSent ? 'पुनः भेजें' : 'WhatsApp'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-stone-50 px-5 py-3 border-t border-stone-200 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-xs text-stone-600">
+                प्रेषित:{' '}
+                <strong className="text-emerald-700 font-bold">
+                  {Object.keys(sentStudentIds).filter(id => absentStudentsList.some(s => s.id === id)).length}
+                </strong>{' '}
+                / {absentStudentsList.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowBatchAbsenteeModal(false)}
+                className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-lg text-xs font-bold cursor-pointer transition"
+              >
+                सम्पन्न (Done)
+              </button>
+            </div>
           </div>
         </div>
       )}

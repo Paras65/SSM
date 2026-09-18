@@ -9,9 +9,15 @@ interface ExamManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenAdmitCard?: (student: Student, exam: Exam) => void;
+  onOpenBulkReportCard?: () => void;
 }
 
-export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen, onClose, onOpenAdmitCard }) => {
+export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({
+  isOpen,
+  onClose,
+  onOpenAdmitCard,
+  onOpenBulkReportCard
+}) => {
   const { currentSchool, students, reportCards, refreshFromDb } = useSchool();
   const { showError, showSuccess } = useToast();
   const [activeTab, setActiveTab] = useState<'exams' | 'marks'>('exams');
@@ -298,6 +304,18 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
             <FileSpreadsheet className="w-4 h-4" />
             <span>मार्क्स एंट्री मैट्रिक्स (Marks Entry)</span>
           </button>
+
+          {onOpenBulkReportCard && (
+            <button
+              type="button"
+              onClick={onOpenBulkReportCard}
+              className="ml-auto px-3.5 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              title="कक्षावार सभी छात्रों के 360° समग्र प्रगति पत्रक (HPC Report Cards) एक क्लिक में प्रिंट करें"
+            >
+              <Award className="w-4 h-4" />
+              <span>🖨️ बल्क प्रगति पत्र (Bulk HPC)</span>
+            </button>
+          )}
         </div>
 
         {/* Modal Body */}
@@ -688,6 +706,11 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
                 </div>
               )}
 
+              {/* Fast Keyboard Navigation Tip */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 px-3.5 flex items-center justify-between text-xs text-amber-900 shadow-2xs">
+                <span>💡 <strong>तीव्र कीबोर्ड प्रविष्टि:</strong> अंक लिखकर कीबोर्ड का <strong>Enter (↵)</strong> या <strong>↓ (Down Arrow)</strong> दबाएं — कर्सर स्वतः अगले छात्र पर जाएगा!</span>
+              </div>
+
               <div className="bg-white rounded-2xl border border-stone-200 overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -709,7 +732,7 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
                         </td>
                       </tr>
                     ) : (
-                      filteredStudents.map(st => {
+                      filteredStudents.map((st, idx) => {
                         const marks = studentMarks[st.id] ?? 0;
                         const pct = maxMarks > 0 ? (marks / maxMarks) * 100 : 0;
                         const grade = pct >= 90 ? 'A+' : pct >= 75 ? 'A' : pct >= 60 ? 'B' : pct >= 45 ? 'C' : 'D';
@@ -721,17 +744,30 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({ isOpen
                             <td className="p-3 font-semibold text-stone-600">{maxMarks}</td>
                             <td className="p-3">
                               <input
+                                id={`exam-marks-input-${idx}`}
                                 type="number"
                                 min={0}
                                 max={maxMarks}
                                 disabled={activeExam?.isLocked}
                                 value={studentMarks[st.id] ?? ''}
+                                onFocus={(e) => e.target.select()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                    e.preventDefault();
+                                    const next = document.getElementById(`exam-marks-input-${idx + 1}`);
+                                    if (next) (next as HTMLInputElement).focus();
+                                  } else if (e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    const prev = document.getElementById(`exam-marks-input-${idx - 1}`);
+                                    if (prev) (prev as HTMLInputElement).focus();
+                                  }
+                                }}
                                 onChange={(e) => {
                                   const val = Math.min(maxMarks, Math.max(0, Number(e.target.value) || 0));
                                   setStudentMarks(prev => ({ ...prev, [st.id]: val }));
                                 }}
                                 placeholder="0"
-                                className="w-20 px-2 py-1 rounded-lg border border-stone-300 font-bold text-xs disabled:bg-stone-100 disabled:text-stone-400"
+                                className="w-20 px-2 py-1 rounded-lg border border-stone-300 font-bold text-xs disabled:bg-stone-100 disabled:text-stone-400 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                               />
                             </td>
                             <td className="p-3 font-bold text-orange-900">{pct.toFixed(1)}%</td>
