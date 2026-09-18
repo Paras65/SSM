@@ -7,4 +7,5 @@ You are operating within a constrained compute environment. To optimize resource
 3. **Targeted File Access:** Do not scan or search the broader workspace. Restrict your file system operations ONLY to the specific files explicitly mentioned or `@` tagged in the request.
 4. **Concise Output:** Provide direct answers and code snippets. Skip long-winded explanations or summaries unless explicitly requested.
 5. **Stop on Failure:** If you fail to resolve an error after two attempts, stop immediately and ask for human clarification instead of repeatedly guessing or looping.
+6. **Mandatory Feature Documentation:** Whenever any new feature is added, or an existing feature is modified/refactored, it MUST be immediately and synchronously documented in `docs/USER_MANUAL.md` (including updating the Table of Contents) before considering the task complete.
 
