@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
-import { X, UserPlus, Edit3 } from 'lucide-react';
+import { X, UserPlus, Edit3, Sparkles, Save, AlertCircle } from 'lucide-react';
 import type { Gender, SocialCategory, Student } from '../../types';
 import { SSM_CLASSES } from '../../types';
 
@@ -10,23 +10,34 @@ interface AddStudentModalProps {
   studentToEdit?: Student | null;
 }
 
+const getNextRollForClassSection = (cls: string, sec: string, studentList: Student[]): string => {
+  const classStudents = studentList.filter(s => s.class === cls && s.section === sec);
+  const numbers = classStudents
+    .map(s => parseInt(s.rollNo, 10))
+    .filter(n => !isNaN(n) && isFinite(n));
+  return numbers.length > 0 ? (Math.max(...numbers) + 1).toString() : '1';
+};
+
 export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, studentToEdit }) => {
   const { addStudent, updateStudent, students } = useSchool();
   const { showSuccess, showWarning } = useToast();
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = Boolean(studentToEdit);
-  const nextRoll = (students.length + 101).toString();
+  const defaultClass = studentToEdit?.class || 'Class 6';
+  const defaultSection = studentToEdit?.section || 'A';
+  const defaultRoll = studentToEdit?.rollNo || getNextRollForClassSection(defaultClass, defaultSection, students);
 
   const initialName = studentToEdit
     ? studentToEdit.name.replace(/^(भैया\s+|बहिन\s+|Bhaiya\s+|Bahin\s+)/i, '')
     : '';
 
   const [formData, setFormData] = useState({
-    rollNo: studentToEdit?.rollNo || nextRoll,
+    rollNo: defaultRoll,
     name: initialName,
     gender: (studentToEdit?.gender || 'Bhaiya') as Gender,
-    class: studentToEdit?.class || 'Class 6',
-    section: studentToEdit?.section || 'A',
+    class: defaultClass,
+    section: defaultSection,
     fatherName: studentToEdit?.fatherName || '',
     motherName: studentToEdit?.motherName || '',
     contact: studentToEdit?.contact || '',
@@ -43,9 +54,57 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
     bpl: studentToEdit?.bpl || false
   });
 
+  const isRollDuplicate = !isEditing && formData.rollNo.trim() !== '' && students.some(
+    s => s.class === formData.class && s.section === formData.section && s.rollNo.trim() === formData.rollNo.trim()
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleClassChange = (newClass: string) => {
+    const nextRoll = getNextRollForClassSection(newClass, formData.section, students);
+    setFormData(prev => ({
+      ...prev,
+      class: newClass,
+      rollNo: nextRoll
+    }));
+  };
+
+  const handleSectionChange = (newSection: string) => {
+    const nextRoll = getNextRollForClassSection(formData.class, newSection, students);
+    setFormData(prev => ({
+      ...prev,
+      section: newSection,
+      rollNo: nextRoll
+    }));
+  };
+
+  const cleanPhone = formData.contact.replace(/\D/g, '').slice(-10);
+  const matchedSibling = (!isEditing && cleanPhone.length === 10)
+    ? students.find(s => {
+        const sPhone = s.contact ? s.contact.replace(/\D/g, '').slice(-10) : '';
+        return sPhone === cleanPhone && (s.fatherName || s.familyId);
+      })
+    : null;
+
+  const handleAutoFillSibling = (sibling: Student) => {
+    const familyCode = sibling.familyId || `FAM-${cleanPhone.slice(-6)}`;
+    setFormData(prev => ({
+      ...prev,
+      fatherName: sibling.fatherName || prev.fatherName,
+      motherName: sibling.motherName || prev.motherName,
+      address: sibling.address || prev.address,
+      pin: sibling.pin || prev.pin,
+      familyId: familyCode,
+      socialCategory: (sibling.socialCategory as SocialCategory) || prev.socialCategory,
+    }));
+    showSuccess(`सहोदर छात्र '${sibling.name}' का पारिवारिक विवरण एवं Family ID (${familyCode}) स्वतः भर दिया गया!`);
+  };
+
+  const handleApaarChange = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 12);
+    const formatted = digits.match(/.{1,4}/g)?.join('-') || digits;
+    setFormData(prev => ({ ...prev, apaarId: formatted }));
+  };
+
+  const handleSave = (addAnother: boolean = false) => {
     if (!formData.name.trim() || !formData.fatherName.trim()) {
       showWarning('कृपया छात्र एवं पिता का नाम अवश्य भरें।');
       return;
@@ -63,15 +122,46 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
         name: fullName
       });
       showSuccess(`'${fullName}' का विवरण सफलतापूर्वक अद्यतन (Updated) किया गया!`);
+      onClose();
     } else {
       addStudent({
         ...formData,
         name: fullName
       });
-      showSuccess(`नए छात्र '${fullName}' सफलतापूर्वक पंजीकृत किए गए!`);
-    }
 
-    onClose();
+      if (addAnother) {
+        showSuccess(`नए छात्र '${fullName}' पंजीकृत! अब अगले छात्र का विवरण भरें।`);
+        const currentRollNum = parseInt(formData.rollNo, 10);
+        const nextRollNum = !isNaN(currentRollNum) ? (currentRollNum + 1).toString() : '1';
+
+        setFormData(prev => ({
+          ...prev,
+          rollNo: nextRollNum,
+          name: '',
+          fatherName: '',
+          motherName: '',
+          contact: '',
+          dob: '2014-01-01',
+          pen: '',
+          apaarId: '',
+          familyId: '',
+          cwsn: false,
+          bpl: false,
+        }));
+
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+        }, 50);
+      } else {
+        showSuccess(`नए छात्र '${fullName}' सफलतापूर्वक पंजीकृत किए गए!`);
+        onClose();
+      }
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSave(false);
   };
 
   return (
@@ -100,6 +190,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
                 छात्र / छात्रा का नाम *
               </label>
               <input
+                ref={nameInputRef}
                 type="text"
                 required
                 placeholder="उदा. केशव शास्त्री"
@@ -143,15 +234,30 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                अनुक्रमांक (Roll No)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-stone-700">
+                  अनुक्रमांक (Roll No)
+                </label>
+                {!isEditing && (
+                  <span className="text-[10px] text-orange-600 font-medium bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200">
+                    स्वतः गणना
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 value={formData.rollNo}
                 onChange={e => setFormData({ ...formData, rollNo: e.target.value })}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500"
+                className={`w-full px-3 py-2 text-sm rounded-lg border focus:ring-2 focus:ring-orange-500 ${
+                  isRollDuplicate ? 'border-amber-400 bg-amber-50/50' : 'border-stone-300'
+                }`}
               />
+              {isRollDuplicate && (
+                <p className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>रोल नं. {formData.rollNo} इस वर्ग में पहले से आवंटित है।</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -160,7 +266,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
               </label>
               <select
                 value={formData.class}
-                onChange={e => setFormData({ ...formData, class: e.target.value })}
+                onChange={e => handleClassChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500 bg-white"
               >
                 {SSM_CLASSES.map(cls => (
@@ -175,7 +281,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
               </label>
               <select
                 value={formData.section}
-                onChange={e => setFormData({ ...formData, section: e.target.value })}
+                onChange={e => handleSectionChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500 bg-white"
               >
                 <option value="A">Section A</option>
@@ -250,9 +356,9 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
               <input
                 type="tel"
                 required
-                placeholder="+91 98765 00000"
+                placeholder="10-अंकीय मोबाइल नंबर"
                 value={formData.contact}
-                onChange={e => setFormData({ ...formData, contact: e.target.value })}
+                onChange={e => setFormData({ ...formData, contact: e.target.value.replace(/[^\d+ ]/g, '').slice(0, 14) })}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500"
               />
             </div>
@@ -291,6 +397,28 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
               </select>
             </div>
           </div>
+
+          {/* Sibling detection alert banner */}
+          {matchedSibling && (
+            <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-amber-950 shadow-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0 animate-pulse" />
+                <div className="leading-snug">
+                  <span className="font-bold text-amber-900">✨ सहोदर परिवार मिला: </span>
+                  <span className="font-semibold">{matchedSibling.fatherName}</span>
+                  <span className="text-amber-800"> (सहोदर: {matchedSibling.name}, {matchedSibling.class})</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAutoFillSibling(matchedSibling)}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold rounded-lg text-xs shrink-0 cursor-pointer shadow-xs transition"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>स्वतः भरें (Auto-Fill)</span>
+              </button>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-semibold text-stone-700 mb-1">
@@ -338,7 +466,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
                   maxLength={14}
                   placeholder="उदा. 9876-5432-1098"
                   value={formData.apaarId}
-                  onChange={e => setFormData({ ...formData, apaarId: e.target.value })}
+                  onChange={e => handleApaarChange(e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-stone-300 focus:ring-2 focus:ring-blue-500 bg-white"
                 />
               </div>
@@ -396,19 +524,31 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
             </div>
           </div>
 
-          <div className="pt-3 border-t border-stone-200 flex justify-end gap-2">
+          <div className="pt-3 border-t border-stone-200 flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-lg"
+              className="px-3.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-lg cursor-pointer transition"
             >
               रद्द करें (Cancel)
             </button>
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => handleSave(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg shadow-2xs cursor-pointer transition active:scale-98"
+                title="वर्तमान छात्र सुरक्षित करें और उसी कक्षा के अगले छात्र का फॉर्म खोलें"
+              >
+                <UserPlus className="w-4 h-4 text-amber-600" />
+                <span>सहेजें एवं अगला छात्र जोड़ें</span>
+              </button>
+            )}
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-sm cursor-pointer transition"
+              className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white rounded-lg shadow-sm cursor-pointer transition active:scale-98"
             >
-              {isEditing ? 'विवरण अद्यतन करें (Update Student)' : 'छात्र पंजीकृत करें (Register Student)'}
+              {isEditing ? <Edit3 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              <span>{isEditing ? 'विवरण अद्यतन करें (Update Student)' : 'छात्र पंजीकृत करें (Register Student)'}</span>
             </button>
           </div>
         </form>
