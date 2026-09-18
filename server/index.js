@@ -190,6 +190,14 @@ async function startServer() {
     });
     console.log('✅ Connected successfully to MongoDB!');
 
+    // Verify initial schools & migrate seed data strictly to Demo Sandbox
+    try {
+      const seedDatabase = require('./seed');
+      await seedDatabase();
+    } catch (seedErr) {
+      console.warn('⚠️ Seeding / migration warning:', seedErr.message);
+    }
+
     app.listen(PORT, () => {
       console.log(`🚀 Saraswati Shishu Mandir Backend running at: http://localhost:${PORT}`);
       console.log(`📋 API Status endpoint: http://localhost:${PORT}/api/status`);

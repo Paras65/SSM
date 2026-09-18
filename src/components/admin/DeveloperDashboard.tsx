@@ -69,7 +69,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
   const [auditActorFilter, setAuditActorFilter] = useState<string>('all');
 
   // Test Seeder State
-  const [seedingSchoolId, setSeedingSchoolId] = useState<string>('');
+  const [seedingSchoolId, setSeedingSchoolId] = useState<string>('ssm-demo');
   const [isSeeding, setIsSeeding] = useState(false);
 
   // Fetch MongoDB Health & Network KPIs
@@ -219,19 +219,26 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     }
   };
 
-  // Targeted Test Data Seeder
+  // Targeted Test Data Seeder (Strictly for Demo Sandbox)
   const handleSeedTargetSchool = async () => {
     if (!seedingSchoolId) return;
-    const targetSchool = schools.find(s => s.id === seedingSchoolId);
-    if (!targetSchool) return;
+    if (seedingSchoolId !== 'ssm-demo') {
+      showError('डेमो डेटा केवल लाइव डेमो मोड (ssm-demo) में लोड किया जा सकता है। वास्तविक विद्यालयों में वास्तविक डेटा का प्रयोग अनिवार्य है।');
+      return;
+    }
+    const targetSchool = schools.find(s => s.id === seedingSchoolId) || {
+      id: 'ssm-demo',
+      hindiName: 'सरस्वती शिशु मंदिर (लाइव डेमो)',
+      city: 'नई दिल्ली'
+    };
 
-    if (!window.confirm(`क्या आप '${targetSchool.hindiName}' में 12 छात्र, उपस्थिति, शुल्क, 360° NEP रिपोर्ट कार्ड एवं नोटिस लोड करना चाहते हैं?`)) {
+    if (!window.confirm(`क्या आप डेमो सैंडबॉक्स ('${targetSchool.hindiName}') में 12 छात्र, उपस्थिति, शुल्क, 360° NEP रिपोर्ट कार्ड एवं नोटिस लोड करना चाहते हैं?`)) {
       return;
     }
 
     setIsSeeding(true);
     try {
-      const demo = generateRichDemoData(targetSchool.id, targetSchool.city);
+      const demo = generateRichDemoData('ssm-demo', targetSchool.city || 'नई दिल्ली');
       if (bulkAddStudents) {
         await bulkAddStudents(demo.students);
       }
@@ -244,8 +251,8 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
       for (const n of demo.notices) {
         await addNotice(n);
       }
-      showSuccess(`शाखा '${targetSchool.hindiName}' में 12 छात्र, शुल्क एवं प्रगति पत्र सफलतापूर्वक लोड हुए!`);
-      await refreshFromDb();
+      showSuccess(`डेमो सैंडबॉक्स ('${targetSchool.hindiName}') में 12 छात्र, शुल्क एवं प्रगति पत्र सफलतापूर्वक लोड हुए!`);
+      await refreshFromDb('ssm-demo');
       await loadNetworkData();
     } catch (err: any) {
       showError('डेमो डेटा लोड करने में त्रुटि: ' + err.message);
@@ -863,36 +870,34 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
             <div className="flex items-center gap-2 pb-2 border-b border-stone-200">
               <Sparkles className="w-5 h-5 text-amber-600" />
               <h3 className="text-base font-bold text-stone-900">
-                लक्षित शाखा परीक्षण डेटा सीडर (Targeted Demo Seeder)
+                लाइव डेमो सैंडबॉक्स डेटा सीडर (Demo Sandbox Seeder)
               </h3>
             </div>
             <p className="text-xs text-stone-600 leading-relaxed">
-              किसी भी चयनित शाखा में त्वरित परीक्षण एवं लाइव डेमो हेतु 12 छात्र, शुल्क रिकॉर्ड, 360° NEP प्रगति पत्र एवं नोटिस लोड करें।
+              डेमो सैंडबॉक्स (ssm-demo) में त्वरित परीक्षण एवं लाइव डेमो हेतु 12 छात्र, शुल्क रिकॉर्ड, 360° NEP प्रगति पत्र एवं नोटिस लोड करें। वास्तविक विद्यालयों में केवल वास्तविक डेटा प्रविष्टि की जा सकती है।
             </p>
 
             <div className="space-y-3">
               <label className="block text-xs font-bold text-stone-700">
-                लक्षित विद्यालय शाखा चुनें:
+                लक्षित शाखा (केवल लाइव डेमो सैंडबॉक्स):
               </label>
               <select
                 value={seedingSchoolId}
                 onChange={e => setSeedingSchoolId(e.target.value)}
                 className="w-full p-2.5 rounded-xl border border-stone-300 bg-stone-50 text-xs font-bold text-stone-900 focus:ring-2 focus:ring-orange-500"
               >
-                {schools.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.hindiName} ({s.city}) — [{s.id}]
-                  </option>
-                ))}
+                <option value="ssm-demo">
+                  सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय (लाइव डेमो) [ssm-demo]
+                </option>
               </select>
 
               <button
                 onClick={handleSeedTargetSchool}
-                disabled={isSeeding || !seedingSchoolId}
+                disabled={isSeeding || seedingSchoolId !== 'ssm-demo'}
                 className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Sparkles className="w-4 h-4 text-yellow-200" />
-                <span>{isSeeding ? 'डेटा लोड हो रहा है...' : 'चयनित शाखा में डेमो डेटा इंजेक्ट करें'}</span>
+                <span>{isSeeding ? 'डेटा लोड हो रहा है...' : 'डेमो सैंडबॉक्स में डेटा इंजेक्ट करें'}</span>
               </button>
             </div>
           </div>

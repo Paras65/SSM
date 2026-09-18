@@ -290,6 +290,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const dbSchools = await api.getSchools().catch(() => []);
         if (dbSchools.length > 0) {
           const uniqueSchools = dbSchools.filter((s: School, idx: number, arr: School[]) =>
+            s.id !== 'ssm-demo' &&
             idx === arr.findIndex(x => x.id === s.id || ((x.hindiName === s.hindiName || x.name === s.name) && x.city === s.city))
           );
           setSchools(uniqueSchools);
@@ -459,7 +460,12 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setIsDemoMode(false);
     setViewMode('public');
-    refreshFromDb(currentSchoolId);
+    const resetSchoolId = currentSchoolId === 'ssm-demo' ? 'ssm-gorakhpur' : currentSchoolId;
+    setCurrentSchoolIdState(resetSchoolId);
+    try {
+      localStorage.setItem('ssm_current_school_id', resetSchoolId);
+    } catch {}
+    refreshFromDb(resetSchoolId);
   };
 
   // Student actions (MongoDB + Optimistic)

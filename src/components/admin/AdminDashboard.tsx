@@ -195,11 +195,15 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleSeedDemoData = async () => {
-    if (!window.confirm(`क्या आप '${currentSchool.hindiName || currentSchool.name}' में 12 छात्र, उपस्थिति, शुल्क, 360° NEP रिपोर्ट कार्ड एवं नोटिस लोड करना चाहते हैं?`)) {
+    if (currentSchool.id !== 'ssm-demo') {
+      showError('डेमो डेटा केवल लाइव डेमो मोड (Demo Sandbox) में ही लोड किया जा सकता है। वास्तविक विद्यालयों में केवल वास्तविक डेटा प्रविष्टि की जा सकती है।');
+      return;
+    }
+    if (!window.confirm(`क्या आप डेमो सैंडबॉक्स में 12 छात्र, उपस्थिति, शुल्क, 360° NEP रिपोर्ट कार्ड एवं नोटिस लोड करना चाहते हैं?`)) {
       return;
     }
     try {
-      const demo = generateRichDemoData(currentSchool.id, currentSchool.city);
+      const demo = generateRichDemoData('ssm-demo', currentSchool.city || 'नई दिल्ली');
       if (bulkAddStudents) {
         await bulkAddStudents(demo.students);
       }
@@ -212,8 +216,8 @@ export const AdminDashboard: React.FC = () => {
       for (const n of demo.notices) {
         await addNotice(n);
       }
-      showSuccess('रिच डेमो डेटा (12 छात्र, उपस्थिति, शुल्क, समग्र प्रगति पत्र) सफलतापूर्वक लोड हो गया है।');
-      await refreshFromDb();
+      showSuccess('डेमो सैंडबॉक्स में रिच डेमो डेटा (12 छात्र, उपस्थिति, शुल्क, समग्र प्रगति पत्र) सफलतापूर्वक लोड हो गया है।');
+      await refreshFromDb('ssm-demo');
     } catch (err: any) {
       showError('डेमो डेटा लोड करने में त्रुटि: ' + (err.message || 'Error'));
     }
@@ -711,12 +715,12 @@ export const AdminDashboard: React.FC = () => {
               <span>डेटा रीस्टोर (फ़ाइल से)</span>
             </button>
 
-            {/* Pitching Demo Seeder Button (Developer Only) */}
-            {isDeveloper && (
+            {/* Pitching Demo Seeder Button (Developer Only, strictly in Demo Sandbox) */}
+            {isDeveloper && currentSchool.id === 'ssm-demo' && (
               <button
                 onClick={handleSeedDemoData}
                 className="hidden xl:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 text-yellow-300 text-[11px] font-bold border border-orange-800/80 transition-colors shrink-0 cursor-pointer"
-                title="पिचिंग एवं लाइव डेमो हेतु 12 छात्र, उपस्थिति, शुल्क एवं 360° रिपोर्ट कार्ड लोड करें"
+                title="डेमो सैंडबॉक्स हेतु 12 छात्र, उपस्थिति, शुल्क एवं 360° रिपोर्ट कार्ड लोड करें"
               >
                 <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
                 <span>डेमो लोड</span>

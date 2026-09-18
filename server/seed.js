@@ -64,12 +64,32 @@ const INITIAL_SCHOOLS = [
     principalName: 'आचार्य विष्णु दत्त त्रिपाठी',
     adminPasscode: '1972',
     plan: 'free'
+  },
+  {
+    id: 'ssm-demo',
+    name: 'Saraswati Shishu Mandir Senior Secondary School (Demo Sandbox)',
+    hindiName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय (लाइव डेमो)',
+    tagline: 'सा विद्या या विमुक्तये • लाइव सैंडबॉक्स परीक्षण',
+    affiliate: 'सम्बद्ध: विद्या भारती अखिल भारतीय शिक्षा संस्थान',
+    affiliationNo: 'VB-DEMO-2026',
+    established: '1952',
+    address: 'विद्या भारती परिसर, आदर्श नगर, नई दिल्ली - 110001',
+    city: 'आदर्श नगर (डेमो)',
+    state: 'नई दिल्ली',
+    prant: 'दिल्ली प्रांत',
+    phone: '011-23456789',
+    email: 'demo@vidyabharti.net',
+    timings: 'प्रातः 7:30 बजे से दोपहर 1:30 बजे तक',
+    principalName: 'आचार्य देवव्रत शास्त्री',
+    adminPasscode: '1952',
+    plan: 'pro'
   }
 ];
 
 const INITIAL_STUDENTS = [
   {
     id: 'ssm-001',
+    schoolId: 'ssm-demo',
     rollNo: '101',
     name: 'Bhaiya Aryan Sharma',
     gender: 'Bhaiya',
@@ -85,6 +105,7 @@ const INITIAL_STUDENTS = [
   },
   {
     id: 'ssm-002',
+    schoolId: 'ssm-demo',
     rollNo: '102',
     name: 'Bahin Ananya Verma',
     gender: 'Bahin',
@@ -100,6 +121,7 @@ const INITIAL_STUDENTS = [
   },
   {
     id: 'ssm-003',
+    schoolId: 'ssm-demo',
     rollNo: '103',
     name: 'Bhaiya Devansh Mishra',
     gender: 'Bhaiya',
@@ -115,6 +137,7 @@ const INITIAL_STUDENTS = [
   },
   {
     id: 'ssm-004',
+    schoolId: 'ssm-demo',
     rollNo: '104',
     name: 'Bahin Priya Pandey',
     gender: 'Bahin',
@@ -130,6 +153,7 @@ const INITIAL_STUDENTS = [
   },
   {
     id: 'ssm-005',
+    schoolId: 'ssm-demo',
     rollNo: '105',
     name: 'Bhaiya Harshvardhan Singh',
     gender: 'Bhaiya',
@@ -145,6 +169,7 @@ const INITIAL_STUDENTS = [
   },
   {
     id: 'ssm-006',
+    schoolId: 'ssm-demo',
     rollNo: '106',
     name: 'Bahin Gargi Tripathi',
     gender: 'Bahin',
@@ -160,6 +185,7 @@ const INITIAL_STUDENTS = [
   },
   {
     id: 'ssm-007',
+    schoolId: 'ssm-demo',
     rollNo: '107',
     name: 'Bhaiya Shivam Gupta',
     gender: 'Bhaiya',
@@ -175,6 +201,7 @@ const INITIAL_STUDENTS = [
   },
   {
     id: 'ssm-008',
+    schoolId: 'ssm-demo',
     rollNo: '108',
     name: 'Bahin Tanvi Shukla',
     gender: 'Bahin',
@@ -193,6 +220,7 @@ const INITIAL_STUDENTS = [
 const INITIAL_FEES = [
   {
     id: 'fee-001',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-001',
     term: 'Quarter 1 (Apr - Jun)',
     academicYear: '2025-26',
@@ -205,6 +233,7 @@ const INITIAL_FEES = [
   },
   {
     id: 'fee-002',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-002',
     term: 'Quarter 1 (Apr - Jun)',
     academicYear: '2025-26',
@@ -217,6 +246,7 @@ const INITIAL_FEES = [
   },
   {
     id: 'fee-003',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-003',
     term: 'Quarter 1 (Apr - Jun)',
     academicYear: '2025-26',
@@ -229,6 +259,7 @@ const INITIAL_FEES = [
   },
   {
     id: 'fee-004',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-004',
     term: 'Quarter 1 (Apr - Jun)',
     academicYear: '2025-26',
@@ -238,6 +269,7 @@ const INITIAL_FEES = [
   },
   {
     id: 'fee-005',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-005',
     term: 'Quarter 1 (Apr - Jun)',
     academicYear: '2025-26',
@@ -250,6 +282,7 @@ const INITIAL_FEES = [
   },
   {
     id: 'fee-006',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-006',
     term: 'Quarter 1 (Apr - Jun)',
     academicYear: '2025-26',
@@ -265,6 +298,7 @@ const INITIAL_FEES = [
 const INITIAL_REPORTS = [
   {
     id: 'rep-001',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-001',
     examTerm: 'Ardhvarshik Pariksha (Mid-Term)',
     academicYear: '2025-26',
@@ -288,6 +322,7 @@ const INITIAL_REPORTS = [
   },
   {
     id: 'rep-002',
+    schoolId: 'ssm-demo',
     studentId: 'ssm-002',
     examTerm: 'Ardhvarshik Pariksha (Mid-Term)',
     academicYear: '2025-26',
@@ -314,6 +349,7 @@ const INITIAL_REPORTS = [
 const INITIAL_NOTICES = [
   {
     id: 'not-01',
+    schoolId: 'ssm-demo',
     title: 'Satr 2026-27 Pravesh Prarambh (Admissions Open for Arun, Uday, Prabhat to Class 10)',
     category: 'Academics',
     date: '2026-03-01',
@@ -322,6 +358,7 @@ const INITIAL_NOTICES = [
   },
   {
     id: 'not-02',
+    schoolId: 'ssm-demo',
     title: 'Varshik Khel-Kood & Ghosh Pratiyogita (Annual Sports Meet)',
     category: 'Events',
     date: '2026-03-18',
@@ -330,6 +367,7 @@ const INITIAL_NOTICES = [
   },
   {
     id: 'not-03',
+    schoolId: 'ssm-demo',
     title: 'Ardhvarshik Pariksha Phal & Abhibhavak Sammelan (PTM & Report Cards)',
     category: 'Examinations',
     date: '2026-03-25',
@@ -338,6 +376,7 @@ const INITIAL_NOTICES = [
   },
   {
     id: 'not-04',
+    schoolId: 'ssm-demo',
     title: 'Akhil Bharatiya Vigyan evam Ganit Mela (Science & Vedic Maths Fair)',
     category: 'Vidya Bharati',
     date: '2026-04-05',
@@ -349,7 +388,7 @@ const INITIAL_NOTICES = [
 const INITIAL_STAFF = [
   {
     id: 'stf-001',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     name: 'श्री रामेश्वर त्रिपाठी',
     gender: 'Acharya',
     designation: 'वरिष्ठ प्रवक्ता (गणित)',
@@ -367,7 +406,7 @@ const INITIAL_STAFF = [
   },
   {
     id: 'stf-002',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     name: 'दीदी सरिता वाजपेयी',
     gender: 'Didi',
     designation: 'प्रवक्ता (संस्कृत एवं हिन्दी)',
@@ -385,7 +424,7 @@ const INITIAL_STAFF = [
   },
   {
     id: 'stf-003',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     name: 'श्री अखिलेश कुमार पाण्डेय',
     gender: 'Acharya',
     designation: 'सहायक शिक्षक (विज्ञान एवं कंप्यूटर)',
@@ -403,7 +442,7 @@ const INITIAL_STAFF = [
   },
   {
     id: 'stf-004',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     name: 'श्री केशव प्रसाद मिश्र',
     gender: 'Acharya',
     designation: 'शारीरिक एवं योग शिक्षक (प्रमुखाचार्य)',
@@ -421,7 +460,7 @@ const INITIAL_STAFF = [
   },
   {
     id: 'stf-005',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     name: 'दीदी वंदना सिंह',
     gender: 'Didi',
     designation: 'संगीत एवं सांस्कृतिक आचार्या',
@@ -442,7 +481,7 @@ const INITIAL_STAFF = [
 const INITIAL_HOMEWORK = [
   {
     id: 'hw-001',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     class: 'Class 8',
     section: 'A',
     subject: 'गणित (Mathematics)',
@@ -455,7 +494,7 @@ const INITIAL_HOMEWORK = [
   },
   {
     id: 'hw-002',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     class: 'Class 8',
     section: 'A',
     subject: 'संस्कृत (Sanskrit)',
@@ -468,7 +507,7 @@ const INITIAL_HOMEWORK = [
   },
   {
     id: 'hw-003',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     class: 'Class 8',
     section: 'A',
     subject: 'विज्ञान (Science)',
@@ -481,7 +520,7 @@ const INITIAL_HOMEWORK = [
   },
   {
     id: 'hw-004',
-    schoolId: 'ssm-gorakhpur',
+    schoolId: 'ssm-demo',
     class: 'Class 7',
     section: 'A',
     subject: 'हिन्दी (Hindi)',
@@ -496,84 +535,133 @@ const INITIAL_HOMEWORK = [
 
 async function seedDatabase() {
   try {
-    const schoolCount = await School.countDocuments();
-    if (schoolCount > 0) {
-      // Database has already been initialized previously.
-      // Do not re-seed deleted collections so administrator UI deletions persist across restarts.
-      return;
+    // 1. Ensure all initial schools exist in MongoDB (without overwriting user custom edits)
+    for (const school of INITIAL_SCHOOLS) {
+      await School.updateOne(
+        { id: school.id },
+        { $setOnInsert: school },
+        { upsert: true }
+      );
     }
+    console.log('✅ Initial schools verified/synced in MongoDB.');
 
-    console.log('🌱 Seeding initial Vidya Bharati schools into MongoDB...');
-    await School.insertMany(INITIAL_SCHOOLS);
-    console.log(`✅ Seeded ${INITIAL_SCHOOLS.length} school branches.`);
+    // 2. Migration: Isolate any existing seed records from actual schools (e.g. ssm-gorakhpur) strictly to 'ssm-demo'
+    const seedStudentIds = ['ssm-001', 'ssm-002', 'ssm-003', 'ssm-004', 'ssm-005', 'ssm-006', 'ssm-007', 'ssm-008'];
+    const seedFeeIds = ['fee-001', 'fee-002', 'fee-003', 'fee-004', 'fee-005', 'fee-006'];
+    const seedReportIds = ['rep-001', 'rep-002'];
+    const seedNoticeIds = ['not-01', 'not-02', 'not-03', 'not-04'];
+    const seedStaffIds = ['stf-001', 'stf-002', 'stf-003', 'stf-004', 'stf-005'];
+    const seedHomeworkIds = ['hw-001', 'hw-002', 'hw-003', 'hw-004'];
 
-    // Ensure all existing documents have schoolId: 'ssm-gorakhpur'
-    await Student.updateMany({ schoolId: { $exists: false } }, { $set: { schoolId: 'ssm-gorakhpur' } });
-    await Fee.updateMany({ schoolId: { $exists: false } }, { $set: { schoolId: 'ssm-gorakhpur' } });
-    await Attendance.updateMany({ schoolId: { $exists: false } }, { $set: { schoolId: 'ssm-gorakhpur' } });
-    await ReportCard.updateMany({ schoolId: { $exists: false } }, { $set: { schoolId: 'ssm-gorakhpur' } });
-    await Notice.updateMany({ schoolId: { $exists: false } }, { $set: { schoolId: 'ssm-gorakhpur' } });
+    await Student.updateMany(
+      { $or: [{ id: { $in: seedStudentIds } }, { id: { $regex: /^ssm-gorakhpur-std-/ } }, { schoolId: { $exists: false } }] },
+      { $set: { schoolId: 'ssm-demo' } }
+    );
+    await Fee.updateMany(
+      { $or: [{ id: { $in: seedFeeIds } }, { studentId: { $in: seedStudentIds } }, { schoolId: { $exists: false } }] },
+      { $set: { schoolId: 'ssm-demo' } }
+    );
+    await Attendance.updateMany(
+      { $or: [{ studentId: { $in: seedStudentIds } }, { id: { $regex: /^att-.*ssm-00/ } }, { schoolId: { $exists: false } }] },
+      { $set: { schoolId: 'ssm-demo' } }
+    );
+    await ReportCard.updateMany(
+      { $or: [{ id: { $in: seedReportIds } }, { studentId: { $in: seedStudentIds } }, { schoolId: { $exists: false } }] },
+      { $set: { schoolId: 'ssm-demo' } }
+    );
+    await Notice.updateMany(
+      { $or: [{ id: { $in: seedNoticeIds } }, { schoolId: { $exists: false } }] },
+      { $set: { schoolId: 'ssm-demo' } }
+    );
+    await Staff.updateMany(
+      { $or: [{ id: { $in: seedStaffIds } }, { schoolId: { $exists: false } }] },
+      { $set: { schoolId: 'ssm-demo' } }
+    );
+    await Homework.updateMany(
+      { $or: [{ id: { $in: seedHomeworkIds } }, { schoolId: { $exists: false } }] },
+      { $set: { schoolId: 'ssm-demo' } }
+    );
 
-    const studentCount = await Student.countDocuments();
-    if (studentCount === 0) {
-      console.log('🌱 Seeding initial students into MongoDB...');
+    // 3. Seed demo data ONLY for ssm-demo if collection is empty for demo sandbox
+    const demoStudentCount = await Student.countDocuments({ schoolId: 'ssm-demo' });
+    if (demoStudentCount === 0) {
+      console.log('🌱 Seeding demo students for ssm-demo...');
       await Student.insertMany(INITIAL_STUDENTS);
-      console.log(`✅ Seeded ${INITIAL_STUDENTS.length} students.`);
+      console.log(`✅ Seeded ${INITIAL_STUDENTS.length} demo students.`);
     }
 
-    const feeCount = await Fee.countDocuments();
-    if (feeCount === 0) {
-      console.log('🌱 Seeding initial fee records into MongoDB...');
+    const demoFeeCount = await Fee.countDocuments({ schoolId: 'ssm-demo' });
+    if (demoFeeCount === 0) {
+      console.log('🌱 Seeding demo fees for ssm-demo...');
       await Fee.insertMany(INITIAL_FEES);
-      console.log(`✅ Seeded ${INITIAL_FEES.length} fee records.`);
+      console.log(`✅ Seeded ${INITIAL_FEES.length} demo fee records.`);
     }
 
-    const reportCount = await ReportCard.countDocuments();
-    if (reportCount === 0) {
-      console.log('🌱 Seeding initial report cards into MongoDB...');
+    const demoReportCount = await ReportCard.countDocuments({ schoolId: 'ssm-demo' });
+    if (demoReportCount === 0) {
+      console.log('🌱 Seeding demo report cards for ssm-demo...');
       await ReportCard.insertMany(INITIAL_REPORTS);
-      console.log(`✅ Seeded ${INITIAL_REPORTS.length} report cards.`);
+      console.log(`✅ Seeded ${INITIAL_REPORTS.length} demo report cards.`);
     }
 
-    const noticeCount = await Notice.countDocuments();
-    if (noticeCount === 0) {
-      console.log('🌱 Seeding initial notices into MongoDB...');
+    const demoNoticeCount = await Notice.countDocuments({ schoolId: 'ssm-demo' });
+    if (demoNoticeCount === 0) {
+      console.log('🌱 Seeding demo notices for ssm-demo...');
       await Notice.insertMany(INITIAL_NOTICES);
-      console.log(`✅ Seeded ${INITIAL_NOTICES.length} notices.`);
+      console.log(`✅ Seeded ${INITIAL_NOTICES.length} demo notices.`);
     }
 
     const today = new Date().toISOString().split('T')[0];
-    const attendanceCount = await Attendance.countDocuments();
-    if (attendanceCount === 0) {
-      console.log('🌱 Seeding today attendance into MongoDB...');
+    const demoAttendanceCount = await Attendance.countDocuments({ schoolId: 'ssm-demo' });
+    if (demoAttendanceCount === 0) {
+      console.log('🌱 Seeding demo attendance for ssm-demo...');
       const initialAttendance = INITIAL_STUDENTS.map((s, idx) => ({
         id: `att-${idx}-${s.id}`,
+        schoolId: 'ssm-demo',
         studentId: s.id,
         date: today,
         status: idx === 3 ? 'Absent' : idx === 6 ? 'Leave' : 'Present'
       }));
       await Attendance.insertMany(initialAttendance);
-      console.log(`✅ Seeded ${initialAttendance.length} attendance records for ${today}.`);
+      console.log(`✅ Seeded ${initialAttendance.length} demo attendance records for ${today}.`);
     }
 
-    const staffCount = await Staff.countDocuments();
-    if (staffCount === 0) {
-      console.log('🌱 Seeding initial staff/Acharyas into MongoDB...');
+    const demoStaffCount = await Staff.countDocuments({ schoolId: 'ssm-demo' });
+    if (demoStaffCount === 0) {
+      console.log('🌱 Seeding demo staff for ssm-demo...');
       await Staff.insertMany(INITIAL_STAFF);
-      console.log(`✅ Seeded ${INITIAL_STAFF.length} staff records.`);
+      console.log(`✅ Seeded ${INITIAL_STAFF.length} demo staff records.`);
     }
 
-    const homeworkCount = await Homework.countDocuments();
-    if (homeworkCount === 0) {
-      console.log('🌱 Seeding initial homework into MongoDB...');
+    const demoHomeworkCount = await Homework.countDocuments({ schoolId: 'ssm-demo' });
+    if (demoHomeworkCount === 0) {
+      console.log('🌱 Seeding demo homework for ssm-demo...');
       await Homework.insertMany(INITIAL_HOMEWORK);
-      console.log(`✅ Seeded ${INITIAL_HOMEWORK.length} homework assignments.`);
+      console.log(`✅ Seeded ${INITIAL_HOMEWORK.length} demo homework assignments.`);
     }
 
-    console.log('🎉 MongoDB database ready with Saraswati Shishu Mandir records!');
+    console.log('🎉 MongoDB ready: Seed data isolated strictly to Demo Mode (ssm-demo). Real schools use actual data.');
   } catch (err) {
     console.error('Error seeding database:', err.message);
   }
+}
+
+if (require.main === module) {
+  require('dotenv').config();
+  const mongoose = require('mongoose');
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ssm_school';
+  mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 8000 })
+    .then(async () => {
+      console.log('Connected to MongoDB for seeding/migration.');
+      await seedDatabase();
+      await mongoose.disconnect();
+      console.log('Disconnected from MongoDB.');
+      process.exit(0);
+    })
+    .catch(err => {
+      console.error('Migration connection error:', err.message);
+      process.exit(1);
+    });
 }
 
 module.exports = seedDatabase;
