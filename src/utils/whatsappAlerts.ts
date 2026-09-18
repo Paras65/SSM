@@ -1,17 +1,11 @@
+import { cleanIndianPhone } from './whatsapp';
+
+/**
+ * Normalizes Indian phone numbers with country code (91XXXXXXXXXX)
+ * Consolidated with cleanIndianPhone for unified single source of truth.
+ */
 export function formatWhatsAppPhone(phone: string): string {
-  if (!phone) return '';
-  // Strip all non-digit characters
-  const digits = phone.replace(/\D/g, '');
-  // If 10 digits (standard Indian mobile), prepend 91
-  if (digits.length === 10) {
-    return `91${digits}`;
-  }
-  // If starts with 0 and followed by 10 digits
-  if (digits.length === 11 && digits.startsWith('0')) {
-    return `91${digits.slice(1)}`;
-  }
-  // If already includes country code (e.g. 919876543210)
-  return digits;
+  return cleanIndianPhone(phone) || '';
 }
 
 export function generateAbsenteeWhatsAppLink(params: {

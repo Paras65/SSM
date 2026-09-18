@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSchool } from '../../../context/SchoolContext';
 import { useToast } from '../../../context/ToastContext';
 import { exportStudentsToCSV } from '../../../utils/csvExport';
-import { downloadUdisePlusCSV } from '../../../utils/udiseExport';
+import { downloadUdisePlus42ColumnCSV } from '../../../utils/udiseExport';
 import { SSM_CLASSES, type Student, type ReportCard } from '../../../types';
 import {
   Search,
@@ -138,14 +138,14 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
 
           <button
             onClick={() => {
-              downloadUdisePlusCSV(filteredStudents.length > 0 ? filteredStudents : students, currentSchool);
-              showSuccess('UDISE+ SDMS सरकारी प्रारूप CSV सफलतापूर्वक डाउनलोड हो गई है।');
+              downloadUdisePlus42ColumnCSV(filteredStudents.length > 0 ? filteredStudents : students, currentSchool);
+              showSuccess('UDISE+ SDMS 42-कॉलम मास्टर प्रारूप CSV सफलतापूर्वक डाउनलोड हो गई है।');
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
-            title="भारत सरकार UDISE+ SDMS आधिकारिक बैच प्रारूप (21 कॉलम) में CSV निर्यात करें"
+            title="भारत सरकार UDISE+ SDMS आधिकारिक बैच प्रारूप (42 कॉलम) में CSV निर्यात करें"
           >
             <FileText className="w-3.5 h-3.5 text-blue-200" />
-            <span>UDISE+ निर्यात</span>
+            <span>UDISE+ निर्यात (42-Col)</span>
           </button>
 
           {onOpenDakhilKharij && (
