@@ -36,6 +36,7 @@ interface AdminOverviewTabProps {
     admissions: number;
   };
   staffCount: number;
+  resignedStaffCount?: number;
   totalBhaiya: number;
   totalBahin: number;
   attendanceRate: number;
@@ -63,6 +64,7 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
   isDeveloper,
   developerMetrics,
   staffCount,
+  resignedStaffCount = 0,
   totalBhaiya,
   totalBahin,
   attendanceRate,
@@ -350,7 +352,11 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
             <div>
               <span className="text-3xl font-black text-stone-900">{staffCount}</span>
               <p className="text-xs text-stone-500 mt-1">
-                समर्पित शिक्षक एवं प्रशिक्षक
+                {resignedStaffCount > 0 ? (
+                  <span>{staffCount} कार्यरत • <span className="text-amber-700 font-semibold">{resignedStaffCount} सेवामुक्त</span></span>
+                ) : (
+                  'समर्पित शिक्षक एवं प्रशिक्षक'
+                )}
               </p>
             </div>
             <span className="text-xs font-bold text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity">

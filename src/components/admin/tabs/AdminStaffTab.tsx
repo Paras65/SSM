@@ -45,6 +45,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
   const [stfQualification, setStfQualification] = useState('');
   const [stfSubjects, setStfSubjects] = useState('');
   const [stfPhone, setStfPhone] = useState('');
+  const [stfPin, setStfPin] = useState('1234');
   const [stfMonthlySalary, setStfMonthlySalary] = useState<number | ''>('');
   const [stfStatus, setStfStatus] = useState<'Active' | 'OnLeave' | 'Resigned'>('Active');
   const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
@@ -62,6 +63,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     setStfQualification('');
     setStfSubjects('');
     setStfPhone('');
+    setStfPin('1234');
     setStfMonthlySalary('');
     setStfStatus('Active');
     setShowAddStaff(false);
@@ -75,6 +77,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     setStfQualification(staff.qualification || '');
     setStfSubjects(staff.subjects || '');
     setStfPhone(staff.phone || '');
+    setStfPin(staff.pin || '1234');
     setStfMonthlySalary(staff.monthlySalary || '');
     setStfStatus((staff.status as any) || 'Active');
     setShowAddStaff(true);
@@ -100,6 +103,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           qualification: stfQualification,
           subjects: stfSubjects,
           phone: stfPhone,
+          pin: stfPin || '1234',
           monthlySalary: Number(stfMonthlySalary) || 0,
           basicPay: basic,
           daHra: da,
@@ -116,6 +120,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           qualification: stfQualification,
           subjects: stfSubjects,
           phone: stfPhone,
+          pin: stfPin || '1234',
           monthlySalary: Number(stfMonthlySalary),
           basicPay: basic,
           daHra: da,
@@ -162,6 +167,9 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     });
   }, [staffList, roleFilter, statusFilter, searchQuery]);
 
+  const activeStaff = useMemo(() => staffList.filter(s => s.status !== 'Resigned'), [staffList]);
+  const resignedStaff = useMemo(() => staffList.filter(s => s.status === 'Resigned'), [staffList]);
+
   return (
     <div className="space-y-6">
       {/* Header & KPI Row */}
@@ -169,17 +177,20 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
         <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-              कुल शिक्षक एवं कर्मचारी
+              सक्रिय शिक्षक एवं कर्मचारी
             </span>
             <div className="p-2 rounded-xl bg-orange-100 text-orange-700">
               <Briefcase className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-black text-stone-900">{staffList.length}</span>
+            <span className="text-3xl font-black text-stone-900">{activeStaff.length}</span>
             <p className="text-xs text-stone-500 mt-1">
-              आचार्य: {staffList.filter(s => s.gender === 'Acharya').length} • दीदी जी:{' '}
-              {staffList.filter(s => s.gender === 'Didi').length}
+              आचार्य: {activeStaff.filter(s => s.gender === 'Acharya').length} • दीदी जी:{' '}
+              {activeStaff.filter(s => s.gender === 'Didi').length}
+              {resignedStaff.length > 0 && (
+                <span className="text-amber-700 font-semibold"> • {resignedStaff.length} सेवामुक्त</span>
+              )}
             </p>
           </div>
         </div>
@@ -195,9 +206,9 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           </div>
           <div className="mt-3">
             <span className="text-3xl font-black text-stone-900">
-              ₹{staffList.reduce((acc, s) => acc + (s.monthlySalary || 0), 0).toLocaleString('en-IN')}
+              ₹{activeStaff.reduce((acc, s) => acc + (s.monthlySalary || 0), 0).toLocaleString('en-IN')}
             </span>
-            <p className="text-xs text-stone-500 mt-1">मासिक संवितरण (Monthly Payroll)</p>
+            <p className="text-xs text-stone-500 mt-1">मासिक संवितरण (सक्रिय स्टाफ)</p>
           </div>
         </div>
 
@@ -300,6 +311,22 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
                 value={stfPhone}
                 onChange={e => setStfPhone(e.target.value)}
                 className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500"
+                required
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-stone-700 font-bold">लॉगिन सुरक्षा पिन (PIN)*</label>
+                <span className="text-[10px] text-orange-600 font-semibold">डिफ़ॉल्ट: 1234</span>
+              </div>
+              <input
+                type="text"
+                maxLength={6}
+                placeholder="1234"
+                value={stfPin}
+                onChange={e => setStfPin(e.target.value)}
+                className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500 font-mono tracking-widest font-bold"
                 required
               />
             </div>
@@ -467,7 +494,14 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
                     <td className="p-3 font-semibold text-stone-700">{member.designation}</td>
                     <td className="p-3 text-stone-600">{member.qualification || 'स्नातकोत्तर'}</td>
                     <td className="p-3 text-stone-600">{member.subjects || '—'}</td>
-                    <td className="p-3 text-stone-600 font-mono">{member.phone}</td>
+                    <td className="p-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-mono text-stone-800 font-semibold">{member.phone}</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-orange-800 font-mono bg-orange-50 border border-orange-200 px-1.5 py-0.2 rounded w-fit" title="लॉगिन सुरक्षा पिन">
+                          🔑 पिन: {member.pin || '1234'}
+                        </span>
+                      </div>
+                    </td>
                     <td className="p-3 font-bold text-emerald-700 font-mono">
                       ₹{member.monthlySalary?.toLocaleString('en-IN')}
                     </td>
@@ -475,16 +509,16 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           member.status === 'OnLeave'
-                            ? 'bg-blue-100 text-blue-800'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
                             : member.status === 'Resigned'
-                            ? 'bg-stone-200 text-stone-700'
-                            : 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-red-100 text-red-800 border border-red-200 font-bold'
+                            : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                         }`}
                       >
                         {member.status === 'OnLeave'
                           ? 'अवकाश पर'
                           : member.status === 'Resigned'
-                          ? 'कार्यमुक्त'
+                          ? 'सेवामुक्त (लॉगिन बंद)'
                           : 'सक्रिय'}
                       </span>
                     </td>

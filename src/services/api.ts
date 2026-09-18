@@ -567,6 +567,15 @@ export const api = {
     return handleJsonResponse<Staff>(res, 'Failed to fetch teacher profile');
   },
 
+  async updateTeacherPin(currentPin: string, newPin: string): Promise<{ success: boolean; message: string }> {
+    const res = await apiFetch('/staff/me/pin', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPin, newPin })
+    });
+    return handleJsonResponse<{ success: boolean; message: string }>(res, 'पिन बदलने में विफलता');
+  },
+
   async createStaff(staff: Omit<Staff, 'id'> & { id?: string }): Promise<Staff> {
     const res = await apiFetch('/staff', {
       method: 'POST',

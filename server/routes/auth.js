@@ -285,6 +285,22 @@ router.post('/teacher-login', async (req, res) => {
       return res.status(401).json({ error: 'आचार्य विवरण प्राप्त नहीं हुआ। कृपया सही मोबाइल दर्ज करें।', code: 'INVALID_CREDENTIALS' });
     }
 
+    if (teacher.status === 'Resigned') {
+      await recordAuditLog({
+        schoolId: teacher.schoolId,
+        actorType: 'teacher',
+        actorId: teacher.id,
+        actorName: teacher.name,
+        action: 'TEACHER_LOGIN_BLOCKED_RESIGNED',
+        description: `सेवामुक्त आचार्य ${teacher.name} द्वारा लॉगिन का प्रयास स्वतः ब्लॉक किया गया`,
+        req
+      });
+      return res.status(403).json({
+        error: 'यह आचार्य खाता विद्यालय से सेवामुक्त (Resigned) है। पोर्टल प्रवेश निषेध है। (Teacher account has resigned)',
+        code: 'ACCOUNT_RESIGNED'
+      });
+    }
+
     const expectedPin = teacher.pin || '1234';
     if (String(safePin).trim() !== String(expectedPin).trim()) {
       await recordAuditLog({

@@ -43,6 +43,51 @@ router.get('/me', requireTeacherAuth, async (req, res) => {
   }
 });
 
+// PUT /api/staff/me/pin - Authenticated teacher change own PIN
+router.put('/me/pin', requireTeacherAuth, async (req, res) => {
+  try {
+    const teacherId = req.user.staffId;
+    const schoolId = req.user.schoolId;
+    const { currentPin, newPin } = req.body;
+
+    if (!currentPin || !newPin || typeof currentPin !== 'string' || typeof newPin !== 'string') {
+      return res.status(400).json({ error: 'वर्तमान और नया सुरक्षा पिन आवश्यक हैं।' });
+    }
+
+    const cleanNewPin = newPin.trim();
+    if (cleanNewPin.length < 4 || cleanNewPin.length > 6) {
+      return res.status(400).json({ error: 'नया पिन 4 से 6 अंकों का होना चाहिए।' });
+    }
+
+    const teacher = await Staff.findOne({ id: teacherId, ...(req.user.role === 'developer' ? {} : { schoolId }) });
+    if (!teacher) {
+      return res.status(404).json({ error: 'आचार्य रिकॉर्ड नहीं मिला।' });
+    }
+
+    const expectedPin = teacher.pin || '1234';
+    if (currentPin.trim() !== String(expectedPin).trim()) {
+      return res.status(401).json({ error: 'वर्तमान सुरक्षा पिन गलत है। (Current PIN is incorrect)' });
+    }
+
+    teacher.pin = cleanNewPin;
+    await teacher.save();
+
+    await recordAuditLog({
+      schoolId: teacher.schoolId,
+      actorType: 'teacher',
+      actorId: teacher.id,
+      actorName: teacher.name,
+      action: 'TEACHER_PIN_CHANGED',
+      description: `आचार्य ${teacher.name} द्वारा स्वयं का सुरक्षा पिन बदला गया`,
+      req
+    });
+
+    res.json({ success: true, message: 'सुरक्षा पिन सफलतापूर्वक परिवर्तित हो गया है।' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/staff - List staff members
 router.get('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {

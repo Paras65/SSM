@@ -30,6 +30,7 @@ import {
   Edit2,
   Crown,
   Lock,
+  KeyRound,
   X
 } from 'lucide-react';
 
@@ -90,6 +91,46 @@ export const TeacherPortal: React.FC = () => {
   const [leaveEnd, setLeaveEnd] = useState('');
   const [leaveReason, setLeaveReason] = useState('');
   const [leaveSuccess, setLeaveSuccess] = useState(false);
+
+  // PIN Change State
+  const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [currentPinInput, setCurrentPinInput] = useState('');
+  const [newPinInput, setNewPinInput] = useState('');
+  const [confirmPinInput, setConfirmPinInput] = useState('');
+  const [pinChangeError, setPinChangeError] = useState('');
+  const [isChangingPin, setIsChangingPin] = useState(false);
+
+  const handleUpdatePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinChangeError('');
+
+    if (!currentPinInput.trim() || !newPinInput.trim()) {
+      setPinChangeError('वर्तमान और नया पिन दर्ज करना अनिवार्य है।');
+      return;
+    }
+    if (newPinInput.trim().length < 4 || newPinInput.trim().length > 6) {
+      setPinChangeError('नया पिन 4 से 6 अंकों का होना चाहिए।');
+      return;
+    }
+    if (newPinInput.trim() !== confirmPinInput.trim()) {
+      setPinChangeError('नया पिन और पुष्टि पिन मेल नहीं खाते हैं।');
+      return;
+    }
+
+    setIsChangingPin(true);
+    try {
+      await api.updateTeacherPin(currentPinInput.trim(), newPinInput.trim());
+      showSuccess('सुरक्षा पिन सफलतापूर्वक बदल दिया गया है!');
+      setShowChangePinModal(false);
+      setCurrentPinInput('');
+      setNewPinInput('');
+      setConfirmPinInput('');
+    } catch (err: any) {
+      setPinChangeError(err.message || 'पिन बदलने में विफलता!');
+    } finally {
+      setIsChangingPin(false);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -453,6 +494,21 @@ export const TeacherPortal: React.FC = () => {
             >
               <Lightbulb className="w-3.5 h-3.5 text-amber-300" />
               <span className="hidden sm:inline">{showTips ? 'सुझाव सक्रिय' : 'सुझाव देखें'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowChangePinModal(true);
+                setPinChangeError('');
+                setCurrentPinInput('');
+                setNewPinInput('');
+                setConfirmPinInput('');
+              }}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-orange-900/60 hover:bg-orange-900 text-amber-200 font-bold transition shadow-xs text-xs shrink-0 cursor-pointer"
+              title="सुरक्षा पिन बदलें"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">पिन बदलें</span>
             </button>
 
             <button
@@ -1610,6 +1666,92 @@ export const TeacherPortal: React.FC = () => {
         )}
 
       </main>
+
+      {/* Change PIN Modal */}
+      {showChangePinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-orange-200 relative animate-in zoom-in-95">
+            <button
+              onClick={() => setShowChangePinModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-5">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center text-xl mb-2 shadow-xs border border-orange-200">
+                <KeyRound className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-stone-900">सुरक्षा पिन बदलें</h3>
+              <p className="text-xs text-stone-500 mt-0.5">आचार्य पोर्टल लॉगिन हेतु नया 4-अंकीय पिन निर्धारित करें</p>
+            </div>
+
+            {pinChangeError && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                {pinChangeError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdatePin} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">वर्तमान पिन (Current PIN)*</label>
+                <input
+                  type="password"
+                  required
+                  maxLength={6}
+                  placeholder="पुराना पिन (उदा: 1234)"
+                  value={currentPinInput}
+                  onChange={e => setCurrentPinInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono tracking-widest text-center text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">नया सुरक्षा पिन (New PIN)*</label>
+                <input
+                  type="password"
+                  required
+                  maxLength={6}
+                  placeholder="नया 4 से 6 अंकों का पिन"
+                  value={newPinInput}
+                  onChange={e => setNewPinInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono tracking-widest text-center text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">नया पिन पुनः दर्ज करें (Confirm)*</label>
+                <input
+                  type="password"
+                  required
+                  maxLength={6}
+                  placeholder="नया पिन दोबारा दर्ज करें"
+                  value={confirmPinInput}
+                  onChange={e => setConfirmPinInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono tracking-widest text-center text-sm"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowChangePinModal(false)}
+                  className="flex-1 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-xl transition cursor-pointer"
+                >
+                  रद्द करें
+                </button>
+                <button
+                  type="submit"
+                  disabled={isChangingPin}
+                  className="flex-1 py-2.5 bg-orange-700 hover:bg-orange-800 disabled:opacity-60 text-white font-bold rounded-xl transition shadow-xs cursor-pointer"
+                >
+                  {isChangingPin ? 'बदला जा रहा है...' : 'पिन सहेजें'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Salary Slip Modal */}
       {showSalarySlip && teacherProfile && (

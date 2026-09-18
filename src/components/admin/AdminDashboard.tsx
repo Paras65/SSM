@@ -380,9 +380,9 @@ export const AdminDashboard: React.FC = () => {
           students: branchStudents.length,
           present: branchAttendance.filter(record => record.status === 'Present').length,
           marked: branchAttendance.length,
-          collected: branchFees.filter(fee => fee.status === 'Paid').reduce((sum, fee) => sum + fee.paidAmount, 0),
-          pending: branchFees.reduce((sum, fee) => sum + (fee.totalAmount - fee.paidAmount), 0),
-          admissions: branchAdmissions.filter(admission => admission.status !== 'Admitted').length
+          collected: branchFees.reduce((sum, fee) => sum + (fee.paidAmount || 0), 0),
+          pending: branchFees.reduce((sum, fee) => sum + Math.max(0, (fee.totalAmount || 0) - (fee.paidAmount || 0)), 0),
+          admissions: branchAdmissions.filter(admission => admission.status === 'Pending' || (!['Admitted', 'Rejected'].includes(admission.status))).length
         };
       }));
 
@@ -409,7 +409,7 @@ export const AdminDashboard: React.FC = () => {
       setDeveloperMetrics({
         students: totals.students,
         present: totals.present,
-        attendanceRate: totals.students > 0 ? Math.round((totals.present / Math.max(totals.marked, totals.students)) * 100) : 0,
+        attendanceRate: totals.students > 0 ? Math.round((totals.present / totals.students) * 100) : 0,
         collected: totals.collected,
         pending: totals.pending,
         admissions: totals.admissions
@@ -481,7 +481,7 @@ export const AdminDashboard: React.FC = () => {
       if (vals[i] === 'Present') present++;
     }
     const marked = vals.length;
-    const rate = totalStudents > 0 ? Math.round((present / (marked || totalStudents)) * 100) : 0;
+    const rate = totalStudents > 0 ? Math.round((present / totalStudents) * 100) : 0;
     return { presentCount: present, attendanceRate: rate };
   }, [todayAttendance, totalStudents]);
 
@@ -490,11 +490,16 @@ export const AdminDashboard: React.FC = () => {
     let pending = 0;
     for (let i = 0; i < feeRecords.length; i++) {
       const f = feeRecords[i];
-      if (f.status === 'Paid') collected += f.paidAmount;
-      pending += (f.totalAmount - f.paidAmount);
+      collected += (f.paidAmount || 0);
+      pending += Math.max(0, (f.totalAmount || 0) - (f.paidAmount || 0));
     }
     return { totalFeeCollected: collected, totalFeePending: pending };
   }, [feeRecords]);
+
+  const activeStaffList = useMemo(() => {
+    return staffList.filter(s => s.status !== 'Resigned');
+  }, [staffList]);
+  const resignedStaffCount = staffList.length - activeStaffList.length;
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col w-full max-w-full overflow-x-hidden">
@@ -790,7 +795,7 @@ export const AdminDashboard: React.FC = () => {
               <option value="fees">शुल्क प्रबंधन व रसीद</option>
               <option value="reports">प्रगति पत्र {isPro ? '' : '(PRO)'}</option>
               <option value="homework">दैनिक गृहकार्य ({homeworkList.length})</option>
-              <option value="staff">आचार्य एवं वेतन {isPro ? '' : '(PRO)'}</option>
+              <option value="staff">आचार्य एवं वेतन ({activeStaffList.length}) {isPro ? '' : '(PRO)'}</option>
               <option value="admissions">प्रवेश समीक्षा ({admissions.length})</option>
               <option value="notices">सूचना प्रसारण</option>
               {isDeveloper && <option value="developer">🛠️ डेवलपर कंसोल (Developer Super-Admin)</option>}
@@ -911,7 +916,7 @@ export const AdminDashboard: React.FC = () => {
                 : 'border-transparent text-orange-200 hover:text-white'
             }`}
           >
-            <span>आचार्य एवं वेतन ({staffList.length})</span>
+            <span>आचार्य एवं वेतन ({activeStaffList.length})</span>
           </button>
           <button
             onClick={() => setCurrentTab('admissions')}
@@ -1081,7 +1086,8 @@ export const AdminDashboard: React.FC = () => {
             <AdminOverviewTab
               isDeveloper={isDeveloper}
               developerMetrics={developerMetrics}
-              staffCount={staffList.length}
+              staffCount={activeStaffList.length}
+              resignedStaffCount={resignedStaffCount}
               totalBhaiya={totalBhaiya}
               totalBahin={totalBahin}
               attendanceRate={attendanceRate}
