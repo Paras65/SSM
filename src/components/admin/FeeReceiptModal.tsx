@@ -23,13 +23,20 @@ export const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({ fee, student, 
   };
 
   // Standard UPI URI format accepted by all Indian UPI apps (PhonePe, GPay, Paytm, BHIM)
-  const schoolVpa = `ssm.${currentSchool.id.replace(/[^a-z0-9]/g, '')}@upi`;
+  const isUpiEnabled = Boolean(currentSchool?.features?.enableDynamicUpi && currentSchool?.features?.upiVpa);
+  const schoolVpa = currentSchool?.features?.upiVpa || '';
+  const payeeName = currentSchool?.features?.upiPayeeName || currentSchool.name;
   const amountToPay = fee.paidAmount > 0 ? fee.paidAmount : fee.totalAmount;
   const note = `Fee-${student.rollNo}-${student.name.slice(0, 15)}`;
-  const upiUri = `upi://pay?pa=${schoolVpa}&pn=${encodeURIComponent(currentSchool.name.slice(0, 25))}&am=${amountToPay}&cu=INR&tn=${encodeURIComponent(note)}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data=${encodeURIComponent(upiUri)}`;
+  const upiUri = isUpiEnabled
+    ? `upi://pay?pa=${encodeURIComponent(schoolVpa)}&pn=${encodeURIComponent(payeeName.slice(0, 25))}&am=${amountToPay}&cu=INR&tn=${encodeURIComponent(note)}`
+    : '';
+  const qrImageUrl = isUpiEnabled
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data=${encodeURIComponent(upiUri)}`
+    : '';
 
   const handleCopyUpi = () => {
+    if (!schoolVpa) return;
     navigator.clipboard.writeText(schoolVpa);
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
@@ -69,32 +76,36 @@ export const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({ fee, student, 
         <div className="no-print bg-gradient-to-r from-orange-800 to-amber-700 text-white px-5 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-amber-300" />
-            <span className="text-xs sm:text-sm font-semibold">शुल्क प्राप्ति रसीद एवं UPI भुगतान</span>
+            <span className="text-xs sm:text-sm font-semibold">
+              {isUpiEnabled ? 'शुल्क प्राप्ति रसीद एवं UPI भुगतान' : 'शुल्क प्राप्ति रसीद (Fee Receipt)'}
+            </span>
           </div>
 
           <div className="flex items-center space-x-1.5 sm:space-x-2">
-            {/* Toggle Views */}
-            <div className="bg-black/20 p-0.5 rounded-lg flex items-center text-xs">
-              <button
-                type="button"
-                onClick={() => setActiveView('receipt')}
-                className={`px-2.5 py-1 rounded-md font-bold transition ${
-                  activeView === 'receipt' ? 'bg-white text-orange-950 shadow-xs' : 'text-orange-100 hover:text-white'
-                }`}
-              >
-                रसीद पत्र
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveView('qr')}
-                className={`px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1 ${
-                  activeView === 'qr' ? 'bg-amber-300 text-stone-900 shadow-xs' : 'text-orange-100 hover:text-white'
-                }`}
-              >
-                <QrCode className="w-3.5 h-3.5" />
-                <span>UPI QR</span>
-              </button>
-            </div>
+            {/* Toggle Views (Only displayed if school has dynamic UPI enabled) */}
+            {isUpiEnabled && (
+              <div className="bg-black/20 p-0.5 rounded-lg flex items-center text-xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveView('receipt')}
+                  className={`px-2.5 py-1 rounded-md font-bold transition ${
+                    activeView === 'receipt' ? 'bg-white text-orange-950 shadow-xs' : 'text-orange-100 hover:text-white'
+                  }`}
+                >
+                  रसीद पत्र
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveView('qr')}
+                  className={`px-2.5 py-1 rounded-md font-bold transition flex items-center gap-1 ${
+                    activeView === 'qr' ? 'bg-amber-300 text-stone-900 shadow-xs' : 'text-orange-100 hover:text-white'
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>UPI QR</span>
+                </button>
+              </div>
+            )}
 
             <button
               onClick={handleShareWhatsApp}
@@ -280,7 +291,7 @@ export const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({ fee, student, 
         )}
 
         {/* VIEW 2: Interactive Dynamic UPI QR Code for Counter / Mobile scanning */}
-        {activeView === 'qr' && (
+        {isUpiEnabled && activeView === 'qr' && (
           <div className="p-6 sm:p-10 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
               <Sparkles className="w-3.5 h-3.5 text-emerald-700" />

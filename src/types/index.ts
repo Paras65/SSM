@@ -31,6 +31,14 @@ export type ProFeatureKey =
   | 'bulk_attendance' 
   | 'csv_export';
 
+export interface SchoolFeatures {
+  enableDynamicUpi?: boolean;
+  upiVpa?: string;
+  upiPayeeName?: string;
+  enableStaffAttendanceLop?: boolean;
+  lopDeductionRate?: number;
+}
+
 export interface School {
   id: string;
   name: string;
@@ -56,6 +64,7 @@ export interface School {
   discontinuationReason?: string;
   udiseCode?: string;
   website?: string;
+  features?: SchoolFeatures;
 }
 
 export interface StudentAcademicHistory {
@@ -285,6 +294,28 @@ export interface Staff {
   joiningDate: string;
   pin?: string;
   status: 'Active' | 'OnLeave' | 'Resigned';
+}
+
+export interface SalarySlip {
+  id?: string;
+  schoolId: string;
+  staffId: string;
+  staffName: string;
+  designation: string;
+  month: string;
+  academicYear?: string;
+  basicPay: number;
+  daHra?: number;
+  grossPay: number;
+  pfDeduction?: number;
+  samitiDeduction?: number;
+  lopDays?: number;
+  lopDeduction?: number;
+  totalDeductions?: number;
+  netSalary: number;
+  paymentStatus?: 'Generated' | 'Disbursed' | 'Hold';
+  paymentMode?: string;
+  disbursedDate?: string;
 }
 
 export interface ExamScheduleItem {

@@ -34,15 +34,23 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
   const [historySlips, setHistorySlips] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  const isLopEnabled = Boolean(currentSchool?.features?.enableStaffAttendanceLop);
+  const lopDeductionRate = currentSchool?.features?.lopDeductionRate ?? 1;
+  const [lopDays, setLopDays] = useState<number>(0);
+
   const basicPay = staff.basicPay || Math.round(staff.monthlySalary * 0.65);
   const daHra = staff.daHra || Math.round(staff.monthlySalary * 0.35);
   const grossPay = basicPay + daHra;
 
   const pf = staff.pfDeduction || Math.round(basicPay * 0.1);
   const samitiKosh = staff.samitiDeduction || 500;
-  const totalDeductions = pf + samitiKosh;
 
-  const netSalary = grossPay - totalDeductions;
+  // LOP Deduction: only computed if isLopEnabled
+  const dailyWage = Math.round((staff.monthlySalary || grossPay) / 30);
+  const lopDeduction = isLopEnabled ? Math.round(lopDays * dailyWage * lopDeductionRate) : 0;
+
+  const totalDeductions = pf + samitiKosh + lopDeduction;
+  const netSalary = Math.max(0, grossPay - totalDeductions);
 
   const loadHistory = async () => {
     try {
@@ -77,6 +85,8 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
         grossPay,
         pfDeduction: pf,
         samitiDeduction: samitiKosh,
+        lopDays: isLopEnabled ? lopDays : 0,
+        lopDeduction: isLopEnabled ? lopDeduction : 0,
         totalDeductions,
         netSalary,
         paymentStatus: 'Disbursed',
@@ -347,6 +357,37 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
               </div>
             </div>
 
+            {/* Optional LOP Leave Input Banner (Screen only, if school enabled) */}
+            {isLopEnabled && (
+              <div className="bg-amber-50/90 border border-amber-300 rounded-xl p-3.5 mb-5 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-800 font-bold flex items-center gap-1.5">
+                    <span>⚠️ अनधिकृत अनुपस्थिति दिवस (LOP Days):</span>
+                  </span>
+                  <span className="text-stone-500 text-[11px] font-mono">(दैनिक वेतन दर: ₹{dailyWage})</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <label htmlFor="lop-days-input" className="text-stone-600 font-medium text-xs">अनुपस्थिति दिन:</label>
+                  <input
+                    id="lop-days-input"
+                    type="number"
+                    min="0"
+                    max="31"
+                    step="0.5"
+                    value={lopDays}
+                    onChange={(e) => {
+                      setLopDays(Math.max(0, parseFloat(e.target.value) || 0));
+                      setIsSaved(false);
+                    }}
+                    className="w-20 px-2.5 py-1 bg-white border border-amber-400 rounded-lg font-bold font-mono text-center text-xs text-stone-800 focus:ring-2 focus:ring-amber-400 focus:outline-none shadow-2xs"
+                  />
+                  <span className="font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
+                    कटौती: -₹{lopDeduction.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Earnings & Deductions Tables */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               {/* Earnings */}
@@ -384,6 +425,12 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
                     <span className="text-stone-600">समिति कल्याण कोष / Samiti Kosh</span>
                     <span className="font-semibold font-mono">₹{samitiKosh.toLocaleString('en-IN')}</span>
                   </div>
+                  {isLopEnabled && lopDays > 0 && (
+                    <div className="flex justify-between px-3 py-2 text-rose-800 bg-rose-50/60 font-medium">
+                      <span>अनधिकृत अनुपस्थिति (LOP: {lopDays} दिन)</span>
+                      <span className="font-semibold font-mono font-bold">-₹{lopDeduction.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between px-3 py-2 bg-rose-50/50 font-bold text-rose-950">
                     <span>कुल कटौती (Total Deductions)</span>
                     <span className="font-mono">₹{totalDeductions.toLocaleString('en-IN')}</span>

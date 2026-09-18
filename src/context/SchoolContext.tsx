@@ -67,7 +67,14 @@ export const DEMO_SANDBOX_SCHOOL: School = {
   adminPasscode: '1952',
   plan: 'pro',
   udiseCode: '07010100101',
-  website: 'https://www.init65.co.in'
+  website: 'https://www.init65.co.in',
+  features: {
+    enableDynamicUpi: false,
+    upiVpa: 'ssmdemo@sbi',
+    upiPayeeName: 'सरस्वती शिशु मंदिर लाइव डेमो',
+    enableStaffAttendanceLop: false,
+    lopDeductionRate: 1
+  }
 };
 
 interface SchoolContextType {

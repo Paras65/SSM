@@ -13,6 +13,8 @@ const salarySlipSchema = new mongoose.Schema({
   grossPay: { type: Number, required: true },
   pfDeduction: { type: Number, default: 0 },
   samitiDeduction: { type: Number, default: 0 },
+  lopDays: { type: Number, default: 0 },
+  lopDeduction: { type: Number, default: 0 },
   totalDeductions: { type: Number, default: 0 },
   netSalary: { type: Number, required: true },
   paymentStatus: { type: String, enum: ['Generated', 'Disbursed', 'Hold'], default: 'Disbursed' },

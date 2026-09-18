@@ -65,7 +65,8 @@ import {
   Crown,
   Lock,
   LogOut,
-  ArrowRight
+  ArrowRight,
+  Sliders
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -111,7 +112,7 @@ export const AdminDashboard: React.FC = () => {
   const [activeEditStudent, setActiveEditStudent] = useState<Student | null>(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
-  const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
+  const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add' | 'settings'>('list');
   
   // Selected items for modals
   const [activeFeeModal, setActiveFeeModal] = useState<{ fee: FeeRecord; student: Student } | null>(null);
@@ -662,6 +663,18 @@ export const AdminDashboard: React.FC = () => {
             </button>
 
             <button
+              onClick={() => {
+                setSchoolModalMode('settings');
+                setShowSchoolModal(true);
+              }}
+              className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-900/80 hover:bg-orange-800 text-amber-200 text-[11px] font-bold border border-orange-700 transition-colors shrink-0 cursor-pointer"
+              title="शाखा सुविधा सेटिंग्स (UPI QR, LOP आदि) कॉन्फ़िगर करें"
+            >
+              <Sliders className="w-3.5 h-3.5 text-amber-400" />
+              <span>सुविधा सेटिंग्स</span>
+            </button>
+
+            <button
               onClick={() => setShowSessionManagementModal(true)}
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold border border-amber-400/40 transition-colors shrink-0 cursor-pointer"
               title="सत्र प्रबंधन, छात्र प्रोन्नति एवं बकाया शुल्क अंतरण"
@@ -831,6 +844,10 @@ export const AdminDashboard: React.FC = () => {
                 ['💡', 'मदद गाइड', () => setShowHelpGuideModal(true)],
                 ['⚙️', 'शाखा प्रबंधन', () => {
                   setSchoolModalMode('list');
+                  setShowSchoolModal(true);
+                }],
+                ['🎛️', 'सुविधा सेटिंग्स', () => {
+                  setSchoolModalMode('settings');
                   setShowSchoolModal(true);
                 }]
               ] as Array<[string, string, () => void]>).map(([icon, label, action]) => (

@@ -24,7 +24,10 @@ import {
   MessageSquare,
   Download,
   Printer,
-  AlertTriangle
+  AlertTriangle,
+  Sliders,
+  QrCode,
+  Save
 } from 'lucide-react';
 import { generateSchoolOnboardingWhatsAppUrl } from '../../utils/whatsapp';
 import { downloadStudentCsvTemplate } from '../../utils/csvExport';
@@ -32,7 +35,7 @@ import { downloadStudentCsvTemplate } from '../../utils/csvExport';
 interface SchoolManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: 'list' | 'add';
+  initialMode?: 'list' | 'add' | 'settings';
   initialPlan?: 'free' | 'pro';
 }
 
@@ -61,7 +64,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const { schools, currentSchool, setCurrentSchoolId, registerSchool, setViewMode, updateSchoolInfo, refreshFromDb } = useSchool();
   const { showSuccess, showError, showWarning } = useToast();
   const isDeveloper = typeof window !== 'undefined' && sessionStorage.getItem('ssm_admin_role') === 'developer';
-  const [activeTab, setActiveTab] = useState<'list' | 'add'>(initialMode);
+  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'settings'>(initialMode);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Random 6-digit secure PIN generator
@@ -89,6 +92,14 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [discontinueReason, setDiscontinueReason] = useState('');
   const [discontinueConfirmText, setDiscontinueConfirmText] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+
+  // Feature Toggles State (initialized from currentSchool.features)
+  const [enableDynamicUpi, setEnableDynamicUpi] = useState(false);
+  const [upiVpa, setUpiVpa] = useState('');
+  const [upiPayeeName, setUpiPayeeName] = useState('');
+  const [enableStaffAttendanceLop, setEnableStaffAttendanceLop] = useState(false);
+  const [lopDeductionRate, setLopDeductionRate] = useState(1);
+  const [isSavingFeatures, setIsSavingFeatures] = useState(false);
 
   const handleExportArchive = async (schoolId: string) => {
     setIsExporting(true);
@@ -137,14 +148,52 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
     }
   };
 
-  // Sync state when modal opens or initialMode/initialPlan changes
+  const handleSaveFeatures = async () => {
+    if (enableDynamicUpi && !upiVpa.trim()) {
+      showWarning('कृपया अधिकृत UPI VPA (उदा. ssmgorakhpur@sbi) अवश्य भरें या सुविधा अक्षम करें।');
+      return;
+    }
+    try {
+      setIsSavingFeatures(true);
+      await updateSchoolInfo(currentSchool.id, {
+        features: {
+          enableDynamicUpi,
+          upiVpa: upiVpa.trim(),
+          upiPayeeName: upiPayeeName.trim() || currentSchool.hindiName || currentSchool.name,
+          enableStaffAttendanceLop,
+          lopDeductionRate: Number(lopDeductionRate) || 1
+        }
+      });
+      showSuccess('शाखा सुविधा सेटिंग्स सफलतापूर्वक सुरक्षित की गईं!');
+      await refreshFromDb();
+    } catch (err: any) {
+      showError('सेटिंग्स सहेजने में त्रुटि: ' + (err.message || 'Error'));
+    } finally {
+      setIsSavingFeatures(false);
+    }
+  };
+
+  // Sync state when modal opens or initialMode/initialPlan/currentSchool changes
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialMode);
       setPlan(initialPlan);
       setCreatedSchool(null);
+      if (currentSchool?.features) {
+        setEnableDynamicUpi(Boolean(currentSchool.features.enableDynamicUpi));
+        setUpiVpa(currentSchool.features.upiVpa || '');
+        setUpiPayeeName(currentSchool.features.upiPayeeName || currentSchool.hindiName || currentSchool.name || '');
+        setEnableStaffAttendanceLop(Boolean(currentSchool.features.enableStaffAttendanceLop));
+        setLopDeductionRate(currentSchool.features.lopDeductionRate ?? 1);
+      } else {
+        setEnableDynamicUpi(false);
+        setUpiVpa('');
+        setUpiPayeeName(currentSchool?.hindiName || currentSchool?.name || '');
+        setEnableStaffAttendanceLop(false);
+        setLopDeductionRate(1);
+      }
     }
-  }, [isOpen, initialMode, initialPlan]);
+  }, [isOpen, initialMode, initialPlan, currentSchool]);
 
   // Sync state with prant automatically
   const handlePrantChange = (selectedPrant: string) => {
@@ -278,6 +327,21 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                 <span className="px-2.5 py-0.5 rounded-full bg-orange-200/80 text-orange-950 text-xs font-mono font-bold">
                   {visibleSchools.length}
                 </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab('settings');
+                  setCreatedSchool(null);
+                }}
+                className={`pb-3.5 px-4 sm:px-5 text-xs sm:text-sm font-bold border-b-2 flex items-center gap-2.5 transition-all cursor-pointer ${
+                  activeTab === 'settings'
+                    ? 'border-orange-600 text-orange-950'
+                    : 'border-transparent text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <Sliders className="w-4 h-4 text-orange-600" />
+                <span>⚙️ सुविधा सेटिंग्स (Feature Settings)</span>
               </button>
 
               {isDeveloper && (
@@ -1001,10 +1065,21 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                         {sch.status === 'discontinued' ? (
                           <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">शाखा विसर्जित</span>
                         ) : isActive ? (
-                          <span className="text-xs sm:text-sm font-bold text-green-700 flex items-center gap-1.5">
-                            <Check className="w-4 h-4 text-green-700" />
-                            <span>वर्तमान चयनित</span>
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('settings')}
+                              className="px-2.5 py-1.5 rounded-lg border border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-900 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                              title="शाखा सुविधा सेटिंग्स (UPI QR, LOP आदि) कॉन्फ़िगर करें"
+                            >
+                              <Sliders className="w-3.5 h-3.5 text-orange-600" />
+                              <span>सुविधा सेटिंग्स</span>
+                            </button>
+                            <span className="text-xs sm:text-sm font-bold text-green-700 flex items-center gap-1">
+                              <Check className="w-4 h-4 text-green-700" />
+                              <span>सक्रिय</span>
+                            </span>
+                          </div>
                         ) : isDeveloper ? (
                           <button
                             onClick={() => {
@@ -1028,6 +1103,217 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                   खोज के अनुरूप कोई विद्यालय शाखा नहीं मिली।
                 </div>
               )}
+
+            </div>
+          )}
+
+          {/* ================= TAB 3: FEATURE SETTINGS ================= */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6 max-w-4xl mx-auto">
+              {/* Header card */}
+              <div className="bg-gradient-to-r from-orange-900 via-orange-800 to-amber-800 text-white rounded-2xl p-5 sm:p-6 shadow-md flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center text-2xl shrink-0">
+                    ⚙️
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+                      शाखा सुविधा नियंत्रण (Branch Feature Toggles)
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-white">
+                      {currentSchool.hindiName || currentSchool.name}
+                    </h3>
+                    <p className="text-xs text-orange-200 mt-0.5">
+                      {currentSchool.city} • सम्बद्धता क्र: {currentSchool.affiliationNo}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-xs bg-black/30 px-3 py-1.5 rounded-xl border border-white/20 text-amber-200">
+                  सत्र: <strong>{currentSchool.currentAcademicYear || '2025-26'}</strong>
+                </div>
+              </div>
+
+              {/* Feature 1: Dynamic UPI QR */}
+              <div className={`p-5 sm:p-6 rounded-2xl border-2 transition-all bg-white shadow-xs ${enableDynamicUpi ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-stone-200'}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${enableDynamicUpi ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-500'}`}>
+                      <QrCode className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-bold text-stone-900">
+                          डायनामिक UPI QR कोड एवं 1-क्लिक भुगतान
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                          वैकल्पिक सुविधा
+                        </span>
+                        {enableDynamicUpi ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            सक्रिय (Enabled)
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">
+                            निष्क्रिय (Disabled)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                        सक्षम करने पर प्रत्येक छात्र की शुल्क पावती (Fee Receipt) एवं व्हाट्सएप सूचना पर विद्यालय का अधिकृत डायनामिक UPI QR कोड स्वतः निर्मित होगा। अभिभावक PhonePe, GPay, Paytm अथवा BHIM से 1-क्लिक में सीधा शुल्क हस्तांतरित कर सकेंगे। डिफ़ॉल्ट रूप से यह अक्षम (Disabled) रहता है।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <button
+                    type="button"
+                    onClick={() => setEnableDynamicUpi(!enableDynamicUpi)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${enableDynamicUpi ? 'bg-emerald-600' : 'bg-stone-300'}`}
+                    role="switch"
+                    aria-checked={enableDynamicUpi}
+                    title={enableDynamicUpi ? 'क्लिक करके सुविधा बंद करें' : 'क्लिक करके सुविधा चालू करें'}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${enableDynamicUpi ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </button>
+                </div>
+
+                {/* Conditional Fields when UPI enabled */}
+                {enableDynamicUpi && (
+                  <div className="mt-5 pt-4 border-t border-stone-100 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
+                        विद्यालय का अधिकृत UPI VPA ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="उदा. ssmgorakhpur@sbi अथवा school@hdfcbank"
+                        value={upiVpa}
+                        onChange={e => setUpiVpa(e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-mono font-bold text-stone-800"
+                      />
+                      <span className="text-[11px] text-stone-500 mt-1 block">
+                        बैंक शाखा द्वारा प्रदत्त आधिकारिक मर्चेंट/करेंट खाता VPA ID दर्ज करें।
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
+                        अधिकृत खाताधारक / मर्चेंट नाम (Payee Name)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="उदा. सरस्वती शिशु मंदिर शुल्क खाता"
+                        value={upiPayeeName}
+                        onChange={e => setUpiPayeeName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-stone-800"
+                      />
+                      <span className="text-[11px] text-stone-500 mt-1 block">
+                        अभिभावक के UPI ऐप स्क्रीन पर प्रदर्शित होने वाला बैंक अधिकृत नाम।
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Feature 2: Staff Attendance LOP */}
+              <div className={`p-5 sm:p-6 rounded-2xl border-2 transition-all bg-white shadow-xs ${enableStaffAttendanceLop ? 'border-amber-500 ring-2 ring-amber-500/10' : 'border-stone-200'}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${enableStaffAttendanceLop ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-500'}`}>
+                      <Sliders className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-bold text-stone-900">
+                          आचार्य उपस्थिति आधारित LOP वेतन कटौती (Loss of Pay)
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                          वैकल्पिक सुविधा
+                        </span>
+                        {enableStaffAttendanceLop ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                            सक्रिय (Enabled)
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-300">
+                            निष्क्रिय (Disabled)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                        सक्षम करने पर मासिक वेतन पर्ची (Salary Slip) जनरेट करते समय अनधिकृत अनुपस्थिति / बिना वेतन अवकाश (LOP Days) दर्ज करने की सुविधा उपलब्ध होगी। सिस्टम स्वतः दैनिक वेतन दर के अनुसार कटौती कर शुद्ध देय वेतन का निर्धारण करेगा। डिफ़ॉल्ट रूप से यह अक्षम (Disabled) रहता है।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <button
+                    type="button"
+                    onClick={() => setEnableStaffAttendanceLop(!enableStaffAttendanceLop)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${enableStaffAttendanceLop ? 'bg-amber-600' : 'bg-stone-300'}`}
+                    role="switch"
+                    aria-checked={enableStaffAttendanceLop}
+                    title={enableStaffAttendanceLop ? 'क्लिक करके सुविधा बंद करें' : 'क्लिक करके सुविधा चालू करें'}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${enableStaffAttendanceLop ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </button>
+                </div>
+
+                {/* Conditional Fields when LOP enabled */}
+                {enableStaffAttendanceLop && (
+                  <div className="mt-5 pt-4 border-t border-stone-100 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
+                        प्रति अनुपस्थिति कटौती दर (Deduction Rate Multiplier)
+                      </label>
+                      <input
+                        type="number"
+                        min="0.25"
+                        max="3"
+                        step="0.25"
+                        value={lopDeductionRate}
+                        onChange={e => setLopDeductionRate(parseFloat(e.target.value) || 1)}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-mono font-bold text-stone-800"
+                      />
+                      <span className="text-[11px] text-stone-500 mt-1 block">
+                        मानक दर: <strong>1.0</strong> (1 दिन की अनुपस्थिति = 1 दिन का वेतन)। आधा दिन हेतु 0.5।
+                      </span>
+                    </div>
+
+                    <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 text-xs text-amber-950 flex flex-col justify-center">
+                      <span className="font-bold block mb-1">📐 परिकलन सूत्र (Deduction Formula):</span>
+                      <p className="font-mono text-[11px] text-stone-800">
+                        दैनिक वेतन = कुल मासिक वेतन ÷ 30<br/>
+                        LOP कटौती = दैनिक वेतन × LOP दिवस × {lopDeductionRate}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-stone-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('list')}
+                  className="px-5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer"
+                >
+                  शाखा सूची पर लौटें
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveFeatures}
+                  disabled={isSavingFeatures}
+                  className="px-6 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingFeatures ? 'सेटिंग्स सुरक्षित हो रही हैं...' : 'सुविधा सेटिंग्स सुरक्षित करें (Save)'}</span>
+                </button>
+              </div>
 
             </div>
           )}

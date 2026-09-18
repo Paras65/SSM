@@ -23,7 +23,14 @@ const schoolSchema = new mongoose.Schema({
   plan: { type: String, enum: ['free', 'academic', 'pro'], default: 'free' },
   status: { type: String, enum: ['active', 'suspended', 'discontinued'], default: 'active', index: true },
   discontinuedAt: { type: Date },
-  discontinuationReason: { type: String, default: '' }
+  discontinuationReason: { type: String, default: '' },
+  features: {
+    enableDynamicUpi: { type: Boolean, default: false },
+    upiVpa: { type: String, default: '' },
+    upiPayeeName: { type: String, default: '' },
+    enableStaffAttendanceLop: { type: Boolean, default: false },
+    lopDeductionRate: { type: Number, default: 1 }
+  }
 }, {
   timestamps: true
 });
