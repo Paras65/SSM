@@ -32,6 +32,7 @@ const SchoolProposalModal = React.lazy(() => import('./SchoolProposalModal').the
 const BulkIdCardModal = React.lazy(() => import('./BulkIdCardModal').then(m => ({ default: m.BulkIdCardModal })));
 const DakhilKharijRegisterModal = React.lazy(() => import('./DakhilKharijRegisterModal').then(m => ({ default: m.DakhilKharijRegisterModal })));
 const DeveloperDashboard = React.lazy(() => import('./DeveloperDashboard').then(m => ({ default: m.DeveloperDashboard })));
+const CommandPaletteModal = React.lazy(() => import('../common/CommandPaletteModal').then(m => ({ default: m.CommandPaletteModal })));
 
 // Tab Subcomponents (Phase 2 Monolith Decomposition)
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
@@ -66,7 +67,8 @@ import {
   Lock,
   LogOut,
   ArrowRight,
-  Sliders
+  Sliders,
+  Search
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -158,6 +160,7 @@ export const AdminDashboard: React.FC = () => {
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showBulkIdCardModal, setShowBulkIdCardModal] = useState(false);
   const [showDakhilKharijModal, setShowDakhilKharijModal] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRestoreBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,6 +235,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Check if any admin modal is currently active
   const isAnyModalOpen = Boolean(
+    showCommandPalette ||
     upgradeModalFeature ||
     showAddStudent ||
     activeEditStudent ||
@@ -264,6 +268,7 @@ export const AdminDashboard: React.FC = () => {
   );
 
   const closeAllModals = useCallback(() => {
+    setShowCommandPalette(false);
     setUpgradeModalFeature(null);
     setShowAddStudent(false);
     setActiveEditStudent(null);
@@ -327,7 +332,18 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Global shortcut: Ctrl+K or Cmd+K
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+        return;
+      }
       if (e.key === 'Escape') {
+        if (showCommandPalette) {
+          e.preventDefault();
+          setShowCommandPalette(false);
+          return;
+        }
         if (isAnyModalOpen) {
           e.preventDefault();
           closeAllModals();
@@ -339,7 +355,7 @@ export const AdminDashboard: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAnyModalOpen, closeAllModals, currentTab, navigateTab]);
+  }, [showCommandPalette, isAnyModalOpen, closeAllModals, currentTab, navigateTab]);
 
   const fetchHomeworkAndStaff = useCallback(async () => {
     try {
@@ -462,6 +478,90 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Quick Command Palette Handlers (Ctrl + K)
+  const handleSelectStudentActionFromPalette = (action: 'fee' | 'report' | 'idcard' | 'edit', student: Student) => {
+    if (action === 'fee') {
+      const fee = feeRecords.find(f => f.studentId === student.id) || ({
+        id: `fee-temp-${student.id}`,
+        studentId: student.id,
+        schoolId: currentSchool.id,
+        term: 'वार्षिक शुल्क',
+        academicYear: currentSchool.currentAcademicYear || '2025-26',
+        totalAmount: 1500,
+        paidAmount: 0,
+        status: 'Pending'
+      } as FeeRecord);
+      setActiveFeeModal({ fee, student });
+    } else if (action === 'report') {
+      const report = reportCards.find(r => r.studentId === student.id) || {
+        id: `report-temp-${student.id}`,
+        studentId: student.id,
+        schoolId: currentSchool.id,
+        examTerm: 'वार्षिक परीक्षा 2025-26',
+        academicYear: '2025-26',
+        marks: [
+          { subject: 'हिंदी', maxMarks: 100, marksObtained: 88, grade: 'A+' },
+          { subject: 'संस्कृत', maxMarks: 100, marksObtained: 92, grade: 'O' },
+          { subject: 'अंग्रेजी', maxMarks: 100, marksObtained: 85, grade: 'A' },
+          { subject: 'गणित', maxMarks: 100, marksObtained: 95, grade: 'O' },
+          { subject: 'विज्ञान', maxMarks: 100, marksObtained: 90, grade: 'O' },
+          { subject: 'सामाजिक विज्ञान', maxMarks: 100, marksObtained: 86, grade: 'A' }
+        ],
+        totalMax: 600,
+        totalObtained: 536,
+        percentage: 89.33,
+        grade: 'A+',
+        acharyaRemarks: 'प्रतिभाशाली, संस्कारवान एवं अध्ययनशील छात्र।',
+        attendancePercentage: 96,
+        moralConduct: 'श्रेष्ठ'
+      } as ReportCard;
+      setActiveReportModal({ report, student });
+    } else if (action === 'idcard') {
+      setActiveIdCardStudent(student);
+    } else if (action === 'edit') {
+      setActiveEditStudent(student);
+    }
+  };
+
+  const handleTriggerQuickActionFromPalette = (actionKey: string) => {
+    switch (actionKey) {
+      case 'add-student':
+        setShowAddStudent(true);
+        break;
+      case 'bulk-import':
+        setShowBulkImport(true);
+        break;
+      case 'dakhil-kharij':
+        setShowDakhilKharijModal(true);
+        break;
+      case 'tabulation':
+        setShowTabulationModal(true);
+        break;
+      case 'bulk-id-card':
+        setShowBulkIdCardModal(true);
+        break;
+      case 'school-settings':
+        setSchoolModalMode('settings');
+        setShowSchoolModal(true);
+        break;
+      case 'transport':
+        setShowTransportModal(true);
+        break;
+      case 'library':
+        setShowLibraryModal(true);
+        break;
+      case 'inventory':
+        setShowInventoryModal(true);
+        break;
+      case 'backup-download':
+        downloadFullSchoolBackup(currentSchool, students, feeRecords, attendanceRecords, reportCards, notices);
+        showSuccess('विद्यालय बैकअप फ़ाइल सफलतापूर्वक डाउनलोड हो गई!');
+        break;
+      default:
+        break;
+    }
+  };
+
   // Calculations for overview stats (memoized for performance)
   const totalStudents = students.length;
   const { totalBhaiya, totalBahin } = useMemo(() => {
@@ -551,6 +651,13 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Mobile-only Quick Buttons */}
             <div className="flex items-center gap-1.5 sm:hidden shrink-0">
+              <button
+                onClick={() => setShowCommandPalette(true)}
+                className="p-1.5 rounded-lg bg-orange-950/90 hover:bg-orange-950 text-amber-300 border border-orange-700/80 shrink-0 cursor-pointer"
+                title="त्वरित खोज (Ctrl+K)"
+              >
+                <Search className="w-3.5 h-3.5" />
+              </button>
               <button
                 onClick={() => setShowAddStudent(true)}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 font-bold text-white text-[11px] shadow-xs shrink-0 cursor-pointer"
@@ -649,6 +756,19 @@ export const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Quick Command Palette Button */}
+            <button
+              onClick={() => setShowCommandPalette(true)}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-orange-950/90 hover:bg-orange-950 text-amber-200 text-[11px] font-bold border border-amber-500/40 hover:border-amber-400 transition-all shadow-xs shrink-0 cursor-pointer group"
+              title="त्वरित खोज व कमांड पैलेट खोलें (Ctrl + K)"
+            >
+              <Search className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="hidden sm:inline">त्वरित खोज</span>
+              <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[9px] font-mono bg-black/40 text-amber-300 rounded border border-amber-600/50">
+                Ctrl K
+              </kbd>
+            </button>
 
             <button
               onClick={() => {
@@ -1478,6 +1598,17 @@ export const AdminDashboard: React.FC = () => {
           <BonafideCertificateModal
             student={activeBonafideStudent}
             onClose={() => setActiveBonafideStudent(null)}
+          />
+        )}
+
+        {showCommandPalette && (
+          <CommandPaletteModal
+            isOpen={showCommandPalette}
+            onClose={() => setShowCommandPalette(false)}
+            students={students}
+            onNavigateTab={navigateTab}
+            onSelectStudentAction={handleSelectStudentActionFromPalette}
+            onTriggerQuickAction={handleTriggerQuickActionFromPalette}
           />
         )}
       </Suspense>
