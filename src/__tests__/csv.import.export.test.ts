@@ -5,7 +5,8 @@ import {
   parseCsvContent,
   generateStudentsCSV,
   generateFeesCSV,
-  generateAttendanceCSV
+  generateAttendanceCSV,
+  generateStudentCsvTemplate
 } from '../utils/csvExport';
 import type { Student, FeeRecord, AttendanceRecord } from '../types';
 
@@ -296,4 +297,56 @@ describe('CSV Import, Export & OWASP Security Test Suite', () => {
       expect(duration).toBeLessThan(100);
     });
   });
+
+  // =========================================================================
+  // 6. Synchronized 16-Column Student Import Template
+  // =========================================================================
+  describe('Synchronized 16-Column Student Import Template', () => {
+    it('generates template with all 16 statutory and compliance headers', () => {
+      const template = generateStudentCsvTemplate();
+      const rows = parseCsvContent(template);
+      expect(rows.length).toBeGreaterThan(1); // Header + sample rows
+
+      const headers = rows[0];
+      expect(headers).toEqual([
+        'Roll No',
+        'Name',
+        'Gender (Bhaiya/Bahin)',
+        'Class',
+        'Section',
+        'Father Name',
+        'Mother Name',
+        'Contact',
+        'Address',
+        'DOB (YYYY-MM-DD)',
+        'Admission Date (YYYY-MM-DD)',
+        'Blood Group',
+        'PEN (11 Digits)',
+        'APAAR ID (12 Digits)',
+        'Social Category (General/OBC/SC/ST)',
+        'Family ID (Optional)'
+      ]);
+    });
+
+    it('contains valid sample rows matching the 16 headers', () => {
+      const template = generateStudentCsvTemplate();
+      const rows = parseCsvContent(template);
+      const dataRows = rows.slice(1);
+
+      expect(dataRows.length).toBe(5);
+      dataRows.forEach(row => {
+        expect(row.length).toBe(16);
+        // Gender check
+        expect(['Bhaiya', 'Bahin']).toContain(row[2]);
+        // Date formats YYYY-MM-DD
+        expect(row[9]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(row[10]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        // PEN 11 digits
+        expect(row[12]).toMatch(/^\d{11}$/);
+        // APAAR ID 12 digits
+        expect(row[13]).toMatch(/^\d{12}$/);
+      });
+    });
+  });
 });
+

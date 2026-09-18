@@ -401,7 +401,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
 
                     <button
                       type="button"
-                      onClick={downloadStudentCsvTemplate}
+                      onClick={() => downloadStudentCsvTemplate()}
                       className="px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-bold transition border border-amber-300 flex items-center gap-1.5 cursor-pointer"
                       title="छात्रों की सूची 1-क्लिक में तैयार करने हेतु आधिकारिक एक्सेल प्रारूप डाउनलोड करें"
                     >

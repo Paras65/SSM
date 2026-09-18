@@ -8,4 +8,5 @@ You are operating within a constrained compute environment. To optimize resource
 4. **Concise Output:** Provide direct answers and code snippets. Skip long-winded explanations or summaries unless explicitly requested.
 5. **Stop on Failure:** If you fail to resolve an error after two attempts, stop immediately and ask for human clarification instead of repeatedly guessing or looping.
 6. **Mandatory Feature Documentation:** Whenever any new feature is added, or an existing feature is modified/refactored, it MUST be immediately and synchronously documented in `docs/USER_MANUAL.md` (including updating the Table of Contents) before considering the task complete.
+7. **Interrelated Feature Synchronization:** Whenever any model, schema, or core feature is modified or added, all interrelated downstream and upstream components across the lifecycle (including sample CSV import templates, parsers, export utilities, filters, UI modals, and reports) MUST be audited and updated synchronously to prevent schema drift and workflow obsolescence.
 

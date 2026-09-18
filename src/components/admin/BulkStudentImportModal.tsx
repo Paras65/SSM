@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import type { Student, Gender } from '../../types';
-import { parseCsvLine } from '../../utils/csvExport';
+import type { Student, Gender, SocialCategory } from '../../types';
+import { parseCsvLine, downloadStudentCsvTemplate } from '../../utils/csvExport';
 import {
   Upload,
   Download,
@@ -33,45 +33,11 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
 
   if (!isOpen) return null;
 
-  // Generate and download sample CSV template
+  // Download unified sample CSV template (Single Source of Truth)
   const downloadSampleCsv = () => {
-    const headers = [
-      'Roll No',
-      'Name',
-      'Gender (Bhaiya/Bahin)',
-      'Class',
-      'Section',
-      'Father Name',
-      'Mother Name',
-      'Contact',
-      'Address',
-      'DOB (YYYY-MM-DD)',
-      'Blood Group'
-    ];
-
-    const sampleRows = [
-      ['101', 'Bhaiya Keshav Sharma', 'Bhaiya', 'Class 6', 'A', 'Shri Ramesh Sharma', 'Smt. Geeta Sharma', '+91 98765 43210', 'Civil Lines Gorakhpur', '2014-04-15', 'O+'],
-      ['102', 'Bahin Shreya Dixit', 'Bahin', 'Class 6', 'A', 'Shri Alok Dixit', 'Smt. Pratibha Dixit', '+91 94150 99887', 'Golghar Gorakhpur', '2014-07-22', 'B+'],
-      ['103', 'Bhaiya Madhav Pandey', 'Bhaiya', 'Class 6', 'B', 'Shri Suresh Pandey', 'Smt. Saroj Pandey', '+91 98390 12345', 'Taramandal Gorakhpur', '2014-02-10', 'A+'],
-      ['104', 'Bahin Ananya Tiwari', 'Bahin', 'Class 7', 'A', 'Shri Vinod Tiwari', 'Smt. Ritu Tiwari', '+91 99350 54321', 'Geeta Vatika Gorakhpur', '2013-09-05', 'AB+'],
-      ['105', 'Bhaiya Devendra Nath', 'Bhaiya', 'Class 8', 'A', 'Shri Prem Nath', 'Smt. Shanti Devi', '+91 94500 67890', 'Shahpur Gorakhpur', '2012-11-18', 'O+']
-    ];
-
-    const csvContent = '\uFEFF' + [
-      headers.join(','),
-      ...sampleRows.map(r => r.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ssm_students_import_template_${currentSchool.id}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadStudentCsvTemplate(currentSchool?.id);
   };
+
 
 
   // Handle uploaded CSV file
@@ -123,7 +89,14 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
         const colContact = findCol(['contact', 'phone', 'mobile', 'sampark']);
         const colAddress = findCol(['address', 'pata', 'city']);
         const colDob = findCol(['dob', 'birth', 'janma']);
+        const colAdmissionDate = findCol(['admissiondate', 'admitdate', 'praveshtithi', 'pravesh', 'admission']);
         const colBlood = findCol(['blood', 'rakta']);
+        const colPen = findCol(['pen', 'permanenteducationnumber']);
+        const colApaar = findCol(['apaar', 'apaarid']);
+        const colCategory = findCol(['socialcategory', 'category', 'varg', 'jati', 'caste']);
+        const colFamilyId = findCol(['familyid', 'family', 'parivar']);
+        const colCwsn = findCol(['cwsn', 'divyang', 'specialneeds']);
+        const colBpl = findCol(['bpl', 'ews']);
 
         const parsed: Partial<Student>[] = [];
 
@@ -133,6 +106,21 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
 
           const rawGender = colGender !== -1 ? row[colGender]?.toLowerCase() : '';
           const gender: Gender = rawGender.includes('bahin') || rawGender === 'f' || rawGender === 'female' ? 'Bahin' : 'Bhaiya';
+
+          const rawCategory = colCategory !== -1 ? (row[colCategory] || '').trim() : '';
+          let socialCategory: SocialCategory = 'General';
+          if (/obc/i.test(rawCategory)) socialCategory = 'OBC';
+          else if (/st/i.test(rawCategory) && !/sc/i.test(rawCategory)) socialCategory = 'ST';
+          else if (/sc/i.test(rawCategory)) socialCategory = 'SC';
+
+          const rawCwsn = colCwsn !== -1 ? (row[colCwsn] || '').toLowerCase() : '';
+          const cwsn = rawCwsn === 'yes' || rawCwsn === 'true' || rawCwsn === 'हाँ' || rawCwsn === '1';
+
+          const rawBpl = colBpl !== -1 ? (row[colBpl] || '').toLowerCase() : '';
+          const bpl = rawBpl === 'yes' || rawBpl === 'true' || rawBpl === 'हाँ' || rawBpl === '1';
+
+          const rawAdmission = colAdmissionDate !== -1 ? (row[colAdmissionDate] || '').trim() : '';
+          const admissionDate = rawAdmission || new Date().toISOString().split('T')[0];
 
           const student: Partial<Student> = {
             rollNo: (colRoll !== -1 ? row[colRoll] : (100 + i).toString()) || (100 + i).toString(),
@@ -145,12 +133,19 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
             contact: (colContact !== -1 ? row[colContact] : '+91 98765 43210') || '+91 98765 43210',
             address: (colAddress !== -1 ? row[colAddress] : currentSchool.city || 'गोरखपुर') || 'गोरखपुर',
             dob: (colDob !== -1 ? row[colDob] : '2014-01-01') || '2014-01-01',
-            admissionDate: new Date().toISOString().split('T')[0],
-            bloodGroup: (colBlood !== -1 ? row[colBlood] : 'B+') || 'B+'
+            admissionDate,
+            bloodGroup: (colBlood !== -1 ? row[colBlood] : 'B+') || 'B+',
+            pen: colPen !== -1 ? (row[colPen] || '').trim() : '',
+            apaarId: colApaar !== -1 ? (row[colApaar] || '').trim() : '',
+            socialCategory,
+            familyId: colFamilyId !== -1 ? (row[colFamilyId] || '').trim() : '',
+            cwsn,
+            bpl
           };
 
           parsed.push(student);
         }
+
 
         if (parsed.length === 0) {
           setError('CSV फ़ाइल से कोई वैध छात्र रिकॉर्ड प्राप्त नहीं हुआ।');
@@ -227,7 +222,7 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
                   नमूना CSV टेम्पलेट (Sample Template)
                 </h4>
                 <p className="text-xs text-stone-600 mb-4">
-                  अनुक्रमांक, नाम, कक्षा, वर्ग, पिता, माता एवं संपर्क नंबर सहित पूर्व-स्वरूपित फ़ाइल।
+                  अनुक्रमांक, नाम, कक्षा, वर्ग, माता-पिता, प्रवेश तिथि, PEN, APAAR ID, श्रेणी एवं संपर्क सहित 16-कॉलम शासकीय प्रारूप।
                 </p>
               </div>
               <button

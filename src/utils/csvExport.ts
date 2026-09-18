@@ -173,7 +173,7 @@ export function exportAbsenteesToCSV(attendance: AttendanceRecord[], students: S
   downloadCSV(csv, `SSM_Absentees_${date}.csv`);
 }
 
-export function downloadStudentCsvTemplate(): void {
+export function generateStudentCsvTemplate(): string {
   const headers = [
     'Roll No',
     'Name',
@@ -185,20 +185,34 @@ export function downloadStudentCsvTemplate(): void {
     'Contact',
     'Address',
     'DOB (YYYY-MM-DD)',
-    'Blood Group'
+    'Admission Date (YYYY-MM-DD)',
+    'Blood Group',
+    'PEN (11 Digits)',
+    'APAAR ID (12 Digits)',
+    'Social Category (General/OBC/SC/ST)',
+    'Family ID (Optional)'
   ];
 
   const sampleRows = [
-    ['101', 'Bhaiya Keshav Sharma', 'Bhaiya', 'Class 6', 'A', 'Shri Ramesh Sharma', 'Smt. Geeta Sharma', '+91 98765 43210', 'Civil Lines', '2014-04-15', 'O+'],
-    ['102', 'Bahin Shreya Dixit', 'Bahin', 'Class 6', 'A', 'Shri Alok Dixit', 'Smt. Pratibha Dixit', '+91 94150 99887', 'Golghar', '2014-07-22', 'B+'],
-    ['103', 'Bhaiya Madhav Pandey', 'Bhaiya', 'Class 6', 'B', 'Shri Suresh Pandey', 'Smt. Saroj Pandey', '+91 98390 12345', 'Taramandal', '2014-02-10', 'A+'],
-    ['104', 'Bahin Ananya Tiwari', 'Bahin', 'Class 7', 'A', 'Shri Vinod Tiwari', 'Smt. Ritu Tiwari', '+91 99350 54321', 'Geeta Vatika', '2013-09-05', 'AB+'],
-    ['105', 'Bhaiya Devendra Nath', 'Bhaiya', 'Class 8', 'A', 'Shri Prem Nath', 'Smt. Shanti Devi', '+91 94500 67890', 'Shahpur', '2012-11-18', 'O+']
+    ['101', 'Bhaiya Keshav Sharma', 'Bhaiya', 'Class 6', 'A', 'Shri Ramesh Sharma', 'Smt. Geeta Sharma', '+91 98765 43210', 'Civil Lines', '2014-04-15', '2023-04-05', 'O+', '21098700101', '987654321001', 'General', 'FAM-1001'],
+    ['102', 'Bahin Shreya Dixit', 'Bahin', 'Class 6', 'A', 'Shri Alok Dixit', 'Smt. Pratibha Dixit', '+91 94150 99887', 'Golghar', '2014-07-22', '2023-04-05', 'B+', '21098700102', '987654321002', 'General', 'FAM-1002'],
+    ['103', 'Bhaiya Madhav Pandey', 'Bhaiya', 'Class 6', 'B', 'Shri Suresh Pandey', 'Smt. Saroj Pandey', '+91 98390 12345', 'Taramandal', '2014-02-10', '2023-04-06', 'A+', '21098700103', '987654321003', 'OBC', 'FAM-1003'],
+    ['104', 'Bahin Ananya Tiwari', 'Bahin', 'Class 7', 'A', 'Shri Vinod Tiwari', 'Smt. Ritu Tiwari', '+91 99350 54321', 'Geeta Vatika', '2013-09-05', '2022-04-10', 'AB+', '21098700104', '987654321004', 'General', 'FAM-1004'],
+    ['105', 'Bhaiya Devendra Nath', 'Bhaiya', 'Class 8', 'A', 'Shri Prem Nath', 'Smt. Shanti Devi', '+91 94500 67890', 'Shahpur', '2012-11-18', '2021-04-15', 'O+', '21098700105', '987654321005', 'SC', 'FAM-1005']
   ];
 
-  const csv = [headers.join(','), ...sampleRows.map(row => row.map(sanitizeCsvCell).join(','))].join('\n');
-  downloadCSV(csv, 'SSM_Chhatra_Panjika_Sample_Template.csv');
+  return [headers.join(','), ...sampleRows.map(row => row.map(sanitizeCsvCell).join(','))].join('\n');
 }
+
+export function downloadStudentCsvTemplate(schoolId?: string | unknown): void {
+  const csv = generateStudentCsvTemplate();
+  const filename = typeof schoolId === 'string' && schoolId
+    ? `ssm_students_import_template_${schoolId}.csv` 
+    : 'SSM_Chhatra_Panjika_Sample_Template.csv';
+  downloadCSV(csv, filename);
+}
+
+
 
 export function exportPayrollToCSV(staffList: Staff[], schoolName: string, month: string): void {
   const headers = [
