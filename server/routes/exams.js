@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Exam = require('../models/Exam');
 const ReportCard = require('../models/ReportCard');
-const { requireAdminAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope } = require('../middleware/auth');
+const { requireAdminAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope, requireClassTeacherScope } = require('../middleware/auth');
 const { calculateCurrentAcademicYear } = require('../utils/sessionHelper');
 const { recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
 
@@ -110,7 +110,7 @@ router.delete('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => 
 });
 
 // POST /api/exams/marks-bulk - Bulk marks submission
-router.post('/marks-bulk', requireTeacherAuth, requireSchoolScope, async (req, res) => {
+router.post('/marks-bulk', requireTeacherAuth, requireSchoolScope, requireClassTeacherScope, async (req, res) => {
   try {
     const { schoolId, examTerm, academicYear, subject, marksList } = req.body;
     if (!marksList || !Array.isArray(marksList) || !subject) {

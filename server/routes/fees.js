@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Fee = require('../models/Fee');
+const FeePaymentTransaction = require('../models/FeePaymentTransaction');
 const { requireAdminAuth, requireSchoolScope } = require('../middleware/auth');
 const { cleanStringParam } = require('../middleware/sanitize');
 const { calculateCurrentAcademicYear } = require('../utils/sessionHelper');
@@ -18,6 +19,22 @@ router.get('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
     if (status) filter.status = status;
     if (yr) filter.academicYear = yr;
     await executeSafeQuery(Fee, filter, req, res, { createdAt: -1 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/fees/transactions - Query fee payment transactions ledger
+router.get('/transactions', requireAdminAuth, requireSchoolScope, async (req, res) => {
+  try {
+    const filter = {};
+    const schoolId = cleanStringParam(req.query.schoolId);
+    const studentId = cleanStringParam(req.query.studentId);
+    const feeId = cleanStringParam(req.query.feeId);
+    if (schoolId) filter.schoolId = schoolId;
+    if (studentId) filter.studentId = studentId;
+    if (feeId) filter.feeId = feeId;
+    await executeSafeQuery(FeePaymentTransaction, filter, req, res, { transactionDate: -1, createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -86,6 +103,25 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
     }
 
     await fee.save();
+
+    try {
+      const tx = new FeePaymentTransaction({
+        id: generateUniqueId('tx-fee'),
+        schoolId: fee.schoolId,
+        feeId: fee.id,
+        studentId: fee.studentId,
+        amount: installmentAmount > 0 ? installmentAmount : collectedAmount,
+        paymentMode: fee.paymentMode,
+        receiptNo: receipt,
+        collectedBy: req.user?.schoolName || req.user?.role || 'Admin',
+        academicYear: fee.academicYear,
+        transactionDate: fee.paidDate
+      });
+      await tx.save();
+    } catch (txErr) {
+      console.error('Failed to create fee transaction audit record:', txErr);
+    }
+
     await recordAuditLog({
       schoolId: fee.schoolId,
       actorType: req.user?.role || 'admin',

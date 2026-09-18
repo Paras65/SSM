@@ -330,7 +330,8 @@ router.post('/teacher-login', authLimiter, async (req, res) => {
       role: 'teacher',
       staffId: teacher.id,
       name: teacher.name,
-      designation: teacher.designation
+      designation: teacher.designation,
+      assignedClasses: teacher.assignedClasses || []
     });
 
     await recordAuditLog({
@@ -353,12 +354,89 @@ router.post('/teacher-login', authLimiter, async (req, res) => {
         gender: teacher.gender,
         designation: teacher.designation,
         subjects: teacher.subjects,
+        assignedClasses: teacher.assignedClasses || [],
         phone: teacher.phone,
         email: teacher.email
       }
     });
   } catch (err) {
     res.status(500).json({ error: 'आचार्य प्रमाणीकरण त्रुटि: ' + err.message });
+  }
+});
+
+// POST /api/auth/parent-login (Dedicated parent authentication with sibling aggregation)
+router.post('/parent-login', authLimiter, async (req, res) => {
+  try {
+    const { schoolId, phone, pin } = req.body;
+    if (!phone || typeof phone !== 'string' || !phone.trim()) {
+      return res.status(400).json({ error: 'मोबाइल नंबर दर्ज करना अनिवार्य है।' });
+    }
+    const cleanPhone = phone.trim();
+    const cleanSchoolId = schoolId && typeof schoolId === 'string' ? schoolId.trim() : '';
+
+    const digitsOnly = cleanPhone.replace(/\D/g, '').slice(-10);
+    const pattern = digitsOnly ? digitsOnly.split('').join('[\\s\\-]*') : escapeRegex(cleanPhone);
+
+    const filter = {
+      contact: { $regex: pattern },
+      ...(cleanSchoolId ? { schoolId: cleanSchoolId } : {})
+    };
+
+    const matchingStudents = await Student.find(filter)
+      .select('id schoolId rollNo name gender class section fatherName motherName admissionDate')
+      .lean();
+
+    if (!matchingStudents || matchingStudents.length === 0) {
+      return res.status(401).json({
+        error: 'इस मोबाइल नंबर से संबंधित कोई पंजीकृत छात्र नहीं मिला।',
+        code: 'PARENT_NOT_FOUND'
+      });
+    }
+
+    const targetSchoolId = cleanSchoolId || matchingStudents[0]?.schoolId || 'ssm-gorakhpur';
+    const parentName = matchingStudents[0]?.fatherName || matchingStudents[0]?.motherName || 'अभिभावक';
+
+    // Verify PIN if provided or on record
+    const expectedPin = matchingStudents[0]?.pin || '1234';
+    if (pin && typeof pin === 'string' && pin.trim()) {
+      if (!verifyPasscode(expectedPin, pin.trim())) {
+        return res.status(401).json({
+          error: 'अमान्य सुरक्षा पिन! कृपया सही पिन दर्ज करें।',
+          code: 'INVALID_PIN'
+        });
+      }
+    }
+
+    const token = generateAdminToken({
+      schoolId: targetSchoolId,
+      role: 'parent',
+      phone: cleanPhone,
+      parentName,
+      linkedStudentIds: matchingStudents.map(s => s.id)
+    });
+
+    await recordAuditLog({
+      schoolId: targetSchoolId,
+      actorType: 'parent',
+      actorId: cleanPhone,
+      actorName: parentName,
+      action: 'PARENT_LOGIN_SUCCESS',
+      description: `अभिभावक ${parentName} द्वारा पोर्टल लॉगिन (${matchingStudents.length} छात्र संबद्ध)`,
+      req
+    });
+
+    res.json({
+      success: true,
+      token,
+      parent: {
+        name: parentName,
+        phone: cleanPhone,
+        childrenCount: matchingStudents.length,
+        children: matchingStudents
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'अभिभावक प्रमाणीकरण त्रुटि: ' + err.message });
   }
 });
 

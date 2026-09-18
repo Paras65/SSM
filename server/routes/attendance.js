@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Attendance = require('../models/Attendance');
-const { requireTeacherAuth, requireSchoolScope } = require('../middleware/auth');
+const { requireTeacherAuth, requireSchoolScope, requireClassTeacherScope } = require('../middleware/auth');
 const { calculateCurrentAcademicYear } = require('../utils/sessionHelper');
 const { executeSafeQuery } = require('../utils/routeHelpers');
 
@@ -25,7 +25,7 @@ router.get('/', requireTeacherAuth, requireSchoolScope, async (req, res) => {
 });
 
 // POST /api/attendance - Mark single attendance
-router.post('/', requireTeacherAuth, requireSchoolScope, async (req, res) => {
+router.post('/', requireTeacherAuth, requireSchoolScope, requireClassTeacherScope, async (req, res) => {
   try {
     const { studentId, date, status = 'Present', schoolId, academicYear, class: studentClass } = req.body;
     if (!studentId || !date) {
@@ -58,7 +58,7 @@ router.post('/', requireTeacherAuth, requireSchoolScope, async (req, res) => {
 });
 
 // POST /api/attendance/bulk - Mark bulk attendance
-router.post('/bulk', requireTeacherAuth, requireSchoolScope, async (req, res) => {
+router.post('/bulk', requireTeacherAuth, requireSchoolScope, requireClassTeacherScope, async (req, res) => {
   try {
     const { updates, schoolId } = req.body;
     if (!Array.isArray(updates) || updates.length === 0) {

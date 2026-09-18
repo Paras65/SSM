@@ -17,6 +17,7 @@ const staffSchema = new mongoose.Schema({
   samitiDeduction: { type: Number, default: 500 },
   joiningDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
   pin: { type: String, default: '1234' },
+  assignedClasses: [{ type: String }],
   status: { type: String, enum: ['Active', 'OnLeave', 'Resigned'], default: 'Active' }
 }, {
   timestamps: true

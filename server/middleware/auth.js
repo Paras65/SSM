@@ -129,7 +129,7 @@ async function requirePortalAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-    if (!['admin', 'developer', 'student', 'teacher'].includes(decoded.role)) {
+    if (!['admin', 'developer', 'student', 'teacher', 'parent'].includes(decoded.role)) {
       return res.status(403).json({ error: 'अमान्य पोर्टल भूमिका। (Invalid portal role)', code: 'ROLE_FORBIDDEN' });
     }
 
@@ -211,6 +211,69 @@ function requireSchoolScope(req, res, next) {
   next();
 }
 
+function requireParentAuth(req, res, next) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'अभिभावक लॉगिन आवश्यक है। (Parent login required)', code: 'AUTH_REQUIRED' });
+  }
+
+  try {
+    const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    if (!['parent', 'admin', 'developer'].includes(decoded.role)) {
+      return res.status(403).json({ error: 'केवल अभिभावक पोर्टल प्रवेश की अनुमति है।', code: 'PARENT_ROLE_REQUIRED' });
+    }
+    req.user = decoded;
+    req.userSchoolId = decoded.schoolId;
+    next();
+  } catch (err) {
+    const isExpired = err.name === 'TokenExpiredError';
+    return res.status(401).json({
+      error: isExpired
+        ? 'सत्र समाप्त हो गया है! कृपया पुनः लॉगिन करें।'
+        : 'अमान्य अभिभावक सत्र।',
+      code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID'
+    });
+  }
+}
+
+function requireClassTeacherScope(req, res, next) {
+  if (!req.user || ['admin', 'developer'].includes(req.user.role)) return next();
+  
+  if (req.user.role === 'teacher') {
+    const assignedClasses = Array.isArray(req.user.assignedClasses) ? req.user.assignedClasses : [];
+    if (assignedClasses.length > 0) {
+      const targetClass = req.body?.class || req.body?.className || req.query?.class;
+      if (targetClass && !assignedClasses.includes(targetClass)) {
+        return res.status(403).json({
+          error: `आप केवल अपनी आवंटित कक्षा (${assignedClasses.join(', ')}) का डेटा संशोधित कर सकते हैं।`,
+          code: 'CLASS_SCOPE_FORBIDDEN'
+        });
+      }
+
+      if (Array.isArray(req.body?.updates)) {
+        const outOfScope = req.body.updates.find(u => u.class && !assignedClasses.includes(u.class));
+        if (outOfScope) {
+          return res.status(403).json({
+            error: `आप केवल अपनी आवंटित कक्षा (${assignedClasses.join(', ')}) का डेटा संशोधित कर सकते हैं। (अमान्य कक्षा: ${outOfScope.class})`,
+            code: 'CLASS_SCOPE_FORBIDDEN'
+          });
+        }
+      }
+
+      if (Array.isArray(req.body?.marksList)) {
+        const outOfScope = req.body.marksList.find(m => (m.class || m.className) && !assignedClasses.includes(m.class || m.className));
+        if (outOfScope) {
+          return res.status(403).json({
+            error: `आप केवल अपनी आवंटित कक्षा (${assignedClasses.join(', ')}) का डेटा संशोधित कर सकते हैं। (अमान्य कक्षा: ${outOfScope.class || outOfScope.className})`,
+            code: 'CLASS_SCOPE_FORBIDDEN'
+          });
+        }
+      }
+    }
+  }
+  next();
+}
+
 /**
  * Generate signed JWT token
  */
@@ -228,6 +291,8 @@ module.exports = {
   requireAdminAuth,
   requireStudentAuth,
   requireTeacherAuth,
+  requireParentAuth,
+  requireClassTeacherScope,
   requirePortalAuth,
   requireSchoolScope,
   generateAdminToken,
