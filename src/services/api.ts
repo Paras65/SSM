@@ -320,13 +320,13 @@ export const api = {
     return handleJsonResponse<AttendanceRecord>(res, 'Failed to save attendance');
   },
 
-  async setBulkAttendance(updates: { studentId: string; date: string; status: AttendanceStatus; schoolId?: string }[], schoolId?: string): Promise<AttendanceRecord[]> {
+  async setBulkAttendance(updates: { studentId: string; date: string; status: AttendanceStatus; schoolId?: string }[], schoolId?: string): Promise<any> {
     const res = await apiFetch('/attendance/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates, schoolId })
     });
-    return handleJsonResponse<AttendanceRecord[]>(res, 'Failed to save bulk attendance');
+    return handleJsonResponse<any>(res, 'Failed to save bulk attendance');
   },
 
   async deleteAttendance(id: string): Promise<{ success: boolean; id: string }> {

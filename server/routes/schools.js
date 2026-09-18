@@ -11,7 +11,7 @@ const Exam = require('../models/Exam');
 const TransportRoute = require('../models/Transport');
 const Book = require('../models/Book');
 const InventoryItem = require('../models/InventoryItem');
-const { requireAdminAuth, requireSchoolScope } = require('../middleware/auth');
+const { requireAdminAuth, requireSchoolScope, hashPasscode } = require('../middleware/auth');
 const { generateUniqueId, recordAuditLog } = require('../utils/routeHelpers');
 
 // GET /api/schools - List all schools (public directory)
@@ -78,6 +78,9 @@ router.post('/', async (req, res) => {
       const citySlug = rawSlug.length > 0 ? rawSlug.slice(0, 15) : 'branch';
       data.id = generateUniqueId(`ssm-${citySlug}`);
     }
+    if (data.adminPasscode && !data.adminPasscode.startsWith('scrypt:')) {
+      data.adminPasscode = hashPasscode(data.adminPasscode);
+    }
     const school = new School(data);
     await school.save();
     await recordAuditLog({
@@ -109,12 +112,13 @@ router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
     delete updatePayload._id;
     delete updatePayload.createdAt;
 
-    // If adminPasscode is updated, increment tokenVersion to invalidate existing stale sessions
+    // If adminPasscode is updated, increment tokenVersion to invalidate existing stale sessions and hash it
     if (updatePayload.adminPasscode) {
       const existing = await School.findOne(targetFilter).lean();
       if (existing) {
         updatePayload.tokenVersion = (existing.tokenVersion || 1) + 1;
       }
+      updatePayload.adminPasscode = hashPasscode(updatePayload.adminPasscode);
     }
 
     const school = await School.findOneAndUpdate(

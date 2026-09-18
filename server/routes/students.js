@@ -19,16 +19,17 @@ router.get('/verify-tc', async (req, res) => {
     }
 
     const filter = schoolId ? { schoolId } : {};
-    const safeRegex = new RegExp(escapeRegex(q), 'i');
+    const exactRegex = new RegExp(`^${escapeRegex(q)}$`, 'i');
 
     const student = await Student.findOne({
       ...filter,
       $or: [
-        { rollNo: safeRegex },
-        { pen: safeRegex },
-        { name: safeRegex }
+        { pen: exactRegex },
+        { rollNo: exactRegex },
+        { id: exactRegex },
+        { name: exactRegex }
       ]
-    }).select('id schoolId rollNo name gender class section fatherName motherName admissionDate bloodGroup pen').lean();
+    }).select('id schoolId rollNo name gender class section fatherName motherName admissionDate pen').lean();
 
     if (!student) {
       return res.status(404).json({ error: 'इस विवरण से कोई प्रमाणित छात्र अभिलेख नहीं मिला।' });

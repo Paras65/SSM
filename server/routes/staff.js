@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Staff = require('../models/Staff');
-const { requireAdminAuth, requireTeacherAuth, requireSchoolScope } = require('../middleware/auth');
+const { requireAdminAuth, requireTeacherAuth, requireSchoolScope, verifyPasscode, hashPasscode } = require('../middleware/auth');
 const { cleanStringParam } = require('../middleware/sanitize');
 const { generateUniqueId, recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
 
@@ -65,11 +65,11 @@ router.put('/me/pin', requireTeacherAuth, async (req, res) => {
     }
 
     const expectedPin = teacher.pin || '1234';
-    if (currentPin.trim() !== String(expectedPin).trim()) {
+    if (!verifyPasscode(expectedPin, currentPin)) {
       return res.status(401).json({ error: 'वर्तमान सुरक्षा पिन गलत है। (Current PIN is incorrect)' });
     }
 
-    teacher.pin = cleanNewPin;
+    teacher.pin = hashPasscode(cleanNewPin);
     await teacher.save();
 
     await recordAuditLog({

@@ -58,13 +58,32 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
     const fee = await Fee.findOne({ id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) });
     if (!fee) return res.status(404).json({ error: 'Fee record not found' });
 
-    const collectedAmount = typeof paidAmount === 'number' && paidAmount > 0 ? Math.min(fee.totalAmount, paidAmount) : fee.totalAmount;
+    const currentPaid = fee.paidAmount || 0;
+    const collectedAmount = typeof paidAmount === 'number' && paidAmount > 0
+      ? Math.min(fee.totalAmount, paidAmount)
+      : fee.totalAmount;
+
+    const installmentAmount = Math.max(0, collectedAmount - currentPaid);
+
     fee.paidAmount = collectedAmount;
     fee.status = fee.paidAmount >= fee.totalAmount ? 'Paid' : 'Partial';
     fee.paidDate = new Date().toISOString().split('T')[0];
     const schoolSuffix = (fee.schoolId || 'SSM').slice(-4).toUpperCase();
-    fee.receiptNo = fee.receiptNo || `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`;
+    const receipt = `SSM-REC-${new Date().getFullYear()}-${schoolSuffix}-${Date.now().toString().slice(-6)}`;
+    fee.receiptNo = fee.receiptNo || receipt;
     fee.paymentMode = paymentMode || 'Online UPI';
+
+    if (!Array.isArray(fee.payments)) {
+      fee.payments = [];
+    }
+    if (installmentAmount > 0 || fee.payments.length === 0) {
+      fee.payments.push({
+        amount: installmentAmount > 0 ? installmentAmount : collectedAmount,
+        date: fee.paidDate,
+        receiptNo: receipt,
+        paymentMode: fee.paymentMode
+      });
+    }
 
     await fee.save();
     await recordAuditLog({

@@ -1,14 +1,24 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const School = require('../models/School');
 const Student = require('../models/Student');
 const Staff = require('../models/Staff');
-const { generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode } = require('../middleware/auth');
+const { generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode, verifyPasscode } = require('../middleware/auth');
 const { escapeRegex } = require('../middleware/sanitize');
 const { recordAuditLog } = require('../utils/routeHelpers');
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'अत्यधिक लॉगिन प्रयास! कृपया 15 मिनट बाद पुनः प्रयास करें।' },
+  skip: () => process.env.NODE_ENV === 'test'
+});
+
 // POST /api/auth/login (Admin / Developer login)
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { schoolId, passcode } = req.body;
     if (!passcode || typeof passcode !== 'string' || !passcode.trim()) {
@@ -131,7 +141,7 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/student-login
-router.post('/student-login', async (req, res) => {
+router.post('/student-login', authLimiter, async (req, res) => {
   try {
     const { schoolId, rollNo, contact, studentClass, dob, pin } = req.body;
     if (!schoolId || !rollNo || !contact || typeof schoolId !== 'string' || typeof rollNo !== 'string' || typeof contact !== 'string') {
@@ -191,7 +201,7 @@ router.post('/student-login', async (req, res) => {
           code: 'PIN_REQUIRED'
         });
       }
-      if (pin.trim() !== student.pin.trim()) {
+      if (!verifyPasscode(student.pin, pin)) {
         await recordAuditLog({
           schoolId: student.schoolId,
           actorType: 'student',
@@ -253,7 +263,7 @@ router.post('/student-login', async (req, res) => {
 });
 
 // POST /api/auth/teacher-login
-router.post('/teacher-login', async (req, res) => {
+router.post('/teacher-login', authLimiter, async (req, res) => {
   try {
     const { schoolId, phone, pin } = req.body;
     if (!phone || !pin || typeof phone !== 'string' || typeof pin !== 'string') {
@@ -302,7 +312,7 @@ router.post('/teacher-login', async (req, res) => {
     }
 
     const expectedPin = teacher.pin || '1234';
-    if (String(safePin).trim() !== String(expectedPin).trim()) {
+    if (!verifyPasscode(expectedPin, safePin)) {
       await recordAuditLog({
         schoolId: teacher.schoolId,
         actorType: 'teacher',

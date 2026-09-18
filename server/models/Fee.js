@@ -11,7 +11,13 @@ const feeSchema = new mongoose.Schema({
   status: { type: String, enum: ['Paid', 'Pending', 'Partial'], default: 'Pending' },
   paidDate: { type: String },
   receiptNo: { type: String },
-  paymentMode: { type: String }
+  paymentMode: { type: String },
+  payments: [{
+    amount: { type: Number, required: true },
+    date: { type: String, required: true },
+    receiptNo: { type: String, required: true },
+    paymentMode: { type: String, default: 'Online UPI' }
+  }]
 }, {
   timestamps: true
 });

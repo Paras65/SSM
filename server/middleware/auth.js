@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { isValidAdminPasscode, isValidDeveloperPasscode } = require('../utils/authValidation');
+const { isValidAdminPasscode, isValidDeveloperPasscode, hashPasscode, verifyPasscode } = require('../utils/authValidation');
 const School = require('../models/School');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
@@ -233,6 +233,8 @@ module.exports = {
   generateAdminToken,
   JWT_SECRET,
   isValidAdminPasscode,
-  isValidDeveloperPasscode
+  isValidDeveloperPasscode,
+  hashPasscode,
+  verifyPasscode
 };
 

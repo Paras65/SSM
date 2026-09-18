@@ -97,12 +97,15 @@ router.post('/bulk', requireTeacherAuth, requireSchoolScope, async (req, res) =>
       };
     });
 
-    await Attendance.bulkWrite(operations);
-    const filter = { date: updates[0]?.date };
-    if (schoolId) filter.schoolId = schoolId;
-    if (req.user.role !== 'developer' && !filter.schoolId) filter.schoolId = req.userSchoolId;
-    const records = await Attendance.find(filter);
-    res.json(records);
+    const bulkResult = await Attendance.bulkWrite(operations, { ordered: false });
+    res.json({
+      success: true,
+      count: operations.length,
+      matchedCount: bulkResult.matchedCount,
+      upsertedCount: bulkResult.upsertedCount,
+      modifiedCount: bulkResult.modifiedCount,
+      date: updates[0]?.date
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
