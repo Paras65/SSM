@@ -30,6 +30,7 @@ const TabulationRegisterModal = React.lazy(() => import('./TabulationRegisterMod
 const HelpGuideModal = React.lazy(() => import('./HelpGuideModal').then(m => ({ default: m.HelpGuideModal })));
 const SchoolProposalModal = React.lazy(() => import('./SchoolProposalModal').then(m => ({ default: m.SchoolProposalModal })));
 const BulkIdCardModal = React.lazy(() => import('./BulkIdCardModal').then(m => ({ default: m.BulkIdCardModal })));
+const DakhilKharijRegisterModal = React.lazy(() => import('./DakhilKharijRegisterModal').then(m => ({ default: m.DakhilKharijRegisterModal })));
 const DeveloperDashboard = React.lazy(() => import('./DeveloperDashboard').then(m => ({ default: m.DeveloperDashboard })));
 
 // Tab Subcomponents (Phase 2 Monolith Decomposition)
@@ -155,6 +156,7 @@ export const AdminDashboard: React.FC = () => {
   const [showTabulationModal, setShowTabulationModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showBulkIdCardModal, setShowBulkIdCardModal] = useState(false);
+  const [showDakhilKharijModal, setShowDakhilKharijModal] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRestoreBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,6 +256,7 @@ export const AdminDashboard: React.FC = () => {
     showTabulationModal ||
     showProposalModal ||
     showBulkIdCardModal ||
+    showDakhilKharijModal ||
     activeAdmitCard ||
     activeCharacterStudent ||
     activeBonafideStudent
@@ -285,6 +288,7 @@ export const AdminDashboard: React.FC = () => {
     setShowTabulationModal(false);
     setShowProposalModal(false);
     setShowBulkIdCardModal(false);
+    setShowDakhilKharijModal(false);
     setActiveAdmitCard(null);
     setActiveCharacterStudent(null);
     setActiveBonafideStudent(null);
@@ -815,6 +819,7 @@ export const AdminDashboard: React.FC = () => {
               {([
                 ['📝', 'परीक्षा व अंक', () => setShowExamModal(true)],
                 ['📋', 'टैबुलेशन रजिस्टर', () => setShowTabulationModal(true)],
+                ['📖', 'दाखिल-खारिज पंजिका', () => setShowDakhilKharijModal(true)],
                 ['🕒', 'समय सारिणी', () => setShowTimetableModal(true)],
                 ['🌴', 'अवकाश समीक्षा', () => setShowLeaveModal(true)],
                 ['🚌', 'बस परिवहन', () => setShowTransportModal(true)],
@@ -974,6 +979,14 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    onClick={() => { setShowDakhilKharijModal(true); setShowMoreMenu(false); }}
+                    className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span>📖</span>
+                    <span>दाखिल-खारिज पंजिका (General Register)</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => { setShowTimetableModal(true); setShowMoreMenu(false); }}
                     className="w-full text-left px-3 py-2 text-stone-200 hover:bg-orange-950 hover:text-amber-300 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
                   >
@@ -1129,6 +1142,7 @@ export const AdminDashboard: React.FC = () => {
               onOpenReportModal={setActiveReportModal}
               onOpenCharacterCertificate={setActiveCharacterStudent}
               onOpenBonafideCertificate={setActiveBonafideStudent}
+              onOpenDakhilKharij={() => setShowDakhilKharijModal(true)}
             />
           </TabErrorBoundary>
         )}
@@ -1392,6 +1406,13 @@ export const AdminDashboard: React.FC = () => {
           <TabulationRegisterModal
             isOpen={showTabulationModal}
             onClose={() => setShowTabulationModal(false)}
+          />
+        )}
+
+        {showDakhilKharijModal && (
+          <DakhilKharijRegisterModal
+            onClose={() => setShowDakhilKharijModal(false)}
+            onOpenTc={setActiveTcStudent}
           />
         )}
 

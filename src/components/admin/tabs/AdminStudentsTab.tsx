@@ -13,7 +13,8 @@ import {
   Plus,
   Camera,
   Edit3,
-  Trash2
+  Trash2,
+  BookOpen
 } from 'lucide-react';
 
 interface AdminStudentsTabProps {
@@ -30,6 +31,7 @@ interface AdminStudentsTabProps {
   onOpenReportModal: (modal: { report: ReportCard; student: Student }) => void;
   onOpenCharacterCertificate: (student: Student) => void;
   onOpenBonafideCertificate: (student: Student) => void;
+  onOpenDakhilKharij?: () => void;
 }
 
 const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
@@ -45,7 +47,8 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
   onOpenTc,
   onOpenReportModal,
   onOpenCharacterCertificate,
-  onOpenBonafideCertificate
+  onOpenBonafideCertificate,
+  onOpenDakhilKharij
 }) => {
   const { students, currentSchool, deleteStudent, reportCards } = useSchool();
   const { showSuccess, showInfo } = useToast();
@@ -144,6 +147,17 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
             <FileText className="w-3.5 h-3.5 text-blue-200" />
             <span>UDISE+ निर्यात</span>
           </button>
+
+          {onOpenDakhilKharij && (
+            <button
+              onClick={onOpenDakhilKharij}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition"
+              title="दाखिल-खारिज पंजिका (General Admission & Withdrawal Register / S.R. Register)"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-200" />
+              <span>दाखिल-खारिज पंजिका</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenBulkImport}
