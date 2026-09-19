@@ -266,12 +266,15 @@ For each student, produce a JSON object with:
 Return strictly a JSON array of objects. No markdown backticks, no explanations. Example:
 [{"rollNo":"1","name":"Bhaiya केशव शर्मा","gender":"Bhaiya","class":"${defaultClass}","section":"${defaultSection}","fatherName":"श्री राजेश शर्मा","motherName":"","contact":"","dob":"2014-05-10","address":"रामपुर","pin":""}]`;
 
-      // Call Gemini Vision API
+      // Call Gemini Vision API securely using header auth (no key in URL query)
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${effectiveKey}`,
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': effectiveKey
+          },
           body: JSON.stringify({
             contents: [
               {

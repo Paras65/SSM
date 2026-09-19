@@ -1,4 +1,4 @@
-import { QuestionItem, QuestionPaper, QuestionPaperSection, ExamPaperType } from '../types';
+import { QuestionItem, QuestionType, QuestionPaper, QuestionPaperSection, ExamPaperType } from '../types';
 
 export interface GeneratePaperOptions {
   schoolId?: string;
@@ -693,4 +693,223 @@ export function generateSmartQuestionPaper(options: GeneratePaperOptions): Quest
     createdBy: 'आचार्य / परीक्षा समिति'
   };
 }
+
+export interface GenerateWithGeminiOptions extends GeneratePaperOptions {
+  apiKey?: string;
+  customTopic?: string;
+}
+
+export async function generateQuestionPaperWithGemini(
+  options: GenerateWithGeminiOptions
+): Promise<QuestionPaper> {
+  const effectiveKey =
+    options.apiKey ||
+    (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+    localStorage.getItem('ssm_gemini_api_key') ||
+    '';
+
+  if (!effectiveKey) {
+    return generateSmartQuestionPaper(options);
+  }
+
+  const {
+    classLevel,
+    subject,
+    examType,
+    month = 'जुलाई',
+    chapters = 'पाठ १ व २',
+    targetMarks,
+    durationMinutes = examType === 'unit-test' ? 45 : 90,
+    customTopic = '',
+    schoolName = 'सरस्वती शिशु मन्दिर'
+  } = options;
+
+  const prompt = `You are an expert Indian school question paper creator specialized in Vidya Bharati / NCERT syllabus for ${schoolName}.
+Create a complete, beautifully balanced examination question paper in Hindi for:
+- Class: ${classLevel}
+- Subject: ${subject}
+- Exam Type: ${examType === 'unit-test' ? 'मासिक इकाई मूल्यांकन (Monthly Unit Test)' : 'त्रैमासिक परीक्षा (Traimasik / Periodic Test)'}
+- Month: ${month}
+- Chapters / Topics: ${chapters} ${customTopic ? `(Special Focus/Topic: ${customTopic})` : ''}
+- Total Target Marks: ${targetMarks}
+- Duration: ${durationMinutes} minutes
+
+Strict Rules:
+1. The sum of marks of all questions MUST EXACTLY EQUAL ${targetMarks} marks.
+2. Structure into 2 to 3 sections:
+   - खण्ड "क": Objective / MCQs (type: "mcq", 1 mark each with 4 options labeled क, ख, ग, घ) and/or Very Short Answer (type: "vsa", 1 mark each).
+   - खण्ड "ख": Short Answer (type: "sa", 2 or 3 marks each).
+   - खण्ड "ग": Long Answer (type: "la", 4 or 5 marks each). For long answers, provide an internalChoiceText ("अथवा: ...").
+3. Output strictly a JSON object with this structure:
+{
+  "title": "मासिक इकाई मूल्यांकन / त्रैमासिक परीक्षा ...",
+  "generalInstructions": [
+    "सभी प्रश्न अनिवार्य हैं।",
+    "प्रश्नों के निर्धारित अंक उनके सम्मुख अंकित हैं।"
+  ],
+  "sections": [
+    {
+      "id": "sec-a",
+      "title": "खण्ड 'क' - वस्तुनिष्ठ प्रश्न",
+      "instructions": "सही विकल्प का चयन कीजिए।",
+      "questions": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "text": "प्रश्न पाठ...",
+          "marks": 1,
+          "options": [
+            { "id": "opt-1", "text": "(क) विकल्प १" },
+            { "id": "opt-2", "text": "(ख) विकल्प २" },
+            { "id": "opt-3", "text": "(ग) विकल्प ३" },
+            { "id": "opt-4", "text": "(घ) विकल्प ४" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-b",
+      "title": "खण्ड 'ख' - लघु उत्तरीय प्रश्न",
+      "instructions": "संक्षेप में उत्तर दीजिए।",
+      "questions": [
+        {
+          "id": "q2",
+          "type": "sa",
+          "text": "प्रश्न पाठ...",
+          "marks": 2
+        }
+      ]
+    },
+    {
+      "id": "sec-c",
+      "title": "खण्ड 'ग' - दीर्घ उत्तरीय प्रश्न",
+      "instructions": "विस्तृत उत्तर दीजिए।",
+      "questions": [
+        {
+          "id": "q3",
+          "type": "la",
+          "text": "प्रश्न पाठ...",
+          "marks": 4,
+          "internalChoiceText": "अथवा: वैकल्पिक प्रश्न पाठ..."
+        }
+      ]
+    }
+  ]
+}
+Return ONLY valid JSON. No markdown code blocks, no backticks.`;
+
+  try {
+    let parsed: any = null;
+
+    // 1. Try secure backend proxy first (keeps API key secure on server if configured)
+    try {
+      const proxyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (effectiveKey) {
+        proxyHeaders['x-gemini-api-key'] = effectiveKey;
+      }
+      const proxyRes = await fetch('/api/ai/generate-question-paper', {
+        method: 'POST',
+        headers: proxyHeaders,
+        body: JSON.stringify({ prompt })
+      });
+      if (proxyRes.ok) {
+        parsed = await proxyRes.json();
+      }
+    } catch {
+      // Backend proxy unavailable (e.g. static dev), will fallback to direct call
+    }
+
+    // 2. If proxy didn't return data, call Google endpoint with secure header auth (no key in URL query)
+    if (!parsed) {
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': effectiveKey
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.3,
+              responseMimeType: 'application/json'
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson?.error?.message || `AI service returned status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(cleanJson);
+    }
+
+    if (parsed && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+      const validatedSections: QuestionPaperSection[] = parsed.sections.map(
+        (sec: any, sIdx: number) => ({
+          id: sec.id || `sec-${sIdx + 1}`,
+          title: sec.title || `खण्ड ${String.fromCharCode(65 + sIdx)}`,
+          instructions: sec.instructions || 'निर्देशानुसार हल करें।',
+          questions: (sec.questions || []).map((q: any, qIdx: number): QuestionItem => ({
+            id: q.id || `q-${sIdx + 1}-${qIdx + 1}`,
+            type: (['mcq', 'vsa', 'sa', 'la', 'sanskriti'].includes(q.type) ? q.type : 'sa') as QuestionType,
+            text: q.text || 'प्रश्न',
+            marks: Number(q.marks) || 1,
+            subject,
+            classLevel,
+            chapter: chapters,
+            options: Array.isArray(q.options)
+              ? q.options.map((opt: any, oIdx: number) => ({
+                  id: opt.id || `opt-${oIdx + 1}`,
+                  text: typeof opt === 'string' ? opt : opt.text || ''
+                }))
+              : undefined,
+            internalChoiceText: q.internalChoiceText || undefined
+          }))
+        })
+      );
+
+      return {
+        id: `qp-ai-${Date.now()}`,
+        schoolId: options.schoolId,
+        title:
+          parsed.title ||
+          (examType === 'unit-test'
+            ? `मासिक इकाई मूल्यांकन - ${month} (${classLevel})`
+            : `त्रैमासिक परीक्षा सत्र 2026-27 (${classLevel})`),
+        examType,
+        classLevel,
+        subject,
+        month,
+        chapters,
+        totalMarks: targetMarks,
+        durationMinutes,
+        generalInstructions:
+          Array.isArray(parsed.generalInstructions) && parsed.generalInstructions.length > 0
+            ? parsed.generalInstructions
+            : [
+                'सभी प्रश्न अनिवार्य हैं। प्रश्नों के सम्मुख उनके निर्धारित अंक अंकित हैं।',
+                'खण्ड "क" के वस्तुनिष्ठ प्रश्नों में केवल सही विकल्प का चयन कर उत्तर लिखिए।',
+                'दीर्घ उत्तरीय प्रश्नों में दिए गए आंतरिक विकल्प ("अथवा") में से केवल एक प्रश्न हल करें।',
+                'स्वच्छता एवं स्पष्ट लिखावट पर विशेष ध्यान दें।'
+              ],
+        sections: validatedSections,
+        createdAt: new Date().toISOString(),
+        createdBy: 'Gemini AI एवं आचार्य'
+      };
+    }
+
+    return generateSmartQuestionPaper(options);
+  } catch (err) {
+    console.warn('Gemini API call failed, falling back to curriculum question bank:', err);
+    return generateSmartQuestionPaper(options);
+  }
+}
+
 

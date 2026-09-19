@@ -26,6 +26,7 @@ import {
 } from '../../types';
 import {
   generateSmartQuestionPaper,
+  generateQuestionPaperWithGemini,
   MONTH_OPTIONS,
   SUBJECT_OPTIONS,
   CLASS_OPTIONS
@@ -55,6 +56,73 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   const [targetMarks, setTargetMarks] = useState<number>(20);
   const [durationMinutes, setDurationMinutes] = useState<number>(45);
   const [includeSanskriti, setIncludeSanskriti] = useState<boolean>(true);
+
+  // Gemini AI Generation State
+  const [customTopic, setCustomTopic] = useState<string>('');
+  const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
+  const [geminiApiKey, setGeminiApiKey] = useState<string>(() => {
+    return (
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      ''
+    );
+  });
+  const [showApiKeyModal, setShowApiKeyModal] = useState<boolean>(false);
+  const [keyInput, setKeyInput] = useState<string>(geminiApiKey);
+
+  const maskApiKey = (key: string) => {
+    if (!key) return '';
+    const clean = key.trim();
+    if (clean.length <= 10) return '••••••••';
+    return `${clean.slice(0, 6)}••••••••${clean.slice(-4)}`;
+  };
+
+  const handleSaveApiKey = () => {
+    const trimmed = keyInput.trim().replace(/[^A-Za-z0-9_-]/g, '');
+    setGeminiApiKey(trimmed);
+    if (trimmed) {
+      localStorage.setItem('ssm_gemini_api_key', trimmed);
+    } else {
+      localStorage.removeItem('ssm_gemini_api_key');
+    }
+    setShowApiKeyModal(false);
+  };
+
+  const handleGeminiGenerate = async () => {
+    const effectiveKey =
+      geminiApiKey ||
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      '';
+
+    if (!effectiveKey) {
+      setShowApiKeyModal(true);
+      return;
+    }
+
+    setIsAiGenerating(true);
+    try {
+      const newPaper = await generateQuestionPaperWithGemini({
+        apiKey: effectiveKey,
+        schoolId: publicSchool.id,
+        schoolName: publicSchool.hindiName,
+        classLevel,
+        subject,
+        examType,
+        month,
+        chapters,
+        targetMarks,
+        durationMinutes,
+        includeSanskriti,
+        customTopic
+      });
+      setPaper(newPaper);
+    } catch (err) {
+      console.error('Gemini AI generation failed:', err);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   // Active Tab: 'editor' | 'preview'
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
@@ -273,6 +341,39 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>१-क्लिक स्मार्ट जनरेट</span>
               </button>
+
+              <button
+                type="button"
+                onClick={handleGeminiGenerate}
+                disabled={isAiGenerating}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                title="Google Gemini AI द्वारा नए प्रश्न पत्र का निर्माण करें"
+              >
+                {isAiGenerating ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>AI तैयार कर रहा है...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>✨ Gemini AI से बनाएं</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowApiKeyModal(true)}
+                className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl border flex items-center gap-1 cursor-pointer transition ${
+                  geminiApiKey
+                    ? 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100'
+                    : 'bg-stone-100 text-stone-600 border-stone-300 hover:bg-stone-200'
+                }`}
+                title="Gemini API Key सेटिंग्स"
+              >
+                <span>🔑 {geminiApiKey ? maskApiKey(geminiApiKey) : 'API Key जोड़ें'}</span>
+              </button>
             </div>
           </div>
 
@@ -384,18 +485,33 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             </div>
           </div>
 
-          {/* Chapters / Course Progress Input */}
-          <div>
-            <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
-              पाठ्यक्रम प्रगति / निर्धारित अध्याय (Syllabus Covered This Month)
-            </label>
-            <input
-              type="text"
-              value={chapters}
-              onChange={e => setChapters(e.target.value)}
-              placeholder="उदा. अध्याय १ एवं २: संख्या पद्धति, पूर्णांक एवं वैदिक गणित"
-              className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs"
-            />
+          {/* Chapters / Course Progress Input & AI Topic */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
+                पाठ्यक्रम प्रगति / निर्धारित अध्याय (Syllabus Covered This Month)
+              </label>
+              <input
+                type="text"
+                value={chapters}
+                onChange={e => setChapters(e.target.value)}
+                placeholder="उदा. अध्याय १ एवं २: संख्या पद्धति, पूर्णांक एवं वैदिक गणित"
+                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-extrabold text-purple-900 uppercase mb-0.5 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-purple-600" />
+                <span>AI विशिष्ट विषय / फोकस पाठ (Optional Gemini AI Prompt)</span>
+              </label>
+              <input
+                type="text"
+                value={customTopic}
+                onChange={e => setCustomTopic(e.target.value)}
+                placeholder="उदा. प्रकाश का परावर्तन, कबीर के दोहे, या कोई विशेष टॉपिक..."
+                className="w-full px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50/40 text-xs font-semibold text-purple-950 focus:outline-hidden focus:border-purple-500 shadow-2xs"
+              />
+            </div>
           </div>
         </div>
 
@@ -733,6 +849,76 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Gemini API Key Modal */}
+      {showApiKeyModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-stone-200 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-stone-900 flex items-center gap-2">
+                <span>🔑 Google Gemini API Key सेटिंग्स</span>
+              </h3>
+              <button
+                onClick={() => setShowApiKeyModal(false)}
+                className="p-1 text-stone-400 hover:text-stone-700 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Google Gemini AI द्वारा नए प्रश्न पत्र स्वतः उत्पन्न करने हेतु अपनी मुफ़्त API Key दर्ज करें। यह कुंजी आपके ब्राउज़र में सुरक्षित रूप से सहेजी जाती है।
+            </p>
+            {geminiApiKey && (
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center justify-between">
+                <span className="font-semibold">सक्रिय कुंजी (सुरक्षित):</span>
+                <code className="font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-200">
+                  {maskApiKey(geminiApiKey)}
+                </code>
+              </div>
+            )}
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                नई Gemini API Key दर्ज करें:
+              </label>
+              <input
+                type="password"
+                value={keyInput}
+                onChange={e => setKeyInput(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full px-3 py-2 text-xs border border-stone-300 rounded-xl focus:outline-hidden focus:border-purple-600 font-mono"
+              />
+            </div>
+            <div className="text-[11px] text-stone-500 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+              💡 मुफ़्त API Key प्राप्त करने हेतु:{' '}
+              <a
+                href="https://aistudio.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-700 underline font-bold"
+              >
+                aistudio.google.com
+              </a>{' '}
+              पर जाकर Google ID से 1 मिनट में फ़्री की जनरेट करें (प्रतिदिन 1,500 रिक्वेस्ट्स मुफ़्त)।
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowApiKeyModal(false)}
+                className="px-3 py-1.5 text-xs font-bold text-stone-600 hover:bg-stone-100 rounded-xl cursor-pointer"
+              >
+                रद्द करें
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveApiKey}
+                className="px-4 py-1.5 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 rounded-xl cursor-pointer shadow-xs"
+              >
+                सहेजें (Save Key)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
