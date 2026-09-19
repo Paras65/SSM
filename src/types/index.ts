@@ -334,6 +334,7 @@ export interface Staff {
   samitiDeduction?: number;
   joiningDate: string;
   pin?: string;
+  assignedClasses?: string[];
   status: 'Active' | 'OnLeave' | 'Resigned';
 }
 

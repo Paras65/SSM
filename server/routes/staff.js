@@ -110,6 +110,11 @@ router.post('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
     if (!data.schoolId) {
       data.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
+    if (typeof data.assignedClasses === 'string') {
+      data.assignedClasses = data.assignedClasses.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (Array.isArray(data.assignedClasses)) {
+      data.assignedClasses = data.assignedClasses.map(s => String(s).trim()).filter(Boolean);
+    }
     const member = new Staff(data);
     await member.save();
     const sanitizedMember = member.toObject ? member.toObject() : { ...member };
@@ -129,6 +134,11 @@ router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
     delete updateData.createdAt;
     if (!req.user || req.user.role !== 'developer') {
       delete updateData.schoolId;
+    }
+    if (typeof updateData.assignedClasses === 'string') {
+      updateData.assignedClasses = updateData.assignedClasses.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (Array.isArray(updateData.assignedClasses)) {
+      updateData.assignedClasses = updateData.assignedClasses.map(s => String(s).trim()).filter(Boolean);
     }
 
     const member = await Staff.findOneAndUpdate(

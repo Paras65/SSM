@@ -48,6 +48,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
   const [stfPin, setStfPin] = useState('1234');
   const [stfMonthlySalary, setStfMonthlySalary] = useState<number | ''>('');
   const [stfStatus, setStfStatus] = useState<'Active' | 'OnLeave' | 'Resigned'>('Active');
+  const [stfAssignedClasses, setStfAssignedClasses] = useState('');
   const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
 
   // Filters
@@ -66,6 +67,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     setStfPin('1234');
     setStfMonthlySalary('');
     setStfStatus('Active');
+    setStfAssignedClasses('');
     setShowAddStaff(false);
   };
 
@@ -80,6 +82,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     setStfPin(staff.pin || '1234');
     setStfMonthlySalary(staff.monthlySalary || '');
     setStfStatus((staff.status as any) || 'Active');
+    setStfAssignedClasses((staff.assignedClasses || []).join(', '));
     setShowAddStaff(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -94,6 +97,9 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
       const basic = Math.round(Number(stfMonthlySalary) * 0.6) || 15000;
       const da = Math.round(Number(stfMonthlySalary) * 0.3) || 7500;
       const pf = Math.round(Number(stfMonthlySalary) * 0.05) || 1250;
+      const parsedAssignedClasses = stfAssignedClasses
+        ? stfAssignedClasses.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
 
       if (editingStaffId) {
         await api.updateStaff(editingStaffId, {
@@ -104,6 +110,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           subjects: stfSubjects,
           phone: stfPhone,
           pin: stfPin || '1234',
+          assignedClasses: parsedAssignedClasses,
           monthlySalary: Number(stfMonthlySalary) || 0,
           basicPay: basic,
           daHra: da,
@@ -121,6 +128,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
           subjects: stfSubjects,
           phone: stfPhone,
           pin: stfPin || '1234',
+          assignedClasses: parsedAssignedClasses,
           monthlySalary: Number(stfMonthlySalary),
           basicPay: basic,
           daHra: da,
@@ -356,6 +364,25 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
               </select>
             </div>
 
+            <div className="sm:col-span-3 bg-white/80 p-3 rounded-xl border border-stone-200">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-stone-800 font-bold">
+                  🎓 कक्षाध्यापक दायित्व / आवंटित कक्षाएं (Assigned Classes for Class Teacher Scope)
+                </label>
+                <span className="text-[10px] text-stone-500">वैकल्पिक (Optional)</span>
+              </div>
+              <input
+                type="text"
+                placeholder="उदा: Class 8, Class 5-A, Class 6"
+                value={stfAssignedClasses}
+                onChange={e => setStfAssignedClasses(e.target.value)}
+                className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500 font-medium"
+              />
+              <p className="text-[10px] text-stone-500 mt-1">
+                आचार्य को जिस कक्षा का कक्षाध्यापक (Class Teacher) बनाना हो, उन कक्षाओं के नाम कॉमा (,) लगाकर दर्ज करें।
+              </p>
+            </div>
+
             <div className="sm:col-span-3 flex justify-end gap-2">
               <button
                 type="button"
@@ -491,7 +518,22 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
                         {member.gender === 'Acharya' ? 'आचार्य जी' : 'दीदी जी'}
                       </span>
                     </td>
-                    <td className="p-3 font-semibold text-stone-700">{member.designation}</td>
+                    <td className="p-3">
+                      <div className="font-semibold text-stone-700">{member.designation}</div>
+                      {member.assignedClasses && member.assignedClasses.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {member.assignedClasses.map((cls, cIdx) => (
+                            <span
+                              key={cIdx}
+                              className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-orange-100 text-orange-900 border border-orange-200 text-[10px] font-bold"
+                              title="कक्षाध्यापक दायित्व"
+                            >
+                              🎓 {cls}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td className="p-3 text-stone-600">{member.qualification || 'स्नातकोत्तर'}</td>
                     <td className="p-3 text-stone-600">{member.subjects || '—'}</td>
                     <td className="p-3">
