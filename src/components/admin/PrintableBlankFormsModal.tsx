@@ -4,12 +4,8 @@ import type { Student, School } from '../../types';
 import {
   Printer,
   X,
-  FileText,
   Calendar,
-  Users,
   Filter,
-  CheckCircle2,
-  Download,
   ArrowLeft
 } from 'lucide-react';
 

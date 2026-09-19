@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { FeeRecord, Student } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
-import { Printer, X, CheckCircle, QrCode, Smartphone, MessageSquare, Sparkles, Copy, Check, ArrowLeft } from 'lucide-react';
+import { Printer, X, CheckCircle, QrCode, MessageSquare, Sparkles, Copy, Check, ArrowLeft } from 'lucide-react';
 import { formatWhatsAppPhone } from '../../utils/whatsappAlerts';
 
 interface FeeReceiptModalProps {

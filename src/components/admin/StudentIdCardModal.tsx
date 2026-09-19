@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Student } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
-import { Printer, X, Award, ShieldCheck, QrCode, ArrowLeft } from 'lucide-react';
+import { Printer, X, ShieldCheck, ArrowLeft } from 'lucide-react';
 
 interface StudentIdCardModalProps {
   student: Student;

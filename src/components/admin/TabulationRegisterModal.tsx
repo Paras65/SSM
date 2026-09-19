@@ -6,19 +6,10 @@ import {
   X,
   Printer,
   Download,
-  Filter,
   RefreshCw,
-  Award,
-  BookOpen,
-  FileSpreadsheet,
-  CheckCircle2,
-  AlertTriangle,
-  TrendingUp,
-  Users,
   Search,
   ArrowLeft
 } from 'lucide-react';
-import { HelpTooltip } from '../common/HelpTooltip';
 import {
   StudentResultRow,
   ClassTabulationStatistics,
