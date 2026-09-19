@@ -191,8 +191,8 @@ router.get('/:id/archive', requireAdminAuth, requireSchoolScope, async (req, res
       books,
       inventory
     ] = await Promise.all([
-      School.findOne({ id: schoolId, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) }).lean(),
-      Student.find(targetFilter).lean(),
+      School.findOne({ id: schoolId, ...(req.user.role === 'developer' ? {} : { id: req.userSchoolId }) }).select('-adminPasscode').lean(),
+      Student.find(targetFilter).select('-pin').lean(),
       Fee.find(targetFilter).lean(),
       Attendance.find(targetFilter).lean(),
       ReportCard.find(targetFilter).lean(),
@@ -279,10 +279,13 @@ router.post('/:id/discontinue', requireAdminAuth, requireSchoolScope, async (req
       req
     });
 
+    const sanitizedSchool = school.toObject ? school.toObject() : { ...school };
+    delete sanitizedSchool.adminPasscode;
+
     res.json({
       success: true,
       message: 'विद्यालय शाखा सफलतापूर्वक विसर्जित (Discontinued) की गई। सत्र अमान्य कर दिए गए हैं।',
-      school
+      school: sanitizedSchool
     });
   } catch (err) {
     res.status(500).json({ error: 'शाखा विसर्जन में त्रुटि: ' + err.message });
@@ -313,7 +316,10 @@ router.post('/:id/reactivate', requireAdminAuth, async (req, res) => {
       req
     });
 
-    res.json({ success: true, message: 'शाखा पुनः सक्रिय कर दी गई है।', school });
+    const sanitizedSchool = school.toObject ? school.toObject() : { ...school };
+    delete sanitizedSchool.adminPasscode;
+
+    res.json({ success: true, message: 'शाखा पुनः सक्रिय कर दी गई है।', school: sanitizedSchool });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

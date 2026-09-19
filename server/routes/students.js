@@ -257,6 +257,7 @@ router.post('/:id/anonymize', requireAdminAuth, requireSchoolScope, async (req, 
 
     student.contact = '+91 99*** *****';
     student.address = '[DPDP Act 2023: गोपनीयता नीति के तहत अनामीकृत/संरक्षित]';
+    student.pin = '';
     if (student.fatherName && student.fatherName.length > 3) {
       student.fatherName = `${student.fatherName.slice(0, 3)}***`;
     }
@@ -273,10 +274,13 @@ router.post('/:id/anonymize', requireAdminAuth, requireSchoolScope, async (req, 
       req
     });
 
+    const sanitizedStudent = student.toObject ? student.toObject() : { ...student };
+    delete sanitizedStudent.pin;
+
     res.json({
       success: true,
       message: 'छात्र का व्यक्तिगत डेटा DPDP Act 2023 के अंतर्गत सफलतापूर्वक अनामीकृत किया गया।',
-      student
+      student: sanitizedStudent
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -349,7 +353,11 @@ router.post('/promote', requireAdminAuth, requireSchoolScope, async (req, res) =
       success: true,
       message: `${updatedStudents.length} छात्रों की प्रोन्नति सफलतापूर्वक संपन्न हुई।`,
       count: updatedStudents.length,
-      students: updatedStudents
+      students: updatedStudents.map(s => {
+        const obj = s.toObject ? s.toObject() : { ...s };
+        delete obj.pin;
+        return obj;
+      })
     });
   } catch (err) {
     res.status(500).json({ error: 'प्रोन्नति त्रुटि: ' + err.message });

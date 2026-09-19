@@ -20,6 +20,7 @@ const Book = require('../../server/models/Book.js');
 const BookIssue = require('../../server/models/BookIssue.js');
 const InventoryItem = require('../../server/models/InventoryItem.js');
 const Staff = require('../../server/models/Staff.js');
+const Student = require('../../server/models/Student.js');
 const AuditLog = require('../../server/models/AuditLog.js');
 
 let mongoServer: MongoMemoryServer;
@@ -49,6 +50,7 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
       BookIssue.deleteMany({}),
       InventoryItem.deleteMany({}),
       Staff.deleteMany({}),
+      Student.deleteMany({}),
       AuditLog.deleteMany({})
     ]);
 
@@ -442,6 +444,18 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
     });
 
     it('excludes student PIN from GET /api/students listing responses', async () => {
+      await Student.create({
+        id: 'test-student-list-pin',
+        schoolId: 'school-a',
+        rollNo: '101',
+        name: 'List Test Student',
+        gender: 'Bhaiya',
+        class: 'Class 6',
+        fatherName: 'Father',
+        contact: '9876543210',
+        pin: '9876'
+      });
+
       const res = await request(app)
         .get('/api/students')
         .set('Authorization', `Bearer ${schoolAToken}`);
@@ -567,6 +581,90 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
 
       const notRes = await request(app).get('/api/notices');
       expect(notRes.status).toBe(400);
+    });
+
+    it('excludes adminPasscode and student PIN from GET /api/schools/:id/archive export', async () => {
+      await Student.create({
+        id: 'test-student-archive-pin',
+        schoolId: 'school-a',
+        rollNo: '105',
+        name: 'Archive Test Student',
+        gender: 'Bhaiya',
+        class: 'Class 6',
+        fatherName: 'Father',
+        contact: '9876543210',
+        pin: '9876'
+      });
+
+      const res = await request(app)
+        .get('/api/schools/school-a/archive')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.school).toBeDefined();
+      expect(res.body.school.adminPasscode).toBeUndefined();
+      expect(Array.isArray(res.body.data.students)).toBe(true);
+      expect(res.body.data.students.length).toBeGreaterThan(0);
+      expect(res.body.data.students[0].pin).toBeUndefined();
+    });
+
+    it('excludes student PIN from POST /api/students/:id/anonymize response', async () => {
+      await Student.create({
+        id: 'student-anonymize-test',
+        schoolId: 'school-a',
+        rollNo: '201',
+        name: 'Anonymize Target',
+        gender: 'Bhaiya',
+        class: 'Class 7',
+        fatherName: 'Pita Ji',
+        contact: '9988776655',
+        pin: '4321'
+      });
+
+      const res = await request(app)
+        .post('/api/students/student-anonymize-test/anonymize')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.student).toBeDefined();
+      expect(res.body.student.pin).toBeFalsy();
+    });
+
+    it('excludes student PIN from POST /api/students/promote response', async () => {
+      await Student.create({
+        id: 'student-promote-test',
+        schoolId: 'school-a',
+        rollNo: '202',
+        name: 'Promote Target',
+        gender: 'Bahin',
+        class: 'Class 7',
+        fatherName: 'Pita Ji',
+        contact: '9988776656',
+        pin: '1234'
+      });
+
+      const res = await request(app)
+        .post('/api/students/promote')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          schoolId: 'school-a',
+          fromAcademicYear: '2025-26',
+          toAcademicYear: '2026-27',
+          promotions: [
+            {
+              studentId: 'student-promote-test',
+              nextClass: 'Class 8',
+              nextSection: 'A',
+              nextRollNo: '202',
+              action: 'promote'
+            }
+          ]
+        });
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.students)).toBe(true);
+      expect(res.body.students.length).toBeGreaterThan(0);
+      expect(res.body.students[0].pin).toBeUndefined();
     });
   });
 });
