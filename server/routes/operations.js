@@ -7,17 +7,25 @@ const Book = require('../models/Book');
 const BookIssue = require('../models/BookIssue');
 const InventoryItem = require('../models/InventoryItem');
 const AuditLog = require('../models/AuditLog');
-const Staff = require('../models/Staff');
+const jwt = require('jsonwebtoken');
 const { requireAdminAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope } = require('../middleware/auth');
 const { cleanStringParam, escapeRegex } = require('../middleware/sanitize');
 const { recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
+
 // ================= TIMETABLE =================
 router.get('/timetable', async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    if (req.query.class) filter.class = req.query.class;
-    if (req.query.section) filter.section = req.query.section;
+    const schoolId = cleanStringParam(req.query.schoolId);
+    if (!schoolId) {
+      return res.status(400).json({ error: 'विद्यालय पहचान (schoolId) आवश्यक है।' });
+    }
+    const filter = { schoolId };
+    const cls = cleanStringParam(req.query.class);
+    const sec = cleanStringParam(req.query.section);
+    if (cls) filter.class = cls;
+    if (sec) filter.section = sec;
     const timetables = await Timetable.find(filter).lean();
     res.json(timetables);
   } catch (err) {
@@ -113,8 +121,28 @@ router.patch('/leaves/:id/status', requireTeacherAuth, requireSchoolScope, async
 // ================= TRANSPORT =================
 router.get('/transport/routes', async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    await executeSafeQuery(TransportRoute, filter, req, res, { routeName: 1 });
+    const schoolId = cleanStringParam(req.query.schoolId);
+    if (!schoolId) {
+      return res.status(400).json({ error: 'विद्यालय पहचान (schoolId) आवश्यक है।' });
+    }
+    const filter = { schoolId };
+
+    // Privilege check: Authenticated users can view driverPhone; unauthenticated callers have driverPhone stripped
+    let isPrivileged = false;
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+        if (['admin', 'developer', 'teacher', 'student'].includes(decoded?.role)) {
+          isPrivileged = true;
+        }
+      } catch {
+        isPrivileged = false;
+      }
+    }
+
+    const projection = isPrivileged ? null : '-driverPhone';
+    await executeSafeQuery(TransportRoute, filter, req, res, { routeName: 1 }, projection);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -172,10 +200,13 @@ router.delete('/transport/routes/:id', requireAdminAuth, requireSchoolScope, asy
 router.get('/library/books', async (req, res) => {
   try {
     const schoolId = cleanStringParam(req.query.schoolId);
+    if (!schoolId) {
+      return res.status(400).json({ error: 'विद्यालय पहचान (schoolId) आवश्यक है।' });
+    }
     const category = cleanStringParam(req.query.category);
     const rawSearch = cleanStringParam(req.query.search);
 
-    const filter = schoolId ? { schoolId } : {};
+    const filter = { schoolId };
     if (category) filter.category = category;
     if (rawSearch) {
       const safeSearch = escapeRegex(rawSearch);
@@ -294,7 +325,7 @@ router.post('/library/return', requireAdminAuth, requireSchoolScope, async (req,
 });
 
 // ================= INVENTORY & STORE =================
-router.get('/inventory', async (req, res) => {
+router.get('/inventory', requireAdminAuth, requireSchoolScope, async (req, res) => {
   try {
     const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
     if (req.query.category) filter.category = req.query.category;

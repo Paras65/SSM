@@ -490,5 +490,83 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
       expect(res.body.adminPasscode).toBeUndefined();
       expect(res.body.id).toBe('ssm-security-branch');
     });
+
+    it('restricts public unauthenticated GET /api/schools to minimal discovery fields', async () => {
+      const res = await request(app).get('/api/schools');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+
+      const school = res.body[0];
+      // Public identification fields must be present
+      expect(school.id).toBeDefined();
+      expect(school.name).toBeDefined();
+      expect(school.hindiName).toBeDefined();
+      expect(school.city).toBeDefined();
+
+      // Sensitive contact and internal fields MUST be stripped for unauthenticated visitors
+      expect(school.phone).toBeUndefined();
+      expect(school.email).toBeUndefined();
+      expect(school.principalName).toBeUndefined();
+      expect(school.address).toBeUndefined();
+      expect(school.adminPasscode).toBeUndefined();
+      expect(school.tokenVersion).toBeUndefined();
+      expect(school.plan).toBeUndefined();
+    });
+
+    it('requires admin authentication for GET /api/inventory', async () => {
+      const unauthRes = await request(app).get('/api/inventory?schoolId=school-a');
+      expect(unauthRes.status).toBe(401);
+
+      const authRes = await request(app)
+        .get('/api/inventory?schoolId=school-a')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+      expect(authRes.status).toBe(200);
+    });
+
+    it('requires schoolId on GET /api/transport/routes and strips driverPhone for public callers', async () => {
+      const missingSchoolRes = await request(app).get('/api/transport/routes');
+      expect(missingSchoolRes.status).toBe(400);
+
+      // Create a test route in School A
+      await request(app)
+        .post('/api/transport/routes')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          id: 'route-test-mask',
+          schoolId: 'school-a',
+          routeName: 'मार्ग 1',
+          vehicleNumber: 'UP 53 9999',
+          driverName: 'रामू',
+          driverPhone: '9876543210',
+          stops: [{ stopName: 'चौक', monthlyFare: 500 }]
+        });
+
+      // Public call without token
+      const publicRes = await request(app).get('/api/transport/routes?schoolId=school-a');
+      expect(publicRes.status).toBe(200);
+      expect(publicRes.body.length).toBeGreaterThan(0);
+      expect(publicRes.body[0].driverPhone).toBeUndefined();
+      expect(publicRes.body[0].routeName).toBe('मार्ग 1');
+
+      // Authenticated call with token
+      const authRes = await request(app)
+        .get('/api/transport/routes?schoolId=school-a')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+      expect(authRes.status).toBe(200);
+      expect(authRes.body[0].driverPhone).toBe('9876543210');
+    });
+
+    it('requires schoolId on timetable, library, and notices endpoints to prevent unscoped cross-tenant dumps', async () => {
+      const ttRes = await request(app).get('/api/timetable');
+      expect(ttRes.status).toBe(400);
+
+      const libRes = await request(app).get('/api/library/books');
+      expect(libRes.status).toBe(400);
+
+      const notRes = await request(app).get('/api/notices');
+      expect(notRes.status).toBe(400);
+    });
   });
 });

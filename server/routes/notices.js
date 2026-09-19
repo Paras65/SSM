@@ -2,13 +2,19 @@ const express = require('express');
 const router = express.Router();
 const Notice = require('../models/Notice');
 const { requireAdminAuth, requireSchoolScope } = require('../middleware/auth');
+const { cleanStringParam } = require('../middleware/sanitize');
 const { generateUniqueId, executeSafeQuery } = require('../utils/routeHelpers');
 
-// GET /api/notices - List notices (public)
+// GET /api/notices - List notices (public per-branch notice board)
 router.get('/', async (req, res) => {
   try {
-    const filter = req.query.schoolId ? { schoolId: req.query.schoolId } : {};
-    if (req.query.category && req.query.category !== 'All') filter.category = req.query.category;
+    const schoolId = cleanStringParam(req.query.schoolId);
+    if (!schoolId) {
+      return res.status(400).json({ error: 'विद्यालय पहचान (schoolId) आवश्यक है।' });
+    }
+    const filter = { schoolId };
+    const category = cleanStringParam(req.query.category);
+    if (category && category !== 'All') filter.category = category;
     await executeSafeQuery(Notice, filter, req, res, { date: -1, createdAt: -1 });
   } catch (err) {
     res.status(500).json({ error: err.message });

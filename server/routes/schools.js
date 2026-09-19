@@ -12,18 +12,41 @@ const TransportRoute = require('../models/Transport');
 const Book = require('../models/Book');
 const InventoryItem = require('../models/InventoryItem');
 const { requireAdminAuth, requireSchoolScope, hashPasscode } = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
 const { generateUniqueId, recordAuditLog } = require('../utils/routeHelpers');
 
-// GET /api/schools - List all schools (public directory)
+const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
+
+/**
+ * Public requests only receive safe branch discovery fields for dropdowns and locators.
+ * Authenticated admins/teachers receive operational profile fields, with credentials and tokenVersion stripped.
+ */
+function getSchoolProjection(req) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+      if (['admin', 'developer', 'teacher'].includes(decoded?.role)) {
+        return '-adminPasscode -tokenVersion -__v';
+      }
+    } catch {
+      // Fallback to public projection
+    }
+  }
+  return 'id name hindiName city state prant affiliationNo established tagline currentAcademicYear status';
+}
+
+// GET /api/schools - List all schools (public minimal directory or authenticated full list)
 router.get('/', async (req, res) => {
   try {
     const dummySchoolIds = ['ssm-demo', 'ssm-gorakhpur', 'ssm-delhi', 'ssm-varanasi'];
+    const projection = getSchoolProjection(req);
     const rawSchools = await School.find({
       status: { $nin: ['discontinued', 'demo'] },
       isDemo: { $ne: true },
       id: { $nin: dummySchoolIds }
     })
-      .select('-adminPasscode')
+      .select(projection)
       .sort({ established: 1, createdAt: 1 })
       .lean();
 
@@ -41,7 +64,8 @@ router.get('/', async (req, res) => {
 // GET /api/schools/:id - School profile details
 router.get('/:id', async (req, res) => {
   try {
-    const school = await School.findOne({ id: req.params.id }).select('-adminPasscode').lean();
+    const projection = getSchoolProjection(req);
+    const school = await School.findOne({ id: req.params.id }).select(projection).lean();
     if (!school) return res.status(404).json({ error: 'School not found' });
     res.json(school);
   } catch (err) {
