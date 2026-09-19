@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import {
   X,
@@ -166,7 +166,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         subject,
         examType,
         month,
-        chapters,
+        chapters: customTopic || chapters,
         targetMarks,
         durationMinutes,
         includeSanskriti
@@ -177,9 +177,22 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     }
   };
 
-  // Voice Input State
+  // Voice Input State & Ref
   const [isListening, setIsListening] = useState<boolean>(false);
-  const [listeningField, setListeningField] = useState<'topic' | 'chapters' | null>(null);
+  const [listeningField, setListeningField] = useState<'topic' | 'chapters' | 'voice-command' | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Stop any active speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
   // Saved Papers State (Save to device / localStorage)
   const [savedPapers, setSavedPapers] = useState<QuestionPaper[]>(() => {
@@ -193,58 +206,116 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   const [showSavedModal, setShowSavedModal] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
 
-  // Voice Input Handler (Hindi & English Web Speech API)
-  const handleVoiceInput = (field: 'topic' | 'chapters') => {
+  // Voice Input Handler (Hindi & English Web Speech API + Voice Command Support)
+  const handleVoiceInput = (field: 'topic' | 'chapters' | 'voice-command') => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('आपके ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है। कृपया Google Chrome का उपयोग करें।');
+      alert('आपके ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है। कृपया Google Chrome, Microsoft Edge या समर्थित ब्राउज़र का उपयोग करें।');
       return;
     }
 
-    if (isListening) {
+    // If currently listening, stop cleanly
+    if (isListening && recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {}
+      recognitionRef.current = null;
       setIsListening(false);
       setListeningField(null);
       return;
     }
 
     try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch {}
+        recognitionRef.current = null;
+      }
+
       const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
       recognition.lang = 'hi-IN';
       recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
 
       recognition.onstart = () => {
         setIsListening(true);
         setListeningField(field);
-      };
-
-      recognition.onresult = (event: any) => {
-        const transcript = event.results?.[0]?.[0]?.transcript || '';
-        if (transcript.trim()) {
-          if (field === 'topic') {
-            setCustomTopic(transcript.trim());
-          } else {
-            setChapters(transcript.trim());
-          }
+        if (field === 'voice-command') {
+          setSaveToast('🎙️ बोलें: "सहेजें", "सेव करें", या "प्रिंट करें"...');
         }
       };
 
-      recognition.onerror = () => {
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        const clean = transcript.trim();
+        if (!clean) return;
+
+        // Detect voice command (save, print)
+        const lower = clean.toLowerCase();
+        if (
+          lower.includes('सहेज') ||
+          lower.includes('सेव') ||
+          lower.includes('save') ||
+          lower.includes('सुरक्षित')
+        ) {
+          handleSaveToDevice();
+          setSaveToast('🎙️ आवाज़ आदेश: प्रश्न पत्र डिवाइस में सहेजा गया!');
+          setTimeout(() => setSaveToast(null), 3500);
+          try { recognition.stop(); } catch {}
+          return;
+        }
+
+        if (lower.includes('प्रिंट') || lower.includes('print')) {
+          setActiveTab('preview');
+          setSaveToast('🎙️ आवाज़ आदेश: प्रिंट पूर्वावलोकन खोला गया!');
+          setTimeout(() => {
+            setSaveToast(null);
+            handlePrint();
+          }, 600);
+          try { recognition.stop(); } catch {}
+          return;
+        }
+
+        if (field === 'topic') {
+          setCustomTopic(clean);
+        } else if (field === 'chapters') {
+          setChapters(clean);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition error:', event.error);
         setIsListening(false);
         setListeningField(null);
+        recognitionRef.current = null;
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          alert('माइक्रोफ़ोन की अनुमति नहीं मिली है। कृपया ब्राउज़र सेटिंग्स में माइक्रोफ़ोन की अनुमति (Allow Microphone) प्रदान करें।');
+        } else if (event.error === 'network') {
+          alert('वॉइस इनपुट हेतु सक्रिय इंटरनेट कनेक्शन आवश्यक है।');
+        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          setSaveToast(`वॉइस पहचान: ${event.error}`);
+          setTimeout(() => setSaveToast(null), 3000);
+        }
       };
 
       recognition.onend = () => {
         setIsListening(false);
         setListeningField(null);
+        recognitionRef.current = null;
       };
 
       recognition.start();
-    } catch {
+    } catch (err: any) {
+      console.warn('Failed to start speech recognition:', err);
       setIsListening(false);
       setListeningField(null);
+      recognitionRef.current = null;
+      alert('माइक्रोफ़ोन आरंभ करने में समस्या आई। कृपया पुनः प्रयास करें।');
     }
   };
 
@@ -997,12 +1068,39 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
+              onClick={() => handleVoiceInput('voice-command')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                isListening && listeningField === 'voice-command'
+                  ? 'bg-red-600 text-white animate-pulse border-red-700'
+                  : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300'
+              }`}
+              title="बोलकर 'सहेजें' या 'प्रिंट' कहें (Voice Command Save)"
+            >
+              <Mic className={`w-3.5 h-3.5 ${isListening && listeningField === 'voice-command' ? 'text-white' : 'text-amber-800'}`} />
+              <span>{isListening && listeningField === 'voice-command' ? 'बोलें "सहेजें"...' : 'बोलकर सहेजें'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleSaveToDevice}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
               title="वर्तमान प्रश्न पत्र को डिवाइस मेमोरी में सहेजें"
             >
               <Save className="w-3.5 h-3.5" />
               <span>डिवाइस में सहेजें</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('preview');
+                setTimeout(() => handlePrint(), 200);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              title="A4 प्रिंट करें अथवा PDF के रूप में सहेजें"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>A4 प्रिंट / PDF</span>
             </button>
 
             <button
@@ -1014,17 +1112,6 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">बैकअप</span>
             </button>
-
-            {activeTab === 'preview' && (
-              <button
-                type="button"
-                onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>प्रिंट करें</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -1321,8 +1408,23 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
             <button
               type="button"
+              onClick={() => handleVoiceInput('voice-command')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border ${
+                isListening && listeningField === 'voice-command'
+                  ? 'bg-red-600 text-white animate-pulse border-red-700'
+                  : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300'
+              }`}
+              title="बोलकर 'सहेजें' या 'प्रिंट' कहें (Voice Command Save)"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>{isListening && listeningField === 'voice-command' ? 'बोलें "सहेजें"...' : 'बोलकर सहेजें'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleSaveToDevice}
               className="px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              title="वर्तमान प्रश्न पत्र को डिवाइस मेमोरी में सहेजें"
             >
               <Save className="w-3.5 h-3.5" />
               <span>सहेजें</span>
@@ -1343,9 +1445,10 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 setTimeout(() => handlePrint(), 200);
               }}
               className="flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              title="A4 प्रिंट करें अथवा PDF के रूप में सहेजें"
             >
               <Printer className="w-4 h-4" />
-              <span>A4 प्रिंट करें</span>
+              <span>A4 प्रिंट / PDF</span>
             </button>
           </div>
         </div>
@@ -1380,7 +1483,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                   <FolderOpen className="w-12 h-12 mx-auto text-stone-300 mb-2" />
                   <p className="text-sm font-bold text-stone-600">कोई सहेजा गया प्रश्न पत्र नहीं मिला</p>
                   <p className="text-xs text-stone-400 mt-1">
-                    प्रश्न पत्र तैयार करने के बाद "सहेजें" बटन पर क्लिक करके यहाँ सुरक्षित रख सकते हैं।
+                    प्रश्न पत्र तैयार करने के बाद "सहेजें" अथवा "बोलकर सहेजें" बटन द्वारा यहाँ सुरक्षित रख सकते हैं।
                   </p>
                 </div>
               ) : (
@@ -1421,6 +1524,21 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                         title="पेपर खोलें"
                       >
                         खोलें
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLoadSavedPaper(saved);
+                          setTimeout(() => {
+                            setActiveTab('preview');
+                            handlePrint();
+                          }, 200);
+                        }}
+                        className="p-1.5 text-stone-500 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition cursor-pointer"
+                        title="A4 प्रिंट / PDF"
+                      >
+                        <Printer className="w-4 h-4" />
                       </button>
                       <button
                         type="button"
