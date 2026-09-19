@@ -36,6 +36,7 @@ const DeveloperDashboard = React.lazy(() => import('./DeveloperDashboard').then(
 const CommandPaletteModal = React.lazy(() => import('../common/CommandPaletteModal').then(m => ({ default: m.CommandPaletteModal })));
 const RegisterScannerModal = React.lazy(() => import('./RegisterScannerModal').then(m => ({ default: m.RegisterScannerModal })));
 const PrintableBlankFormsModal = React.lazy(() => import('./PrintableBlankFormsModal').then(m => ({ default: m.PrintableBlankFormsModal })));
+const QuestionPaperModal = React.lazy(() => import('../exam/QuestionPaperModal').then(m => ({ default: m.QuestionPaperModal })));
 
 // Tab Subcomponents (Phase 2 Monolith Decomposition)
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
@@ -150,6 +151,7 @@ export const AdminDashboard: React.FC = () => {
   const [activePhotoStudent, setActivePhotoStudent] = useState<Student | null>(null);
 
   const [showExamModal, setShowExamModal] = useState(false);
+  const [showQuestionPaperModal, setShowQuestionPaperModal] = useState(false);
   const [showTimetableModal, setShowTimetableModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showTransportModal, setShowTransportModal] = useState(false);
@@ -255,6 +257,7 @@ export const AdminDashboard: React.FC = () => {
     activeWhatsAppAlert ||
     activePhotoStudent ||
     showExamModal ||
+    showQuestionPaperModal ||
     showTimetableModal ||
     showLeaveModal ||
     showTransportModal ||
@@ -291,6 +294,7 @@ export const AdminDashboard: React.FC = () => {
     setActiveWhatsAppAlert(null);
     setActivePhotoStudent(null);
     setShowExamModal(false);
+    setShowQuestionPaperModal(false);
     setShowTimetableModal(false);
     setShowLeaveModal(false);
     setShowTransportModal(false);
@@ -576,6 +580,9 @@ export const AdminDashboard: React.FC = () => {
         break;
       case 'inventory':
         setShowInventoryModal(true);
+        break;
+      case 'question-paper':
+        setShowQuestionPaperModal(true);
         break;
       case 'backup-download':
         downloadFullSchoolBackup(currentSchool, students, feeRecords, attendanceRecords, reportCards, notices);
@@ -975,6 +982,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl bg-orange-950/70 p-2">
               {([
                 ['📝', 'परीक्षा व अंक', () => setShowExamModal(true)],
+                ['📄', 'प्रश्न पत्र निर्माता', () => setShowQuestionPaperModal(true)],
                 ['📋', 'टैबुलेशन रजिस्टर', () => setShowTabulationModal(true)],
                 ['📖', 'दाखिल-खारिज पंजिका', () => setShowDakhilKharijModal(true)],
                 ['🕒', 'समय सारिणी', () => setShowTimetableModal(true)],
@@ -1273,6 +1281,7 @@ export const AdminDashboard: React.FC = () => {
               onOpenAddStudent={() => setShowAddStudent(true)}
               onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
               onOpenExamModal={() => setShowExamModal(true)}
+              onOpenQuestionPaperModal={() => setShowQuestionPaperModal(true)}
               onOpenTabulationModal={() => setShowTabulationModal(true)}
               onOpenTimetableModal={() => setShowTimetableModal(true)}
               onOpenLeaveModal={() => setShowLeaveModal(true)}
@@ -1634,6 +1643,13 @@ export const AdminDashboard: React.FC = () => {
             mode={printableFormsConfig.initialMode}
             students={students}
             school={currentSchool}
+          />
+        )}
+
+        {showQuestionPaperModal && (
+          <QuestionPaperModal
+            isOpen={showQuestionPaperModal}
+            onClose={() => setShowQuestionPaperModal(false)}
           />
         )}
 

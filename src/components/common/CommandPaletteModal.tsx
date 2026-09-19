@@ -232,6 +232,16 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       execute: () => onTriggerQuickAction('bulk-report-card')
     },
     {
+      id: 'action-question-paper',
+      category: 'quick-action',
+      title: 'Smart Question Paper Generator',
+      hindiTitle: '📝 स्मार्ट प्रश्न पत्र निर्माता (Question Paper Generator)',
+      subtitle: 'मासिक इकाई मूल्यांकन व त्रैमासिक परीक्षा हेतु १-क्लिक संतुलित प्रश्न पत्र A4 प्रिंट',
+      icon: <FileText className="w-4 h-4 text-orange-600" />,
+      keywords: ['question', 'paper', 'exam', 'test', 'unit', 'traimasik', 'प्रश्न', 'पत्र', 'इकाई', 'मूल्यांकन', 'टेस्ट'],
+      execute: () => onTriggerQuickAction('question-paper')
+    },
+    {
       id: 'action-dcr',
       category: 'quick-action',
       title: 'Daily Cash Register DCR',

@@ -519,3 +519,48 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
+export type QuestionType = 'mcq' | 'vsa' | 'sa' | 'la' | 'sanskriti';
+export type ExamPaperType = 'unit-test' | 'traimasik' | 'ardhavarshik' | 'varshik' | 'practice';
+
+export interface QuestionOption {
+  id: string;
+  text: string;
+}
+
+export interface QuestionItem {
+  id: string;
+  type: QuestionType;
+  text: string;
+  marks: number;
+  subject: string;
+  classLevel: string;
+  chapter?: string;
+  options?: QuestionOption[];
+  internalChoiceText?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+
+export interface QuestionPaperSection {
+  id: string;
+  title: string;
+  instructions: string;
+  questions: QuestionItem[];
+}
+
+export interface QuestionPaper {
+  id: string;
+  schoolId?: string;
+  title: string;
+  examType: ExamPaperType;
+  classLevel: string;
+  subject: string;
+  month?: string;
+  chapters?: string;
+  totalMarks: number;
+  durationMinutes: number;
+  generalInstructions: string[];
+  sections: QuestionPaperSection[];
+  createdAt: string;
+  createdBy: string;
+}
+

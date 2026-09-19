@@ -31,8 +31,10 @@ import {
   Crown,
   Lock,
   KeyRound,
+  FileText,
   X
 } from 'lucide-react';
+import { QuestionPaperModal } from '../exam/QuestionPaperModal';
 
 type TeacherTab = 'attendance' | 'homework' | 'marks' | 'timetable' | 'leaves' | 'salary';
 
@@ -52,6 +54,7 @@ export const TeacherPortal: React.FC = () => {
 
   const [teacherProfile, setTeacherProfile] = useState<Staff | null>(null);
   const [showSalarySlip, setShowSalarySlip] = useState(false);
+  const [showQuestionPaperModal, setShowQuestionPaperModal] = useState(false);
 
   // Class Selection for Attendance & Homework
   const CLASSES = SSM_CLASSES;
@@ -135,7 +138,10 @@ export const TeacherPortal: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (showSalarySlip) {
+        if (showQuestionPaperModal) {
+          e.preventDefault();
+          setShowQuestionPaperModal(false);
+        } else if (showSalarySlip) {
           e.preventDefault();
           setShowSalarySlip(false);
         } else if (showAddHw) {
@@ -150,11 +156,13 @@ export const TeacherPortal: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSalarySlip, showAddHw, currentTab]);
+  }, [showQuestionPaperModal, showSalarySlip, showAddHw, currentTab]);
 
   useEffect(() => {
     const handlePopState = () => {
-      if (showSalarySlip) {
+      if (showQuestionPaperModal) {
+        setShowQuestionPaperModal(false);
+      } else if (showSalarySlip) {
         setShowSalarySlip(false);
       } else if (showAddHw) {
         setShowAddHw(false);
@@ -166,7 +174,7 @@ export const TeacherPortal: React.FC = () => {
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [showSalarySlip, showAddHw, currentTab, setViewMode]);
+  }, [showQuestionPaperModal, showSalarySlip, showAddHw, currentTab, setViewMode]);
 
   const fetchTeacherCommonData = useCallback(async () => {
     try {
@@ -1145,7 +1153,17 @@ export const TeacherPortal: React.FC = () => {
                   />
                 </div>
 
-                <div className="self-end">
+                <div className="self-end flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuestionPaperModal(true)}
+                    className="px-3.5 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                    title="मासिक इकाई मूल्यांकन व त्रैमासिक परीक्षा हेतु प्रश्न पत्र तैयार करें"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>📝 प्रश्न पत्र निर्माता</span>
+                  </button>
+
                   <button
                     onClick={handleBulkMarksSave}
                     disabled={isSavingMarks || Boolean(selectedExam?.isLocked)}
@@ -1807,6 +1825,14 @@ export const TeacherPortal: React.FC = () => {
           onClose={() => setShowSalarySlip(false)}
         />
       )}
+
+      {/* Smart Question Paper Generator Modal */}
+      <QuestionPaperModal
+        isOpen={showQuestionPaperModal}
+        onClose={() => setShowQuestionPaperModal(false)}
+        initialClass={selectedClass}
+        initialSubject={examSubject}
+      />
     </div>
   );
 };

@@ -48,6 +48,7 @@ interface AdminOverviewTabProps {
   onOpenAddStudent: () => void;
   onOpenBulkIdCard: () => void;
   onOpenExamModal: () => void;
+  onOpenQuestionPaperModal?: () => void;
   onOpenTabulationModal: () => void;
   onOpenTimetableModal: () => void;
   onOpenLeaveModal: () => void;
@@ -76,6 +77,7 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
   onOpenAddStudent,
   onOpenBulkIdCard,
   onOpenExamModal,
+  onOpenQuestionPaperModal,
   onOpenTabulationModal,
   onOpenTimetableModal,
   onOpenLeaveModal,
@@ -452,6 +454,19 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
               </span>
               <span>→</span>
             </button>
+
+            {onOpenQuestionPaperModal && (
+              <button
+                onClick={onOpenQuestionPaperModal}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-950 text-xs font-bold transition-all border border-orange-200"
+              >
+                <span className="flex items-center gap-2">
+                  <span>📄</span>
+                  स्मार्ट प्रश्न पत्र निर्माता (Unit Test & Traimasik)
+                </span>
+                <span className="text-orange-600">→</span>
+              </button>
+            )}
 
             <button
               onClick={onOpenTabulationModal}
