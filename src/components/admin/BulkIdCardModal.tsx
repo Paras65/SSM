@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Student, School } from '../../types';
-import { Printer, X, ShieldCheck, Filter, Users } from 'lucide-react';
+import { Printer, X, ShieldCheck, Filter, Users, ArrowLeft } from 'lucide-react';
 
 interface BulkIdCardModalProps {
   isOpen: boolean;
@@ -36,17 +36,26 @@ export const BulkIdCardModal: React.FC<BulkIdCardModalProps> = ({
       
       {/* Top Action Bar (hidden when printing) */}
       <div className="no-print bg-stone-900 text-white rounded-2xl p-4 mb-4 shadow-xl border border-stone-800 flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto w-full shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white text-lg">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+            title="वापस जाएं (Back)"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden xs:inline sm:inline">वापस</span>
+          </button>
+          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white text-lg shrink-0">
             🪷
           </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-amber-100 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>कक्षावार परिचय पत्र (Bulk Student ID Cards Printing)</span>
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-bold text-amber-100 flex items-center gap-2 truncate">
+              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="truncate">कक्षावार परिचय पत्र (Bulk Student ID Cards)</span>
             </h3>
-            <p className="text-xs text-stone-400">
-              A4 शीट पर मुद्रण हेतु अनुकूलित • 8 कार्ड प्रति पृष्ठ (Dashed कटिंग गाइड्स सहित)
+            <p className="text-xs text-stone-400 truncate">
+              A4 शीट पर मुद्रण हेतु अनुकूलित • 8 कार्ड प्रति पृष्ठ
             </p>
           </div>
         </div>
@@ -82,6 +91,7 @@ export const BulkIdCardModal: React.FC<BulkIdCardModalProps> = ({
 
           <button
             onClick={onClose}
+            title="बंद करें (Close)"
             className="p-2 text-stone-400 hover:text-white rounded-xl hover:bg-stone-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />

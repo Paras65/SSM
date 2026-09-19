@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { FeeRecord, Student } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
-import { Printer, X, CheckCircle, QrCode, Smartphone, MessageSquare, Sparkles, Copy, Check } from 'lucide-react';
+import { Printer, X, CheckCircle, QrCode, Smartphone, MessageSquare, Sparkles, Copy, Check, ArrowLeft } from 'lucide-react';
 import { formatWhatsAppPhone } from '../../utils/whatsappAlerts';
 
 interface FeeReceiptModalProps {
@@ -45,7 +45,7 @@ export const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({ fee, student, 
   const handleShareWhatsApp = () => {
     const cleanPhone = formatWhatsAppPhone(student.contact);
     const text = 
-`🚩 *सादर नमस्ते जी* 🚩
+`🚩 * सादर नमस्ते जी * 🚩
 *${currentSchool.hindiName || currentSchool.name}*
 --------------------------------
 🧾 *शुल्क भुगतान पावती (Fee Payment Receipt)*
@@ -69,19 +69,30 @@ export const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({ fee, student, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto print:static print:p-0 print:bg-white print:overflow-visible">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-orange-200 print:shadow-none print:border-none print:max-w-none print:rounded-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-orange-200 flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:rounded-none print:m-0">
         
         {/* Modal Action Bar (Hidden when printing) */}
-        <div className="no-print bg-gradient-to-r from-orange-800 to-amber-700 text-white px-5 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-amber-300" />
-            <span className="text-xs sm:text-sm font-semibold">
-              {isUpiEnabled ? 'शुल्क प्राप्ति रसीद एवं UPI भुगतान' : 'शुल्क प्राप्ति रसीद (Fee Receipt)'}
-            </span>
+        <div className="shrink-0 no-print bg-gradient-to-r from-orange-800 to-amber-700 text-white px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-orange-900/30">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-black/20 hover:bg-black/30 text-amber-100 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+              title="वापस जाएं (Back)"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden xs:inline sm:inline">वापस</span>
+            </button>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <CheckCircle className="w-4 h-4 text-amber-300 shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold truncate">
+                {isUpiEnabled ? 'शुल्क रसीद एवं UPI' : 'शुल्क प्राप्ति रसीद'}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-1.5 sm:space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             {/* Toggle Views (Only displayed if school has dynamic UPI enabled) */}
             {isUpiEnabled && (
               <div className="bg-black/20 p-0.5 rounded-lg flex items-center text-xs">
@@ -127,16 +138,19 @@ export const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({ fee, student, 
             <button
               onClick={onClose}
               aria-label="बंद करें"
-              className="p-1 rounded-lg hover:bg-white/10 text-white transition-all"
+              title="बंद करें (Close)"
+              className="p-1 rounded-lg hover:bg-white/10 text-white transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* VIEW 1: Printable Receipt Content */}
-        {activeView === 'receipt' && (
-          <div className="p-6 sm:p-10 text-stone-900 bg-white print:p-4" id="receipt-print-area">
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto print:overflow-visible">
+          {/* VIEW 1: Printable Receipt Content */}
+          {activeView === 'receipt' && (
+            <div className="p-4 sm:p-8 text-stone-900 bg-white print:p-4" id="receipt-print-area">
             
             {/* School Header */}
             <div className="text-center border-b-2 border-orange-600 pb-4 mb-5">
@@ -368,5 +382,6 @@ export const FeeReceiptModal: React.FC<FeeReceiptModalProps> = ({ fee, student, 
 
       </div>
     </div>
-  );
+  </div>
+);
 };

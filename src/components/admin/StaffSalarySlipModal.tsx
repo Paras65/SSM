@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Printer, IndianRupee, FileText, CheckCircle, Save, History, CreditCard, Clock } from 'lucide-react';
+import { X, Printer, IndianRupee, FileText, CheckCircle, Save, History, CreditCard, Clock, ArrowLeft } from 'lucide-react';
 import type { Staff } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
@@ -110,34 +110,44 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto print:static print:bg-white print:p-0 print:overflow-visible">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 print:max-h-none print:shadow-none print:border-none print:overflow-visible print:w-full">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:bg-white print:p-0 print:m-0 print:overflow-visible">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 print:max-h-none print:shadow-none print:border-none print:overflow-visible print:w-full print:m-0">
         
         {/* Header - Screen only */}
-        <div className="flex flex-wrap items-center justify-between px-6 py-3 bg-gradient-to-r from-saffron-800 via-saffron-700 to-amber-700 text-white gap-2 print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-amber-300" />
-              <h3 className="text-base md:text-lg font-bold">आचार्य / कर्मचारी वेतन प्रबंधन</h3>
+        <div className="shrink-0 flex flex-wrap items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-saffron-800 via-saffron-700 to-amber-700 text-white gap-2 print:hidden border-b border-saffron-900/40">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-black/20 hover:bg-black/30 text-amber-100 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+              title="वापस जाएं (Back)"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden xs:inline sm:inline">वापस</span>
+            </button>
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="w-5 h-5 text-amber-300 shrink-0" />
+              <h3 className="text-sm sm:text-base md:text-lg font-bold truncate">वेतन प्रबंधन</h3>
             </div>
             {/* View tabs */}
-            <div className="flex bg-saffron-950/40 p-0.5 rounded-lg text-xs font-semibold">
+            <div className="flex bg-saffron-950/40 p-0.5 rounded-lg text-xs font-semibold shrink-0">
               <button
                 onClick={() => setActiveView('slip')}
-                className={`px-3 py-1 rounded-md transition ${
+                className={`px-2.5 sm:px-3 py-1 rounded-md transition ${
                   activeView === 'slip' ? 'bg-amber-400 text-saffron-950 shadow font-bold' : 'text-stone-200 hover:text-white'
                 }`}
               >
-                वेतन पर्ची (Slip)
+                वेतन पर्ची
               </button>
               <button
                 onClick={() => setActiveView('history')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-md transition ${
                   activeView === 'history' ? 'bg-amber-400 text-saffron-950 shadow font-bold' : 'text-stone-200 hover:text-white'
                 }`}
               >
                 <History className="w-3.5 h-3.5" />
-                <span>वेतन इतिहास (History)</span>
+                <span className="hidden sm:inline">वेतन इतिहास</span>
+                <span className="sm:hidden">इतिहास</span>
               </button>
             </div>
           </div>
@@ -199,7 +209,8 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
             <button
               onClick={onClose}
               aria-label="बंद करें"
-              className="p-1.5 rounded-lg hover:bg-white/10 text-white transition"
+              title="बंद करें (Close)"
+              className="p-1.5 rounded-lg hover:bg-white/10 text-white transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

@@ -9,7 +9,8 @@ import {
   Users,
   Filter,
   CheckCircle2,
-  Download
+  Download,
+  ArrowLeft
 } from 'lucide-react';
 
 interface PrintableBlankFormsModalProps {
@@ -64,15 +65,24 @@ export const PrintableBlankFormsModal: React.FC<PrintableBlankFormsModalProps> =
     <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/75 backdrop-blur-sm flex flex-col p-2 sm:p-6 print:static print:p-0 print:bg-white print:overflow-visible">
       {/* Top Action Toolbar (Hidden in Print) */}
       <div className="no-print bg-stone-900 text-white rounded-2xl p-4 mb-4 shadow-xl border border-stone-800 flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto w-full shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white text-lg shadow-xs">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+            title="वापस जाएं (Back)"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden xs:inline sm:inline">वापस</span>
+          </button>
+          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white text-lg shadow-xs shrink-0">
             📄
           </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-amber-100 flex items-center gap-2">
-              <span>ऑफलाइन हार्ड-कॉपी सेतु (Printable Paper Forms)</span>
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-bold text-amber-100 flex items-center gap-2 truncate">
+              <span>ऑफलाइन हार्ड-कॉपी सेतु (Printable Forms)</span>
             </h3>
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-stone-400 truncate">
               A4 मानक मुद्रण योग्य रिक्त प्रवेश प्रपत्र एवं कक्षावार 31-दिवसीय उपस्थिति पंजिका
             </p>
           </div>
@@ -163,6 +173,7 @@ export const PrintableBlankFormsModal: React.FC<PrintableBlankFormsModalProps> =
           <button
             type="button"
             onClick={onClose}
+            title="बंद करें (Close)"
             className="p-1.5 text-stone-400 hover:text-white hover:bg-stone-800 rounded-xl transition cursor-pointer"
           >
             <X className="w-5 h-5" />

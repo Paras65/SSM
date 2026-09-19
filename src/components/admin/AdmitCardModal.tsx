@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import type { Student, Exam } from '../../types';
-import { Printer, X, Award, ShieldCheck, QrCode } from 'lucide-react';
+import { Printer, X, Award, ShieldCheck, QrCode, ArrowLeft } from 'lucide-react';
 
 interface AdmitCardModalProps {
   student: Student;
@@ -26,36 +26,47 @@ export const AdmitCardModal: React.FC<AdmitCardModalProps> = ({ student, exam, o
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&margin=2&data=${qrVerificationData}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs overflow-y-auto print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl border border-stone-200 relative my-6 print:shadow-none print:border-none print:max-w-none print:rounded-none print:p-0 print:m-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-stone-200 flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:rounded-none print:m-0">
         
         {/* Action Bar (Hidden in Print) */}
-        <div className="no-print flex items-center justify-between pb-3 border-b border-stone-200">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🪪</span>
-            <div>
-              <h3 className="text-sm font-bold text-stone-900">
-                परीक्षा प्रवेश पत्र (Examination Admit Card / Hall Ticket)
+        <div className="shrink-0 no-print bg-stone-900 text-white px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-stone-800">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+              title="वापस जाएं (Back)"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden xs:inline sm:inline">वापस</span>
+            </button>
+            <span className="text-xl shrink-0">🪪</span>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-bold text-stone-100 truncate">
+                परीक्षा प्रवेश पत्र (Admit Card)
               </h3>
-              <p className="text-[11px] text-stone-500">
+              <p className="text-[10px] sm:text-[11px] text-stone-400 truncate">
                 {student.name} • {student.class} ({student.rollNo})
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-800 hover:to-amber-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
             >
-              <Printer className="w-4 h-4" />
-              <span>प्रिंट करें (Print Admit Card)</span>
+              <Printer className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">प्रिंट करें (Print)</span>
+              <span className="sm:hidden">प्रिंट</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition cursor-pointer"
+              className="p-1.5 sm:p-2 text-stone-400 hover:text-white rounded-xl hover:bg-stone-800 transition cursor-pointer"
+              title="बंद करें (Close)"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -63,8 +74,10 @@ export const AdmitCardModal: React.FC<AdmitCardModalProps> = ({ student, exam, o
           </div>
         </div>
 
-        {/* Printable Card Area */}
-        <div className="mt-4 p-5 sm:p-7 bg-amber-50/20 border-4 border-double border-orange-800 rounded-2xl relative print:border-2 print:m-0 print:p-5 print-avoid-break">
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 print:p-0 print:overflow-visible">
+          {/* Printable Card Area */}
+          <div className="p-4 sm:p-7 bg-amber-50/20 border-4 border-double border-orange-800 rounded-2xl relative print:border-2 print:m-0 print:p-5 print-avoid-break">
           
           {/* Watermark */}
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
@@ -227,6 +240,8 @@ export const AdmitCardModal: React.FC<AdmitCardModalProps> = ({ student, exam, o
               <span>प्रधानाचार्य हस्ताक्षर</span>
               <span className="block text-[9px] text-stone-400 font-normal">Principal Stamp & Sign</span>
             </div>
+          </div>
+
           </div>
 
         </div>

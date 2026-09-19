@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Student } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
-import { Printer, X, Award, ShieldCheck, QrCode } from 'lucide-react';
+import { Printer, X, Award, ShieldCheck, QrCode, ArrowLeft } from 'lucide-react';
 
 interface StudentIdCardModalProps {
   student: Student;
@@ -16,31 +16,46 @@ export const StudentIdCardModal: React.FC<StudentIdCardModalProps> = ({ student,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-4 overflow-y-auto print:static print:p-0 print:bg-white print:overflow-visible">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-orange-300 print:shadow-none print:border-none print:w-auto print:max-w-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-orange-300 flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:w-auto print:max-w-none print:rounded-none print:m-0">
         
         {/* Action Header */}
-        <div className="no-print bg-gradient-to-r from-orange-800 to-amber-700 text-white px-5 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4 text-yellow-300" />
-            <span>छात्र परिचय पत्र (Student ID Card)</span>
+        <div className="shrink-0 no-print bg-gradient-to-r from-orange-800 to-amber-700 text-white px-3.5 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-orange-900/30">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-black/20 hover:bg-black/30 text-amber-100 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+              title="वापस जाएं (Back)"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden xs:inline sm:inline">वापस</span>
+            </button>
+            <div className="flex items-center gap-1.5 min-w-0 text-xs font-bold uppercase tracking-wider">
+              <ShieldCheck className="w-4 h-4 text-yellow-300 shrink-0" />
+              <span className="truncate">छात्र परिचय पत्र</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-900 hover:bg-orange-50 rounded-lg text-xs font-bold transition-all shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-900 hover:bg-orange-50 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>प्रिंट करें (Print)</span>
+              <span>प्रिंट</span>
             </button>
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-orange-900 text-white">
+            <button
+              onClick={onClose}
+              title="बंद करें (Close)"
+              className="p-1 rounded-lg hover:bg-orange-900 text-white cursor-pointer"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {/* Printable ID Card Body */}
-        <div className="p-6 bg-stone-100 flex justify-center print:bg-white print:p-0">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-stone-100 flex justify-center print:bg-white print:p-0 print:overflow-visible">
           
           <div className="w-80 bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-orange-600 relative">
             

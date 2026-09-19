@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   TrendingUp,
   Users,
-  Search
+  Search,
+  ArrowLeft
 } from 'lucide-react';
 import { HelpTooltip } from '../common/HelpTooltip';
 import {
@@ -171,56 +172,67 @@ export const TabulationRegisterModal: React.FC<TabulationRegisterModalProps> = (
       <div className="bg-white rounded-3xl shadow-2xl border border-stone-300 w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden">
         
         {/* Top App Bar (Hidden on Print) */}
-        <div className="px-6 py-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-orange-950 via-stone-900 to-orange-950 text-white shrink-0 print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-400 flex items-center justify-center text-xl shadow-inner">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-orange-950 via-stone-900 to-orange-950 text-white shrink-0 print:hidden">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+              title="वापस जाएं (Back)"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden xs:inline sm:inline">वापस</span>
+            </button>
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-400 flex items-center justify-center text-xl shadow-inner shrink-0">
               📋
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-white tracking-wide">
-                  समग्र परीक्षा परिणाम सारणी / टैबुलेशन रजिस्टर (TR Sheet)
+                <h2 className="text-sm sm:text-lg font-black text-white tracking-wide truncate">
+                  समग्र परीक्षा परिणाम सारणी (TR Sheet)
                 </h2>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                <span className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
                   बोर्ड एवं विद्या भारती मानक
                 </span>
               </div>
-              <p className="text-xs text-stone-300">
+              <p className="text-xs text-stone-300 truncate">
                 शाखा: <span className="text-amber-300 font-bold">{currentSchool.hindiName || currentSchool.name}</span> • सत्र {selectedAcademicYear} • {selectedTerm}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md"
+              className="px-2.5 sm:px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
               title="लैंडस्केप प्रिंट करें"
             >
               <Printer className="w-4 h-4" />
-              <span>🖨️ लैंडस्केप प्रिंट</span>
+              <span className="hidden sm:inline">🖨️ लैंडस्केप प्रिंट</span>
+              <span className="sm:hidden">प्रिंट</span>
             </button>
             <button
               onClick={handleExportCSV}
               disabled={studentResults.length === 0}
-              className="px-3.5 py-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              className="px-2.5 sm:px-3.5 py-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
               title="एक्सेल / CSV डाउनलोड करें"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span>CSV निर्यात</span>
+              <span className="hidden sm:inline">CSV निर्यात</span>
+              <span className="sm:hidden">CSV</span>
             </button>
             <button
               onClick={fetchReports}
               disabled={loading}
-              className="p-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white transition disabled:opacity-50"
+              className="p-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white transition disabled:opacity-50 cursor-pointer"
               title="रिफ्रेश करें"
             >
               <RefreshCw className={`w-4 h-4 text-amber-400 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-stone-800 hover:bg-red-900/60 text-stone-300 hover:text-white transition"
-              title="बंद करें"
+              className="p-2 rounded-xl bg-stone-800 hover:bg-red-900/60 text-stone-300 hover:text-white transition cursor-pointer"
+              title="बंद करें (Close)"
             >
               <X className="w-5 h-5" />
             </button>
