@@ -15,7 +15,11 @@ import {
   FileText,
   ChevronDown,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Mic,
+  Save,
+  Download,
+  FolderOpen
 } from 'lucide-react';
 import {
   QuestionPaper,
@@ -170,6 +174,149 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
       setPaper(fallbackPaper);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Voice Input State
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [listeningField, setListeningField] = useState<'topic' | 'chapters' | null>(null);
+
+  // Saved Papers State (Save to device / localStorage)
+  const [savedPapers, setSavedPapers] = useState<QuestionPaper[]>(() => {
+    try {
+      const stored = localStorage.getItem('ssm_saved_question_papers');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showSavedModal, setShowSavedModal] = useState<boolean>(false);
+  const [saveToast, setSaveToast] = useState<string | null>(null);
+
+  // Voice Input Handler (Hindi & English Web Speech API)
+  const handleVoiceInput = (field: 'topic' | 'chapters') => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('आपके ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है। कृपया Google Chrome का उपयोग करें।');
+      return;
+    }
+
+    if (isListening) {
+      setIsListening(false);
+      setListeningField(null);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setListeningField(field);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results?.[0]?.[0]?.transcript || '';
+        if (transcript.trim()) {
+          if (field === 'topic') {
+            setCustomTopic(transcript.trim());
+          } else {
+            setChapters(transcript.trim());
+          }
+        }
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+        setListeningField(null);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        setListeningField(null);
+      };
+
+      recognition.start();
+    } catch {
+      setIsListening(false);
+      setListeningField(null);
+    }
+  };
+
+  // Save Paper to Device (Local Storage)
+  const handleSaveToDevice = () => {
+    try {
+      const paperToSave: QuestionPaper = {
+        ...paper,
+        id: paper.id || `qp-${Date.now()}`,
+        createdAt: paper.createdAt || new Date().toISOString()
+      };
+
+      const existing = [...savedPapers];
+      const index = existing.findIndex(p => p.id === paperToSave.id);
+      let updated: QuestionPaper[];
+      if (index >= 0) {
+        existing[index] = paperToSave;
+        updated = existing;
+      } else {
+        updated = [paperToSave, ...existing].slice(0, 50); // Keep last 50 papers
+      }
+
+      setSavedPapers(updated);
+      localStorage.setItem('ssm_saved_question_papers', JSON.stringify(updated));
+      setSaveToast('प्रश्न पत्र डिवाइस में सुरक्षित सहेजा गया!');
+      setTimeout(() => setSaveToast(null), 3000);
+    } catch {
+      setSaveToast('सहेजने में त्रुटि आई।');
+      setTimeout(() => setSaveToast(null), 3000);
+    }
+  };
+
+  // Load Saved Paper
+  const handleLoadSavedPaper = (saved: QuestionPaper) => {
+    setPaper(saved);
+    setClassLevel(saved.classLevel || classLevel);
+    setSubject(saved.subject || subject);
+    setExamType(saved.examType || examType);
+    if (saved.month) setMonth(saved.month);
+    if (saved.chapters) setChapters(saved.chapters);
+    if (saved.totalMarks) setTargetMarks(saved.totalMarks);
+    if (saved.durationMinutes) setDurationMinutes(saved.durationMinutes);
+    setShowSavedModal(false);
+    setSaveToast(`"${saved.title}" लोड किया गया!`);
+    setTimeout(() => setSaveToast(null), 3000);
+  };
+
+  // Delete Saved Paper
+  const handleDeleteSavedPaper = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedPapers.filter(p => p.id !== id);
+    setSavedPapers(updated);
+    localStorage.setItem('ssm_saved_question_papers', JSON.stringify(updated));
+  };
+
+  // Download Paper as JSON / File backup
+  const handleDownloadJson = () => {
+    try {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(paper, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      downloadAnchor.setAttribute(
+        'download',
+        `question_paper_${subject.replace(/[^a-zA-Z0-9]/g, '_')}_${classLevel.replace(/\s+/g, '_')}.json`
+      );
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      setSaveToast('प्रश्न पत्र फ़ाइल डाउनलोड हो गई!');
+      setTimeout(() => setSaveToast(null), 3000);
+    } catch {
+      alert('डाउनलोड करने में समस्या आई।');
     }
   };
 
@@ -416,76 +563,91 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/75 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-stone-200 w-full max-w-5xl my-auto max-h-[92vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-stone-950/75 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-white rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-stone-200 w-full max-w-5xl my-0 sm:my-auto h-full sm:h-auto sm:max-h-[92vh] flex flex-col overflow-hidden">
         
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-orange-200 bg-gradient-to-r from-orange-900 via-amber-900 to-stone-900 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-300 flex items-center justify-center shadow-inner shrink-0">
-              <FileText className="w-5 h-5" />
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-orange-200 bg-gradient-to-r from-orange-900 via-amber-900 to-stone-900 text-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-300 flex items-center justify-center shadow-inner shrink-0">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-white tracking-wide">
-                  स्मार्ट प्रश्न पत्र निर्माता (Smart Question Paper Generator)
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-sm sm:text-lg font-black text-white tracking-wide truncate">
+                  स्मार्ट प्रश्न पत्र निर्माता
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-yellow-300 border border-yellow-400/30">
-                  पाठ्यक्रम प्रगति आधारित
+                <span className="hidden xs:inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-yellow-300 border border-yellow-400/30 shrink-0">
+                  पाठ्यक्रम आधारित
                 </span>
               </div>
-              <p className="text-xs text-orange-200/90 truncate max-w-md sm:max-w-xl">
-                मासिक इकाई मूल्यांकन (Unit Test) एवं त्रैमासिक परीक्षा हेतु १-क्लिक संतुलित प्रश्न पत्र
+              <p className="text-[11px] sm:text-xs text-orange-200/90 truncate">
+                मासिक इकाई मूल्यांकन एवं परीक्षा हेतु १-क्लिक संतुलित प्रश्न पत्र
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-stone-200 hover:text-white transition cursor-pointer"
-            title="बंद करें"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowSavedModal(true)}
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 hover:text-white text-xs font-bold transition cursor-pointer border border-white/10"
+              title="सहेजे गए प्रश्न पत्र देखें"
+            >
+              <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
+              <span className="hidden sm:inline">सहेजे गए</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-400/20 text-[10px] font-mono">
+                {savedPapers.length}
+              </span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-stone-200 hover:text-white transition cursor-pointer"
+              title="बंद करें"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Blueprint & Configuration Bar */}
-        <div className="p-4 bg-amber-50/60 border-b border-orange-200 space-y-3 shrink-0">
+        <div className="p-3 sm:p-4 bg-amber-50/60 border-b border-orange-200 space-y-3 shrink-0">
           {/* Top Row: Exam Type Tabs & Live Marks Balance Badge */}
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-orange-200 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-orange-200 shadow-2xs overflow-x-auto max-w-full">
               <button
                 type="button"
                 onClick={() => handleExamTypeChange('unit-test')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   examType === 'unit-test'
                     ? 'bg-orange-700 text-white shadow-xs'
                     : 'text-stone-700 hover:bg-orange-50'
                 }`}
               >
-                <span>📅 मासिक इकाई मूल्यांकन (Unit Test)</span>
+                <span>📅 इकाई मूल्यांकन (Unit Test)</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleExamTypeChange('traimasik')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   examType === 'traimasik'
                     ? 'bg-orange-700 text-white shadow-xs'
                     : 'text-stone-700 hover:bg-orange-50'
                 }`}
               >
-                <span>📋 त्रैमासिक परीक्षा (Traimasik PT)</span>
+                <span>📋 त्रैमासिक (Traimasik)</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleExamTypeChange('ardhavarshik')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   examType === 'ardhavarshik'
                     ? 'bg-orange-700 text-white shadow-xs'
                     : 'text-stone-700 hover:bg-orange-50'
                 }`}
               >
-                <span>🏛️ सत्रीय / अभ्यास परीक्षा</span>
+                <span>🏛️ सत्रीय / अभ्यास</span>
               </button>
             </div>
 
@@ -677,36 +839,95 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
 
           {/* Chapters / Course Progress Input & AI Topic */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div>
-              <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
-                पाठ्यक्रम प्रगति / निर्धारित अध्याय (Syllabus Covered This Month)
-              </label>
-              <input
-                type="text"
-                value={chapters}
-                onChange={e => setChapters(e.target.value)}
-                placeholder="उदा. अध्याय १ एवं २: संख्या पद्धति, पूर्णांक एवं वैदिक गणित"
-                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs"
-              />
+              <div className="flex items-center justify-between mb-0.5">
+                <label className="block text-[10px] font-extrabold text-stone-600 uppercase">
+                  पाठ्यक्रम प्रगति / निर्धारित अध्याय (Syllabus)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleVoiceInput('chapters')}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                    isListening && listeningField === 'chapters'
+                      ? 'bg-red-600 text-white animate-pulse'
+                      : 'bg-amber-100 hover:bg-amber-200 text-amber-900'
+                  }`}
+                  title="बोलकर अध्याय लिखें (Voice Input)"
+                >
+                  <Mic className={`w-3 h-3 ${isListening && listeningField === 'chapters' ? 'text-white' : 'text-amber-800'}`} />
+                  <span>{isListening && listeningField === 'chapters' ? 'सुन रहे हैं...' : 'बोलकर लिखें'}</span>
+                </button>
+              </div>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={chapters}
+                  onChange={e => setChapters(e.target.value)}
+                  placeholder="उदा. अध्याय १ एवं २: संख्या पद्धति, पूर्णांक एवं वैदिक गणित"
+                  className={`w-full pr-8 px-3 py-1.5 rounded-lg border ${
+                    isListening && listeningField === 'chapters'
+                      ? 'border-red-500 ring-2 ring-red-200'
+                      : 'border-stone-300'
+                  } bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs`}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleVoiceInput('chapters')}
+                  className="absolute right-2 p-1 text-stone-400 hover:text-orange-600 transition cursor-pointer"
+                  title="माइक से बोलें"
+                >
+                  <Mic className={`w-3.5 h-3.5 ${isListening && listeningField === 'chapters' ? 'text-red-600 animate-pulse' : ''}`} />
+                </button>
+              </div>
             </div>
+
             <div>
               <div className="flex items-center justify-between mb-0.5">
                 <label className="text-[10px] font-extrabold text-stone-700 uppercase flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-orange-600" />
                   <span>विशेष पाठ व फोकस बिंदु (Special Focus Topic)</span>
                 </label>
-                <span className="text-[9px] font-bold text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded-full">
-                  ✨ स्वतः चयनित
-                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleVoiceInput('topic')}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                      isListening && listeningField === 'topic'
+                        ? 'bg-red-600 text-white animate-pulse'
+                        : 'bg-amber-100 hover:bg-amber-200 text-amber-900'
+                    }`}
+                    title="बोलकर फोकस टॉपिक लिखें (Voice Input)"
+                  >
+                    <Mic className={`w-3 h-3 ${isListening && listeningField === 'topic' ? 'text-white' : 'text-amber-800'}`} />
+                    <span>{isListening && listeningField === 'topic' ? 'सुन रहे हैं...' : 'बोलकर लिखें'}</span>
+                  </button>
+                  <span className="text-[9px] font-bold text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded-full">
+                    ✨ स्वतः चयनित
+                  </span>
+                </div>
               </div>
-              <input
-                type="text"
-                value={customTopic}
-                onChange={e => setCustomTopic(e.target.value)}
-                placeholder="उदा. प्रकाश का परावर्तन, कबीर के दोहे, या कोई विशेष टॉपिक..."
-                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={customTopic}
+                  onChange={e => setCustomTopic(e.target.value)}
+                  placeholder="उदा. प्रकाश का परावर्तन, कबीर के दोहे, या कोई विशेष टॉपिक..."
+                  className={`w-full pr-8 px-3 py-1.5 rounded-lg border ${
+                    isListening && listeningField === 'topic'
+                      ? 'border-red-500 ring-2 ring-red-200'
+                      : 'border-stone-300'
+                  } bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs`}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleVoiceInput('topic')}
+                  className="absolute right-2 p-1 text-stone-400 hover:text-orange-600 transition cursor-pointer"
+                  title="माइक से बोलें"
+                >
+                  <Mic className={`w-3.5 h-3.5 ${isListening && listeningField === 'topic' ? 'text-red-600 animate-pulse' : ''}`} />
+                </button>
+              </div>
               {/* 1-Click Suggestion Chips for Non-Tech Users */}
               <div className="flex flex-wrap items-center gap-1 mt-1 text-[10px]">
                 <span className="text-stone-400 font-bold">१-क्लिक सुझाव:</span>
@@ -745,7 +966,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         </div>
 
         {/* Action & View Switcher Bar */}
-        <div className="px-5 py-2.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between shrink-0">
+        <div className="px-3 sm:px-5 py-2.5 bg-stone-100 border-b border-stone-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -757,7 +978,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               }`}
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>संपादक (Edit Questions)</span>
+              <span>संपादक (Edit)</span>
             </button>
             <button
               type="button"
@@ -769,20 +990,42 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               }`}
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>A4 मुद्रण पूर्वावलोकन (Print Preview)</span>
+              <span>A4 पूर्वावलोकन (Preview)</span>
             </button>
           </div>
 
-          {activeTab === 'preview' && (
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              onClick={handleSaveToDevice}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              title="वर्तमान प्रश्न पत्र को डिवाइस मेमोरी में सहेजें"
             >
-              <Printer className="w-4 h-4" />
-              <span>प्रिंट करें (Print Paper)</span>
+              <Save className="w-3.5 h-3.5" />
+              <span>डिवाइस में सहेजें</span>
             </button>
-          )}
+
+            <button
+              type="button"
+              onClick={handleDownloadJson}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 text-xs font-bold transition cursor-pointer"
+              title="प्रश्न पत्र बैकअप फ़ाइल डाउनलोड करें (JSON)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">बैकअप</span>
+            </button>
+
+            {activeTab === 'preview' && (
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>प्रिंट करें</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Modal Body: Editor vs Preview */}
@@ -918,7 +1161,8 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             </div>
           ) : (
             /* TAB 2: A4 PRINT PREVIEW */
-            <div className="bg-white max-w-[210mm] mx-auto p-8 sm:p-12 rounded-xl shadow-lg border border-stone-200 text-stone-900 font-sans print:p-0 print:shadow-none print:border-none print:max-w-none">
+            <div className="overflow-x-auto pb-4">
+              <div className="bg-white min-w-[300px] max-w-[210mm] mx-auto p-4 sm:p-8 md:p-12 rounded-xl shadow-lg border border-stone-200 text-stone-900 font-sans print:p-0 print:shadow-none print:border-none print:max-w-none">
               
               {/* Exam Header */}
               <div className="text-center border-b-2 border-stone-900 pb-3 mb-3">
@@ -1058,34 +1302,47 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 <span>पृष्ठ १ का १</span>
               </div>
             </div>
+            </div>
           )}
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-3 border-t border-stone-200 bg-white flex items-center justify-between shrink-0">
-          <div className="text-xs text-stone-600">
-            कुल प्रश्न: <span className="font-bold text-stone-900">{paper.sections.reduce((acc, s) => acc + s.questions.length, 0)}</span> | 
-            कुल अंक: <span className="font-black text-orange-900">{currentTotalMarks} / {targetMarks}</span>
+        <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-t border-stone-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+          <div className="text-xs text-stone-600 flex items-center gap-2">
+            <span>कुल प्रश्न: <strong className="text-stone-900">{paper.sections.reduce((acc, s) => acc + s.questions.length, 0)}</strong></span>
+            <span>|</span>
+            <span>कुल अंक: <strong className="text-orange-900">{currentTotalMarks} / {targetMarks}</strong></span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500 bg-stone-100 px-2.5 py-1.5 rounded-xl border border-stone-200">
+          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 w-full sm:w-auto">
+            <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500 bg-stone-100 px-2.5 py-1.5 rounded-xl border border-stone-200">
               ⚡ <kbd className="font-mono bg-white px-1 rounded text-stone-700 font-bold border border-stone-300">Ctrl+Enter</kbd> जनरेट | <kbd className="font-mono bg-white px-1 rounded text-stone-700 font-bold border border-stone-300">Ctrl+P</kbd> प्रिंट
             </span>
+
+            <button
+              type="button"
+              onClick={handleSaveToDevice}
+              className="px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>सहेजें</span>
+            </button>
+
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 text-xs font-bold transition cursor-pointer"
+              className="px-3 sm:px-4 py-2 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 text-xs font-bold transition cursor-pointer"
             >
               बंद करें
             </button>
+
             <button
               type="button"
               onClick={() => {
                 setActiveTab('preview');
                 setTimeout(() => handlePrint(), 200);
               }}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              className="flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>A4 प्रिंट करें</span>
@@ -1093,6 +1350,112 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Saved Papers Modal / Drawer */}
+      {showSavedModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-stone-950/80 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-3.5 bg-stone-900 text-white flex items-center justify-between border-b border-stone-800">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-amber-400" />
+                <h3 className="text-sm sm:text-base font-bold text-white">
+                  सहेजे गए प्रश्न पत्र (Saved Question Papers)
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-amber-400/20 text-amber-300">
+                  {savedPapers.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSavedModal(false)}
+                className="p-1 rounded-lg text-stone-300 hover:text-white hover:bg-stone-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bg-stone-50">
+              {savedPapers.length === 0 ? (
+                <div className="text-center py-10 text-stone-500">
+                  <FolderOpen className="w-12 h-12 mx-auto text-stone-300 mb-2" />
+                  <p className="text-sm font-bold text-stone-600">कोई सहेजा गया प्रश्न पत्र नहीं मिला</p>
+                  <p className="text-xs text-stone-400 mt-1">
+                    प्रश्न पत्र तैयार करने के बाद "सहेजें" बटन पर क्लिक करके यहाँ सुरक्षित रख सकते हैं।
+                  </p>
+                </div>
+              ) : (
+                savedPapers.map(saved => (
+                  <div
+                    key={saved.id}
+                    onClick={() => handleLoadSavedPaper(saved)}
+                    className="p-3.5 bg-white rounded-xl border border-stone-200 hover:border-orange-300 hover:shadow-xs transition cursor-pointer flex items-center justify-between gap-3 group"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-orange-100 text-orange-900">
+                          {saved.classLevel}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-700">
+                          {saved.subject}
+                        </span>
+                        <span className="text-[11px] font-bold text-stone-500">
+                          {saved.totalMarks} अंक
+                        </span>
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-bold text-stone-900 group-hover:text-orange-900 truncate">
+                        {saved.title}
+                      </h4>
+                      <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                        {saved.chapters || 'पाठ्यक्रम आधारित'} • {saved.sections.reduce((acc, s) => acc + s.questions.length, 0)} प्रश्न
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLoadSavedPaper(saved);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-bold transition cursor-pointer"
+                        title="पेपर खोलें"
+                      >
+                        खोलें
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteSavedPaper(saved.id, e)}
+                        className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                        title="हटाएं"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="px-4 py-3 bg-stone-100 border-t border-stone-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowSavedModal(false)}
+                className="px-4 py-1.5 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-200 text-xs font-bold transition cursor-pointer"
+              >
+                बंद करें
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Save Toast */}
+      {saveToast && (
+        <div className="fixed bottom-5 right-5 z-70 bg-stone-900 text-white px-4 py-2.5 rounded-xl shadow-2xl border border-stone-700 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-bottom-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{saveToast}</span>
+        </div>
+      )}
     </div>
   );
 };
