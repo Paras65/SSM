@@ -893,9 +893,8 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
       if (effectiveKey.startsWith('AIzaSy')) {
         headers['x-goog-api-key'] = effectiveKey;
       } else {
-        // Support Bearer/OAuth tokens or pass via both
+        // For OAuth2 / Bearer tokens, send ONLY Authorization header (never send x-goog-api-key)
         headers['Authorization'] = `Bearer ${effectiveKey}`;
-        headers['x-goog-api-key'] = effectiveKey;
       }
 
       // Try primary model (gemini-1.5-flash) without leaking key in URL
@@ -934,6 +933,11 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
+        if (response.status === 401 || response.status === 403) {
+          try {
+            localStorage.removeItem('ssm_gemini_api_key');
+          } catch {}
+        }
         throw new Error(errJson?.error?.message || `AI service returned status ${response.status}`);
       }
 

@@ -457,8 +457,8 @@ router.post('/ai/generate-question-paper', async (req, res) => {
     if (sanitizedKey.startsWith('AIzaSy')) {
       googleHeaders['x-goog-api-key'] = sanitizedKey;
     } else {
+      // For OAuth2 / Bearer tokens, send ONLY Authorization header (never send x-goog-api-key)
       googleHeaders['Authorization'] = `Bearer ${sanitizedKey}`;
-      googleHeaders['x-goog-api-key'] = sanitizedKey;
     }
 
     let googleRes = await fetch(

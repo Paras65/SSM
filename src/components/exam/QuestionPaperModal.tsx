@@ -112,17 +112,18 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   // Special Focus & Generation State
   const [customTopic, setCustomTopic] = useState<string>(initialPrompt);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const geminiApiKey =
-    (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-    localStorage.getItem('ssm_gemini_api_key') ||
-    '';
-
   const handleSpecialFocusGenerate = async () => {
     setIsGenerating(true);
     try {
-      if (geminiApiKey) {
+      const effectiveKey =
+        (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+        localStorage.getItem('ssm_gemini_api_key') ||
+        '';
+
+      // Only attempt Gemini call if a valid Google AI Studio key (starts with AIzaSy) is available
+      if (effectiveKey && effectiveKey.startsWith('AIzaSy')) {
         const newPaper = await generateQuestionPaperWithGemini({
-          apiKey: geminiApiKey,
+          apiKey: effectiveKey,
           schoolId: publicSchool.id,
           schoolName: publicSchool.hindiName,
           classLevel,
@@ -137,6 +138,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         });
         setPaper(newPaper);
       } else {
+        // Automatically generate from curriculum question bank with 100% reliability
         const newPaper = generateSmartQuestionPaper({
           schoolId: publicSchool.id,
           schoolName: publicSchool.hindiName,
