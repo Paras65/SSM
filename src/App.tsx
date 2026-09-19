@@ -28,6 +28,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const TeacherPortal = React.lazy(() => import('./components/teacher/TeacherPortal').then(m => ({ default: m.TeacherPortal })));
 const StudentPortal = React.lazy(() => import('./components/student/StudentPortal').then(m => ({ default: m.StudentPortal })));
+const HelpGuideModal = React.lazy(() => import('./components/admin/HelpGuideModal').then(m => ({ default: m.HelpGuideModal })));
 
 const PortalLoadingFallback: React.FC<{ label: string }> = ({ label }) => (
   <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
@@ -85,6 +86,7 @@ const SchoolApp: React.FC = () => {
   const [showSchoolModal, setShowSchoolModal] = useState(false);
   const [showSchoolLocatorModal, setShowSchoolLocatorModal] = useState(false);
   const [showTcVerificationModal, setShowTcVerificationModal] = useState(false);
+  const [showHelpGuideModal, setShowHelpGuideModal] = useState(false);
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
   const [schoolModalPlan, setSchoolModalPlan] = useState<'free' | 'pro'>('free');
 
@@ -100,7 +102,7 @@ const SchoolApp: React.FC = () => {
     }
   }, []);
 
-  const isAnyPublicModalOpen = showAuthModal || showTeacherAuthModal || showSchoolModal || showSchoolLocatorModal || showTcVerificationModal;
+  const isAnyPublicModalOpen = showAuthModal || showTeacherAuthModal || showSchoolModal || showSchoolLocatorModal || showTcVerificationModal || showHelpGuideModal;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -110,6 +112,7 @@ const SchoolApp: React.FC = () => {
         setShowSchoolModal(false);
         setShowSchoolLocatorModal(false);
         setShowTcVerificationModal(false);
+        setShowHelpGuideModal(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -180,6 +183,7 @@ const SchoolApp: React.FC = () => {
             onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
             onOpenVerifyTc={() => setShowTcVerificationModal(true)}
             onStartDemo={startDemoMode}
+            onOpenHelpGuide={() => setShowHelpGuideModal(true)}
           />
           <main className="flex-1">
             <Hero
@@ -189,10 +193,12 @@ const SchoolApp: React.FC = () => {
               onOpenBranchList={handleOpenBranchList}
               onOpenVerifyTc={() => setShowTcVerificationModal(true)}
               onStartDemo={startDemoMode}
+              onOpenHelpGuide={() => setShowHelpGuideModal(true)}
             />
             <ERPModulesSection
               onOpenSignUp={() => handleOpenSignUp('free')}
               onOpenLogin={handleOpenLogin}
+              onOpenHelpGuide={() => setShowHelpGuideModal(true)}
             />
             <DailyPanchang />
             <AdmissionInquiry />
@@ -207,7 +213,7 @@ const SchoolApp: React.FC = () => {
             />
           </main>
           <LegalInformation />
-          <Footer />
+          <Footer onOpenHelpGuide={() => setShowHelpGuideModal(true)} />
         </div>
       )}
       <PwaInstallBanner />
@@ -265,6 +271,16 @@ const SchoolApp: React.FC = () => {
         initialMode={schoolModalMode}
         initialPlan={schoolModalPlan}
       />
+
+      {/* User Manual & Help Guide Modal (Accessible from Homepage) */}
+      {showHelpGuideModal && (
+        <React.Suspense fallback={null}>
+          <HelpGuideModal
+            isOpen={showHelpGuideModal}
+            onClose={() => setShowHelpGuideModal(false)}
+          />
+        </React.Suspense>
+      )}
     </>
   );
 };

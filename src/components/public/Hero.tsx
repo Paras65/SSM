@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import { BookOpen, ShieldCheck, HeartHandshake, ArrowRight, Sparkles, Plus, LogIn } from 'lucide-react';
+import { BookOpen, ShieldCheck, HeartHandshake, ArrowRight, Sparkles, Plus, LogIn, HelpCircle } from 'lucide-react';
 
 interface HeroProps {
   onOpenSignUp?: () => void;
@@ -9,6 +9,7 @@ interface HeroProps {
   onOpenBranchList?: () => void;
   onOpenVerifyTc?: () => void;
   onStartDemo?: () => void;
+  onOpenHelpGuide?: () => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
@@ -17,7 +18,8 @@ export const Hero: React.FC<HeroProps> = ({
   onOpenTeacherLogin,
   onOpenBranchList,
   onOpenVerifyTc,
-  onStartDemo
+  onStartDemo,
+  onOpenHelpGuide
 }) => {
   const { setViewMode, publicSchool } = useSchool();
 
@@ -163,25 +165,37 @@ export const Hero: React.FC<HeroProps> = ({
                   <span>✅ टीसी सत्यापन</span>
                 </button>
               )}
+
+              {onOpenHelpGuide && (
+                <button
+                  type="button"
+                  onClick={onOpenHelpGuide}
+                  className="px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-orange-950 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="सम्पूर्ण ३६-अध्यायी उपयोगकर्ता मार्गदर्शिका व सहायता देखें"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-orange-600" />
+                  <span>📖 ईआरपी मार्गदर्शिका</span>
+                </button>
+              )}
             </div>
 
             {/* Highlights row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-orange-200/80">
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
-                <span className="block text-2xl font-black text-orange-700">100%</span>
-                <span className="text-xs text-stone-600 font-medium">कागज-रहित ईआरपी</span>
+                <span className="block text-2xl font-black text-orange-700">३६+</span>
+                <span className="text-xs text-stone-600 font-medium">ईआरपी मॉड्यूल</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
                 <span className="block text-xl sm:text-2xl font-black text-orange-700">NEP 2020</span>
                 <span className="text-xs text-stone-600 font-medium">360° प्रगति पत्र</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
-                <span className="block text-2xl font-black text-orange-700">5+</span>
-                <span className="text-xs text-stone-600 font-medium">पंचमुखी आयाम</span>
+                <span className="block text-xl sm:text-2xl font-black text-orange-700">AI विज़न</span>
+                <span className="text-xs text-stone-600 font-medium">रजिस्टर स्कैनर</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
-                <span className="block text-xl sm:text-2xl font-black text-orange-700">बहु-शाखा</span>
-                <span className="text-xs text-stone-600 font-medium">स्वायत्त क्लाउड</span>
+                <span className="block text-xl sm:text-2xl font-black text-orange-700">DCR बही</span>
+                <span className="text-xs text-stone-600 font-medium">दैनिक नोट मिलान</span>
               </div>
             </div>
 

@@ -6,7 +6,11 @@ import { PrivacyPolicyModal } from '../common/PrivacyPolicyModal';
 import { SchoolPlansModal } from './SchoolPlansModal';
 import { TCVerificationModal } from './TCVerificationModal';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenHelpGuide?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenHelpGuide }) => {
   const { publicSchool } = useSchool();
   const { t } = useLanguage();
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -62,6 +66,17 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-xs text-stone-300">
               <li><a href="#about" className="hover:text-orange-400 transition-colors">विद्यालय परिचय एवं इतिहास</a></li>
               <li><a href="#contact" className="hover:text-orange-400 transition-colors text-amber-300 font-medium">📞 संपर्क व ईआरपी सहायता केंद्र</a></li>
+              {onOpenHelpGuide && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={onOpenHelpGuide}
+                    className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-semibold cursor-pointer"
+                  >
+                    <span>📖 संपूर्ण उपयोगकर्ता मार्गदर्शिका (36 अध्याय)</span>
+                  </button>
+                </li>
+              )}
               <li><a href="#panchmukhi" className="hover:text-orange-400 transition-colors">पंचमुखी शिक्षा आयाम</a></li>
               <li><a href="#vandana" className="hover:text-orange-400 transition-colors">दैनिक सरस्वती वंदना एवं मंत्र</a></li>
               <li><a href="#admissions" className="hover:text-orange-400 transition-colors">सत्र 2026-27 प्रवेश फॉर्म</a></li>

@@ -61,19 +61,23 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenSignUp }) => {
             <div className="space-y-2.5 pt-1 text-xs sm:text-sm text-stone-800">
               <div className="flex items-center gap-2.5">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span><strong>NEP 2020 अनुपालन:</strong> 360° समग्र प्रगति पत्र (HPC) एवं सर्वांगीण विकास मूल्यांकन।</span>
+                <span><strong>NEP 2020 अनुपालन:</strong> 360° समग्र प्रगति पत्र (HPC) एवं पंचमुखी शिक्षा विकास मूल्यांकन।</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span><strong>शून्य-लागत व्हाट्सएप संवाद:</strong> उपस्थिति, परीक्षा अंक एवं परिपत्र सीधे अभिभावकों के फोन पर।</span>
+                <span><strong>शून्य-लागत व्हाट्सएप संवाद:</strong> 1-क्लिक अनुपस्थित कतार, शुल्क रसीद व परीक्षा परिणाम सीधे फोन पर।</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span><strong>सुरक्षित डेटा संचालन:</strong> 100% विज्ञापन-मुक्त, सुरक्षित एवं स्वायत्त बहु-शाखा डेटाबेस।</span>
+                <span><strong>हार्ड-कॉपी व डिजिटल सेतु:</strong> रजिस्टर AI स्कैनर, 17-कॉलम दाखिल-खारिज (S.R.) पंजिका एवं A4 ऑफ़लाइन प्रपत्र।</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span><strong>कागज-रहित प्रशासन:</strong> डिजिटल प्रवेश पंजिका, स्वचालित शुल्क रसीदें एवं 1-क्लिक टीसी सत्यापन।</span>
+                <span><strong>दैनिक रोकड़ बही (DCR) व टीसी:</strong> ₹500-₹10 भौतिक नोट मिलान, स्वतः उपस्थिति गणना व ऑनलाइन TC सत्यापन।</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span><strong>सुरक्षित डेटा संचालन:</strong> 100% विज्ञापन-मुक्त, DPDP Act 2023 अनुपालित एवं स्वायत्त बहु-शाखा क्लाउड।</span>
               </div>
             </div>
           </div>
@@ -121,10 +125,10 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenSignUp }) => {
                   <FileText className="w-5 h-5 text-emerald-700" />
                 </div>
                 <h4 className="text-sm sm:text-base font-bold text-stone-900 mb-1.5">
-                  डिजिटल छात्र पंजिका व टीसी
+                  दाखिल-खारिज, DCR व टीसी
                 </h4>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  यू-डायस (UDISE+) संगत डेटा, डिजिटल आईडी कार्ड, फोटो प्रबंधन एवं ऑनलाइन क्यूआर/पिन आधारित स्थानांतरण प्रमाण पत्र (TC)।
+                  17-कॉलम वैधानिक पंजिका, दैनिक रोकड़ बही नोट मिलान, 8-आईडी कार्ड प्रति A4, और ऑनलाइन क्यूआर सत्यापित टीसी।
                 </p>
               </div>
               <span className="text-[11px] font-bold text-emerald-700 mt-3 pt-2 border-t border-stone-100 block">

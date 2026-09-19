@@ -14,6 +14,7 @@ interface NavbarProps {
   onOpenTeacherLogin?: () => void;
   onOpenVerifyTc?: () => void;
   onStartDemo?: () => void;
+  onOpenHelpGuide?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -22,7 +23,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBranchList,
   onOpenTeacherLogin,
   onOpenVerifyTc,
-  onStartDemo
+  onStartDemo,
+  onOpenHelpGuide
 }) => {
   const { viewMode, setViewMode, dbStatus, currentSchool, publicSchool, isDemoMode } = useSchool();
   const { language, toggleLanguage, setLanguage, t } = useLanguage();
@@ -258,6 +260,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       संपर्क व सहायता (Contact & Support)
                     </a>
+                    {onOpenHelpGuide && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMoreLinksOpen(false);
+                          onOpenHelpGuide();
+                        }}
+                        className="w-full text-left block px-3.5 py-1.5 text-xs text-amber-950 bg-amber-50 hover:bg-amber-100 font-bold border-t border-orange-100 cursor-pointer transition"
+                      >
+                        📖 उपयोगकर्ता मार्गदर्शिका (36 अध्याय)
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -581,6 +595,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   💻 ईआरपी विशेषताएं व मॉड्यूल
                 </a>
+                {onOpenHelpGuide && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenHelpGuide();
+                    }}
+                    className="w-full text-left block px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-orange-950 font-bold border border-amber-300 cursor-pointer"
+                  >
+                    📖 उपयोगकर्ता मार्गदर्शिका (36 अध्याय)
+                  </button>
+                )}
                 <a
                   href="#admissions"
                   onClick={() => setMobileMenuOpen(false)}
