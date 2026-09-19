@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import type { Student } from '../../types';
 import { convertDateToHindiWords } from '../../utils/dakhilKharijExport';
-import { Printer, X, Award, ShieldCheck, Download } from 'lucide-react';
+import { Printer, X, ArrowLeft, Award, ShieldCheck, Download } from 'lucide-react';
 
 
 interface TransferCertificateModalProps {
@@ -85,50 +85,61 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 print:p-0 print:bg-white">
+    <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full border border-stone-200 overflow-hidden flex flex-col my-4 max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:w-full">
         
         {/* Controls Bar (Hidden during print) */}
-        <div className="bg-stone-900 text-white px-5 py-3 flex items-center justify-between print:hidden shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📜</span>
-            <div>
-              <h3 className="text-sm font-bold text-amber-200">
+        <div className="bg-stone-900 text-white px-3.5 sm:px-5 py-2.5 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 print:hidden shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+              title="वापस जाएं (Back)"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden xs:inline sm:inline">वापस</span>
+            </button>
+            <span className="text-lg sm:text-xl shrink-0">📜</span>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-bold text-amber-200 truncate">
                 स्थानांतरण प्रमाण पत्र (Transfer Certificate / TC)
               </h3>
-              <span className="text-[11px] text-stone-400">
+              <span className="text-[10px] sm:text-[11px] text-stone-400 truncate block">
                 विद्या भारती मानक प्रारूप • छात्र: {student.name} ({student.rollNo})
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {!isWithdrawn ? (
               <button
                 type="button"
                 onClick={handleIssueAndWithdraw}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
                 title="टी.सी. जारी करें एवं छात्र का नाम दाखिल-खारिज पंजिका में 'खारिज' करें"
               >
                 <Award className="w-3.5 h-3.5 text-yellow-300" />
-                <span>टी.सी. निर्गमन व नाम पृथक करें</span>
+                <span className="hidden sm:inline">टी.सी. निर्गमन व नाम पृथक करें</span>
+                <span className="sm:hidden">नाम पृथक</span>
               </button>
             ) : (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-800 text-emerald-100 rounded-lg text-xs font-bold">
+              <span className="flex items-center gap-1 px-2 sm:px-2.5 py-1 bg-emerald-800 text-emerald-100 rounded-lg text-xs font-bold">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-                <span>टी.सी. निर्गमित (खारिज)</span>
+                <span>टी.सी. निर्गमित</span>
               </span>
             )}
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>प्रिंट / PDF सेव करें</span>
+              <span>प्रिंट</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1 text-stone-400 hover:text-white rounded-lg hover:bg-stone-800"
+              className="p-1.5 text-stone-400 hover:text-white rounded-lg hover:bg-stone-800 transition cursor-pointer"
+              title="बंद करें (Close)"
             >
               <X className="w-5 h-5" />
             </button>

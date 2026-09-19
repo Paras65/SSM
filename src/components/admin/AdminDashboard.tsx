@@ -1440,13 +1440,6 @@ export const AdminDashboard: React.FC = () => {
           />
         )}
 
-        {activeTcStudent && (
-          <TransferCertificateModal
-            student={activeTcStudent}
-            onClose={() => setActiveTcStudent(null)}
-          />
-        )}
-
         {showSchoolModal && (
           <SchoolManagementModal
             isOpen={showSchoolModal}
@@ -1583,6 +1576,13 @@ export const AdminDashboard: React.FC = () => {
           <DakhilKharijRegisterModal
             onClose={() => setShowDakhilKharijModal(false)}
             onOpenTc={setActiveTcStudent}
+          />
+        )}
+
+        {activeTcStudent && (
+          <TransferCertificateModal
+            student={activeTcStudent}
+            onClose={() => setActiveTcStudent(null)}
           />
         )}
 
