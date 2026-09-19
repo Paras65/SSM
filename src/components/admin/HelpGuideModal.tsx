@@ -18,6 +18,21 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+const HELP_CATEGORIES = [
+  { id: 'all', label: 'सभी विषय' },
+  { id: 'daily-guide', label: '🌟 1-मिनट सरल दैनिक गाइड' },
+  { id: 'dcr', label: '💵 रोकड़ बही (DCR)' },
+  { id: 'scanner', label: '📸 AI रजिस्टर स्कैनर' },
+  { id: 'tc', label: '📜 टीसी व उपस्थिति' },
+  { id: 'paper-bridge', label: '📄 A4 रिक्त फॉर्म्स' },
+  { id: 'session', label: '🎓 सत्र व प्रोन्नति' },
+  { id: 'exam', label: '📝 परीक्षा व अंक' },
+  { id: 'auth', label: '🔑 लॉगिन व क्रेडेंशियल' },
+  { id: 'fee', label: '💰 शुल्क व रसीदें' },
+  { id: 'staff', label: '👩‍🏫 आचार्य व स्टाफ' },
+  { id: 'dpdp', label: '🔒 DPDP गोपनीयता' }
+];
+
 interface HelpGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -300,25 +315,33 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            {[
-              { id: 'all', label: 'सभी विषय' },
-              { id: 'daily-guide', label: '🌟 1-मिनट सरल दैनिक गाइड' },
-              { id: 'dcr', label: '💵 रोकड़ बही (DCR)' },
-              { id: 'scanner', label: '📸 AI रजिस्टर स्कैनर' },
-              { id: 'tc', label: '📜 टीसी व उपस्थिति' },
-              { id: 'paper-bridge', label: '📄 A4 रिक्त फॉर्म्स' },
-              { id: 'session', label: '🎓 सत्र व प्रोन्नति' },
-              { id: 'exam', label: '📝 परीक्षा व अंक' },
-              { id: 'auth', label: '🔑 लॉगिन व क्रेडेंशियल' },
-              { id: 'fee', label: '💰 शुल्क व रसीदें' },
-              { id: 'staff', label: '👩‍🏫 आचार्य व स्टाफ' },
-              { id: 'dpdp', label: '🔒 DPDP गोपनीयता' }
-            ].map(cat => (
+          {/* Mobile Category Dropdown (sm:hidden) - Dashboard Consistent */}
+          <div className="sm:hidden">
+            <label htmlFor="mobile-help-category" className="sr-only">विषय चुनें</label>
+            <div className="relative">
+              <select
+                id="mobile-help-category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full pl-3 pr-8 py-2 rounded-xl border border-stone-200 bg-white text-xs font-bold text-stone-900 appearance-none focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs cursor-pointer"
+              >
+                {HELP_CATEGORIES.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-stone-500 absolute right-2.5 top-2.5 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Desktop & Tablet Wrapped Category Pills (hidden sm:flex) - No Horizontal Scroll */}
+          <div className="hidden sm:flex flex-wrap items-center gap-1.5 text-xs">
+            {HELP_CATEGORIES.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition ${
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
                   selectedCategory === cat.id
                     ? 'bg-stone-900 text-white shadow-2xs'
                     : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-100'
