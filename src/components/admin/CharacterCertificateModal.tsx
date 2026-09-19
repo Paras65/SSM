@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import type { Student } from '../../types';
-import { Printer, X, Award } from 'lucide-react';
+import { Printer, X, ArrowLeft } from 'lucide-react';
 
 interface CharacterCertificateModalProps {
   student: Student;
@@ -22,42 +22,56 @@ export const CharacterCertificateModal: React.FC<CharacterCertificateModalProps>
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/60 backdrop-blur-xs overflow-y-auto print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
-      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full p-3.5 sm:p-6 shadow-2xl border border-stone-200 relative my-2 sm:my-6 print:shadow-none print:border-none print:max-w-none print:rounded-none print:p-0 print:m-0">
-        {/* Action Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-3 border-b border-stone-200 print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📜</span>
-            <div>
-              <h3 className="text-xs sm:text-sm font-bold text-stone-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:rounded-none print:m-0">
+        {/* Action Header - Pinned at top */}
+        <div className="shrink-0 bg-stone-900 text-white px-3.5 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-stone-800 print:hidden">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+              title="वापस जाएं (Back)"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden xs:inline sm:inline">वापस</span>
+            </button>
+            <span className="text-lg sm:text-xl shrink-0">📜</span>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-bold text-stone-100 truncate">
                 चरित्र प्रमाण पत्र (Character Certificate)
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-stone-500">
+              <p className="text-[10px] sm:text-[11px] text-stone-400 truncate">
                 {student.name} • {student.class} ({student.rollNo})
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
+              type="button"
               onClick={handlePrint}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              className="px-2.5 sm:px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              title="प्रमाण पत्र प्रिंट करें"
             >
               <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>प्रमाण पत्र प्रिंट करें</span>
+              <span className="hidden sm:inline">प्रमाण पत्र प्रिंट करें</span>
+              <span className="sm:hidden">प्रिंट</span>
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 sm:p-2 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition cursor-pointer"
-              title="बंद करें"
+              className="p-1.5 sm:p-2 text-stone-400 hover:text-white rounded-xl hover:bg-stone-800 transition cursor-pointer"
+              title="बंद करें (Close)"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Certificate Container */}
-        <div className="mt-3 sm:mt-4 p-4 sm:p-8 md:p-12 bg-amber-50/20 border-4 sm:border-8 border-double border-orange-800 rounded-xl sm:rounded-2xl relative print:border-8 print:p-10">
+        {/* Certificate Container - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 print:p-0 print:overflow-visible">
+          <div className="p-4 sm:p-8 md:p-12 bg-amber-50/20 border-4 sm:border-8 border-double border-orange-800 rounded-xl sm:rounded-2xl relative print:border-8 print:p-10">
           
           {/* Watermark */}
           <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
@@ -124,6 +138,7 @@ export const CharacterCertificateModal: React.FC<CharacterCertificateModalProps>
             </div>
           </div>
 
+        </div>
         </div>
       </div>
     </div>
