@@ -256,7 +256,9 @@ router.post('/student-login', authLimiter, async (req, res) => {
       req
     });
 
-    res.json({ success: true, token, student });
+    const sanitizedStudent = { ...student };
+    delete sanitizedStudent.pin;
+    res.json({ success: true, token, student: sanitizedStudent });
   } catch (err) {
     res.status(500).json({ error: 'छात्र प्रमाणीकरण त्रुटि: ' + err.message });
   }

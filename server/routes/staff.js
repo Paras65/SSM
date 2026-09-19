@@ -112,7 +112,9 @@ router.post('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
     }
     const member = new Staff(data);
     await member.save();
-    res.status(201).json(member);
+    const sanitizedMember = member.toObject ? member.toObject() : { ...member };
+    delete sanitizedMember.pin;
+    res.status(201).json(sanitizedMember);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -133,7 +135,7 @@ router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       updateData,
       { returnDocument: 'after', runValidators: true }
-    );
+    ).select('-pin');
     if (!member) return res.status(404).json({ error: 'Staff member not found' });
     res.json(member);
   } catch (err) {

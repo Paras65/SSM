@@ -419,5 +419,76 @@ describe('Multi-Tenant Isolation & Cross-Branch Protection Suite', () => {
       expect(res.body[0].pin).toBeUndefined();
       expect(res.body[0].name).toBe('Acharya Sharma');
     });
+
+    it('excludes student PIN from POST /api/students creation response', async () => {
+      const res = await request(app)
+        .post('/api/students')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          id: 'test-student-pin-strip',
+          rollNo: '101',
+          name: 'Anonymized Test Student',
+          gender: 'Bhaiya',
+          class: 'Class 6',
+          section: 'A',
+          fatherName: 'Father',
+          contact: '9876543210',
+          pin: '9876'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.pin).toBeUndefined();
+      expect(res.body.name).toBe('Anonymized Test Student');
+    });
+
+    it('excludes student PIN from GET /api/students listing responses', async () => {
+      const res = await request(app)
+        .get('/api/students')
+        .set('Authorization', `Bearer ${schoolAToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0].pin).toBeUndefined();
+    });
+
+    it('excludes teacher PIN from POST /api/staff creation response', async () => {
+      const res = await request(app)
+        .post('/api/staff')
+        .set('Authorization', `Bearer ${schoolAToken}`)
+        .send({
+          id: 'test-staff-pin-strip',
+          name: 'Acharya Verma',
+          phone: '9876543219',
+          designation: 'आचार्य',
+          pin: '5678'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.pin).toBeUndefined();
+      expect(res.body.name).toBe('Acharya Verma');
+    });
+
+    it('excludes adminPasscode from POST /api/schools response', async () => {
+      const res = await request(app)
+        .post('/api/schools')
+        .send({
+          id: 'ssm-security-branch',
+          name: 'Saraswati Shishu Mandir Security Test Branch',
+          hindiName: 'सरस्वती शिशु मंदिर सुरक्षा शाखा',
+          city: 'सुरक्षा नगर',
+          address: 'सुरक्षा मार्ग',
+          state: 'UP',
+          prant: 'गोरक्ष',
+          phone: '9876543210',
+          email: 'sec@ssm.test',
+          principalName: 'सुरक्षा प्रधानाचार्य',
+          adminPasscode: 'sec123'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.adminPasscode).toBeUndefined();
+      expect(res.body.id).toBe('ssm-security-branch');
+    });
   });
 });

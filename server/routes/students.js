@@ -5,7 +5,7 @@ const Fee = require('../models/Fee');
 const Attendance = require('../models/Attendance');
 const ReportCard = require('../models/ReportCard');
 const Leave = require('../models/Leave');
-const { requireAdminAuth, requireTeacherAuth, requireStudentAuth, requireSchoolScope } = require('../middleware/auth');
+const { requireAdminAuth, requireTeacherAuth, requireStudentAuth, requireSchoolScope, hashPasscode } = require('../middleware/auth');
 const { cleanStringParam, escapeRegex } = require('../middleware/sanitize');
 const { generateUniqueId, recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
 
@@ -51,7 +51,7 @@ router.get('/me', requireStudentAuth, async (req, res) => {
     }
 
     const [student, fees, attendance, reportCards] = await Promise.all([
-      Student.findOne({ id: studentId, ...(schoolId ? { schoolId } : {}) }).lean(),
+      Student.findOne({ id: studentId, ...(schoolId ? { schoolId } : {}) }).select('-pin').lean(),
       Fee.find({ studentId, ...(schoolId ? { schoolId } : {}) }).sort({ createdAt: -1 }).lean(),
       Attendance.find({ studentId, ...(schoolId ? { schoolId } : {}) }).sort({ date: -1 }).limit(60).lean(),
       ReportCard.find({ studentId, ...(schoolId ? { schoolId } : {}) }).sort({ createdAt: -1 }).lean()
@@ -85,7 +85,7 @@ router.get('/', requireTeacherAuth, requireSchoolScope, async (req, res) => {
     if (sec) filter.section = sec;
     if (yr) filter.academicYear = yr;
     if (st) filter.status = st;
-    await executeSafeQuery(Student, filter, req, res, { createdAt: -1 });
+    await executeSafeQuery(Student, filter, req, res, { createdAt: -1 }, '-pin');
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -101,9 +101,14 @@ router.post('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
     if (!studentData.schoolId) {
       studentData.schoolId = req.userSchoolId || 'ssm-gorakhpur';
     }
+    if (studentData.pin && typeof studentData.pin === 'string' && !studentData.pin.startsWith('scrypt:')) {
+      studentData.pin = hashPasscode(studentData.pin);
+    }
     const student = new Student(studentData);
     await student.save();
-    res.status(201).json(student);
+    const sanitizedStudent = student.toObject ? student.toObject() : { ...student };
+    delete sanitizedStudent.pin;
+    res.status(201).json(sanitizedStudent);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -146,7 +151,14 @@ router.post('/bulk', requireAdminAuth, requireSchoolScope, async (req, res) => {
       description: `${inserted.length} नए छात्रों का डेटा सफलतापूर्वक आयात (Bulk Import) किया गया।`,
       req
     });
-    res.status(201).json({ count: inserted.length, students: inserted });
+    res.status(201).json({
+      count: inserted.length,
+      students: inserted.map(s => {
+        const obj = s.toObject ? s.toObject() : { ...s };
+        delete obj.pin;
+        return obj;
+      })
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -163,11 +175,17 @@ router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
       delete updateData.schoolId;
     }
 
+    if (updateData.pin === '' || updateData.pin === undefined) {
+      delete updateData.pin;
+    } else if (typeof updateData.pin === 'string' && !updateData.pin.startsWith('scrypt:')) {
+      updateData.pin = hashPasscode(updateData.pin);
+    }
+
     const student = await Student.findOneAndUpdate(
       { id: req.params.id, ...(req.user.role === 'developer' ? {} : { schoolId: req.userSchoolId }) },
       updateData,
       { returnDocument: 'after', runValidators: true }
-    );
+    ).select('-pin');
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     // Cascading active synchronization across modules

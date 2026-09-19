@@ -324,7 +324,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           (isTeacherAuth && (!teacherSchoolId || teacherSchoolId === schoolIdToFetch))
         );
 
-        if (isAuthorizedForSchool) {
+        // API Optimization (Rule 10): Only fetch protected collections if user is actively in admin or teacher view
+        const shouldFetchProtected = (viewMode === 'admin' || viewMode === 'teacher') && isAuthorizedForSchool;
+
+        if (shouldFetchProtected) {
           // Fetch records filtered by active school safely using allSettled
           const [studentsRes, attRes, feesRes, repRes] = await Promise.allSettled([
             api.getStudents(schoolIdToFetch),
@@ -376,10 +379,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // Trigger re-fetch whenever the active school changes
+  // Trigger re-fetch whenever the active school or viewMode changes
   useEffect(() => {
     refreshFromDb(currentSchoolId);
-  }, [currentSchoolId]);
+  }, [currentSchoolId, viewMode]);
 
   // Centralized collision-proof client ID generator
   const generateClientId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;

@@ -90,7 +90,9 @@ router.post('/', async (req, res) => {
       description: `नवीन विद्यालय शाखा पंजीकृत: ${school.hindiName} (${school.city}, ${school.prant})`,
       req
     });
-    res.status(201).json(school);
+    const sanitizedSchool = school.toObject ? school.toObject() : { ...school };
+    delete sanitizedSchool.adminPasscode;
+    res.status(201).json(sanitizedSchool);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -125,7 +127,7 @@ router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
       targetFilter,
       updatePayload,
       { returnDocument: 'after', runValidators: true }
-    );
+    ).select('-adminPasscode');
     if (!school) return res.status(404).json({ error: 'School not found' });
 
     if (updatePayload.adminPasscode) {
