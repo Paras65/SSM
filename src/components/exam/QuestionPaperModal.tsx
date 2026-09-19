@@ -113,73 +113,33 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   const [durationMinutes, setDurationMinutes] = useState<number>(initialMarksDuration.duration);
   const [includeSanskriti, setIncludeSanskriti] = useState<boolean>(true);
 
+  // Voice Target Type
+  type VoiceTarget =
+    | { type: 'chapters' }
+    | { type: 'topic' }
+    | { type: 'voice-command' }
+    | { type: 'question'; secIndex: number; qIndex: number }
+    | { type: 'choice'; secIndex: number; qIndex: number };
+
   // Special Focus & Generation State
   const [customTopic, setCustomTopic] = useState<string>(initialPrompt);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const handleSpecialFocusGenerate = async () => {
-    setIsGenerating(true);
-    try {
-      const effectiveKey =
-        (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-        localStorage.getItem('ssm_gemini_api_key') ||
-        '';
 
-      // Only attempt Gemini call if a valid Google AI Studio key (starts with AIzaSy) is available
-      if (effectiveKey && effectiveKey.startsWith('AIzaSy')) {
-        const newPaper = await generateQuestionPaperWithGemini({
-          apiKey: effectiveKey,
-          schoolId: publicSchool.id,
-          schoolName: publicSchool.hindiName,
-          classLevel,
-          subject,
-          examType,
-          month,
-          chapters,
-          targetMarks,
-          durationMinutes,
-          includeSanskriti,
-          customTopic
-        });
-        setPaper(newPaper);
-      } else {
-        // Automatically generate from curriculum question bank with 100% reliability
-        const newPaper = generateSmartQuestionPaper({
-          schoolId: publicSchool.id,
-          schoolName: publicSchool.hindiName,
-          classLevel,
-          subject,
-          examType,
-          month,
-          chapters: customTopic || chapters,
-          targetMarks,
-          durationMinutes,
-          includeSanskriti
-        });
-        setPaper(newPaper);
-      }
-    } catch (err) {
-      console.error('Generation error:', err);
-      const fallbackPaper = generateSmartQuestionPaper({
-        schoolId: publicSchool.id,
-        schoolName: publicSchool.hindiName,
-        classLevel,
-        subject,
-        examType,
-        month,
-        chapters: customTopic || chapters,
-        targetMarks,
-        durationMinutes,
-        includeSanskriti
-      });
-      setPaper(fallbackPaper);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  // Smart / Baudhik Key State
+  const [smartKey, setSmartKey] = useState<string>(() => {
+    return (
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_smart_api_key') ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      ''
+    );
+  });
+  const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
+  const [tempKey, setTempKey] = useState<string>('');
 
   // Voice Input State & Ref
   const [isListening, setIsListening] = useState<boolean>(false);
-  const [listeningField, setListeningField] = useState<'topic' | 'chapters' | 'voice-command' | null>(null);
+  const [activeVoiceTarget, setActiveVoiceTarget] = useState<VoiceTarget | null>(null);
   const recognitionRef = useRef<any>(null);
 
   // Stop any active speech recognition on unmount
@@ -206,8 +166,8 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   const [showSavedModal, setShowSavedModal] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
 
-  // Voice Input Handler (Hindi & English Web Speech API + Voice Command Support)
-  const handleVoiceInput = (field: 'topic' | 'chapters' | 'voice-command') => {
+  // Voice Input Handler (Hindi & English Web Speech API + Question Dictation + Voice Commands)
+  const handleVoiceInput = (target: VoiceTarget) => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -216,15 +176,28 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
       return;
     }
 
-    // If currently listening, stop cleanly
+    // If currently listening to this exact target, stop cleanly
+    const isSameTarget =
+      isListening &&
+      activeVoiceTarget &&
+      activeVoiceTarget.type === target.type &&
+      (target.type !== 'question' ||
+        (activeVoiceTarget.type === 'question' &&
+          activeVoiceTarget.secIndex === target.secIndex &&
+          activeVoiceTarget.qIndex === target.qIndex)) &&
+      (target.type !== 'choice' ||
+        (activeVoiceTarget.type === 'choice' &&
+          activeVoiceTarget.secIndex === target.secIndex &&
+          activeVoiceTarget.qIndex === target.qIndex));
+
     if (isListening && recognitionRef.current) {
       try {
         recognitionRef.current.abort();
       } catch {}
       recognitionRef.current = null;
       setIsListening(false);
-      setListeningField(null);
-      return;
+      setActiveVoiceTarget(null);
+      if (isSameTarget) return;
     }
 
     try {
@@ -241,9 +214,15 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
       recognition.onstart = () => {
         setIsListening(true);
-        setListeningField(field);
-        if (field === 'voice-command') {
+        setActiveVoiceTarget(target);
+        if (target.type === 'voice-command') {
           setSaveToast('🎙️ बोलें: "सहेजें", "सेव करें", या "प्रिंट करें"...');
+        } else if (target.type === 'question') {
+          setSaveToast(`🎙️ प्र.${target.qIndex + 1} बोलकर लिखें...`);
+        } else if (target.type === 'choice') {
+          setSaveToast('🎙️ अथवा विकल्प बोलकर लिखें...');
+        } else if (target.type === 'chapters') {
+          setSaveToast('🎙️ पाठ्यक्रम / अध्याय का नाम बोलें...');
         }
       };
 
@@ -255,8 +234,8 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         const clean = transcript.trim();
         if (!clean) return;
 
-        // Detect voice command (save, print) when listening for voice-command
-        if (field === 'voice-command') {
+        // Detect voice command when listening for voice-command
+        if (target.type === 'voice-command') {
           const lower = clean.toLowerCase();
           if (
             lower.includes('सहेज') ||
@@ -281,17 +260,35 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             try { recognition.stop(); } catch {}
             return;
           }
-        } else if (field === 'topic') {
+        } else if (target.type === 'topic') {
           setCustomTopic(clean);
-        } else if (field === 'chapters') {
+        } else if (target.type === 'chapters') {
           setChapters(clean);
+        } else if (target.type === 'question') {
+          setPaper(prev => {
+            const updated = { ...prev };
+            const sections = [...updated.sections];
+            if (sections[target.secIndex]?.questions[target.qIndex]) {
+              sections[target.secIndex].questions[target.qIndex].text = clean;
+            }
+            return { ...updated, sections };
+          });
+        } else if (target.type === 'choice') {
+          setPaper(prev => {
+            const updated = { ...prev };
+            const sections = [...updated.sections];
+            if (sections[target.secIndex]?.questions[target.qIndex]) {
+              sections[target.secIndex].questions[target.qIndex].internalChoiceText = clean;
+            }
+            return { ...updated, sections };
+          });
         }
       };
 
       recognition.onerror = (event: any) => {
         console.warn('Speech recognition error:', event.error);
         setIsListening(false);
-        setListeningField(null);
+        setActiveVoiceTarget(null);
         recognitionRef.current = null;
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
           alert('माइक्रोफ़ोन की अनुमति नहीं मिली है। कृपया ब्राउज़र सेटिंग्स में माइक्रोफ़ोन की अनुमति (Allow Microphone) प्रदान करें।');
@@ -305,7 +302,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
       recognition.onend = () => {
         setIsListening(false);
-        setListeningField(null);
+        setActiveVoiceTarget(null);
         recognitionRef.current = null;
       };
 
@@ -313,7 +310,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     } catch (err: any) {
       console.warn('Failed to start speech recognition:', err);
       setIsListening(false);
-      setListeningField(null);
+      setActiveVoiceTarget(null);
       recognitionRef.current = null;
       alert('माइक्रोफ़ोन आरंभ करने में समस्या आई। कृपया पुनः प्रयास करें।');
     }
@@ -419,10 +416,56 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
   const marksBalance = currentTotalMarks - targetMarks;
 
-  // Handler to generate new balanced paper
-  const handleAutoGenerate = () => {
+  // Handler to generate new balanced paper (Async with Smart Key support & fallback)
+  const handleAutoGenerate = async () => {
+    setIsGenerating(true);
     try {
-      const newPaper = generateSmartQuestionPaper({
+      const effectiveKey = (
+        smartKey ||
+        (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+        localStorage.getItem('ssm_smart_api_key') ||
+        localStorage.getItem('ssm_gemini_api_key') ||
+        ''
+      ).trim();
+
+      if (effectiveKey) {
+        setSaveToast('⏳ बौद्धिक ब्लूप्रिंट अनुसार पेपर तैयार हो रहा है...');
+        const newPaper = await generateQuestionPaperWithGemini({
+          apiKey: effectiveKey,
+          schoolId: publicSchool.id,
+          schoolName: publicSchool.hindiName,
+          classLevel,
+          subject,
+          examType,
+          month,
+          chapters,
+          targetMarks,
+          durationMinutes,
+          includeSanskriti
+        });
+        setPaper(newPaper);
+        setSaveToast(`✨ बौद्धिक ब्लूप्रिंट अनुसार ${classLevel} ${subject.split(' ')[0]} का नया प्रश्न पत्र तैयार है!`);
+        setTimeout(() => setSaveToast(null), 3500);
+      } else {
+        const newPaper = generateSmartQuestionPaper({
+          schoolId: publicSchool.id,
+          schoolName: publicSchool.hindiName,
+          classLevel,
+          subject,
+          examType,
+          month,
+          chapters,
+          targetMarks,
+          durationMinutes,
+          includeSanskriti
+        });
+        setPaper(newPaper);
+        setSaveToast(`✨ ${classLevel} ${subject.split(' ')[0]} का संतुलित प्रश्न पत्र तैयार है!`);
+        setTimeout(() => setSaveToast(null), 3000);
+      }
+    } catch (err: any) {
+      console.error('Generation error:', err);
+      const fallbackPaper = generateSmartQuestionPaper({
         schoolId: publicSchool.id,
         schoolName: publicSchool.hindiName,
         classLevel,
@@ -434,12 +477,11 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         durationMinutes,
         includeSanskriti
       });
-      setPaper(newPaper);
-      setSaveToast(`✨ ${classLevel} ${subject.split(' ')[0]} का नया प्रश्न पत्र तैयार है!`);
-      setTimeout(() => setSaveToast(null), 3000);
-    } catch (err) {
-      console.error('Error generating paper:', err);
-      alert('प्रश्न पत्र तैयार करने में समस्या आई।');
+      setPaper(fallbackPaper);
+      setSaveToast('✨ अंतर्निहित प्रश्न बैंक से संतुलित प्रश्न पत्र तैयार किया गया।');
+      setTimeout(() => setSaveToast(null), 3500);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -671,6 +713,23 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
+              onClick={() => {
+                setTempKey(smartKey);
+                setShowKeyModal(true);
+              }}
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                smartKey
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30 hover:bg-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-400/30 hover:bg-amber-500/30'
+              }`}
+              title={smartKey ? 'बौद्धिक सहायक सक्रिय (कुंजी बदलने हेतु क्लिक करें)' : 'बौद्धिक सहायक स्मार्ट कुंजी जोड़ें'}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">{smartKey ? 'बौद्धिक सहायक: सक्रिय' : 'स्मार्ट कुंजी जोड़ें'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowSavedModal(true)}
               className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 hover:text-white text-xs font-bold transition cursor-pointer border border-white/10"
               title="सहेजे गए प्रश्न पत्र देखें"
@@ -777,16 +836,16 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 onChange={e => setChapters(e.target.value)}
                 placeholder="उदा. अध्याय १ एवं २: संख्या पद्धति व संक्रियाएं..."
                 className={`flex-1 h-10 px-3 py-2 text-xs sm:text-sm font-medium rounded-xl border ${
-                  isListening && listeningField === 'chapters'
+                  isListening && activeVoiceTarget?.type === 'chapters'
                     ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20'
                     : 'border-stone-300 bg-white'
                 } focus:outline-hidden focus:border-orange-500 shadow-2xs`}
               />
               <button
                 type="button"
-                onClick={() => handleVoiceInput('chapters')}
+                onClick={() => handleVoiceInput({ type: 'chapters' })}
                 className={`h-10 px-3.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs ${
-                  isListening && listeningField === 'chapters'
+                  isListening && activeVoiceTarget?.type === 'chapters'
                     ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
                     : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
                 }`}
@@ -794,7 +853,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               >
                 <Mic className="w-4 h-4" />
                 <span>
-                  {isListening && listeningField === 'chapters' ? 'सुन रहे हैं...' : 'बोलकर लिखें'}
+                  {isListening && activeVoiceTarget?.type === 'chapters' ? 'सुन रहे हैं...' : 'बोलकर लिखें'}
                 </span>
               </button>
             </div>
@@ -847,12 +906,22 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             {/* Main 1-Click Generate Button */}
             <button
               type="button"
+              disabled={isGenerating}
               onClick={handleAutoGenerate}
-              className="h-10 px-5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs sm:text-sm font-black shadow-md transition cursor-pointer flex items-center gap-2"
+              className="h-10 px-4 sm:px-5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs sm:text-sm font-black shadow-md transition cursor-pointer flex items-center gap-2 disabled:opacity-60"
               title="चयनित सेटिंग्स के आधार पर नया संतुलित प्रश्न पत्र तैयार करें"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>✨ नया प्रश्न पत्र बनाएं</span>
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>तैयार हो रहा है...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>✨ नया प्रश्न पत्र बनाएं</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -911,14 +980,14 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
         {/* Modal Body: Editor vs Preview */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-stone-50">
-          {paper.generationSource === 'gemini' && !paper.generationWarning && (
+          {(paper.generationSource === 'gemini' || paper.generationSource === 'baudhik') && !paper.generationWarning && (
             <div className="max-w-4xl mx-auto mb-4 p-2.5 bg-orange-50 border border-orange-200 rounded-2xl text-xs text-orange-950 flex items-center justify-between gap-2 shadow-2xs">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-orange-600 shrink-0" />
-                <span className="font-bold">विशेष ब्लूप्रिंट अनुसार नवीन संतुलित प्रश्न पत्र तैयार है</span>
+                <span className="font-bold">बौद्धिक ब्लूप्रिंट अनुसार नवीन संतुलित प्रश्न पत्र तैयार है</span>
               </div>
               <span className="text-[10px] bg-orange-200/60 text-orange-900 px-2 py-0.5 rounded-full font-bold">
-                संतुलित ब्लूप्रिंट
+                बौद्धिक ब्लूप्रिंट
               </span>
             </div>
           )}
@@ -945,6 +1014,21 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                       </span>
                       <button
                         type="button"
+                        onClick={() => {
+                          const newQIndex = section.questions.length;
+                          handleAddQuestion(secIndex);
+                          setTimeout(() => {
+                            handleVoiceInput({ type: 'question', secIndex, qIndex: newQIndex });
+                          }, 150);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold border border-amber-300 cursor-pointer transition shadow-2xs"
+                        title="नया प्रश्न जोड़ें और बोलकर डिक्टेट करें"
+                      >
+                        <Mic className="w-3.5 h-3.5 text-amber-800" />
+                        <span>बोलकर जोड़ें</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleAddQuestion(secIndex)}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-bold border border-orange-200 cursor-pointer transition"
                         title="इस खण्ड में प्रश्न जोड़ें"
@@ -967,29 +1051,79 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                             {qIndex + 1}
                           </span>
                           <div className="flex-1">
-                            <textarea
-                              rows={2}
-                              value={q.text}
-                              onChange={e => handleQuestionTextChange(secIndex, qIndex, e.target.value)}
-                              className="w-full p-2 text-xs font-medium text-stone-900 bg-white border border-stone-200 rounded-lg focus:outline-hidden focus:border-orange-400 shadow-2xs resize-y"
-                            />
+                            <div className="relative">
+                              <textarea
+                                rows={2}
+                                value={q.text}
+                                onChange={e => handleQuestionTextChange(secIndex, qIndex, e.target.value)}
+                                placeholder="प्रश्न यहाँ लिखें अथवा माइक दबाकर बोलें..."
+                                className={`w-full p-2 pr-9 text-xs font-medium text-stone-900 bg-white border rounded-lg focus:outline-hidden focus:border-orange-400 shadow-2xs resize-y ${
+                                  isListening &&
+                                  activeVoiceTarget?.type === 'question' &&
+                                  activeVoiceTarget.secIndex === secIndex &&
+                                  activeVoiceTarget.qIndex === qIndex
+                                    ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20'
+                                    : 'border-stone-200'
+                                }`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleVoiceInput({ type: 'question', secIndex, qIndex })}
+                                className={`absolute top-2 right-2 p-1.5 rounded-lg transition cursor-pointer flex items-center justify-center ${
+                                  isListening &&
+                                  activeVoiceTarget?.type === 'question' &&
+                                  activeVoiceTarget.secIndex === secIndex &&
+                                  activeVoiceTarget.qIndex === qIndex
+                                    ? 'bg-red-600 text-white animate-pulse shadow-xs'
+                                    : 'text-stone-400 hover:text-orange-700 hover:bg-orange-50'
+                                }`}
+                                title="बोलकर प्रश्न लिखें"
+                              >
+                                <Mic className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
 
                             {/* Internal Choice if exists */}
-                            {q.internalChoiceText && (
+                            {q.internalChoiceText !== undefined && (
                               <div className="mt-1.5 pl-3 border-l-2 border-orange-300">
-                                <span className="text-[10px] font-bold text-orange-800 uppercase block">
+                                <span className="text-[10px] font-bold text-orange-800 uppercase block mb-1">
                                   आंतरिक विकल्प (अथवा):
                                 </span>
-                                <input
-                                  type="text"
-                                  value={q.internalChoiceText}
-                                  onChange={e => {
-                                    const updatedSections = [...paper.sections];
-                                    updatedSections[secIndex].questions[qIndex].internalChoiceText = e.target.value;
-                                    setPaper({ ...paper, sections: updatedSections });
-                                  }}
-                                  className="w-full p-1.5 text-xs text-stone-700 bg-white border border-stone-200 rounded-md focus:outline-hidden"
-                                />
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={q.internalChoiceText}
+                                    onChange={e => {
+                                      const updatedSections = [...paper.sections];
+                                      updatedSections[secIndex].questions[qIndex].internalChoiceText = e.target.value;
+                                      setPaper({ ...paper, sections: updatedSections });
+                                    }}
+                                    placeholder="अथवा वैकल्पिक प्रश्न पाठ..."
+                                    className={`w-full p-1.5 pr-8 text-xs text-stone-700 bg-white border rounded-md focus:outline-hidden ${
+                                      isListening &&
+                                      activeVoiceTarget?.type === 'choice' &&
+                                      activeVoiceTarget.secIndex === secIndex &&
+                                      activeVoiceTarget.qIndex === qIndex
+                                        ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20'
+                                        : 'border-stone-200'
+                                    }`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVoiceInput({ type: 'choice', secIndex, qIndex })}
+                                    className={`absolute top-1 right-1 p-1 rounded-md transition cursor-pointer flex items-center justify-center ${
+                                      isListening &&
+                                      activeVoiceTarget?.type === 'choice' &&
+                                      activeVoiceTarget.secIndex === secIndex &&
+                                      activeVoiceTarget.qIndex === qIndex
+                                        ? 'bg-red-600 text-white animate-pulse'
+                                        : 'text-stone-400 hover:text-orange-700 hover:bg-orange-50'
+                                    }`}
+                                    title="बोलकर अथवा विकल्प लिखें"
+                                  >
+                                    <Mic className="w-3 h-3" />
+                                  </button>
+                                </div>
                               </div>
                             )}
 
@@ -1202,16 +1336,16 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
             <button
               type="button"
-              onClick={() => handleVoiceInput('voice-command')}
+              onClick={() => handleVoiceInput({ type: 'voice-command' })}
               className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border ${
-                isListening && listeningField === 'voice-command'
+                isListening && activeVoiceTarget?.type === 'voice-command'
                   ? 'bg-red-600 text-white animate-pulse border-red-700'
                   : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300'
               }`}
               title="बोलकर 'सहेजें' या 'प्रिंट' कहें (Voice Command Save)"
             >
               <Mic className="w-3.5 h-3.5" />
-              <span>{isListening && listeningField === 'voice-command' ? 'बोलें "सहेजें"...' : 'बोलकर सहेजें'}</span>
+              <span>{isListening && activeVoiceTarget?.type === 'voice-command' ? 'बोलें "सहेजें"...' : 'बोलकर सहेजें'}</span>
             </button>
 
             <button
@@ -1353,6 +1487,90 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               >
                 बंद करें
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Smart Key Modal (बौद्धिक सहायक स्मार्ट कुंजी) */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-md p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-orange-600" />
+                <h3 className="font-bold text-stone-900 text-sm sm:text-base">
+                  बौद्धिक सहायक स्मार्ट कुंजी
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowKeyModal(false)}
+                className="p-1 text-stone-400 hover:text-stone-700 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-600 leading-relaxed">
+              नवीन बौद्धिक ब्लूप्रिंट आधारित प्रश्न पत्र निर्माण हेतु अपनी सुरक्षित स्मार्ट कुंजी यहाँ दर्ज करें। यह कुंजी केवल आपके ब्राउज़र में सुरक्षित रहेगी।
+            </p>
+
+            <div>
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                स्मार्ट सेवा कुंजी (API Key)
+              </label>
+              <input
+                type="password"
+                value={tempKey}
+                onChange={e => setTempKey(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-stone-300 focus:outline-hidden focus:border-orange-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-[11px] text-stone-400 font-semibold">
+                ॥ सा विद्या या विमुक्तये ॥
+              </span>
+              <div className="flex gap-2">
+                {smartKey && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('ssm_smart_api_key');
+                      localStorage.removeItem('ssm_gemini_api_key');
+                      setSmartKey('');
+                      setTempKey('');
+                      setShowKeyModal(false);
+                      setSaveToast('स्मार्ट कुंजी हटा दी गई।');
+                      setTimeout(() => setSaveToast(null), 3000);
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold cursor-pointer"
+                  >
+                    कुंजी हटाएं
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const clean = tempKey.trim();
+                    if (clean) {
+                      localStorage.setItem('ssm_smart_api_key', clean);
+                      setSmartKey(clean);
+                      setSaveToast('स्मार्ट कुंजी सुरक्षित सहेजी गई!');
+                    } else {
+                      localStorage.removeItem('ssm_smart_api_key');
+                      setSmartKey('');
+                    }
+                    setShowKeyModal(false);
+                    setTimeout(() => setSaveToast(null), 3000);
+                  }}
+                  className="px-4 py-1.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold cursor-pointer"
+                >
+                  सहेजें
+                </button>
+              </div>
             </div>
           </div>
         </div>

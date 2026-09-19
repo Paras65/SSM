@@ -770,6 +770,7 @@ export async function generateQuestionPaperWithGemini(
   const effectiveKey =
     options.apiKey ||
     (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+    localStorage.getItem('ssm_smart_api_key') ||
     localStorage.getItem('ssm_gemini_api_key') ||
     '';
 
@@ -877,68 +878,66 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
         headers: proxyHeaders,
         body: JSON.stringify({ prompt })
       });
-      if (proxyRes.ok) {
+      if (proxyRes.ok && proxyRes.headers.get('content-type')?.includes('application/json')) {
         parsed = await proxyRes.json();
       }
     } catch {
       // Backend proxy unavailable (e.g. static dev), will fallback to direct call
     }
 
-    // 2. If proxy didn't return data, call Google endpoint with standard model using secure headers (no key in URL)
+    // 2. Direct call with multi-model resilient fallback loop
     if (!parsed) {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };
 
-      if (effectiveKey.startsWith('AIzaSy')) {
-        headers['x-goog-api-key'] = effectiveKey;
+      if (effectiveKey.startsWith('AIzaSy') || !effectiveKey.startsWith('ya29.')) {
+        headers['x-goog-api-key'] = effectiveKey.trim();
       } else {
-        // For OAuth2 / Bearer tokens, send ONLY Authorization header (never send x-goog-api-key)
-        headers['Authorization'] = `Bearer ${effectiveKey}`;
+        headers['Authorization'] = `Bearer ${effectiveKey.trim()}`;
       }
 
-      // Try primary model (gemini-1.5-flash) without leaking key in URL
-      let response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.3,
-              responseMimeType: 'application/json'
+      const modelsToTry = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+      let response: Response | null = null;
+      let lastError: any = null;
+
+      for (const modelName of modelsToTry) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+            {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  temperature: 0.3,
+                  responseMimeType: 'application/json'
+                }
+              })
             }
-          })
-        }
-      );
-
-      // If 404, fallback to gemini-2.0-flash
-      if (!response.ok && response.status === 404) {
-        response = await fetch(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.3,
-                responseMimeType: 'application/json'
-              }
-            })
+          );
+          if (res.ok) {
+            response = res;
+            break;
+          } else {
+            lastError = await res.json().catch(() => ({}));
+            if (res.status === 401 || res.status === 403) {
+              try {
+                localStorage.removeItem('ssm_smart_api_key');
+                localStorage.removeItem('ssm_gemini_api_key');
+              } catch {}
+              throw new Error('बौद्धिक सेवा प्रमाणीकरण त्रुटि: अमान्य अथवा समाप्त स्मार्ट कुंजी।');
+            }
           }
-        );
+        } catch (err: any) {
+          if (err.message?.includes('प्रमाणीकरण')) throw err;
+          console.warn(`Model ${modelName} call failed, trying fallback...`, err);
+        }
       }
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        if (response.status === 401 || response.status === 403) {
-          try {
-            localStorage.removeItem('ssm_gemini_api_key');
-          } catch {}
-        }
-        throw new Error(errJson?.error?.message || `AI service returned status ${response.status}`);
+      if (!response) {
+        throw new Error(lastError?.error?.message || 'सभी मॉडल अनुपलब्ध हैं।');
       }
 
       const data = await response.json();
@@ -999,7 +998,7 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
         sections: validatedSections,
         createdAt: new Date().toISOString(),
         createdBy: 'परीक्षा समिति एवं आचार्य',
-        generationSource: 'gemini'
+        generationSource: 'baudhik'
       };
     }
 

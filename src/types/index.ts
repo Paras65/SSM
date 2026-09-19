@@ -562,7 +562,7 @@ export interface QuestionPaper {
   sections: QuestionPaperSection[];
   createdAt: string;
   createdBy: string;
-  generationSource?: 'gemini' | 'curriculum-bank';
+  generationSource?: 'gemini' | 'curriculum-bank' | 'baudhik';
   generationWarning?: string;
 }
 
