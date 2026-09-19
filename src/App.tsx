@@ -19,6 +19,7 @@ import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 import { AdminAuthModal } from './components/admin/AdminAuthModal';
 import { ERPModulesSection } from './components/public/ERPModulesSection';
 import { TeacherAuthModal } from './components/teacher/TeacherAuthModal';
+import { SankulAuthModal } from './components/sankul/SankulAuthModal';
 import { SchoolManagementModal } from './components/admin/SchoolManagementModal';
 import { SchoolLocatorModal } from './components/public/SchoolLocatorModal';
 import { LanguageProvider } from './context/LanguageContext';
@@ -28,6 +29,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const TeacherPortal = React.lazy(() => import('./components/teacher/TeacherPortal').then(m => ({ default: m.TeacherPortal })));
 const StudentPortal = React.lazy(() => import('./components/student/StudentPortal').then(m => ({ default: m.StudentPortal })));
+const SankulPortal = React.lazy(() => import('./components/sankul/SankulPortal').then(m => ({ default: m.SankulPortal })));
 const HelpGuideModal = React.lazy(() => import('./components/admin/HelpGuideModal').then(m => ({ default: m.HelpGuideModal })));
 
 const PortalLoadingFallback: React.FC<{ label: string }> = ({ label }) => (
@@ -83,6 +85,7 @@ const SchoolApp: React.FC = () => {
   const { viewMode, setViewMode, startDemoMode } = useSchool();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTeacherAuthModal, setShowTeacherAuthModal] = useState(false);
+  const [showSankulAuthModal, setShowSankulAuthModal] = useState(false);
   const [showSchoolModal, setShowSchoolModal] = useState(false);
   const [showSchoolLocatorModal, setShowSchoolLocatorModal] = useState(false);
   const [showTcVerificationModal, setShowTcVerificationModal] = useState(false);
@@ -99,16 +102,21 @@ const SchoolApp: React.FC = () => {
       if (!sessionStorage.getItem('ssm_teacher_token')) {
         setShowTeacherAuthModal(true);
       }
+    } else if (window.location.pathname === '/sankul') {
+      if (!sessionStorage.getItem('ssm_sankul_token')) {
+        setShowSankulAuthModal(true);
+      }
     }
   }, []);
 
-  const isAnyPublicModalOpen = showAuthModal || showTeacherAuthModal || showSchoolModal || showSchoolLocatorModal || showTcVerificationModal || showHelpGuideModal;
+  const isAnyPublicModalOpen = showAuthModal || showTeacherAuthModal || showSankulAuthModal || showSchoolModal || showSchoolLocatorModal || showTcVerificationModal || showHelpGuideModal;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isAnyPublicModalOpen) {
         setShowAuthModal(false);
         setShowTeacherAuthModal(false);
+        setShowSankulAuthModal(false);
         setShowSchoolModal(false);
         setShowSchoolLocatorModal(false);
         setShowTcVerificationModal(false);
@@ -124,6 +132,7 @@ const SchoolApp: React.FC = () => {
       if (isAnyPublicModalOpen) {
         setShowAuthModal(false);
         setShowTeacherAuthModal(false);
+        setShowSankulAuthModal(false);
         setShowSchoolModal(false);
         setShowSchoolLocatorModal(false);
         setShowTcVerificationModal(false);
@@ -174,6 +183,12 @@ const SchoolApp: React.FC = () => {
             <StudentPortal />
           </React.Suspense>
         </PortalErrorBoundary>
+      ) : viewMode === 'sankul' ? (
+        <PortalErrorBoundary>
+          <React.Suspense fallback={<PortalLoadingFallback label="संकुल प्रभारी पटल लोड हो रहा है..." />}>
+            <SankulPortal />
+          </React.Suspense>
+        </PortalErrorBoundary>
       ) : (
         <div className="min-h-screen bg-stone-50 flex flex-col w-full max-w-full overflow-x-hidden">
           <Navbar
@@ -181,6 +196,7 @@ const SchoolApp: React.FC = () => {
             onOpenLogin={handleOpenLogin}
             onOpenBranchList={handleOpenBranchList}
             onOpenTeacherLogin={() => setShowTeacherAuthModal(true)}
+            onOpenSankulLogin={() => setShowSankulAuthModal(true)}
             onOpenVerifyTc={() => setShowTcVerificationModal(true)}
             onStartDemo={startDemoMode}
             onOpenHelpGuide={() => setShowHelpGuideModal(true)}
@@ -249,6 +265,21 @@ const SchoolApp: React.FC = () => {
         onSuccess={() => {
           setShowTeacherAuthModal(false);
           setViewMode('teacher');
+        }}
+      />
+
+      {/* Sankul Prabhari Auth Modal */}
+      <SankulAuthModal
+        isOpen={showSankulAuthModal}
+        onClose={() => {
+          setShowSankulAuthModal(false);
+          if (typeof window !== 'undefined' && window.location.pathname === '/sankul' && viewMode !== 'sankul') {
+            window.history.replaceState({}, '', '/');
+          }
+        }}
+        onSuccess={() => {
+          setShowSankulAuthModal(false);
+          setViewMode('sankul');
         }}
       />
 

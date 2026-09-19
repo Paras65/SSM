@@ -300,7 +300,30 @@ export interface PanchmukhiPillar {
   color: string;
 }
 
-export type ViewMode = 'public' | 'admin' | 'student' | 'teacher';
+export type ViewMode = 'public' | 'admin' | 'student' | 'teacher' | 'sankul';
+
+export interface SankulInspection {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  inspectionDate: string;
+  inspectorName: string;
+  academicRating: number; // 1 to 5
+  infrastructureRating: number; // 1 to 5
+  panchmukhiRating: number; // 1 to 5
+  observations: string;
+  recommendations: string;
+}
+
+export interface SankulNotice {
+  id: string;
+  title: string;
+  date: string;
+  category: 'Sports' | 'Academic' | 'Workshop' | 'Meeting' | 'Cultural';
+  content: string;
+  targetPrant?: string;
+  issuedBy: string;
+}
 
 export interface Homework {
   id: string;

@@ -4,7 +4,7 @@ import { AdminAuthModal } from '../admin/AdminAuthModal';
 import { SchoolManagementModal } from '../admin/SchoolManagementModal';
 import { SchoolLocatorModal } from './SchoolLocatorModal';
 import { subscribePwaInstall, promptPwaInstall } from '../../services/pwa';
-import { Sparkles, Phone, Mail, Clock, UserCheck, Menu, X, Smartphone, Globe, LogIn, BookOpen, ChevronDown } from 'lucide-react';
+import { Sparkles, Phone, Mail, Clock, UserCheck, Menu, X, Smartphone, Globe, LogIn, BookOpen, ChevronDown, Building2 } from 'lucide-react';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../context/LanguageContext';
 
 interface NavbarProps {
@@ -12,6 +12,7 @@ interface NavbarProps {
   onOpenLogin?: () => void;
   onOpenBranchList?: () => void;
   onOpenTeacherLogin?: () => void;
+  onOpenSankulLogin?: () => void;
   onOpenVerifyTc?: () => void;
   onStartDemo?: () => void;
   onOpenHelpGuide?: () => void;
@@ -22,6 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onOpenBranchList,
   onOpenTeacherLogin,
+  onOpenSankulLogin,
   onOpenVerifyTc,
   onStartDemo,
   onOpenHelpGuide
@@ -269,7 +271,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className="w-full text-left block px-3.5 py-1.5 text-xs text-amber-950 bg-amber-50 hover:bg-amber-100 font-bold border-t border-orange-100 cursor-pointer transition"
                       >
-                        📖 उपयोगकर्ता मार्गदर्शिका (36 अध्याय)
+                        📖 उपयोगकर्ता मार्गदर्शिका (37 अध्याय)
                       </button>
                     )}
                   </div>
@@ -289,7 +291,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setMoreLinksOpen(false);
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-800 hover:to-amber-800 text-white shadow-xs transition-all cursor-pointer"
-                  title="पोर्टल लॉगिन (छात्र, आचार्य, कार्यालय)"
+                  title="पोर्टल लॉगिन (छात्र, आचार्य, संकुल, कार्यालय)"
                 >
                   <UserCheck className="w-3.5 h-3.5 text-yellow-300" />
                   <span>{isAdminAuthenticated ? 'Admin Dashboard' : 'पोर्टल लॉगिन'}</span>
@@ -341,6 +343,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div>
                         <p className="text-xs font-bold text-stone-900 leading-tight">आचार्य पटल (शिक्षक)</p>
                         <p className="text-[10px] text-stone-500">Teacher & Attendance Login</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPortalsDropdownOpen(false);
+                        if (sessionStorage.getItem('ssm_sankul_token')) {
+                          setViewMode('sankul');
+                        } else if (onOpenSankulLogin) {
+                          onOpenSankulLogin();
+                        }
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-indigo-50 text-stone-800 flex items-center gap-2.5 transition cursor-pointer"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-stone-900 leading-tight">संकुल पटल (संकुल प्रभारी)</p>
+                        <p className="text-[10px] text-stone-500">Cluster Prabhari & Multi-School Oversight</p>
                       </div>
                     </button>
                     <button
@@ -492,7 +514,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <p className="text-[10px] font-extrabold uppercase tracking-wider text-orange-900/70 px-1">
                 पोर्टल एवं पटल (Portals)
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 <button
                   onClick={() => {
                     setViewMode('student');
@@ -516,6 +538,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <BookOpen className="w-4 h-4 text-orange-200 shrink-0" />
                   <span>आचार्य पटल (शिक्षक)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (sessionStorage.getItem('ssm_sankul_token')) {
+                      setViewMode('sankul');
+                    } else if (onOpenSankulLogin) {
+                      onOpenSankulLogin();
+                    }
+                  }}
+                  className="w-full flex items-center justify-start gap-2.5 px-3 py-2.5 bg-indigo-800 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  <Building2 className="w-4 h-4 text-indigo-200 shrink-0" />
+                  <span>संकुल पटल (संकुल प्रभारी)</span>
                 </button>
                 <button
                   onClick={() => {
@@ -604,7 +640,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }}
                     className="w-full text-left block px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-orange-950 font-bold border border-amber-300 cursor-pointer"
                   >
-                    📖 उपयोगकर्ता मार्गदर्शिका (36 अध्याय)
+                    📖 उपयोगकर्ता मार्गदर्शिका (37 अध्याय)
                   </button>
                 )}
                 <a

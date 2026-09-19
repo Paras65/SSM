@@ -15,7 +15,8 @@ import {
   Bus,
   Command,
   HelpCircle,
-  ChevronRight
+  ChevronRight,
+  Building2
 } from 'lucide-react';
 
 interface ERPModulesSectionProps {
@@ -34,7 +35,7 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
   const [activeCategory, setActiveCategory] = useState<ModuleCategory>('all');
 
   const categories = [
-    { id: 'all', label: 'सभी ३६+ सुविधाएं (All)', icon: Sparkles },
+    { id: 'all', label: 'सभी ३७+ सुविधाएं (All)', icon: Sparkles },
     { id: 'daily', label: 'दैनिक व वित्तीय (Daily & Accounts)', icon: Receipt },
     { id: 'academic', label: 'शैक्षणिक व NEP 2020 (Academic)', icon: Award },
     { id: 'paper-ai', label: 'हार्ड-कॉपी व AI टूल्स (Paper & AI)', icon: Camera },
@@ -161,6 +162,16 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
       title: 'वार्षिक सत्र परिवर्तन, छात्र प्रोन्नति व सुरक्षा ऑडिट लॉग्स',
       desc: 'वार्षिक परीक्षा लॉक, पिछले सत्र का बकाया रोलओवर और कक्षा प्रोन्नति। शाम को 1-क्लिक एन्क्रिप्टेड डेटा बैकअप व DPDP Act 2023 गोपनीयता अनुपालन।',
       features: ['वार्षिक सत्र प्रोन्नति व रोलओवर', '1-क्लिक ऑफ़लाइन JSON बैकअप', 'ऑडिट लॉग्स व DPDP 2023 सुरक्षा']
+    },
+    {
+      id: 'sankul-cluster-oversight',
+      category: 'compliance',
+      icon: Building2,
+      badge: 'क्लस्टर प्रबंधन (Sec 37)',
+      badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+      title: 'संकुल प्रभारी पटल: बहु-विद्यालय क्लस्टर निरीक्षण एवं संकलित प्रबंधन',
+      desc: 'संकुल (क्लस्टर) स्तर पर 5-15 संबद्ध विद्यालयों की समग्र समीक्षा, NEP 2020 व पंचमुखी शिक्षा अनुपालन, डिजिटल निरीक्षण व गुणवत्ता स्टार रेटिंग, और संकुल परिपत्र जारी करना।',
+      features: ['बहु-विद्यालय क्लस्टर एनालिटिक्स', 'पंचमुखी व भौतिक निरीक्षण पंजिका', 'संकुल परिपत्र एवं आधिकारिक प्रिंट']
     }
   ];
 
@@ -176,16 +187,16 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-orange-100 text-orange-950 text-xs font-bold uppercase tracking-wider mb-2.5 border border-orange-300 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-            <span>३६-अध्यायी आधिकारिक मार्गदर्शिका अनुरूप (User Manual Aligned)</span>
+            <span>३७-अध्यायी आधिकारिक मार्गदर्शिका अनुरूप (User Manual Aligned)</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">
             सरस्वती शिशु मंदिर ईआरपी के <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-orange-700 via-amber-600 to-red-600 bg-clip-text text-transparent">
-              १२ प्रमुख डिजिटल स्तंभ एवं नवाचार
+              १३ प्रमुख डिजिटल स्तंभ एवं नवाचार
             </span>
           </h2>
           <p className="mt-3 text-sm sm:text-base text-stone-600 leading-relaxed">
-            विद्या भारती के सनातन संस्कारों, NEP 2020 एवं भारतीय जमीनी विद्यालयी संचालन को ध्यान में रखकर तैयार किए गए संपूर्ण ३६+ ईआरपी टूल्स।
+            विद्या भारती के सनातन संस्कारों, NEP 2020 एवं भारतीय जमीनी विद्यालयी संचालन को ध्यान में रखकर तैयार किए गए संपूर्ण ३७+ ईआरपी टूल्स।
           </p>
 
           {/* User Manual Shortcut CTA Button */}
@@ -197,7 +208,7 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-100/80 hover:bg-amber-100 text-orange-950 font-bold text-xs border border-orange-300 shadow-2xs transition-all cursor-pointer hover:border-orange-400"
               >
                 <HelpCircle className="w-4 h-4 text-orange-600" />
-                <span>📖 संपूर्ण ३६-अध्यायी उपयोगकर्ता मार्गदर्शिका (User Manual) देखें</span>
+                <span>📖 संपूर्ण ३७-अध्यायी उपयोगकर्ता मार्गदर्शिका (User Manual) देखें</span>
                 <ChevronRight className="w-3.5 h-3.5 text-orange-600" />
               </button>
             </div>
