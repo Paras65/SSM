@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import {
   Printer,
   X,
+  ArrowLeft,
   Award,
   Filter,
   Users,
@@ -139,17 +140,26 @@ export const BulkReportCardModal: React.FC<BulkReportCardModalProps> = ({
   return createPortal(
     <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/75 backdrop-blur-sm flex flex-col p-2 sm:p-6 print:static print:p-0 print:bg-white print:overflow-visible">
       {/* Top Action Bar (Hidden in Print) */}
-      <div className="no-print bg-stone-900 text-white rounded-2xl p-4 mb-4 shadow-xl border border-stone-800 flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto w-full shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white text-lg shadow-xs">
+      <div className="no-print bg-stone-900 text-white rounded-2xl p-3 sm:p-4 mb-3 sm:mb-4 shadow-xl border border-stone-800 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 max-w-7xl mx-auto w-full shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white text-xs font-bold transition-all cursor-pointer shrink-0"
+            title="वापस जाएं (Back)"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden xs:inline sm:inline">वापस</span>
+          </button>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white text-base sm:text-lg shadow-xs shrink-0">
             🪷
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-amber-100 flex items-center gap-2">
-              <Award className="w-4 h-4 text-amber-400" />
-              <span>कक्षावार प्रगति पत्रक बल्क प्रिंट (Bulk 360° Report Cards)</span>
+            <h3 className="text-xs sm:text-base font-bold text-amber-100 flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+              <span>कक्षावार प्रगति पत्रक बल्क प्रिंट</span>
             </h3>
-            <p className="text-xs text-stone-400">
+            <p className="text-[11px] sm:text-xs text-stone-400 hidden xs:block">
               PTM हेतु एक ही क्लिक में पूरी कक्षा के A4 रिपोर्ट कार्ड मुद्रित करें • NEP 2020 अनुरूप
             </p>
           </div>
