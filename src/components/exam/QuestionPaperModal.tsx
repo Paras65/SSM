@@ -13,7 +13,6 @@ import {
   Edit3,
   RefreshCw,
   FileText,
-  Sliders,
   ChevronDown,
   Layers,
   ArrowRight
@@ -110,46 +109,51 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   const [durationMinutes, setDurationMinutes] = useState<number>(initialMarksDuration.duration);
   const [includeSanskriti, setIncludeSanskriti] = useState<boolean>(true);
 
-  // Gemini AI Generation State
+  // Special Focus & Generation State
   const [customTopic, setCustomTopic] = useState<string>(initialPrompt);
-  const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
-  const [geminiApiKey, setGeminiApiKey] = useState<string>(() => {
-    return (
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-      localStorage.getItem('ssm_gemini_api_key') ||
-      ''
-    );
-  });
-  const [showApiKeyModal, setShowApiKeyModal] = useState<boolean>(false);
-  const [keyInput, setKeyInput] = useState<string>(geminiApiKey);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const geminiApiKey =
+    (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+    localStorage.getItem('ssm_gemini_api_key') ||
+    '';
 
-  const handleSaveApiKey = () => {
-    const trimmed = keyInput.trim().replace(/[^A-Za-z0-9_.-]/g, '');
-    setGeminiApiKey(trimmed);
-    if (trimmed) {
-      localStorage.setItem('ssm_gemini_api_key', trimmed);
-    } else {
-      localStorage.removeItem('ssm_gemini_api_key');
-    }
-    setShowApiKeyModal(false);
-  };
-
-  const handleGeminiGenerate = async () => {
-    const effectiveKey =
-      geminiApiKey ||
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-      localStorage.getItem('ssm_gemini_api_key') ||
-      '';
-
-    if (!effectiveKey) {
-      setShowApiKeyModal(true);
-      return;
-    }
-
-    setIsAiGenerating(true);
+  const handleSpecialFocusGenerate = async () => {
+    setIsGenerating(true);
     try {
-      const newPaper = await generateQuestionPaperWithGemini({
-        apiKey: effectiveKey,
+      if (geminiApiKey) {
+        const newPaper = await generateQuestionPaperWithGemini({
+          apiKey: geminiApiKey,
+          schoolId: publicSchool.id,
+          schoolName: publicSchool.hindiName,
+          classLevel,
+          subject,
+          examType,
+          month,
+          chapters,
+          targetMarks,
+          durationMinutes,
+          includeSanskriti,
+          customTopic
+        });
+        setPaper(newPaper);
+      } else {
+        const newPaper = generateSmartQuestionPaper({
+          schoolId: publicSchool.id,
+          schoolName: publicSchool.hindiName,
+          classLevel,
+          subject,
+          examType,
+          month,
+          chapters: customTopic || chapters,
+          targetMarks,
+          durationMinutes,
+          includeSanskriti
+        });
+        setPaper(newPaper);
+      }
+    } catch (err) {
+      console.error('Generation error:', err);
+      const fallbackPaper = generateSmartQuestionPaper({
         schoolId: publicSchool.id,
         schoolName: publicSchool.hindiName,
         classLevel,
@@ -159,14 +163,11 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         chapters,
         targetMarks,
         durationMinutes,
-        includeSanskriti,
-        customTopic
+        includeSanskriti
       });
-      setPaper(newPaper);
-    } catch (err) {
-      console.error('Gemini AI generation failed:', err);
+      setPaper(fallbackPaper);
     } finally {
-      setIsAiGenerating(false);
+      setIsGenerating(false);
     }
   };
 
@@ -539,36 +540,22 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
               <button
                 type="button"
-                onClick={handleGeminiGenerate}
-                disabled={isAiGenerating}
+                onClick={handleSpecialFocusGenerate}
+                disabled={isGenerating}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
-                title="Google Gemini AI द्वारा नए प्रश्न पत्र का निर्माण करें"
+                title="विशेष पाठ व फोकस अनुसार नया प्रश्न पत्र बनाएं"
               >
-                {isAiGenerating ? (
+                {isGenerating ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>AI तैयार कर रहा है...</span>
+                    <span>तैयार हो रहा है...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>✨ Gemini AI से बनाएं</span>
+                    <span>✨ स्वतः नया पेपर बनाएं</span>
                   </>
                 )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowApiKeyModal(true)}
-                className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl border flex items-center gap-1 cursor-pointer transition ${
-                  geminiApiKey
-                    ? 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100'
-                    : 'bg-stone-100 text-stone-600 border-stone-300 hover:bg-stone-200'
-                }`}
-                title="Gemini AI सेटिंग्स"
-              >
-                <Sliders className="w-3.5 h-3.5" />
-                <span>AI सेटिंग्स</span>
               </button>
             </div>
           </div>
@@ -703,12 +690,12 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             </div>
             <div>
               <div className="flex items-center justify-between mb-0.5">
-                <label className="text-[10px] font-extrabold text-purple-900 uppercase flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-purple-600" />
-                  <span>AI विशिष्ट विषय व प्रॉम्प्ट (Auto-Generated Prompt)</span>
+                <label className="text-[10px] font-extrabold text-stone-700 uppercase flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-orange-600" />
+                  <span>विशेष पाठ व फोकस बिंदु (Special Focus Topic)</span>
                 </label>
-                <span className="text-[9px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded-full">
-                  ✨ चयन अनुसार तैयार
+                <span className="text-[9px] font-bold text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded-full">
+                  ✨ स्वतः चयनित
                 </span>
               </div>
               <input
@@ -716,7 +703,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 value={customTopic}
                 onChange={e => setCustomTopic(e.target.value)}
                 placeholder="उदा. प्रकाश का परावर्तन, कबीर के दोहे, या कोई विशेष टॉपिक..."
-                className="w-full px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50/40 text-xs font-semibold text-purple-950 focus:outline-hidden focus:border-purple-500 shadow-2xs"
+                className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs"
               />
               {/* 1-Click Suggestion Chips for Non-Tech Users */}
               <div className="flex flex-wrap items-center gap-1 mt-1 text-[10px]">
@@ -724,10 +711,10 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setCustomTopic(getRecommendedPrompt(classLevel, subject, month, examType, chapters))}
-                  className="px-1.5 py-0.5 rounded bg-purple-100 hover:bg-purple-200 text-purple-800 font-semibold cursor-pointer transition"
-                  title="मूल स्वचालित प्रॉम्प्ट पर रीसेट करें"
+                  className="px-1.5 py-0.5 rounded bg-orange-100 hover:bg-orange-200 text-orange-900 font-semibold cursor-pointer transition"
+                  title="मूल स्वचालित विवरण पर रीसेट करें"
                 >
-                  🔄 स्वतः रीसेट
+                  🔄 मूल रीसेट
                 </button>
                 <button
                   type="button"
@@ -798,34 +785,13 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
         {/* Modal Body: Editor vs Preview */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-stone-50">
-          {paper.generationWarning && (
-            <div className="max-w-4xl mx-auto mb-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start justify-between gap-3 shadow-2xs">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold">{paper.generationWarning}</p>
-                  <p className="text-[11px] text-amber-800/80 mt-0.5">
-                    सुझाव: aistudio.google.com से प्राप्त मान्य 'AIzaSy...' Key दर्ज करने हेतु ऊपर <strong>AI सेटिंग्स</strong> बटन दबाएं।
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPaper(p => ({ ...p, generationWarning: undefined }))}
-                className="text-stone-400 hover:text-stone-700 text-xs font-bold px-1.5 py-0.5 rounded cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
           {paper.generationSource === 'gemini' && !paper.generationWarning && (
-            <div className="max-w-4xl mx-auto mb-4 p-2.5 bg-purple-50 border border-purple-200 rounded-2xl text-xs text-purple-900 flex items-center justify-between gap-2 shadow-2xs">
+            <div className="max-w-4xl mx-auto mb-4 p-2.5 bg-orange-50 border border-orange-200 rounded-2xl text-xs text-orange-950 flex items-center justify-between gap-2 shadow-2xs">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-                <span className="font-bold">Google Gemini AI द्वारा सफलता से निर्मित प्रश्न पत्र</span>
+                <Sparkles className="w-4 h-4 text-orange-600 shrink-0" />
+                <span className="font-bold">विशेष ब्लूप्रिंट अनुसार नवीन संतुलित प्रश्न पत्र तैयार है</span>
               </div>
-              <span className="text-[10px] bg-purple-200/60 text-purple-800 px-2 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-orange-200/60 text-orange-900 px-2 py-0.5 rounded-full font-bold">
                 संतुलित ब्लूप्रिंट
               </span>
             </div>
@@ -1125,83 +1091,8 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Gemini API Key Modal */}
-      {showApiKeyModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-stone-200 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-stone-900 flex items-center gap-2">
-                <span>🔑 Google Gemini API Key सेटिंग्स</span>
-              </h3>
-              <button
-                onClick={() => setShowApiKeyModal(false)}
-                className="p-1 text-stone-400 hover:text-stone-700 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs text-stone-600 leading-relaxed">
-              Google Gemini AI द्वारा नए प्रश्न पत्र स्वतः उत्पन्न करने हेतु अपनी मुफ़्त API Key दर्ज करें। यह कुंजी आपके ब्राउज़र में सुरक्षित रूप से सहेजी जाती है।
-            </p>
-            {geminiApiKey && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="font-semibold">Gemini API Key सुरक्षित रूप से कॉन्फ़िगर है।</span>
-              </div>
-            )}
-            <div>
-              <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                नई Gemini API Key दर्ज करें:
-              </label>
-              <input
-                type="password"
-                value={keyInput}
-                onChange={e => setKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full px-3 py-2 text-xs border border-stone-300 rounded-xl focus:outline-hidden focus:border-purple-600 font-mono"
-              />
-              {keyInput.trim().length > 0 && !keyInput.trim().startsWith('AIzaSy') && (
-                <div className="mt-1.5 p-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 flex items-start gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                  <span>
-                    Google AI Studio की आधिकारिक कुंजी <strong>'AIzaSy...'</strong> से शुरू होती है। यदि आप Antigravity / gcloud टोकन (उदा. AQ...) दर्ज कर रहे हैं, तो Generative Language API 404 त्रुटि दे सकता है। कृपया aistudio.google.com से मुफ़्त API Key प्राप्त करें।
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="text-[11px] text-stone-500 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
-              💡 मुफ़्त API Key प्राप्त करने हेतु:{' '}
-              <a
-                href="https://aistudio.google.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-purple-700 underline font-bold"
-              >
-                aistudio.google.com
-              </a>{' '}
-              पर जाकर Google ID से 1 मिनट में फ़्री की जनरेट करें (प्रतिदिन 1,500 रिक्वेस्ट्स मुफ़्त)।
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowApiKeyModal(false)}
-                className="px-3 py-1.5 text-xs font-bold text-stone-600 hover:bg-stone-100 rounded-xl cursor-pointer"
-              >
-                रद्द करें
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveApiKey}
-                className="px-4 py-1.5 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 rounded-xl cursor-pointer shadow-xs"
-              >
-                सहेजें (Save Key)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
 

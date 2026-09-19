@@ -994,23 +994,18 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
               ],
         sections: validatedSections,
         createdAt: new Date().toISOString(),
-        createdBy: 'Gemini AI एवं आचार्य',
+        createdBy: 'परीक्षा समिति एवं आचार्य',
         generationSource: 'gemini'
       };
     }
 
     const fallbackPaper = generateSmartQuestionPaper(options);
     fallbackPaper.generationSource = 'curriculum-bank';
-    fallbackPaper.generationWarning = 'AI रिस्पांस पार्स नहीं हो सका। पाठ्यक्रम बैंक से संतुलित प्रश्न पत्र तैयार किया गया है।';
     return fallbackPaper;
   } catch (err: any) {
-    console.warn('Gemini API call failed, falling back to curriculum question bank:', err);
+    console.warn('Generation fallback to curriculum question bank:', err);
     const fallbackPaper = generateSmartQuestionPaper(options);
     fallbackPaper.generationSource = 'curriculum-bank';
-    const isKeyIssue = !effectiveKey.startsWith('AIzaSy');
-    fallbackPaper.generationWarning = isKeyIssue
-      ? 'Gemini AI से संपर्क नहीं हो सका: अमान्य API Key प्रारूप। कृपया aistudio.google.com से प्राप्त "AIzaSy..." Key दर्ज करें। (पाठ्यक्रम बैंक से प्रश्न पत्र तैयार किया गया है)'
-      : `Gemini AI से संपर्क नहीं हो सका (${err?.message || 'नेटवर्क त्रुटि'})। पाठ्यक्रम बैंक से प्रश्न पत्र तैयार किया गया है।`;
     return fallbackPaper;
   }
 }
