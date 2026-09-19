@@ -85,8 +85,8 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full border border-stone-200 overflow-hidden flex flex-col my-4 max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:w-full">
+    <div className="fixed inset-0 z-[70] overflow-hidden bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:w-full">
         
         {/* Controls Bar (Hidden during print) */}
         <div className="bg-stone-900 text-white px-3.5 sm:px-5 py-2.5 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 print:hidden shrink-0">
@@ -212,19 +212,19 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
         </div>
 
         {/* Dynamic Auto-sync notification strip */}
-        <div className="bg-emerald-50 px-5 py-1.5 border-b border-emerald-200 text-[11px] text-emerald-800 font-bold flex items-center justify-between print:hidden">
+        <div className="bg-emerald-50 px-3.5 sm:px-5 py-1.5 border-b border-emerald-200 text-[11px] text-emerald-800 font-bold flex flex-wrap sm:flex-nowrap items-center justify-between gap-1 print:hidden shrink-0">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>⚡ 100% स्वचालित गणना: उपस्थिति ({presentDays}/{totalDays} दिन) व शुल्क लेजर स्थिति छात्र रिकॉर्ड से स्वतः प्राप्त हुई है।</span>
           </span>
-          <span className="text-stone-500 font-normal">आवश्यकतानुसार ऊपर संपादित कर सकते हैं</span>
+          <span className="text-stone-500 font-normal text-[10px] sm:text-[11px]">आवश्यकतानुसार ऊपर संपादित कर सकते हैं</span>
         </div>
 
         {/* Printable Certificate Canvas */}
-        <div className="overflow-y-auto p-4 sm:p-8 print:p-0 flex justify-center bg-stone-100 print:bg-white">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8 print:p-0 print:overflow-visible bg-stone-100 print:bg-white">
           <div
             ref={printRef}
-            className="w-full max-w-2xl bg-white border-[6px] border-double border-orange-800 p-6 sm:p-8 shadow-md relative print:shadow-none print:border-[4px] print:m-0"
+            className="w-full max-w-2xl mx-auto bg-white border-[4px] sm:border-[6px] border-double border-orange-800 p-4 sm:p-8 shadow-md relative print:shadow-none print:border-[4px] print:m-0"
           >
             {/* Watermark Background */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none select-none">
