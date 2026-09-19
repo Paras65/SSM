@@ -255,33 +255,33 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         const clean = transcript.trim();
         if (!clean) return;
 
-        // Detect voice command (save, print)
-        const lower = clean.toLowerCase();
-        if (
-          lower.includes('सहेज') ||
-          lower.includes('सेव') ||
-          lower.includes('save') ||
-          lower.includes('सुरक्षित')
-        ) {
-          handleSaveToDevice();
-          setSaveToast('🎙️ आवाज़ आदेश: प्रश्न पत्र डिवाइस में सहेजा गया!');
-          setTimeout(() => setSaveToast(null), 3500);
-          try { recognition.stop(); } catch {}
-          return;
-        }
+        // Detect voice command (save, print) when listening for voice-command
+        if (field === 'voice-command') {
+          const lower = clean.toLowerCase();
+          if (
+            lower.includes('सहेज') ||
+            lower.includes('सेव') ||
+            lower.includes('save') ||
+            lower.includes('सुरक्षित')
+          ) {
+            handleSaveToDevice();
+            setSaveToast('🎙️ आवाज़ आदेश: प्रश्न पत्र डिवाइस में सहेजा गया!');
+            setTimeout(() => setSaveToast(null), 3500);
+            try { recognition.stop(); } catch {}
+            return;
+          }
 
-        if (lower.includes('प्रिंट') || lower.includes('print')) {
-          setActiveTab('preview');
-          setSaveToast('🎙️ आवाज़ आदेश: प्रिंट पूर्वावलोकन खोला गया!');
-          setTimeout(() => {
-            setSaveToast(null);
-            handlePrint();
-          }, 600);
-          try { recognition.stop(); } catch {}
-          return;
-        }
-
-        if (field === 'topic') {
+          if (lower.includes('प्रिंट') || lower.includes('print')) {
+            setActiveTab('preview');
+            setSaveToast('🎙️ आवाज़ आदेश: प्रिंट पूर्वावलोकन खोला गया!');
+            setTimeout(() => {
+              setSaveToast(null);
+              handlePrint();
+            }, 600);
+            try { recognition.stop(); } catch {}
+            return;
+          }
+        } else if (field === 'topic') {
           setCustomTopic(clean);
         } else if (field === 'chapters') {
           setChapters(clean);
@@ -421,19 +421,26 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
   // Handler to generate new balanced paper
   const handleAutoGenerate = () => {
-    const newPaper = generateSmartQuestionPaper({
-      schoolId: publicSchool.id,
-      schoolName: publicSchool.hindiName,
-      classLevel,
-      subject,
-      examType,
-      month,
-      chapters,
-      targetMarks,
-      durationMinutes,
-      includeSanskriti
-    });
-    setPaper(newPaper);
+    try {
+      const newPaper = generateSmartQuestionPaper({
+        schoolId: publicSchool.id,
+        schoolName: publicSchool.hindiName,
+        classLevel,
+        subject,
+        examType,
+        month,
+        chapters,
+        targetMarks,
+        durationMinutes,
+        includeSanskriti
+      });
+      setPaper(newPaper);
+      setSaveToast(`✨ ${classLevel} ${subject.split(' ')[0]} का नया प्रश्न पत्र तैयार है!`);
+      setTimeout(() => setSaveToast(null), 3000);
+    } catch (err) {
+      console.error('Error generating paper:', err);
+      alert('प्रश्न पत्र तैयार करने में समस्या आई।');
+    }
   };
 
   // Auto-sync paper when Class changes (marks, duration, chapters, prompt, paper)
@@ -628,7 +635,10 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
   // Trigger Print
   const handlePrint = () => {
-    window.print();
+    setActiveTab('preview');
+    setTimeout(() => {
+      window.print();
+    }, 150);
   };
 
   if (!isOpen) return null;
@@ -682,130 +692,19 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
         </div>
 
-        {/* Blueprint & Configuration Bar */}
-        <div className="p-3 sm:p-4 bg-amber-50/60 border-b border-orange-200 space-y-3 shrink-0">
-          {/* Top Row: Exam Type Tabs & Live Marks Balance Badge */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-orange-200 shadow-2xs overflow-x-auto max-w-full">
-              <button
-                type="button"
-                onClick={() => handleExamTypeChange('unit-test')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  examType === 'unit-test'
-                    ? 'bg-orange-700 text-white shadow-xs'
-                    : 'text-stone-700 hover:bg-orange-50'
-                }`}
-              >
-                <span>📅 इकाई मूल्यांकन (Unit Test)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExamTypeChange('traimasik')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  examType === 'traimasik'
-                    ? 'bg-orange-700 text-white shadow-xs'
-                    : 'text-stone-700 hover:bg-orange-50'
-                }`}
-              >
-                <span>📋 त्रैमासिक (Traimasik)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExamTypeChange('ardhavarshik')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  examType === 'ardhavarshik'
-                    ? 'bg-orange-700 text-white shadow-xs'
-                    : 'text-stone-700 hover:bg-orange-50'
-                }`}
-              >
-                <span>🏛️ सत्रीय / अभ्यास</span>
-              </button>
-            </div>
-
-            {/* Live Marks Balance Indicator */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border shadow-2xs ${
-                  marksBalance === 0
-                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                    : marksBalance < 0
-                    ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
-                    : 'bg-red-100 text-red-900 border-red-300 animate-pulse'
-                }`}
-              >
-                {marksBalance === 0 ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                    <span>पूर्ण संतुलित ({currentTotalMarks} / {targetMarks} अंक)</span>
-                  </>
-                ) : marksBalance < 0 ? (
-                  <>
-                    <AlertTriangle className="w-4 h-4 text-amber-700" />
-                    <span>{Math.abs(marksBalance)} अंक कम हैं ({currentTotalMarks}/{targetMarks})</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="w-4 h-4 text-red-700" />
-                    <span>{marksBalance} अंक अधिक हैं ({currentTotalMarks}/{targetMarks})</span>
-                  </>
-                )}
-              </div>
-
-              {marksBalance !== 0 && (
-                <button
-                  type="button"
-                  onClick={handleAutoFixBalance}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-                  title="एक क्लिक में अंकों को स्वतः लक्ष्य के अनुसार संतुलित करें"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>⚡ स्वतः संतुलित करें</span>
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={handleAutoGenerate}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-                title="वर्तमान सेटिंग्स के आधार पर नया संतुलित पेपर बनाएं"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>१-क्लिक स्मार्ट जनरेट</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSpecialFocusGenerate}
-                disabled={isGenerating}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
-                title="विशेष पाठ व फोकस अनुसार नया प्रश्न पत्र बनाएं"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>तैयार हो रहा है...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>✨ स्वतः नया पेपर बनाएं</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Bottom Grid: Class, Subject, Month, Course Progress, Target Marks */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+        {/* Simple & Clean Configuration Panel */}
+        <div className="p-3 sm:p-4 bg-amber-50/70 border-b border-orange-200 space-y-3 shrink-0">
+          {/* Row 1: Key Selectors (Class, Subject, Exam Type, Target Marks) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
             {/* Class */}
             <div>
-              <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">
                 कक्षा (Class)
               </label>
               <select
                 value={classLevel}
                 onChange={e => handleClassChange(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500"
+                className="w-full h-10 px-2.5 py-1.5 rounded-xl border border-stone-300 bg-white font-bold text-stone-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden text-xs sm:text-sm"
               >
                 {CLASS_OPTIONS.map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -815,13 +714,13 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
             {/* Subject */}
             <div>
-              <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">
                 विषय (Subject)
               </label>
               <select
                 value={subject}
                 onChange={e => handleSubjectChange(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500"
+                className="w-full h-10 px-2.5 py-1.5 rounded-xl border border-stone-300 bg-white font-bold text-stone-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden text-xs sm:text-sm"
               >
                 {SUBJECT_OPTIONS.map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -829,235 +728,157 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               </select>
             </div>
 
-            {/* Month (for Monthly Unit Test) */}
+            {/* Exam Type */}
             <div>
-              <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
-                माह (Month)
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                परीक्षा प्रकार
               </label>
               <select
-                value={month}
-                onChange={e => handleMonthChange(e.target.value)}
-                disabled={examType !== 'unit-test'}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 disabled:bg-stone-100 disabled:text-stone-400"
+                value={examType}
+                onChange={e => handleExamTypeChange(e.target.value as ExamPaperType)}
+                className="w-full h-10 px-2.5 py-1.5 rounded-xl border border-stone-300 bg-white font-bold text-stone-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden text-xs sm:text-sm"
               >
-                {MONTH_OPTIONS.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
+                <option value="unit-test">📅 मासिक इकाई मूल्यांकन</option>
+                <option value="traimasik">📋 त्रैमासिक परीक्षा</option>
+                <option value="ardhavarshik">🏛️ सत्रीय / अभ्यास परीक्षा</option>
               </select>
             </div>
 
             {/* Target Marks */}
             <div>
-              <div className="flex items-center justify-between mb-0.5">
-                <label className="block text-[10px] font-extrabold text-stone-600 uppercase">
-                  पूर्णांक (Total Marks)
-                </label>
-                <span className="text-[9px] font-bold text-amber-700 bg-amber-100/70 px-1 rounded-sm">
-                  स्वतः निर्धारित
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                {[15, 20, 25, 30, 40, 50, 80].includes(targetMarks) ? (
-                  <select
-                    value={targetMarks}
-                    onChange={e => setTargetMarks(Number(e.target.value))}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-bold text-stone-800 focus:outline-hidden focus:border-orange-500"
-                  >
-                    <option value={15}>15 अंक (कक्षा 1-3)</option>
-                    <option value={20}>20 अंक (मासिक)</option>
-                    <option value={25}>25 अंक (मासिक उच्च)</option>
-                    <option value={30}>30 अंक (त्रैमासिक लघु)</option>
-                    <option value={40}>40 अंक</option>
-                    <option value={50}>50 अंक (त्रैमासिक मानक)</option>
-                    <option value={80}>80 अंक (सत्रीय/अर्द्धवार्षिक)</option>
-                  </select>
-                ) : (
-                  <input
-                    type="number"
-                    value={targetMarks}
-                    onChange={e => setTargetMarks(Number(e.target.value) || 0)}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-bold text-stone-800 focus:outline-hidden focus:border-orange-500"
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Duration */}
-            <div>
-              <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
-                समय (मिनट)
+              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                पूर्णांक (Marks)
               </label>
-              <input
-                type="number"
-                value={durationMinutes}
-                onChange={e => setDurationMinutes(Number(e.target.value) || 0)}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500"
-              />
-            </div>
-
-            {/* Sanskriti Bodh Toggle */}
-            <div className="flex flex-col justify-end">
-              <label className="flex items-center gap-1.5 py-1.5 cursor-pointer text-[11px] font-bold text-stone-700">
-                <input
-                  type="checkbox"
-                  checked={includeSanskriti}
-                  onChange={e => setIncludeSanskriti(e.target.checked)}
-                  className="w-4 h-4 text-orange-600 rounded-sm border-stone-300"
-                />
-                <span>संस्कृति बोध प्रश्न</span>
-              </label>
+              <select
+                value={targetMarks}
+                onChange={e => setTargetMarks(Number(e.target.value))}
+                className="w-full h-10 px-2.5 py-1.5 rounded-xl border border-stone-300 bg-white font-bold text-stone-800 focus:ring-2 focus:ring-orange-500 focus:outline-hidden text-xs sm:text-sm"
+              >
+                <option value={15}>15 अंक (कक्षा 1-3)</option>
+                <option value={20}>20 अंक (मासिक)</option>
+                <option value={25}>25 अंक (मासिक)</option>
+                <option value={30}>30 अंक (त्रैमासिक)</option>
+                <option value={40}>40 अंक</option>
+                <option value={50}>50 अंक (त्रैमासिक)</option>
+                <option value={80}>80 अंक (सत्रीय)</option>
+              </select>
             </div>
           </div>
 
-          {/* Chapters / Course Progress Input & AI Topic */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            <div>
-              <div className="flex items-center justify-between mb-0.5">
-                <label className="block text-[10px] font-extrabold text-stone-600 uppercase">
-                  पाठ्यक्रम प्रगति / निर्धारित अध्याय (Syllabus)
-                </label>
+          {/* Row 2: Syllabus / Chapters with Big Clear Voice Button */}
+          <div>
+            <label className="block text-[11px] font-bold text-stone-700 mb-1">
+              पाठ्यक्रम प्रगति / अध्याय (Syllabus)
+            </label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                value={chapters}
+                onChange={e => setChapters(e.target.value)}
+                placeholder="उदा. अध्याय १ एवं २: संख्या पद्धति व संक्रियाएं..."
+                className={`flex-1 h-10 px-3 py-2 text-xs sm:text-sm font-medium rounded-xl border ${
+                  isListening && listeningField === 'chapters'
+                    ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20'
+                    : 'border-stone-300 bg-white'
+                } focus:outline-hidden focus:border-orange-500 shadow-2xs`}
+              />
+              <button
+                type="button"
+                onClick={() => handleVoiceInput('chapters')}
+                className={`h-10 px-3.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs ${
+                  isListening && listeningField === 'chapters'
+                    ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                    : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
+                }`}
+                title="बोलकर अध्याय का नाम लिखें"
+              >
+                <Mic className="w-4 h-4" />
+                <span>
+                  {isListening && listeningField === 'chapters' ? 'सुन रहे हैं...' : 'बोलकर लिखें'}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Row 3: Generation & Balance Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-orange-200/60">
+            {/* Live Marks Balance Status */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border shadow-2xs ${
+                  marksBalance === 0
+                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                    : marksBalance < 0
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-red-100 text-red-900 border-red-300'
+                }`}
+              >
+                {marksBalance === 0 ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>पूर्ण संतुलित ({currentTotalMarks} / {targetMarks} अंक)</span>
+                  </>
+                ) : marksBalance < 0 ? (
+                  <>
+                    <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>{Math.abs(marksBalance)} अंक कम ({currentTotalMarks}/{targetMarks})</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4 text-red-700 shrink-0" />
+                    <span>{marksBalance} अंक अधिक ({currentTotalMarks}/{targetMarks})</span>
+                  </>
+                )}
+              </div>
+
+              {marksBalance !== 0 && (
                 <button
                   type="button"
-                  onClick={() => handleVoiceInput('chapters')}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
-                    isListening && listeningField === 'chapters'
-                      ? 'bg-red-600 text-white animate-pulse'
-                      : 'bg-amber-100 hover:bg-amber-200 text-amber-900'
-                  }`}
-                  title="बोलकर अध्याय लिखें (Voice Input)"
+                  onClick={handleAutoFixBalance}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+                  title="अंकों को स्वतः लक्ष्य के अनुसार संतुलित करें"
                 >
-                  <Mic className={`w-3 h-3 ${isListening && listeningField === 'chapters' ? 'text-white' : 'text-amber-800'}`} />
-                  <span>{isListening && listeningField === 'chapters' ? 'सुन रहे हैं...' : 'बोलकर लिखें'}</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>⚡ संतुलित करें</span>
                 </button>
-              </div>
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  value={chapters}
-                  onChange={e => setChapters(e.target.value)}
-                  placeholder="उदा. अध्याय १ एवं २: संख्या पद्धति, पूर्णांक एवं वैदिक गणित"
-                  className={`w-full pr-8 px-3 py-1.5 rounded-lg border ${
-                    isListening && listeningField === 'chapters'
-                      ? 'border-red-500 ring-2 ring-red-200'
-                      : 'border-stone-300'
-                  } bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs`}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleVoiceInput('chapters')}
-                  className="absolute right-2 p-1 text-stone-400 hover:text-orange-600 transition cursor-pointer"
-                  title="माइक से बोलें"
-                >
-                  <Mic className={`w-3.5 h-3.5 ${isListening && listeningField === 'chapters' ? 'text-red-600 animate-pulse' : ''}`} />
-                </button>
-              </div>
+              )}
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-0.5">
-                <label className="text-[10px] font-extrabold text-stone-700 uppercase flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-orange-600" />
-                  <span>विशेष पाठ व फोकस बिंदु (Special Focus Topic)</span>
-                </label>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleVoiceInput('topic')}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
-                      isListening && listeningField === 'topic'
-                        ? 'bg-red-600 text-white animate-pulse'
-                        : 'bg-amber-100 hover:bg-amber-200 text-amber-900'
-                    }`}
-                    title="बोलकर फोकस टॉपिक लिखें (Voice Input)"
-                  >
-                    <Mic className={`w-3 h-3 ${isListening && listeningField === 'topic' ? 'text-white' : 'text-amber-800'}`} />
-                    <span>{isListening && listeningField === 'topic' ? 'सुन रहे हैं...' : 'बोलकर लिखें'}</span>
-                  </button>
-                  <span className="text-[9px] font-bold text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded-full">
-                    ✨ स्वतः चयनित
-                  </span>
-                </div>
-              </div>
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  value={customTopic}
-                  onChange={e => setCustomTopic(e.target.value)}
-                  placeholder="उदा. प्रकाश का परावर्तन, कबीर के दोहे, या कोई विशेष टॉपिक..."
-                  className={`w-full pr-8 px-3 py-1.5 rounded-lg border ${
-                    isListening && listeningField === 'topic'
-                      ? 'border-red-500 ring-2 ring-red-200'
-                      : 'border-stone-300'
-                  } bg-white text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs`}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleVoiceInput('topic')}
-                  className="absolute right-2 p-1 text-stone-400 hover:text-orange-600 transition cursor-pointer"
-                  title="माइक से बोलें"
-                >
-                  <Mic className={`w-3.5 h-3.5 ${isListening && listeningField === 'topic' ? 'text-red-600 animate-pulse' : ''}`} />
-                </button>
-              </div>
-              {/* 1-Click Suggestion Chips for Non-Tech Users */}
-              <div className="flex flex-wrap items-center gap-1 mt-1 text-[10px]">
-                <span className="text-stone-400 font-bold">१-क्लिक सुझाव:</span>
-                <button
-                  type="button"
-                  onClick={() => setCustomTopic(getRecommendedPrompt(classLevel, subject, month, examType, chapters))}
-                  className="px-1.5 py-0.5 rounded bg-orange-100 hover:bg-orange-200 text-orange-900 font-semibold cursor-pointer transition"
-                  title="मूल स्वचालित विवरण पर रीसेट करें"
-                >
-                  🔄 मूल रीसेट
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomTopic(prev => prev.replace(/\s*\(.*?\)$/, '') + ' (सूत्र, परिभाषाएं एवं वस्तुनिष्ठ प्रश्नों पर विशेष बल)')}
-                  className="px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold cursor-pointer transition"
-                >
-                  🎯 सूत्र व परिभाषाएं
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomTopic(prev => prev.replace(/\s*\(.*?\)$/, '') + ' (दैनिक जीवन के उदाहरण एवं प्रयोगात्मक प्रश्न)')}
-                  className="px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold cursor-pointer transition"
-                >
-                  💡 प्रयोगात्मक
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomTopic(prev => prev.replace(/\s*\(.*?\)$/, '') + ' (भारतीय ज्ञान परंपरा, महापुरुष एवं सनातन मूल्य समावेश)')}
-                  className="px-1.5 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold cursor-pointer transition"
-                >
-                  🚩 संस्कृति बोध
-                </button>
-              </div>
-            </div>
+            {/* Main 1-Click Generate Button */}
+            <button
+              type="button"
+              onClick={handleAutoGenerate}
+              className="h-10 px-5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs sm:text-sm font-black shadow-md transition cursor-pointer flex items-center gap-2"
+              title="चयनित सेटिंग्स के आधार पर नया संतुलित प्रश्न पत्र तैयार करें"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>✨ नया प्रश्न पत्र बनाएं</span>
+            </button>
           </div>
         </div>
 
-        {/* Action & View Switcher Bar */}
-        <div className="px-3 sm:px-5 py-2.5 bg-stone-100 border-b border-stone-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-2">
+        {/* View Switcher: Editor vs A4 Preview */}
+        <div className="px-3 sm:px-5 py-2 bg-stone-100 border-b border-stone-200 flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-stone-200 shadow-2xs">
             <button
               type="button"
               onClick={() => setActiveTab('editor')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'editor'
                   ? 'bg-stone-900 text-white shadow-xs'
-                  : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-200'
+                  : 'text-stone-700 hover:bg-stone-100'
               }`}
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>संपादक (Edit)</span>
+              <span>संपादक (Edit Questions)</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'preview'
                   ? 'bg-orange-700 text-white shadow-xs'
-                  : 'bg-white text-stone-700 hover:bg-stone-200 border border-stone-200'
+                  : 'text-stone-700 hover:bg-orange-50'
               }`}
             >
               <Printer className="w-3.5 h-3.5" />
@@ -1065,52 +886,25 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => handleVoiceInput('voice-command')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                isListening && listeningField === 'voice-command'
-                  ? 'bg-red-600 text-white animate-pulse border-red-700'
-                  : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300'
-              }`}
-              title="बोलकर 'सहेजें' या 'प्रिंट' कहें (Voice Command Save)"
-            >
-              <Mic className={`w-3.5 h-3.5 ${isListening && listeningField === 'voice-command' ? 'text-white' : 'text-amber-800'}`} />
-              <span>{isListening && listeningField === 'voice-command' ? 'बोलें "सहेजें"...' : 'बोलकर सहेजें'}</span>
-            </button>
-
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={handleSaveToDevice}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-              title="वर्तमान प्रश्न पत्र को डिवाइस मेमोरी में सहेजें"
+              className="h-9 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              title="वर्तमान प्रश्न पत्र को सहेजें"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>डिवाइस में सहेजें</span>
+              <span>सहेजें</span>
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('preview');
-                setTimeout(() => handlePrint(), 200);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              onClick={handlePrint}
+              className="h-9 px-3.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
               title="A4 प्रिंट करें अथवा PDF के रूप में सहेजें"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>A4 प्रिंट / PDF</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownloadJson}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 text-xs font-bold transition cursor-pointer"
-              title="प्रश्न पत्र बैकअप फ़ाइल डाउनलोड करें (JSON)"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">बैकअप</span>
             </button>
           </div>
         </div>
@@ -1440,10 +1234,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('preview');
-                setTimeout(() => handlePrint(), 200);
-              }}
+              onClick={handlePrint}
               className="flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
               title="A4 प्रिंट करें अथवा PDF के रूप में सहेजें"
             >
