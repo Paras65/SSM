@@ -451,13 +451,21 @@ router.post('/ai/generate-question-paper', async (req, res) => {
       return res.status(400).json({ error: 'अमान्य अथवा अत्यधिक लंबा प्रॉम्प्ट।' });
     }
 
-    const googleRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(sanitizedKey)}`,
+    const googleHeaders = {
+      'Content-Type': 'application/json'
+    };
+    if (sanitizedKey.startsWith('AIzaSy')) {
+      googleHeaders['x-goog-api-key'] = sanitizedKey;
+    } else {
+      googleHeaders['Authorization'] = `Bearer ${sanitizedKey}`;
+      googleHeaders['x-goog-api-key'] = sanitizedKey;
+    }
+
+    let googleRes = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: googleHeaders,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -467,6 +475,24 @@ router.post('/ai/generate-question-paper', async (req, res) => {
         })
       }
     );
+
+    if (!googleRes.ok && googleRes.status === 404) {
+      // Fallback to gemini-2.0-flash
+      googleRes = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+        {
+          method: 'POST',
+          headers: googleHeaders,
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.3,
+              responseMimeType: 'application/json'
+            }
+          })
+        }
+      );
+    }
 
     if (!googleRes.ok) {
       const errJson = await googleRes.json().catch(() => ({}));

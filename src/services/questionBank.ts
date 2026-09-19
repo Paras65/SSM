@@ -884,15 +884,26 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
       // Backend proxy unavailable (e.g. static dev), will fallback to direct call
     }
 
-    // 2. If proxy didn't return data, call Google endpoint with standard model
+    // 2. If proxy didn't return data, call Google endpoint with standard model using secure headers (no key in URL)
     if (!parsed) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(effectiveKey)}`,
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      if (effectiveKey.startsWith('AIzaSy')) {
+        headers['x-goog-api-key'] = effectiveKey;
+      } else {
+        // Support Bearer/OAuth tokens or pass via both
+        headers['Authorization'] = `Bearer ${effectiveKey}`;
+        headers['x-goog-api-key'] = effectiveKey;
+      }
+
+      // Try primary model (gemini-1.5-flash) without leaking key in URL
+      let response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers,
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
@@ -902,6 +913,24 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
           })
         }
       );
+
+      // If 404, fallback to gemini-2.0-flash
+      if (!response.ok && response.status === 404) {
+        response = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.3,
+                responseMimeType: 'application/json'
+              }
+            })
+          }
+        );
+      }
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
@@ -965,14 +994,24 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
               ],
         sections: validatedSections,
         createdAt: new Date().toISOString(),
-        createdBy: 'Gemini AI एवं आचार्य'
+        createdBy: 'Gemini AI एवं आचार्य',
+        generationSource: 'gemini'
       };
     }
 
-    return generateSmartQuestionPaper(options);
-  } catch (err) {
+    const fallbackPaper = generateSmartQuestionPaper(options);
+    fallbackPaper.generationSource = 'curriculum-bank';
+    fallbackPaper.generationWarning = 'AI रिस्पांस पार्स नहीं हो सका। पाठ्यक्रम बैंक से संतुलित प्रश्न पत्र तैयार किया गया है।';
+    return fallbackPaper;
+  } catch (err: any) {
     console.warn('Gemini API call failed, falling back to curriculum question bank:', err);
-    return generateSmartQuestionPaper(options);
+    const fallbackPaper = generateSmartQuestionPaper(options);
+    fallbackPaper.generationSource = 'curriculum-bank';
+    const isKeyIssue = !effectiveKey.startsWith('AIzaSy');
+    fallbackPaper.generationWarning = isKeyIssue
+      ? 'Gemini AI से संपर्क नहीं हो सका: अमान्य API Key प्रारूप। कृपया aistudio.google.com से प्राप्त "AIzaSy..." Key दर्ज करें। (पाठ्यक्रम बैंक से प्रश्न पत्र तैयार किया गया है)'
+      : `Gemini AI से संपर्क नहीं हो सका (${err?.message || 'नेटवर्क त्रुटि'})। पाठ्यक्रम बैंक से प्रश्न पत्र तैयार किया गया है।`;
+    return fallbackPaper;
   }
 }
 

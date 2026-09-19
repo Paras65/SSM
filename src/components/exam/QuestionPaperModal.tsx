@@ -40,26 +40,78 @@ interface QuestionPaperModalProps {
   initialClass?: string;
 }
 
+// Helper: Recommended Marks & Duration based on Class Level and Exam Type for Vidya Bharati
+const getRecommendedMarksAndDuration = (classLvl: string, type: ExamPaperType): { marks: number; duration: number } => {
+  const isJunior = ['Class 1', 'Class 2', 'Class 3'].includes(classLvl);
+  const isSenior = ['Class 9', 'Class 10'].includes(classLvl);
+
+  if (type === 'unit-test') {
+    if (isJunior) return { marks: 15, duration: 40 };
+    if (isSenior) return { marks: 25, duration: 50 };
+    return { marks: 20, duration: 45 };
+  }
+  if (type === 'traimasik') {
+    if (isJunior) return { marks: 30, duration: 60 };
+    return { marks: 50, duration: 90 };
+  }
+  if (type === 'ardhavarshik' || type === 'varshik') {
+    if (isJunior) return { marks: 50, duration: 90 };
+    if (isSenior) return { marks: 80, duration: 180 };
+    return { marks: 80, duration: 150 };
+  }
+  return { marks: 25, duration: 45 };
+};
+
+// Helper: Auto-generate rich, curriculum-aligned AI prompt for non-tech teachers
+const getRecommendedPrompt = (
+  classLvl: string,
+  subj: string,
+  mon: string,
+  type: ExamPaperType,
+  chaps: string
+): string => {
+  const cleanSubject = subj.split(' ')[0] || subj;
+  const examName =
+    type === 'unit-test'
+      ? `${mon} मासिक इकाई मूल्यांकन`
+      : type === 'traimasik'
+      ? 'त्रैमासिक परीक्षा'
+      : 'अर्द्धवार्षिक परीक्षा';
+
+  const baseChapters = chaps.replace(/^अध्याय\s*[^:]*:\s*/i, '').trim() || chaps;
+  return `${classLvl} ${cleanSubject} के ${examName} हेतु (${baseChapters}) पर आधारित संतुलित विद्या भारती ब्लूप्रिंट अनुसार प्रश्न पत्र।`;
+};
+
 export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   isOpen,
   onClose,
-  initialSubject,
-  initialClass
+  initialClass,
+  initialSubject
 }) => {
   const { publicSchool } = useSchool();
+
+  const initialMarksDuration = getRecommendedMarksAndDuration(initialClass || 'Class 5', 'unit-test');
+  const initialChapters = 'अध्याय १ एवं २: संख्या पद्धति व संक्रियाएं';
+  const initialPrompt = getRecommendedPrompt(
+    initialClass || 'Class 5',
+    initialSubject || 'गणित (Mathematics)',
+    'अगस्त',
+    'unit-test',
+    initialChapters
+  );
 
   // Configuration State
   const [examType, setExamType] = useState<ExamPaperType>('unit-test');
   const [classLevel, setClassLevel] = useState<string>(initialClass || 'Class 5');
   const [subject, setSubject] = useState<string>(initialSubject || 'गणित (Mathematics)');
   const [month, setMonth] = useState<string>('अगस्त');
-  const [chapters, setChapters] = useState<string>('अध्याय १ एवं २: संख्या पद्धति व संक्रियाएं');
-  const [targetMarks, setTargetMarks] = useState<number>(20);
-  const [durationMinutes, setDurationMinutes] = useState<number>(45);
+  const [chapters, setChapters] = useState<string>(initialChapters);
+  const [targetMarks, setTargetMarks] = useState<number>(initialMarksDuration.marks);
+  const [durationMinutes, setDurationMinutes] = useState<number>(initialMarksDuration.duration);
   const [includeSanskriti, setIncludeSanskriti] = useState<boolean>(true);
 
   // Gemini AI Generation State
-  const [customTopic, setCustomTopic] = useState<string>('');
+  const [customTopic, setCustomTopic] = useState<string>(initialPrompt);
   const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
   const [geminiApiKey, setGeminiApiKey] = useState<string>(() => {
     return (
@@ -130,9 +182,9 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
       subject: initialSubject || 'गणित (Mathematics)',
       examType: 'unit-test',
       month: 'अगस्त',
-      chapters: 'अध्याय १ एवं २: संख्या पद्धति व संक्रियाएं',
-      targetMarks: 20,
-      durationMinutes: 45,
+      chapters: initialChapters,
+      targetMarks: initialMarksDuration.marks,
+      durationMinutes: initialMarksDuration.duration,
       includeSanskriti: true
     })
   );
@@ -163,35 +215,102 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     setPaper(newPaper);
   };
 
-  // Handler when exam type changes with auto-filling syllabus
+  // Auto-sync paper when Class changes (marks, duration, chapters, prompt, paper)
+  const handleClassChange = (newClass: string) => {
+    setClassLevel(newClass);
+    const rec = getRecommendedMarksAndDuration(newClass, examType);
+    setTargetMarks(rec.marks);
+    setDurationMinutes(rec.duration);
+    const newChaps = getDefaultChaptersForMonth(month, subject, examType);
+    setChapters(newChaps);
+    const newPrompt = getRecommendedPrompt(newClass, subject, month, examType, newChaps);
+    setCustomTopic(newPrompt);
+
+    const newPaper = generateSmartQuestionPaper({
+      schoolId: publicSchool.id,
+      schoolName: publicSchool.hindiName,
+      classLevel: newClass,
+      subject,
+      examType,
+      month,
+      chapters: newChaps,
+      targetMarks: rec.marks,
+      durationMinutes: rec.duration,
+      includeSanskriti
+    });
+    setPaper(newPaper);
+  };
+
+  // Auto-sync paper when Exam Type changes (marks, duration, chapters, prompt, paper)
   const handleExamTypeChange = (newType: ExamPaperType) => {
     setExamType(newType);
-    const newChapters = getDefaultChaptersForMonth(month, subject, newType);
-    setChapters(newChapters);
-    if (newType === 'unit-test') {
-      setTargetMarks(20);
-      setDurationMinutes(45);
-    } else if (newType === 'traimasik') {
-      setTargetMarks(50);
-      setDurationMinutes(90);
-    } else {
-      setTargetMarks(80);
-      setDurationMinutes(150);
-    }
+    const rec = getRecommendedMarksAndDuration(classLevel, newType);
+    setTargetMarks(rec.marks);
+    setDurationMinutes(rec.duration);
+    const newChaps = getDefaultChaptersForMonth(month, subject, newType);
+    setChapters(newChaps);
+    const newPrompt = getRecommendedPrompt(classLevel, subject, month, newType, newChaps);
+    setCustomTopic(newPrompt);
+
+    const newPaper = generateSmartQuestionPaper({
+      schoolId: publicSchool.id,
+      schoolName: publicSchool.hindiName,
+      classLevel,
+      subject,
+      examType: newType,
+      month,
+      chapters: newChaps,
+      targetMarks: rec.marks,
+      durationMinutes: rec.duration,
+      includeSanskriti
+    });
+    setPaper(newPaper);
   };
 
-  // Auto-fill chapters when Month changes
+  // Auto-fill chapters, prompt & regenerate when Month changes
   const handleMonthChange = (newMonth: string) => {
     setMonth(newMonth);
-    const newChapters = getDefaultChaptersForMonth(newMonth, subject, examType);
-    setChapters(newChapters);
+    const newChaps = getDefaultChaptersForMonth(newMonth, subject, examType);
+    setChapters(newChaps);
+    const newPrompt = getRecommendedPrompt(classLevel, subject, newMonth, examType, newChaps);
+    setCustomTopic(newPrompt);
+
+    const newPaper = generateSmartQuestionPaper({
+      schoolId: publicSchool.id,
+      schoolName: publicSchool.hindiName,
+      classLevel,
+      subject,
+      examType,
+      month: newMonth,
+      chapters: newChaps,
+      targetMarks,
+      durationMinutes,
+      includeSanskriti
+    });
+    setPaper(newPaper);
   };
 
-  // Auto-fill chapters when Subject changes
+  // Auto-fill chapters, prompt & regenerate when Subject changes
   const handleSubjectChange = (newSubject: string) => {
     setSubject(newSubject);
-    const newChapters = getDefaultChaptersForMonth(month, newSubject, examType);
-    setChapters(newChapters);
+    const newChaps = getDefaultChaptersForMonth(month, newSubject, examType);
+    setChapters(newChaps);
+    const newPrompt = getRecommendedPrompt(classLevel, newSubject, month, examType, newChaps);
+    setCustomTopic(newPrompt);
+
+    const newPaper = generateSmartQuestionPaper({
+      schoolId: publicSchool.id,
+      schoolName: publicSchool.hindiName,
+      classLevel,
+      subject: newSubject,
+      examType,
+      month,
+      chapters: newChaps,
+      targetMarks,
+      durationMinutes,
+      includeSanskriti
+    });
+    setPaper(newPaper);
   };
 
   // 1-Click Auto-Fix Marks Balance
@@ -463,7 +582,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               </label>
               <select
                 value={classLevel}
-                onChange={e => setClassLevel(e.target.value)}
+                onChange={e => handleClassChange(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500"
               >
                 {CLASS_OPTIONS.map(c => (
@@ -507,22 +626,28 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
             {/* Target Marks */}
             <div>
-              <label className="block text-[10px] font-extrabold text-stone-600 uppercase mb-0.5">
-                पूर्णांक (Total Marks)
-              </label>
+              <div className="flex items-center justify-between mb-0.5">
+                <label className="block text-[10px] font-extrabold text-stone-600 uppercase">
+                  पूर्णांक (Total Marks)
+                </label>
+                <span className="text-[9px] font-bold text-amber-700 bg-amber-100/70 px-1 rounded-sm">
+                  स्वतः निर्धारित
+                </span>
+              </div>
               <div className="flex items-center gap-1">
-                {[15, 20, 25, 40, 50].includes(targetMarks) ? (
+                {[15, 20, 25, 30, 40, 50, 80].includes(targetMarks) ? (
                   <select
                     value={targetMarks}
                     onChange={e => setTargetMarks(Number(e.target.value))}
                     className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-bold text-stone-800 focus:outline-hidden focus:border-orange-500"
                   >
-                    <option value={15}>15 अंक</option>
-                    <option value={20}>20 अंक</option>
-                    <option value={25}>25 अंक</option>
+                    <option value={15}>15 अंक (कक्षा 1-3)</option>
+                    <option value={20}>20 अंक (मासिक)</option>
+                    <option value={25}>25 अंक (मासिक उच्च)</option>
+                    <option value={30}>30 अंक (त्रैमासिक लघु)</option>
                     <option value={40}>40 अंक</option>
-                    <option value={50}>50 अंक</option>
-                    <option value={80}>80 अंक</option>
+                    <option value={50}>50 अंक (त्रैमासिक मानक)</option>
+                    <option value={80}>80 अंक (सत्रीय/अर्द्धवार्षिक)</option>
                   </select>
                 ) : (
                   <input
@@ -577,10 +702,15 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-extrabold text-purple-900 uppercase mb-0.5 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-purple-600" />
-                <span>AI विशिष्ट विषय / फोकस पाठ (Optional Gemini AI Prompt)</span>
-              </label>
+              <div className="flex items-center justify-between mb-0.5">
+                <label className="text-[10px] font-extrabold text-purple-900 uppercase flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-purple-600" />
+                  <span>AI विशिष्ट विषय व प्रॉम्प्ट (Auto-Generated Prompt)</span>
+                </label>
+                <span className="text-[9px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded-full">
+                  ✨ चयन अनुसार तैयार
+                </span>
+              </div>
               <input
                 type="text"
                 value={customTopic}
@@ -588,6 +718,39 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 placeholder="उदा. प्रकाश का परावर्तन, कबीर के दोहे, या कोई विशेष टॉपिक..."
                 className="w-full px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50/40 text-xs font-semibold text-purple-950 focus:outline-hidden focus:border-purple-500 shadow-2xs"
               />
+              {/* 1-Click Suggestion Chips for Non-Tech Users */}
+              <div className="flex flex-wrap items-center gap-1 mt-1 text-[10px]">
+                <span className="text-stone-400 font-bold">१-क्लिक सुझाव:</span>
+                <button
+                  type="button"
+                  onClick={() => setCustomTopic(getRecommendedPrompt(classLevel, subject, month, examType, chapters))}
+                  className="px-1.5 py-0.5 rounded bg-purple-100 hover:bg-purple-200 text-purple-800 font-semibold cursor-pointer transition"
+                  title="मूल स्वचालित प्रॉम्प्ट पर रीसेट करें"
+                >
+                  🔄 स्वतः रीसेट
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomTopic(prev => prev.replace(/\s*\(.*?\)$/, '') + ' (सूत्र, परिभाषाएं एवं वस्तुनिष्ठ प्रश्नों पर विशेष बल)')}
+                  className="px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold cursor-pointer transition"
+                >
+                  🎯 सूत्र व परिभाषाएं
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomTopic(prev => prev.replace(/\s*\(.*?\)$/, '') + ' (दैनिक जीवन के उदाहरण एवं प्रयोगात्मक प्रश्न)')}
+                  className="px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold cursor-pointer transition"
+                >
+                  💡 प्रयोगात्मक
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomTopic(prev => prev.replace(/\s*\(.*?\)$/, '') + ' (भारतीय ज्ञान परंपरा, महापुरुष एवं सनातन मूल्य समावेश)')}
+                  className="px-1.5 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold cursor-pointer transition"
+                >
+                  🚩 संस्कृति बोध
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -635,6 +798,39 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
         {/* Modal Body: Editor vs Preview */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-stone-50">
+          {paper.generationWarning && (
+            <div className="max-w-4xl mx-auto mb-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start justify-between gap-3 shadow-2xs">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">{paper.generationWarning}</p>
+                  <p className="text-[11px] text-amber-800/80 mt-0.5">
+                    सुझाव: aistudio.google.com से प्राप्त मान्य 'AIzaSy...' Key दर्ज करने हेतु ऊपर <strong>AI सेटिंग्स</strong> बटन दबाएं।
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaper(p => ({ ...p, generationWarning: undefined }))}
+                className="text-stone-400 hover:text-stone-700 text-xs font-bold px-1.5 py-0.5 rounded cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {paper.generationSource === 'gemini' && !paper.generationWarning && (
+            <div className="max-w-4xl mx-auto mb-4 p-2.5 bg-purple-50 border border-purple-200 rounded-2xl text-xs text-purple-900 flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+                <span className="font-bold">Google Gemini AI द्वारा सफलता से निर्मित प्रश्न पत्र</span>
+              </div>
+              <span className="text-[10px] bg-purple-200/60 text-purple-800 px-2 py-0.5 rounded-full font-bold">
+                संतुलित ब्लूप्रिंट
+              </span>
+            </div>
+          )}
+
           {activeTab === 'editor' ? (
             /* TAB 1: QUESTION EDITOR */
             <div className="space-y-6 max-w-4xl mx-auto">
@@ -965,6 +1161,14 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 placeholder="AIzaSy..."
                 className="w-full px-3 py-2 text-xs border border-stone-300 rounded-xl focus:outline-hidden focus:border-purple-600 font-mono"
               />
+              {keyInput.trim().length > 0 && !keyInput.trim().startsWith('AIzaSy') && (
+                <div className="mt-1.5 p-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 flex items-start gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    Google AI Studio की आधिकारिक कुंजी <strong>'AIzaSy...'</strong> से शुरू होती है। यदि आप Antigravity / gcloud टोकन (उदा. AQ...) दर्ज कर रहे हैं, तो Generative Language API 404 त्रुटि दे सकता है। कृपया aistudio.google.com से मुफ़्त API Key प्राप्त करें।
+                  </span>
+                </div>
+              )}
             </div>
             <div className="text-[11px] text-stone-500 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
               💡 मुफ़्त API Key प्राप्त करने हेतु:{' '}
