@@ -27,6 +27,7 @@ import {
 import {
   generateSmartQuestionPaper,
   generateQuestionPaperWithGemini,
+  getDefaultChaptersForMonth,
   MONTH_OPTIONS,
   SUBJECT_OPTIONS,
   CLASS_OPTIONS
@@ -70,15 +71,8 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   const [showApiKeyModal, setShowApiKeyModal] = useState<boolean>(false);
   const [keyInput, setKeyInput] = useState<string>(geminiApiKey);
 
-  const maskApiKey = (key: string) => {
-    if (!key) return '';
-    const clean = key.trim();
-    if (clean.length <= 10) return '••••••••';
-    return `${clean.slice(0, 6)}••••••••${clean.slice(-4)}`;
-  };
-
   const handleSaveApiKey = () => {
-    const trimmed = keyInput.trim().replace(/[^A-Za-z0-9_-]/g, '');
+    const trimmed = keyInput.trim().replace(/[^A-Za-z0-9_.-]/g, '');
     setGeminiApiKey(trimmed);
     if (trimmed) {
       localStorage.setItem('ssm_gemini_api_key', trimmed);
@@ -169,9 +163,11 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     setPaper(newPaper);
   };
 
-  // Handler when exam type changes
+  // Handler when exam type changes with auto-filling syllabus
   const handleExamTypeChange = (newType: ExamPaperType) => {
     setExamType(newType);
+    const newChapters = getDefaultChaptersForMonth(month, subject, newType);
+    setChapters(newChapters);
     if (newType === 'unit-test') {
       setTargetMarks(20);
       setDurationMinutes(45);
@@ -183,6 +179,74 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
       setDurationMinutes(150);
     }
   };
+
+  // Auto-fill chapters when Month changes
+  const handleMonthChange = (newMonth: string) => {
+    setMonth(newMonth);
+    const newChapters = getDefaultChaptersForMonth(newMonth, subject, examType);
+    setChapters(newChapters);
+  };
+
+  // Auto-fill chapters when Subject changes
+  const handleSubjectChange = (newSubject: string) => {
+    setSubject(newSubject);
+    const newChapters = getDefaultChaptersForMonth(month, newSubject, examType);
+    setChapters(newChapters);
+  };
+
+  // 1-Click Auto-Fix Marks Balance
+  const handleAutoFixBalance = () => {
+    if (marksBalance === 0) return;
+    const updatedSections = [...paper.sections];
+
+    if (marksBalance > 0) {
+      let remainingToRemove = marksBalance;
+      for (let s = updatedSections.length - 1; s >= 0 && remainingToRemove > 0; s--) {
+        const sec = updatedSections[s];
+        for (let q = sec.questions.length - 1; q >= 0 && remainingToRemove > 0; q--) {
+          const currentQ = sec.questions[q];
+          if (currentQ.marks > 1) {
+            const reduction = Math.min(currentQ.marks - 1, remainingToRemove);
+            currentQ.marks -= reduction;
+            remainingToRemove -= reduction;
+          } else if (sec.questions.length > 1 && remainingToRemove >= 1) {
+            sec.questions.splice(q, 1);
+            remainingToRemove -= 1;
+          }
+        }
+      }
+    } else {
+      let remainingToAdd = Math.abs(marksBalance);
+      for (let s = updatedSections.length - 1; s >= 0 && remainingToAdd > 0; s--) {
+        const sec = updatedSections[s];
+        if (sec.questions.length > 0) {
+          const lastQ = sec.questions[sec.questions.length - 1];
+          lastQ.marks += remainingToAdd;
+          remainingToAdd = 0;
+        }
+      }
+    }
+
+    setPaper({ ...paper, sections: updatedSections });
+  };
+
+  // Keyboard Shortcuts: Ctrl+Enter (Generate), Ctrl+P (Print)
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleAutoGenerate();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        setActiveTab('preview');
+        setTimeout(() => window.print(), 200);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleAutoGenerate]);
 
   // Inline question text change
   const handleQuestionTextChange = (secIndex: number, qIndex: number, newText: string) => {
@@ -332,6 +396,18 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                 )}
               </div>
 
+              {marksBalance !== 0 && (
+                <button
+                  type="button"
+                  onClick={handleAutoFixBalance}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+                  title="एक क्लिक में अंकों को स्वतः लक्ष्य के अनुसार संतुलित करें"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>⚡ स्वतः संतुलित करें</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleAutoGenerate}
@@ -370,9 +446,10 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                     ? 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100'
                     : 'bg-stone-100 text-stone-600 border-stone-300 hover:bg-stone-200'
                 }`}
-                title="Gemini API Key सेटिंग्स"
+                title="Gemini AI सेटिंग्स"
               >
-                <span>🔑 {geminiApiKey ? maskApiKey(geminiApiKey) : 'API Key जोड़ें'}</span>
+                <Sliders className="w-3.5 h-3.5" />
+                <span>AI सेटिंग्स</span>
               </button>
             </div>
           </div>
@@ -402,7 +479,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               </label>
               <select
                 value={subject}
-                onChange={e => setSubject(e.target.value)}
+                onChange={e => handleSubjectChange(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500"
               >
                 {SUBJECT_OPTIONS.map(s => (
@@ -418,7 +495,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               </label>
               <select
                 value={month}
-                onChange={e => setMonth(e.target.value)}
+                onChange={e => handleMonthChange(e.target.value)}
                 disabled={examType !== 'unit-test'}
                 className="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-hidden focus:border-orange-500 disabled:bg-stone-100 disabled:text-stone-400"
               >
@@ -828,6 +905,9 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500 bg-stone-100 px-2.5 py-1.5 rounded-xl border border-stone-200">
+              ⚡ <kbd className="font-mono bg-white px-1 rounded text-stone-700 font-bold border border-stone-300">Ctrl+Enter</kbd> जनरेट | <kbd className="font-mono bg-white px-1 rounded text-stone-700 font-bold border border-stone-300">Ctrl+P</kbd> प्रिंट
+            </span>
             <button
               type="button"
               onClick={onClose}
@@ -869,11 +949,9 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               Google Gemini AI द्वारा नए प्रश्न पत्र स्वतः उत्पन्न करने हेतु अपनी मुफ़्त API Key दर्ज करें। यह कुंजी आपके ब्राउज़र में सुरक्षित रूप से सहेजी जाती है।
             </p>
             {geminiApiKey && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center justify-between">
-                <span className="font-semibold">सक्रिय कुंजी (सुरक्षित):</span>
-                <code className="font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-200">
-                  {maskApiKey(geminiApiKey)}
-                </code>
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="font-semibold">Gemini API Key सुरक्षित रूप से कॉन्फ़िगर है।</span>
               </div>
             )}
             <div>

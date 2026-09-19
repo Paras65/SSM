@@ -440,24 +440,23 @@ router.post('/ai/generate-question-paper', async (req, res) => {
       return res.status(401).json({ error: 'Gemini API Key आवश्यक है।' });
     }
 
-    // Sanitize key (strip dangerous characters, whitespace, newlines)
-    const sanitizedKey = effectiveKey.trim().replace(/[^A-Za-z0-9_-]/g, '');
-    if (sanitizedKey.length < 20 || sanitizedKey.length > 100) {
+    // Sanitize key (strip whitespace, newlines, preserve alphanumeric, dots, hyphens, underscores)
+    const sanitizedKey = effectiveKey.trim().replace(/[^A-Za-z0-9_.-]/g, '');
+    if (sanitizedKey.length < 15 || sanitizedKey.length > 200) {
       return res.status(400).json({ error: 'अमान्य API Key प्रारूप।' });
     }
 
     const { prompt } = req.body;
-    if (!prompt || typeof prompt !== 'string' || prompt.length > 8000) {
+    if (!prompt || typeof prompt !== 'string' || prompt.length > 12000) {
       return res.status(400).json({ error: 'अमान्य अथवा अत्यधिक लंबा प्रॉम्प्ट।' });
     }
 
     const googleRes = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(sanitizedKey)}`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': sanitizedKey
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],

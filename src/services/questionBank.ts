@@ -50,6 +50,70 @@ export const CLASS_OPTIONS = [
   'Class 12'
 ];
 
+export function getDefaultChaptersForMonth(
+  month: string,
+  subject: string,
+  examType: ExamPaperType
+): string {
+  if (examType === 'traimasik') {
+    return 'अध्याय १ से ४: त्रैमासिक संचयी पाठ्यक्रम (अप्रैल से अगस्त)';
+  }
+  if (examType === 'ardhavarshik') {
+    return 'अध्याय १ से ७: अर्द्धवार्षिक पाठ्यक्रम (प्रथम सत्र)';
+  }
+
+  const baseSubject = subject.includes('गणित')
+    ? 'गणित'
+    : subject.includes('विज्ञान')
+    ? 'विज्ञान'
+    : subject.includes('संस्कृत')
+    ? 'संस्कृत'
+    : subject.includes('सामाजिक')
+    ? 'सामाजिक'
+    : 'हिन्दी';
+
+  switch (month) {
+    case 'जुलाई':
+      return baseSubject === 'गणित'
+        ? 'अध्याय १: संख्या पद्धति एवं वैदिक गणित'
+        : baseSubject === 'विज्ञान'
+        ? 'अध्याय १: हमारे आस-पास के पदार्थ एवं भोजन के घटक'
+        : 'अध्याय १: वंदना एवं मातृभूमि का गौरव';
+    case 'अगस्त':
+      return baseSubject === 'गणित'
+        ? 'अध्याय २ व ३: पूर्ण संख्याएं, संक्रियाएं एवं भिन्न'
+        : baseSubject === 'विज्ञान'
+        ? 'अध्याय २ व ३: सजीव जगत एवं पौधों की संरचना'
+        : 'अध्याय २ व ३: प्रेरक प्रसंग एवं व्याकरण (संज्ञा, सर्वनाम)';
+    case 'सितम्बर':
+      return baseSubject === 'गणित'
+        ? 'अध्याय ४: दशमलव एवं रेखागणित के मूल तत्व'
+        : baseSubject === 'विज्ञान'
+        ? 'अध्याय ४: मापन, गति एवं चुंबकत्व'
+        : 'अध्याय ४: कविता, शब्दार्थ एवं विलोम शब्द';
+    case 'अक्टूबर':
+      return baseSubject === 'गणित'
+        ? 'अध्याय ५: पूर्णांक एवं क्षेत्रमिति'
+        : baseSubject === 'विज्ञान'
+        ? 'अध्याय ५: अम्ल, क्षार एवं लवण'
+        : 'अध्याय ५: ऐतिहासिक गाथाएं एवं संधि';
+    case 'नवम्बर':
+      return baseSubject === 'गणित'
+        ? 'अध्याय ६: बीजगणित परिचय एवं अनुपात-समानुपात'
+        : baseSubject === 'विज्ञान'
+        ? 'अध्याय ६: गति, बल एवं प्रकाश'
+        : 'अध्याय ६: बाल साहित्य एवं निबंध लेखन';
+    case 'दिसम्बर':
+      return 'अध्याय ७: व्यावहारिक अनुप्रयोग एवं प्रथम सत्र पुनरावृत्ति';
+    case 'जनवरी':
+      return 'अध्याय ८: ज्यामितीय रचनाएं एवं प्रायोगिक कार्य';
+    case 'फरवरी':
+      return 'अध्याय ९ व १०: सांख्यिकी एवं वार्षिक परीक्षा पूर्व तैयारी';
+    default:
+      return 'अध्याय १ एवं २: मासिक पाठ्यक्रम प्रगति';
+  }
+}
+
 // Rich curriculum question bank indexed by subject and difficulty
 export const SAMPLE_QUESTION_BANK: Record<string, QuestionItem[]> = {
   'गणित': [
@@ -452,6 +516,8 @@ export function generateSmartQuestionPaper(options: GeneratePaperOptions): Quest
 
   const bank = SAMPLE_QUESTION_BANK[baseSubject] || SAMPLE_QUESTION_BANK['हिन्दी'];
   const sanskritiBank = SAMPLE_QUESTION_BANK['संस्कृति बोध'] || [];
+  const sanskritiMarks = (includeSanskriti && sanskritiBank.length > 0) ? 2 : 0;
+  const effectiveAcademicTarget = Math.max(5, targetMarks - sanskritiMarks);
 
   // Determine sections layout based on exam type & target marks
   const sections: QuestionPaperSection[] = [];
@@ -460,7 +526,7 @@ export function generateSmartQuestionPaper(options: GeneratePaperOptions): Quest
   if (examType === 'unit-test' || targetMarks <= 25) {
     // UNIT TEST LAYOUT (15, 20, 25 Marks)
     // Section A: MCQs (3-5 marks)
-    const mcqTarget = targetMarks <= 15 ? 3 : targetMarks <= 20 ? 4 : 5;
+    const mcqTarget = effectiveAcademicTarget <= 15 ? 3 : effectiveAcademicTarget <= 20 ? 4 : 5;
     const mcqs: QuestionItem[] = [];
     const availableMcqs = bank.filter(q => q.type === 'mcq');
     for (let i = 0; i < mcqTarget && i < availableMcqs.length; i++) {
@@ -477,10 +543,9 @@ export function generateSmartQuestionPaper(options: GeneratePaperOptions): Quest
     }
 
     // Section B: Very Short Answer (VSA) (2 marks each)
-    const vsaTargetMarks = Math.floor((targetMarks - allocatedMarks) * 0.45);
     const vsas: QuestionItem[] = [];
     const availableVsas = bank.filter(q => q.type === 'vsa');
-    for (let i = 0; i < availableVsas.length && allocatedMarks + 2 <= targetMarks - 3; i++) {
+    for (let i = 0; i < availableVsas.length && allocatedMarks + 2 <= effectiveAcademicTarget - 3; i++) {
       vsas.push({ ...availableVsas[i], id: `ut-vsa-${i + 1}`, chapter: chapters });
       allocatedMarks += availableVsas[i].marks;
     }
@@ -494,7 +559,7 @@ export function generateSmartQuestionPaper(options: GeneratePaperOptions): Quest
     }
 
     // Section C: Short Answer (SA) (3-4 marks)
-    const remainingMarks = targetMarks - allocatedMarks;
+    const remainingMarks = effectiveAcademicTarget - allocatedMarks;
     const sas: QuestionItem[] = [];
     const availableSas = bank.filter(q => q.type === 'sa');
 
@@ -819,15 +884,14 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
       // Backend proxy unavailable (e.g. static dev), will fallback to direct call
     }
 
-    // 2. If proxy didn't return data, call Google endpoint with secure header auth (no key in URL query)
+    // 2. If proxy didn't return data, call Google endpoint with standard model
     if (!parsed) {
       const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(effectiveKey)}`,
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': effectiveKey
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
