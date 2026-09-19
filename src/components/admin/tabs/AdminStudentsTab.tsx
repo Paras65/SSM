@@ -84,7 +84,7 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
   }, [students, searchQuery, selectedClass, selectedGender]);
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-5">
+    <div className="bg-white rounded-2xl border border-stone-200 p-3.5 sm:p-6 space-y-4 sm:space-y-5">
       {/* Search & Filter Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -366,14 +366,14 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
                     </button>
                     <button
                       onClick={() => onOpenCharacterCertificate(student)}
-                      className="px-2 py-1 bg-stone-100 hover:bg-orange-100 text-stone-800 hover:text-orange-950 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer border border-stone-200"
+                      className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition active:scale-95"
                       title="Print Character Certificate (चरित्र प्रमाण पत्र)"
                     >
                       <span>📜 चरित्र</span>
                     </button>
                     <button
                       onClick={() => onOpenBonafideCertificate(student)}
-                      className="px-2 py-1 bg-stone-100 hover:bg-orange-100 text-stone-800 hover:text-orange-950 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer border border-stone-200"
+                      className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition active:scale-95"
                       title="Print Bonafide Certificate (अध्ययनरत प्रमाण पत्र)"
                     >
                       <span>📄 अध्ययनरत</span>
