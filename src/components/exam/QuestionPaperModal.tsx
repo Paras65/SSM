@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import {
   X,
   Printer,
@@ -96,6 +97,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   initialSubject
 }) => {
   const { publicSchool } = useSchool();
+  const { showSuccess, showInfo, showError, showWarning } = useToast();
 
   const initialMarksDuration = getRecommendedMarksAndDuration(initialClass || 'Class 5', 'unit-test');
   const initialChapters = 'अध्याय १ एवं २: संख्या पद्धति व संक्रियाएं';
@@ -152,16 +154,13 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         }
         return { ...updated, sections };
       });
-      setSaveToast(`चिन्ह "${sym}" प्रविष्‍ट हुआ!`);
-      setTimeout(() => setSaveToast(null), 1500);
+      showInfo(`चिन्ह "${sym}" प्रविष्‍ट हुआ!`);
     } else {
       try {
         navigator.clipboard.writeText(sym);
-        setSaveToast(`चिन्ह "${sym}" कॉपी हुआ!`);
-        setTimeout(() => setSaveToast(null), 1500);
+        showSuccess(`चिन्ह "${sym}" कॉपी हुआ!`);
       } catch {
-        setSaveToast(`चिन्ह: ${sym}`);
-        setTimeout(() => setSaveToast(null), 1500);
+        showInfo(`चिन्ह: ${sym}`);
       }
     }
   };
@@ -217,7 +216,6 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     }
   });
   const [showSavedModal, setShowSavedModal] = useState<boolean>(false);
-  const [saveToast, setSaveToast] = useState<string | null>(null);
 
   // Voice Input Handler (Hindi & English Web Speech API + Question Dictation + Voice Commands)
   const handleVoiceInput = (target: VoiceTarget) => {
@@ -269,15 +267,15 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           setIsListening(true);
           setActiveVoiceTarget(target);
           if (target.type === 'voice-command') {
-            setSaveToast('🎙️ बोलें: "सहेजें", "सेव करें", या "प्रिंट करें"...');
+            showInfo('🎙️ बोलें: "सहेजें", "सेव करें", या "प्रिंट करें"...');
           } else if (target.type === 'question') {
-            setSaveToast(`🎙️ प्र.${target.qIndex + 1} बोलकर लिखें...`);
+            showInfo(`🎙️ प्र.${target.qIndex + 1} बोलकर लिखें...`);
           } else if (target.type === 'choice') {
-            setSaveToast('🎙️ अथवा विकल्प बोलकर लिखें...');
+            showInfo('🎙️ अथवा विकल्प बोलकर लिखें...');
           } else if (target.type === 'mcq-opt') {
-            setSaveToast(`🎙️ विकल्प (${String.fromCharCode(97 + target.optIndex)}) बोलकर लिखें...`);
+            showInfo(`🎙️ विकल्प (${String.fromCharCode(97 + target.optIndex)}) बोलकर लिखें...`);
           } else if (target.type === 'chapters') {
-            setSaveToast('🎙️ पाठ्यक्रम / अध्याय का नाम बोलें...');
+            showInfo('🎙️ पाठ्यक्रम / अध्याय का नाम बोलें...');
           }
         },
         onResult: (clean) => {
@@ -293,17 +291,15 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               lower.includes('सुरक्षित')
             ) {
               handleSaveToDevice();
-              setSaveToast('🎙️ आवाज़ आदेश: प्रश्न पत्र डिवाइस में सहेजा गया!');
-              setTimeout(() => setSaveToast(null), 3500);
+              showSuccess('🎙️ आवाज़ आदेश: प्रश्न पत्र डिवाइस में सहेजा गया!');
               try { recognition?.stop(); } catch {}
               return;
             }
 
             if (lower.includes('प्रिंट') || lower.includes('print')) {
               setActiveTab('preview');
-              setSaveToast('🎙️ आवाज़ आदेश: प्रिंट पूर्वावलोकन खोला गया!');
+              showSuccess('🎙️ आवाज़ आदेश: प्रिंट पूर्वावलोकन खोला गया!');
               setTimeout(() => {
-                setSaveToast(null);
                 handlePrint();
               }, 600);
               try { recognition?.stop(); } catch {}
@@ -353,8 +349,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           } else if (event?.error === 'network') {
             alert('वॉइस इनपुट हेतु सक्रिय इंटरनेट कनेक्शन आवश्यक है।');
           } else if (event?.error !== 'no-speech' && event?.error !== 'aborted') {
-            setSaveToast(`वॉइस पहचान: ${event?.error || 'त्रुटि'}`);
-            setTimeout(() => setSaveToast(null), 3000);
+            showWarning(`वॉइस पहचान: ${event?.error || 'त्रुटि'}`);
           }
         },
         onEnd: () => {
@@ -400,11 +395,9 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
       setSavedPapers(updated);
       localStorage.setItem('ssm_saved_question_papers', JSON.stringify(updated));
-      setSaveToast('प्रश्न पत्र डिवाइस में सुरक्षित सहेजा गया!');
-      setTimeout(() => setSaveToast(null), 3000);
+      showSuccess('प्रश्न पत्र डिवाइस में सुरक्षित सहेजा गया!');
     } catch {
-      setSaveToast('सहेजने में त्रुटि आई।');
-      setTimeout(() => setSaveToast(null), 3000);
+      showError('सहेजने में त्रुटि आई।');
     }
   };
 
@@ -419,8 +412,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     if (saved.totalMarks) setTargetMarks(saved.totalMarks);
     if (saved.durationMinutes) setDurationMinutes(saved.durationMinutes);
     setShowSavedModal(false);
-    setSaveToast(`"${saved.title}" लोड किया गया!`);
-    setTimeout(() => setSaveToast(null), 3000);
+    showSuccess(`"${saved.title}" लोड किया गया!`);
   };
 
   // Delete Saved Paper
@@ -444,10 +436,9 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
-      setSaveToast('प्रश्न पत्र फ़ाइल डाउनलोड हो गई!');
-      setTimeout(() => setSaveToast(null), 3000);
+      showSuccess('प्रश्न पत्र फ़ाइल डाउनलोड हो गई!');
     } catch {
-      alert('डाउनलोड करने में समस्या आई।');
+      showError('डाउनलोड करने में समस्या आई।');
     }
   };
 
@@ -492,7 +483,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
       ).trim();
 
       if (effectiveKey) {
-        setSaveToast('⏳ बौद्धिक ब्लूप्रिंट अनुसार पेपर तैयार हो रहा है...');
+        showInfo('⏳ बौद्धिक ब्लूप्रिंट अनुसार पेपर तैयार हो रहा है...');
         const newPaper = await generateQuestionPaperWithGemini({
           apiKey: effectiveKey,
           schoolId: publicSchool.id,
@@ -507,8 +498,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           includeSanskriti
         });
         setPaper(newPaper);
-        setSaveToast(`✨ बौद्धिक ब्लूप्रिंट अनुसार ${classLevel} ${subject.split(' ')[0]} का नया प्रश्न पत्र तैयार है!`);
-        setTimeout(() => setSaveToast(null), 3500);
+        showSuccess(`✨ बौद्धिक ब्लूप्रिंट अनुसार ${classLevel} ${subject.split(' ')[0]} का नया प्रश्न पत्र तैयार है!`);
       } else {
         const newPaper = generateSmartQuestionPaper({
           schoolId: publicSchool.id,
@@ -523,8 +513,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           includeSanskriti
         });
         setPaper(newPaper);
-        setSaveToast(`✨ ${classLevel} ${subject.split(' ')[0]} का संतुलित प्रश्न पत्र तैयार है!`);
-        setTimeout(() => setSaveToast(null), 3000);
+        showSuccess(`✨ ${classLevel} ${subject.split(' ')[0]} का संतुलित प्रश्न पत्र तैयार है!`);
       }
     } catch (err: any) {
       console.error('Generation error:', err);
@@ -541,8 +530,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         includeSanskriti
       });
       setPaper(fallbackPaper);
-      setSaveToast('✨ अंतर्निहित प्रश्न बैंक से संतुलित प्रश्न पत्र तैयार किया गया।');
-      setTimeout(() => setSaveToast(null), 3500);
+      showSuccess('✨ अंतर्निहित प्रश्न बैंक से संतुलित प्रश्न पत्र तैयार किया गया।');
     } finally {
       setIsGenerating(false);
       setShowMobileConfig(false);
@@ -1793,13 +1781,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         </div>
       )}
 
-      {/* Floating Save Toast */}
-      {saveToast && (
-        <div className="fixed bottom-5 right-5 z-70 bg-stone-900 text-white px-4 py-2.5 rounded-xl shadow-2xl border border-stone-700 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-bottom-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>{saveToast}</span>
-        </div>
-      )}
+
     </div>
   );
 };
