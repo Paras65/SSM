@@ -769,6 +769,7 @@ export async function generateQuestionPaperWithGemini(
 ): Promise<QuestionPaper> {
   const effectiveKey =
     options.apiKey ||
+    (import.meta.env.VITE_SMART_API_KEY as string) ||
     (import.meta.env.VITE_GEMINI_API_KEY as string) ||
     localStorage.getItem('ssm_smart_api_key') ||
     localStorage.getItem('ssm_gemini_api_key') ||
