@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { BookOpen, ShieldCheck, HeartHandshake, ArrowRight, Sparkles, Plus, LogIn, HelpCircle } from 'lucide-react';
+import { WEEKLY_SUBHASHITAS } from './DailyPanchang';
 
 interface HeroProps {
   onOpenSignUp?: () => void;
@@ -22,6 +23,12 @@ export const Hero: React.FC<HeroProps> = ({
   onOpenHelpGuide
 }) => {
   const { setViewMode, publicSchool } = useSchool();
+
+  // Dynamic daily subhashita synchronized with Vedic Panchang weekday
+  const todaySubhashita = useMemo(() => {
+    const dayOfWeek = new Date().getDay();
+    return WEEKLY_SUBHASHITAS[dayOfWeek] || WEEKLY_SUBHASHITAS[0];
+  }, []);
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-orange-100/70 via-amber-50/50 to-white pt-10 pb-16 border-b border-orange-200">
@@ -64,6 +71,26 @@ export const Hero: React.FC<HeroProps> = ({
                 </span>
               </div>
             </div>
+
+            {/* Daily Subhashita Ticker / Cultural Badge */}
+            <a
+              href="#cultural-heritage"
+              className="block p-3 rounded-2xl bg-amber-50/90 hover:bg-amber-100/90 border border-amber-200/90 text-left transition-all shadow-2xs group"
+              title="दैनिक पंचांग व सुभाषितम् देखें"
+            >
+              <div className="flex items-center justify-between gap-2 text-xs font-bold text-orange-900 mb-1">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-orange-600" />
+                  <span>दैनिक सुभाषितम् • {todaySubhashita.source}</span>
+                </span>
+                <span className="text-[11px] text-orange-700 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                  पंचांग देखें <ArrowRight className="w-3 h-3" />
+                </span>
+              </div>
+              <p className="text-xs text-stone-700 font-serif italic truncate">
+                "{todaySubhashita.sanskrit.replace(/\n/g, ' ')}" — {todaySubhashita.hindi}
+              </p>
+            </a>
 
             {/* 3 One-Tap Gateway Cards: Student, Teacher, Admin */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left">

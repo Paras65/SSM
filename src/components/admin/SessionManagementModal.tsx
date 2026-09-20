@@ -316,6 +316,58 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
           </div>
         </div>
 
+        {/* 3-Step Wizard Roadmap Banner */}
+        <div className="bg-white px-5 sm:px-6 py-2.5 border-b border-stone-200 flex items-center justify-between gap-2 overflow-x-auto text-[11px] sm:text-xs shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveTab('promotion')}
+            className={`flex items-center gap-1.5 font-bold transition cursor-pointer shrink-0 ${
+              activeTab === 'promotion' ? 'text-orange-800' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+              activeTab === 'promotion' ? 'bg-orange-700 text-white shadow-xs' : 'bg-stone-200 text-stone-700'
+            }`}>
+              1
+            </span>
+            <span>चरण १: छात्र प्रोन्नति</span>
+          </button>
+
+          <ArrowRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('fee_rollover')}
+            className={`flex items-center gap-1.5 font-bold transition cursor-pointer shrink-0 ${
+              activeTab === 'fee_rollover' ? 'text-orange-800' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+              activeTab === 'fee_rollover' ? 'bg-orange-700 text-white shadow-xs' : 'bg-stone-200 text-stone-700'
+            }`}>
+              2
+            </span>
+            <span>चरण २: बकाया शुल्क अंतरण</span>
+          </button>
+
+          <ArrowRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('exam_lock')}
+            className={`flex items-center gap-1.5 font-bold transition cursor-pointer shrink-0 ${
+              activeTab === 'exam_lock' ? 'text-orange-800' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+              activeTab === 'exam_lock' ? 'bg-orange-700 text-white shadow-xs' : 'bg-stone-200 text-stone-700'
+            }`}>
+              3
+            </span>
+            <span>चरण ३: परीक्षा परिणाम स्थिरीकरण</span>
+          </button>
+        </div>
+
         {/* Navigation Tabs */}
         <div className="flex border-b border-stone-200 bg-stone-50 px-4 sm:px-6 text-xs sm:text-sm font-bold shrink-0">
           <button

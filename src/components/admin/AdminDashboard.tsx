@@ -788,15 +788,18 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Command Palette Button */}
+            {/* Quick Command Palette Search Bar */}
             <button
               onClick={() => setShowCommandPalette(true)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-orange-950/90 hover:bg-orange-950 text-amber-200 text-[11px] font-bold border border-amber-500/40 hover:border-amber-400 transition-all shadow-xs shrink-0 cursor-pointer group"
-              title="त्वरित खोज व कमांड पैलेट खोलें (Ctrl + K)"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/90 hover:bg-black/80 text-amber-200 text-[11px] font-medium border border-amber-500/50 hover:border-amber-400 transition-all shadow-xs shrink-0 cursor-pointer group sm:w-44 md:w-56 justify-between"
+              title="छात्र, रसीद या कार्य खोजें (Ctrl + K)"
             >
-              <Search className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline">त्वरित खोज</span>
-              <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[9px] font-mono bg-black/40 text-amber-300 rounded border border-amber-600/50">
+              <div className="flex items-center gap-1.5 truncate">
+                <Search className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline truncate text-stone-300 font-normal">खोजें (छात्र, रसीद...)...</span>
+                <span className="sm:hidden font-bold">खोजें</span>
+              </div>
+              <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[9px] font-mono bg-black/50 text-amber-300 rounded border border-amber-600/50 shrink-0">
                 Ctrl K
               </kbd>
             </button>

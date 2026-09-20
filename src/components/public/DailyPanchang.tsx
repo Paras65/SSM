@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, Sun, Moon, Sparkles, Volume2, VolumeX } from 'lucide-react';
 
-interface Subhashita {
+export interface Subhashita {
   sanskrit: string;
   hindi: string;
   source: string;
 }
 
-const WEEKLY_SUBHASHITAS: Subhashita[] = [
+export const WEEKLY_SUBHASHITAS: Subhashita[] = [
   // 0: Sunday (रविवासरे)
   {
     sanskrit: 'उद्यमेन हि सिध्यन्ति कार्याणि न मनोरथैः।\nन हि सुप्तस्य सिंहस्य प्रविशन्ति मुखे मृगाः॥',
