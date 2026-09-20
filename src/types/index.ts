@@ -71,6 +71,11 @@ export interface School {
   udiseCode?: string;
   website?: string;
   features?: SchoolFeatures;
+  sankulCluster?: string;
+  enrolledStudentsCount?: number;
+  totalTeachersCount?: number;
+  attendanceRate?: number;
+  feeRecoveryRate?: number;
 }
 
 export interface StudentAcademicHistory {
@@ -310,6 +315,7 @@ export type ViewMode = 'public' | 'admin' | 'student' | 'teacher' | 'sankul';
 
 export interface SankulInspection {
   id: string;
+  clusterName?: string;
   schoolId: string;
   schoolName: string;
   inspectionDate: string;
@@ -323,6 +329,7 @@ export interface SankulInspection {
 
 export interface SankulNotice {
   id: string;
+  clusterName?: string;
   title: string;
   date: string;
   category: 'Sports' | 'Academic' | 'Workshop' | 'Meeting' | 'Cultural';

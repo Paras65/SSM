@@ -24,12 +24,14 @@ import {
   Mail,
   ArrowLeft,
   Trash2,
-  Share2
+  Share2,
+  Download
 } from 'lucide-react';
 
 const INITIAL_INSPECTIONS: SankulInspection[] = [
   {
     id: 'insp-1',
+    clusterName: 'दिल्ली प्रांत संकुल (Delhi Prant Cluster)',
     schoolId: 'ssm-national',
     schoolName: 'सरस्वती शिशु मंदिर वरिष्ठ माध्यमिक विद्यालय, शास्त्री नगर',
     inspectionDate: '2026-08-15',
@@ -42,6 +44,7 @@ const INITIAL_INSPECTIONS: SankulInspection[] = [
   },
   {
     id: 'insp-2',
+    clusterName: 'दिल्ली प्रांत संकुल (Delhi Prant Cluster)',
     schoolId: 'ssm-demo',
     schoolName: 'सरस्वती शिशु मंदिर उच्चतर माध्यमिक, आदर्श नगर',
     inspectionDate: '2026-07-20',
@@ -57,6 +60,7 @@ const INITIAL_INSPECTIONS: SankulInspection[] = [
 const INITIAL_SANKUL_NOTICES: SankulNotice[] = [
   {
     id: 'snot-1',
+    clusterName: 'समस्त संकुल (All Clusters - Prant Oversight)',
     title: 'संकुल स्तरीय वार्षिक खेलकूद एवं एथलेटिक्स प्रतियोगिता 2026-27',
     date: '2026-10-12',
     category: 'Sports',
@@ -65,6 +69,7 @@ const INITIAL_SANKUL_NOTICES: SankulNotice[] = [
   },
   {
     id: 'snot-2',
+    clusterName: 'समस्त संकुल (All Clusters - Prant Oversight)',
     title: 'आचार्य क्षमता संवर्द्धन एवं NEP 2020 पंचमुखी कार्यशाला',
     date: '2026-09-28',
     category: 'Workshop',
@@ -73,6 +78,7 @@ const INITIAL_SANKUL_NOTICES: SankulNotice[] = [
   },
   {
     id: 'snot-3',
+    clusterName: 'गोरखपुर संकुल (Gorakhpur Cluster)',
     title: 'द्वितीय त्रैमासिक संकुल प्रधानाचार्य समीक्षा बैठक',
     date: '2026-09-25',
     category: 'Meeting',
@@ -82,7 +88,7 @@ const INITIAL_SANKUL_NOTICES: SankulNotice[] = [
 ];
 
 export const SankulPortal: React.FC = () => {
-  const { schools, setViewMode, setCurrentSchoolId, currentSchool, students, attendanceRecords, feeRecords } = useSchool();
+  const { schools, setViewMode, setCurrentSchoolId, currentSchool, students, attendanceRecords, feeRecords, addNotice } = useSchool();
   const [activeTab, setActiveTab] = useState<'overview' | 'schools' | 'inspections' | 'notices'>('overview');
   const [selectedCluster, setSelectedCluster] = useState<string>(() => {
     return sessionStorage.getItem('ssm_sankul_name') || SANKUL_CLUSTERS[0];
@@ -232,6 +238,44 @@ export const SankulPortal: React.FC = () => {
     setViewMode('public');
   };
 
+  // Distinct school metrics calculation (Live for active school, profile/calculated for others)
+  const getSchoolMetrics = (school: School) => {
+    const isCurrentActive = school.id === currentSchool?.id;
+    const studentCount = (isCurrentActive && liveStudentCount > 0)
+      ? liveStudentCount
+      : (school.enrolledStudentsCount || (340 + (parseInt(school.id.replace(/\D/g, '') || '10', 10) % 120)));
+
+    const acharyaCount = (isCurrentActive && liveStudentCount > 0)
+      ? Math.max(12, Math.round(liveStudentCount / 18))
+      : (school.totalTeachersCount || Math.max(14, Math.round(studentCount / 18)));
+
+    const attRate = (isCurrentActive && attendanceRecords && attendanceRecords.length > 0)
+      ? avgAttendance
+      : (school.attendanceRate || (93 + (parseInt(school.id.replace(/\D/g, '') || '2', 10) % 5)));
+
+    const feeRate = (isCurrentActive && feeRecords && feeRecords.length > 0)
+      ? avgFeeRecovery
+      : (school.feeRecoveryRate || (90 + (parseInt(school.id.replace(/\D/g, '') || '3', 10) % 6)));
+
+    return { studentCount, acharyaCount, attRate, feeRate };
+  };
+
+  // Filter inspections by active cluster
+  const clusterInspections = useMemo(() => {
+    if (!selectedCluster || selectedCluster.includes('समस्त')) {
+      return inspections;
+    }
+    return inspections.filter(insp => !insp.clusterName || insp.clusterName === selectedCluster);
+  }, [inspections, selectedCluster]);
+
+  // Filter notices by active cluster
+  const clusterNotices = useMemo(() => {
+    if (!selectedCluster || selectedCluster.includes('समस्त')) {
+      return notices;
+    }
+    return notices.filter(n => !n.clusterName || n.clusterName === selectedCluster || n.clusterName.includes('समस्त'));
+  }, [notices, selectedCluster]);
+
   const handleOpenSchoolAudit = (school: School) => {
     setSelectedAuditSchool(school);
     setNewInspSchool(school.hindiName || school.name);
@@ -245,6 +289,25 @@ export const SankulPortal: React.FC = () => {
 
   const handlePrintReport = () => {
     window.print();
+  };
+
+  const handleExportSankulBackup = () => {
+    const data = {
+      version: '1.0',
+      cluster: selectedCluster,
+      exportDate: new Date().toISOString(),
+      inspections: clusterInspections,
+      notices: clusterNotices
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sankul-backup-${selectedCluster.split(' ')[0]}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleCreateInspection = (e: React.FormEvent) => {
@@ -261,6 +324,7 @@ export const SankulPortal: React.FC = () => {
 
     const newRecord: SankulInspection = {
       id: `insp-${Date.now()}`,
+      clusterName: selectedCluster,
       schoolId: targetSchoolId,
       schoolName: targetSchoolName,
       inspectionDate: newInspDate,
@@ -292,6 +356,7 @@ export const SankulPortal: React.FC = () => {
 
     const newNotice: SankulNotice = {
       id: `snot-${Date.now()}`,
+      clusterName: selectedCluster,
       title: newNotTitle.trim(),
       date: new Date().toISOString().split('T')[0],
       category: newNotCategory,
@@ -303,6 +368,19 @@ export const SankulPortal: React.FC = () => {
     setShowAddNoticeModal(false);
     setNewNotTitle('');
     setNewNotContent('');
+
+    // Auto-broadcast into school's general noticeboard
+    try {
+      addNotice?.({
+        title: `[संकुल परिपत्र - ${selectedCluster}] ${newNotTitle.trim()}`,
+        category: 'Vidya Bharati',
+        date: new Date().toISOString().split('T')[0],
+        content: newNotContent.trim(),
+        isUrgent: true
+      });
+    } catch (e) {
+      console.warn('Could not sync notice to school noticeboard:', e);
+    }
   };
 
   const handleDeleteNotice = (id: string) => {
@@ -699,10 +777,7 @@ export const SankulPortal: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-stone-200">
                   {clusterSchools.map((school, idx) => {
-                    const isCurrentActive = school.id === currentSchool?.id;
-                    const schoolStudentCount = (isCurrentActive && liveStudentCount > 0) ? liveStudentCount : 380;
-                    const schoolAcharyaCount = Math.max(12, Math.round(schoolStudentCount / 18));
-                    const schoolAttRate = (isCurrentActive && attendanceRecords && attendanceRecords.length > 0) ? avgAttendance : 94.2;
+                    const { studentCount: schoolStudentCount, acharyaCount: schoolAcharyaCount, attRate: schoolAttRate } = getSchoolMetrics(school);
 
                     return (
                       <tr key={school.id} className="hover:bg-amber-50/40 transition">
@@ -775,75 +850,94 @@ export const SankulPortal: React.FC = () => {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowAddInspectionModal(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-800 hover:to-amber-800 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ नया निरीक्षण दर्ज करें</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportSankulBackup}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold rounded-xl border border-stone-300 shadow-2xs transition cursor-pointer"
+                  title="संकुल निरीक्षण व परिपत्र बैकअप (JSON) डाउनलोड करें"
+                >
+                  <Download className="w-3.5 h-3.5 text-stone-600" />
+                  <span>📥 संकुल बैकअप (JSON)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddInspectionModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-800 hover:to-amber-800 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ नया निरीक्षण दर्ज करें</span>
+                </button>
+              </div>
             </div>
 
             {/* Inspections Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {inspections.map(insp => (
-                <div key={insp.id} className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200 shadow-xs space-y-4">
-                  <div className="flex justify-between items-start gap-2 border-b border-stone-100 pb-3">
-                    <div>
-                      <h4 className="text-sm font-bold text-stone-900 leading-snug">
-                        {insp.schoolName}
-                      </h4>
-                      <p className="text-xs text-stone-500 mt-0.5">
-                        निरीक्षक: <strong>{insp.inspectorName}</strong> • दिनांक: {insp.inspectionDate}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black">
-                        ★ {((insp.academicRating + insp.infrastructureRating + insp.panchmukhiRating) / 3).toFixed(1)} / 5
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteInspection(insp.id)}
-                        className="p-1 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition cursor-pointer no-print"
-                        title="निरीक्षण रिकॉर्ड हटाएं"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Rating Badges */}
-                  <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
-                    <div className="p-2 rounded-xl bg-orange-50/70 border border-orange-200">
-                      <span className="text-stone-500 block text-[10px]">शैक्षणिक स्तर</span>
-                      <span className="font-bold text-orange-900">{'★'.repeat(insp.academicRating)} ({insp.academicRating}/5)</span>
-                    </div>
-                    <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-200">
-                      <span className="text-stone-500 block text-[10px]">भौतिक संसाधन</span>
-                      <span className="font-bold text-blue-900">{'★'.repeat(insp.infrastructureRating)} ({insp.infrastructureRating}/5)</span>
-                    </div>
-                    <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200">
-                      <span className="text-stone-500 block text-[10px]">पंचमुखी आयाम</span>
-                      <span className="font-bold text-emerald-900">{'★'.repeat(insp.panchmukhiRating)} ({insp.panchmukhiRating}/5)</span>
-                    </div>
-                  </div>
-
-                  {/* Observations & Recommendations */}
-                  <div className="space-y-2 text-xs">
-                    <div className="bg-stone-50 p-3 rounded-xl border border-stone-200">
-                      <span className="font-bold text-stone-700 block mb-0.5">📋 निरीक्षण मुख्य बिंदु:</span>
-                      <p className="text-stone-600 leading-relaxed">{insp.observations}</p>
+            {clusterInspections.length === 0 ? (
+              <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center space-y-2">
+                <span className="text-3xl block">🔍</span>
+                <p className="text-sm font-bold text-stone-700">इस संकुल में कोई निरीक्षण दर्ज नहीं है</p>
+                <p className="text-xs text-stone-500">ऊपर दिए गए बटन से नया निरीक्षण रिकॉर्ड जोड़ें।</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {clusterInspections.map(insp => (
+                  <div key={insp.id} className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200 shadow-xs space-y-4">
+                    <div className="flex justify-between items-start gap-2 border-b border-stone-100 pb-3">
+                      <div>
+                        <h4 className="text-sm font-bold text-stone-900 leading-snug">
+                          {insp.schoolName}
+                        </h4>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          निरीक्षक: <strong>{insp.inspectorName}</strong> • दिनांक: {insp.inspectionDate}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black">
+                          ★ {((insp.academicRating + insp.infrastructureRating + insp.panchmukhiRating) / 3).toFixed(1)} / 5
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteInspection(insp.id)}
+                          className="p-1 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition cursor-pointer no-print"
+                          title="निरीक्षण रिकॉर्ड हटाएं"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200">
-                      <span className="font-bold text-amber-900 block mb-0.5">💡 सुधार हेतु अनुशंसाएं:</span>
-                      <p className="text-amber-950 leading-relaxed">{insp.recommendations}</p>
+                    {/* Rating Badges */}
+                    <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
+                      <div className="p-2 rounded-xl bg-orange-50/70 border border-orange-200">
+                        <span className="text-stone-500 block text-[10px]">शैक्षणिक स्तर</span>
+                        <span className="font-bold text-orange-900">{'★'.repeat(insp.academicRating)} ({insp.academicRating}/5)</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-200">
+                        <span className="text-stone-500 block text-[10px]">भौतिक संसाधन</span>
+                        <span className="font-bold text-blue-900">{'★'.repeat(insp.infrastructureRating)} ({insp.infrastructureRating}/5)</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                        <span className="text-stone-500 block text-[10px]">पंचमुखी आयाम</span>
+                        <span className="font-bold text-emerald-900">{'★'.repeat(insp.panchmukhiRating)} ({insp.panchmukhiRating}/5)</span>
+                      </div>
+                    </div>
+
+                    {/* Observations & Recommendations */}
+                    <div className="space-y-2 text-xs">
+                      <div className="bg-stone-50 p-3 rounded-xl border border-stone-200">
+                        <span className="font-bold text-stone-700 block mb-0.5">📋 निरीक्षण मुख्य बिंदु:</span>
+                        <p className="text-stone-600 leading-relaxed">{insp.observations}</p>
+                      </div>
+
+                      <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200">
+                        <span className="font-bold text-amber-900 block mb-0.5">💡 सुधार हेतु अनुशंसाएं:</span>
+                        <p className="text-amber-950 leading-relaxed">{insp.recommendations}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
           </div>
         )}
@@ -876,52 +970,60 @@ export const SankulPortal: React.FC = () => {
             </div>
 
             {/* Circulars List */}
-            <div className="space-y-4">
-              {notices.map(notice => (
-                <div key={notice.id} className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200 shadow-xs space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-950">
-                        {notice.category}
+            {clusterNotices.length === 0 ? (
+              <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center space-y-2">
+                <span className="text-3xl block">📢</span>
+                <p className="text-sm font-bold text-stone-700">इस संकुल के लिए कोई परिपत्र उपलब्ध नहीं है</p>
+                <p className="text-xs text-stone-500">ऊपर दिए गए बटन से नया संकुल परिपत्र जारी करें।</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {clusterNotices.map(notice => (
+                  <div key={notice.id} className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200 shadow-xs space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-950">
+                          {notice.category}
+                        </span>
+                        <h4 className="text-sm sm:text-base font-bold text-stone-900">
+                          {notice.title}
+                        </h4>
+                      </div>
+                      <span className="text-xs text-stone-500 font-medium">
+                        दिनांक: {notice.date}
                       </span>
-                      <h4 className="text-sm sm:text-base font-bold text-stone-900">
-                        {notice.title}
-                      </h4>
                     </div>
-                    <span className="text-xs text-stone-500 font-medium">
-                      दिनांक: {notice.date}
-                    </span>
-                  </div>
 
-                  <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
-                    {notice.content}
-                  </p>
+                    <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
+                      {notice.content}
+                    </p>
 
-                  <div className="text-[11px] text-stone-500 font-semibold pt-2 border-t border-stone-100 flex flex-wrap justify-between items-center gap-2">
-                    <span>निर्गमन कर्ता: <strong>{notice.issuedBy}</strong></span>
-                    <div className="flex items-center gap-2 no-print">
-                      <button
-                        type="button"
-                        onClick={() => handleShareNoticeWhatsApp(notice)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
-                        title="WhatsApp पर प्रधानाचार्यों को प्रसारित करें"
-                      >
-                        <Share2 className="w-3 h-3" />
-                        <span>📱 WhatsApp प्रसारण</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteNotice(notice.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition cursor-pointer"
-                        title="परिपत्र हटाएं"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="text-[11px] text-stone-500 font-semibold pt-2 border-t border-stone-100 flex flex-wrap justify-between items-center gap-2">
+                      <span>निर्गमन कर्ता: <strong>{notice.issuedBy}</strong></span>
+                      <div className="flex items-center gap-2 no-print">
+                        <button
+                          type="button"
+                          onClick={() => handleShareNoticeWhatsApp(notice)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+                          title="WhatsApp पर प्रधानाचार्यों को प्रसारित करें"
+                        >
+                          <Share2 className="w-3 h-3" />
+                          <span>📱 WhatsApp प्रसारण</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNotice(notice.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition cursor-pointer"
+                          title="परिपत्र हटाएं"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
           </div>
         )}
@@ -981,39 +1083,44 @@ export const SankulPortal: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="p-3 rounded-2xl bg-orange-50/80 border border-orange-200">
-                    <span className="text-[10px] text-stone-500 font-semibold block">छात्र शक्ति</span>
-                    <span className="text-base font-black text-orange-950">
-                      {selectedAuditSchool.id === currentSchool?.id && liveStudentCount > 0 ? liveStudentCount : 380}
-                    </span>
-                    <span className="text-[10px] text-orange-700 font-bold block mt-0.5">सक्रिय नामांकित</span>
-                  </div>
+                {(() => {
+                  const m = getSchoolMetrics(selectedAuditSchool);
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div className="p-3 rounded-2xl bg-orange-50/80 border border-orange-200">
+                        <span className="text-[10px] text-stone-500 font-semibold block">छात्र शक्ति</span>
+                        <span className="text-base font-black text-orange-950">
+                          {m.studentCount}
+                        </span>
+                        <span className="text-[10px] text-orange-700 font-bold block mt-0.5">सक्रिय नामांकित</span>
+                      </div>
 
-                  <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200">
-                    <span className="text-[10px] text-stone-500 font-semibold block">आचार्य / दीदी</span>
-                    <span className="text-base font-black text-amber-950">
-                      {Math.max(12, Math.round(((selectedAuditSchool.id === currentSchool?.id && liveStudentCount > 0 ? liveStudentCount : 380)) / 18))}
-                    </span>
-                    <span className="text-[10px] text-amber-800 font-bold block mt-0.5">18:1 अनुपात</span>
-                  </div>
+                      <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200">
+                        <span className="text-[10px] text-stone-500 font-semibold block">आचार्य / दीदी</span>
+                        <span className="text-base font-black text-amber-950">
+                          {m.acharyaCount}
+                        </span>
+                        <span className="text-[10px] text-amber-800 font-bold block mt-0.5">18:1 अनुपात</span>
+                      </div>
 
-                  <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200">
-                    <span className="text-[10px] text-stone-500 font-semibold block">दैनिक उपस्थिति</span>
-                    <span className="text-base font-black text-emerald-700">
-                      {selectedAuditSchool.id === currentSchool?.id && attendanceRecords && attendanceRecords.length > 0 ? `${avgAttendance}%` : '94.2%'}
-                    </span>
-                    <span className="text-[10px] text-emerald-800 font-bold block mt-0.5">संतोषजनक</span>
-                  </div>
+                      <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200">
+                        <span className="text-[10px] text-stone-500 font-semibold block">दैनिक उपस्थिति</span>
+                        <span className="text-base font-black text-emerald-700">
+                          {m.attRate}%
+                        </span>
+                        <span className="text-[10px] text-emerald-800 font-bold block mt-0.5">संतोषजनक</span>
+                      </div>
 
-                  <div className="p-3 rounded-2xl bg-purple-50/80 border border-purple-200">
-                    <span className="text-[10px] text-stone-500 font-semibold block">शुल्क अदायगी</span>
-                    <span className="text-base font-black text-purple-900">
-                      {selectedAuditSchool.id === currentSchool?.id && feeRecords && feeRecords.length > 0 ? `${avgFeeRecovery}%` : '91.5%'}
-                    </span>
-                    <span className="text-[10px] text-purple-700 font-bold block mt-0.5">लेजर अद्यतन</span>
-                  </div>
-                </div>
+                      <div className="p-3 rounded-2xl bg-purple-50/80 border border-purple-200">
+                        <span className="text-[10px] text-stone-500 font-semibold block">शुल्क अदायगी</span>
+                        <span className="text-base font-black text-purple-900">
+                          {m.feeRate}%
+                        </span>
+                        <span className="text-[10px] text-purple-700 font-bold block mt-0.5">लेजर अद्यतन</span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Statutory Readiness Strip */}
                 <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-stone-600">
