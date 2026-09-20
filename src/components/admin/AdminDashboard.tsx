@@ -99,11 +99,66 @@ export const AdminDashboard: React.FC = () => {
 
   const { showSuccess, showError, showInfo } = useToast();
 
-  const isPro = true; // All onboarded schools have full ERP feature access
+  const isDeveloper = sessionStorage.getItem('ssm_admin_role') === 'developer';
+  const isPro = currentSchool?.plan === 'pro' || isDeveloper;
   const [upgradeModalFeature, setUpgradeModalFeature] = useState<{ name: string; desc?: string } | null>(null);
 
-  const requirePro = (_featureName: string, _featureDesc: string, onAllowed: () => void) => {
-    onAllowed();
+  const requirePro = useCallback((featureName: string, featureDesc: string, onAllowed: () => void) => {
+    if (isPro) {
+      onAllowed();
+    } else {
+      setUpgradeModalFeature({ name: featureName, desc: featureDesc });
+    }
+  }, [isPro]);
+
+  // Storage-Safeguard Limit Handlers for Free Tier
+  const handleOpenAddStudent = () => {
+    if (!isPro && students.length >= 100) {
+      requirePro(
+        'अतिरिक्त छात्र नामांकन (100+ छात्र सीमा)',
+        'निःशुल्क सेवा योजना में अधिकतम 100 छात्रों का प्रबंधन अनुमत है। 100 से अधिक छात्रों के प्रबंधन एवं असीमित क्लाउड स्टोरेज हेतु प्रो योजना सक्रिय करें।',
+        () => setShowAddStudent(true)
+      );
+      return;
+    }
+    setShowAddStudent(true);
+  };
+
+  const handleOpenBulkImport = () => {
+    if (!isPro && students.length >= 100) {
+      requirePro(
+        'बल्क छात्र आयात (100+ छात्र सीमा)',
+        'निःशुल्क सेवा योजना में अधिकतम 100 छात्रों का प्रबंधन अनुमत है। 100 से अधिक छात्रों के प्रबंधन एवं असीमित क्लाउड स्टोरेज हेतु प्रो योजना सक्रिय करें।',
+        () => setShowBulkImport(true)
+      );
+      return;
+    }
+    setShowBulkImport(true);
+  };
+
+  const handleOpenPhotoUpload = (student: Student) => {
+    const currentPhotoCount = students.filter(s => s.photoUrl).length;
+    if (!isPro && !student.photoUrl && currentPhotoCount >= 30) {
+      requirePro(
+        'छात्र फ़ोटो गैलरी (30+ फ़ोटो सीमा)',
+        'निःशुल्क सेवा योजना में अधिकतम 30 छात्र फ़ोटो अनुमत हैं। समस्त छात्र फ़ोटो व बोर्ड परीक्षा संग्रह हेतु प्रो योजना सक्रिय करें।',
+        () => setActivePhotoStudent(student)
+      );
+      return;
+    }
+    setActivePhotoStudent(student);
+  };
+
+  const handleOpenRegisterScanner = () => {
+    if (!isPro) {
+      requirePro(
+        'हार्ड-कॉपी रजिस्टर स्मार्ट स्कैनर (OCR)',
+        'रजिस्टर की फ़ोटो खींचकर OCR द्वारा स्वतः छात्र आयात की सुविधा प्रो योजना में उपलब्ध है।',
+        () => setShowRegisterScannerModal(true)
+      );
+      return;
+    }
+    setShowRegisterScannerModal(true);
   };
 
   const [currentTab, setCurrentTab] = useState<AdminTab>(() => {
@@ -139,7 +194,6 @@ export const AdminDashboard: React.FC = () => {
     pending: 0,
     admissions: 0
   });
-  const isDeveloper = sessionStorage.getItem('ssm_admin_role') === 'developer';
 
   // Modal States
   const [activeSalarySlipStaff, setActiveSalarySlipStaff] = useState<Staff | null>(null);
@@ -321,10 +375,32 @@ export const AdminDashboard: React.FC = () => {
 
   const navigateTab = useCallback((newTab: AdminTab) => {
     if (newTab !== currentTab) {
+      if (newTab === 'reports' && !isPro) {
+        requirePro(
+          '360° समग्र प्रगति पत्र (Holistic Report Cards)',
+          'NEP 2020 एवं विद्या भारती 5 आधार विषयों सहित समग्र प्रगति पत्र केवल प्रो योजना में उपलब्ध है।',
+          () => {
+            window.history.pushState({ adminTab: 'reports' }, '', `?tab=reports`);
+            setCurrentTab('reports');
+          }
+        );
+        return;
+      }
+      if (newTab === 'staff' && !isPro) {
+        requirePro(
+          'आचार्य एवं वेतन प्रबंधन (Staff & Payroll)',
+          'शिक्षकों का पूर्ण रिकॉर्ड एवं मासिक वेतन पर्ची केवल प्रो योजना में उपलब्ध है।',
+          () => {
+            window.history.pushState({ adminTab: 'staff' }, '', `?tab=staff`);
+            setCurrentTab('staff');
+          }
+        );
+        return;
+      }
       window.history.pushState({ adminTab: newTab }, '', `?tab=${newTab}`);
       setCurrentTab(newTab);
     }
-  }, [currentTab]);
+  }, [currentTab, isPro, requirePro]);
 
   const handleLogout = () => {
     api.logoutAdmin();
@@ -545,13 +621,13 @@ export const AdminDashboard: React.FC = () => {
   const handleTriggerQuickActionFromPalette = (actionKey: string) => {
     switch (actionKey) {
       case 'add-student':
-        setShowAddStudent(true);
+        handleOpenAddStudent();
         break;
       case 'scan-register':
-        setShowRegisterScannerModal(true);
+        handleOpenRegisterScanner();
         break;
       case 'bulk-import':
-        setShowBulkImport(true);
+        handleOpenBulkImport();
         break;
       case 'dakhil-kharij':
         setShowDakhilKharijModal(true);
@@ -713,7 +789,7 @@ export const AdminDashboard: React.FC = () => {
                 <Search className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => setShowAddStudent(true)}
+                onClick={handleOpenAddStudent}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 font-bold text-white text-[11px] shadow-xs shrink-0 cursor-pointer"
                 title="नया छात्र प्रवेश"
               >
@@ -945,7 +1021,7 @@ export const AdminDashboard: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setShowAddStudent(true)}
+              onClick={handleOpenAddStudent}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-bold text-white shadow-xs shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -1351,7 +1427,7 @@ export const AdminDashboard: React.FC = () => {
               totalFeePending={totalFeePending}
               onNavigateTab={navigateTab}
               onOpenHelpGuide={() => setShowHelpGuideModal(true)}
-              onOpenAddStudent={() => setShowAddStudent(true)}
+              onOpenAddStudent={handleOpenAddStudent}
               onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
               onOpenExamModal={() => setShowExamModal(true)}
               onOpenQuestionPaperModal={() => setShowQuestionPaperModal(true)}
@@ -1375,18 +1451,18 @@ export const AdminDashboard: React.FC = () => {
               totalBhaiya={totalBhaiya}
               totalBahin={totalBahin}
               requirePro={requirePro}
-              onOpenAddStudent={() => setShowAddStudent(true)}
+              onOpenAddStudent={handleOpenAddStudent}
               onOpenEditStudent={setActiveEditStudent}
-              onOpenBulkImport={() => setShowBulkImport(true)}
+              onOpenBulkImport={handleOpenBulkImport}
               onOpenBulkIdCard={() => setShowBulkIdCardModal(true)}
-              onOpenPhotoUpload={setActivePhotoStudent}
+              onOpenPhotoUpload={handleOpenPhotoUpload}
               onOpenIdCard={setActiveIdCardStudent}
               onOpenTc={setActiveTcStudent}
               onOpenReportModal={setActiveReportModal}
               onOpenCharacterCertificate={setActiveCharacterStudent}
               onOpenBonafideCertificate={setActiveBonafideStudent}
               onOpenDakhilKharij={() => setShowDakhilKharijModal(true)}
-              onOpenRegisterScanner={() => setShowRegisterScannerModal(true)}
+              onOpenRegisterScanner={handleOpenRegisterScanner}
               onOpenPrintableAdmissionForm={() => setPrintableFormsConfig({ isOpen: true, initialMode: 'admission' })}
             />
           </TabErrorBoundary>
@@ -1495,7 +1571,7 @@ export const AdminDashboard: React.FC = () => {
               setShowAddStudent(false);
               setActiveEditStudent(null);
             }}
-            onOpenScanner={() => setShowRegisterScannerModal(true)}
+            onOpenScanner={handleOpenRegisterScanner}
           />
         )}
 

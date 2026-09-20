@@ -22,7 +22,7 @@ interface BulkStudentImportModalProps {
 }
 
 export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ isOpen, onClose }) => {
-  const { bulkAddStudents, currentSchool } = useSchool();
+  const { bulkAddStudents, currentSchool, students } = useSchool();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [csvData, setCsvData] = useState<Partial<Student>[]>([]);
@@ -166,6 +166,13 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
     if (csvData.length === 0) return;
     setIsImporting(true);
     setError('');
+
+    const isPro = currentSchool?.plan === 'pro';
+    if (!isPro && ((students?.length || 0) + csvData.length > 100)) {
+      setError(`निःशुल्क सेवा योजना में अधिकतम 100 छात्रों का प्रबंधन अनुमत है। वर्तमान में ${students?.length || 0} छात्र नामांकित हैं और CSV फ़ाइल में ${csvData.length} छात्र हैं (कुल योग: ${(students?.length || 0) + csvData.length})। असीमित छात्रों हेतु प्रो योजना में अपग्रेड करें।`);
+      setIsImporting(false);
+      return;
+    }
 
     try {
       const count = await bulkAddStudents(csvData);
