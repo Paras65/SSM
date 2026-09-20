@@ -84,7 +84,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
                   वैधानिक भूमिकाएं (Legal Roles)
                 </h4>
                 <ul className="list-disc list-inside space-y-1 text-stone-600 pl-2">
-                  <li><strong>डेटा न्यासी (Data Fiduciary):</strong> संबंधित सरस्वती शिशु मंदिर विद्यालय प्रबंध समिति एवं विद्या भारती।</li>
+                  <li><strong>डेटा न्यासी (Data Fiduciary):</strong> संबंधित सरस्वती शिशु मंदिर विद्यालय प्रबंध समिति।</li>
                   <li><strong>डेटा संसाधक (Data Processor & Host):</strong> <code className="bg-stone-100 px-1 py-0.5 rounded text-orange-800">init65.co.in</code> (क्लाउड अवसंरचना एवं सॉफ्टवेयर प्रदाता)।</li>
                   <li><strong>डेटा स्वामी (Data Principal):</strong> विद्यार्थी एवं उनके अधिकृत माता-पिता / संरक्षक।</li>
                 </ul>
@@ -195,7 +195,7 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
                   Legal Roles & Entities
                 </h4>
                 <ul className="list-disc list-inside space-y-1 text-stone-600 pl-2">
-                  <li><strong>Data Fiduciary:</strong> Respective School Management Committee (SSM) & Vidya Bharati.</li>
+                  <li><strong>Data Fiduciary:</strong> Respective Saraswati Shishu Mandir School Management Committee.</li>
                   <li><strong>Data Processor & Host:</strong> <code className="bg-stone-100 px-1 py-0.5 rounded text-orange-800">init65.co.in</code> (Cloud & Software Infrastructure).</li>
                   <li><strong>Data Principal:</strong> Enrolled students and their parents / legal guardians.</li>
                 </ul>
