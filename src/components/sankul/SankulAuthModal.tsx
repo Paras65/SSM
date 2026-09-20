@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSchool } from '../../context/SchoolContext';
+import { api } from '../../services/api';
 import { Lock, X, Building2, ShieldCheck, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 
 interface SankulAuthModalProps {
@@ -39,18 +40,9 @@ export const SankulAuthModal: React.FC<SankulAuthModalProps> = ({ isOpen, onClos
     setError('');
 
     try {
-      // Validate passcode against Vidya Bharati master passcode (1952), developer passcode (2026), or any registered school passcode
-      const validPasscodes = ['1952', '2026', ...schools.map(s => s.adminPasscode).filter(Boolean)];
-      const isMatch = validPasscodes.includes(passcode.trim());
-
-      if (isMatch) {
-        sessionStorage.setItem('ssm_sankul_token', `sankul_token_${Date.now()}`);
-        sessionStorage.setItem('ssm_sankul_name', selectedCluster);
-        setPasscode('');
-        onSuccess();
-      } else {
-        setError('अमान्य पासकोड! कृपया संकुल प्रभारी अथवा विद्या भारती अधिकृत पासकोड दर्ज करें।');
-      }
+      await api.loginSankul(selectedCluster, passcode.trim());
+      setPasscode('');
+      onSuccess();
     } catch (err: any) {
       setError(err.message || 'प्रमाणीकरण में त्रुटि हुई।');
     } finally {

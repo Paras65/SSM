@@ -110,12 +110,18 @@ const rateLimit = require('express-rate-limit');
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
-function rateLimitEndpoint(maxAttempts = 10) {
+function rateLimitEndpoint(maxAttempts = 10, useCompositeKey = false) {
   return rateLimit({
     windowMs: RATE_LIMIT_WINDOW_MS,
     max: maxAttempts,
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => {
+      const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+      if (!useCompositeKey) return ip;
+      const target = req.body?.rollNo || req.body?.phone || req.body?.schoolId || '';
+      return `${ip}_${target}`;
+    },
     message: {
       error: 'सुरक्षा चेतावनी: बहुत अधिक प्रयास! कृपया 15 मिनट पश्चात पुनः प्रयास करें। (Too many attempts, rate limit exceeded)',
       code: 'RATE_LIMIT_EXCEEDED'
@@ -124,11 +130,13 @@ function rateLimitEndpoint(maxAttempts = 10) {
   });
 }
 
-app.use('/api/auth/login', rateLimitEndpoint(30));
-app.use('/api/auth/student-login', rateLimitEndpoint(120));
-app.use('/api/auth/teacher-login', rateLimitEndpoint(120));
-app.use('/api/admissions', rateLimitEndpoint(60));
-app.post('/api/schools', rateLimitEndpoint(20));
+app.use('/api/auth/login', rateLimitEndpoint(30, false));
+app.use('/api/auth/sankul-login', rateLimitEndpoint(30, false));
+app.use('/api/auth/student-login', rateLimitEndpoint(120, true));
+app.use('/api/auth/teacher-login', rateLimitEndpoint(120, true));
+app.use('/api/auth/parent-login', rateLimitEndpoint(120, true));
+app.use('/api/admissions', rateLimitEndpoint(60, false));
+app.post('/api/schools', rateLimitEndpoint(20, false));
 
 // API Routes
 app.use('/api', apiRoutes);

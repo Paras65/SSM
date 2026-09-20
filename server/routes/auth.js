@@ -13,6 +13,11 @@ const authLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const target = req.body?.rollNo || req.body?.phone || req.body?.schoolId || req.body?.clusterName || '';
+    return `${ip}_${target}`;
+  },
   message: { error: 'अत्यधिक लॉगिन प्रयास! कृपया 15 मिनट बाद पुनः प्रयास करें।' },
   skip: () => process.env.NODE_ENV === 'test'
 });
@@ -439,6 +444,74 @@ router.post('/parent-login', authLimiter, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'अभिभावक प्रमाणीकरण त्रुटि: ' + err.message });
+  }
+});
+
+// POST /api/auth/sankul-login (Sankul Prabhari Cluster Oversight Authentication)
+router.post('/sankul-login', authLimiter, async (req, res) => {
+  try {
+    const { clusterName, passcode } = req.body;
+    if (!passcode || typeof passcode !== 'string' || !passcode.trim()) {
+      return res.status(400).json({ error: 'संकुल प्रभारी पासकोड दर्ज करना अनिवार्य है।' });
+    }
+    if (!clusterName || typeof clusterName !== 'string' || !clusterName.trim()) {
+      return res.status(400).json({ error: 'संकुल का नाम चुनना अनिवार्य है।' });
+    }
+
+    const cleanPasscode = passcode.trim();
+    const cleanClusterName = clusterName.trim();
+
+    // Verify against configured developer passcode, Vidyabharati master code (1952), or any registered school admin passcode
+    const schools = await School.find({ status: { $ne: 'discontinued' } }).select('adminPasscode').lean();
+    const schoolPasscodes = schools.map(s => s.adminPasscode).filter(Boolean);
+    const validCodes = [
+      process.env.SANKUL_MASTER_PASSCODE || '1952',
+      process.env.DEVELOPER_PASSCODE || '2026',
+      ...schoolPasscodes
+    ];
+
+    const isMatch = validCodes.some(code => verifyPasscode(code, cleanPasscode) || code === cleanPasscode);
+
+    if (!isMatch) {
+      await recordAuditLog({
+        schoolId: 'ssm-sankul',
+        actorType: 'sankul',
+        actorId: cleanClusterName,
+        actorName: `संकुल प्रभारी (${cleanClusterName})`,
+        action: 'SANKUL_LOGIN_FAILED',
+        description: `संकुल ${cleanClusterName} पर अमान्य पासकोड से असफल लॉगिन प्रयास`,
+        req
+      });
+      return res.status(401).json({
+        error: 'अमान्य पासकोड! कृपया संकुल प्रभारी अथवा विद्या भारती अधिकृत पासकोड दर्ज करें।',
+        code: 'INVALID_CREDENTIALS'
+      });
+    }
+
+    const token = generateAdminToken({
+      role: 'sankul',
+      clusterName: cleanClusterName,
+      schoolId: '*'
+    });
+
+    await recordAuditLog({
+      schoolId: 'ssm-sankul',
+      actorType: 'sankul',
+      actorId: cleanClusterName,
+      actorName: `संकुल प्रभारी (${cleanClusterName})`,
+      action: 'SANKUL_LOGIN_SUCCESS',
+      description: `संकुल प्रभारी (${cleanClusterName}) सफलतापूर्वक प्रमाणित हुआ`,
+      req
+    });
+
+    res.json({
+      success: true,
+      message: 'संकुल प्रभारी सफलतापूर्वक प्रमाणित हुआ!',
+      token,
+      clusterName: cleanClusterName
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'संकुल प्रमाणीकरण त्रुटि: ' + err.message });
   }
 });
 

@@ -32,12 +32,13 @@ router.get('/me', requireTeacherAuth, async (req, res) => {
       return res.status(400).json({ error: 'आचार्य सत्र पहचान उपलब्ध नहीं है।' });
     }
     const teacher = await Staff.findOne({ id: teacherId, ...(req.user.role === 'developer' ? {} : { schoolId }) })
-      .select('-pin')
       .lean();
     if (!teacher) {
       return res.status(404).json({ error: 'आचार्य रिकॉर्ड नहीं मिला।' });
     }
-    res.json(teacher);
+    const isDefaultPin = !teacher.pin || verifyPasscode('1234', teacher.pin) || teacher.pin === '1234';
+    delete teacher.pin;
+    res.json({ ...teacher, isDefaultPin });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

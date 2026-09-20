@@ -370,6 +370,7 @@ export interface Staff {
   samitiDeduction?: number;
   joiningDate: string;
   pin?: string;
+  isDefaultPin?: boolean;
   assignedClasses?: string[];
   status: 'Active' | 'OnLeave' | 'Resigned';
 }

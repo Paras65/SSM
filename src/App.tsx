@@ -24,6 +24,9 @@ import { SchoolLocatorModal } from './components/public/SchoolLocatorModal';
 import { LanguageProvider } from './context/LanguageContext';
 import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/common/ToastContainer';
+import { sessionSync } from './services/sessionSync';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
+import { IdleLockModal } from './components/common/IdleLockModal';
 
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const TeacherPortal = React.lazy(() => import('./components/teacher/TeacherPortal').then(m => ({ default: m.TeacherPortal })));
@@ -92,21 +95,67 @@ const SchoolApp: React.FC = () => {
   const [schoolModalMode, setSchoolModalMode] = useState<'list' | 'add'>('list');
   const [schoolModalPlan, setSchoolModalPlan] = useState<'free' | 'pro'>('free');
 
+  const isPrivilegedView = viewMode === 'admin' || viewMode === 'teacher' || viewMode === 'sankul';
+  const { isLocked: isIdleLocked, unlock: unlockIdle } = useIdleTimeout({
+    timeoutMs: 30 * 60 * 1000,
+    enabled: isPrivilegedView
+  });
+
   useEffect(() => {
+    sessionSync.init();
+
     if (window.location.pathname === '/admin') {
       if (!sessionStorage.getItem('ssm_admin_token')) {
         setShowAuthModal(true);
+      } else {
+        setViewMode('admin');
       }
     } else if (window.location.pathname === '/teacher') {
       if (!sessionStorage.getItem('ssm_teacher_token')) {
         setShowTeacherAuthModal(true);
+      } else {
+        setViewMode('teacher');
       }
     } else if (window.location.pathname === '/sankul') {
       if (!sessionStorage.getItem('ssm_sankul_token')) {
         setShowSankulAuthModal(true);
+      } else {
+        setViewMode('sankul');
       }
     }
-  }, []);
+
+    const onSessionSynced = () => {
+      const path = window.location.pathname;
+      if (path === '/admin' && sessionStorage.getItem('ssm_admin_token')) {
+        setShowAuthModal(false);
+        setViewMode('admin');
+      } else if (path === '/teacher' && sessionStorage.getItem('ssm_teacher_token')) {
+        setShowTeacherAuthModal(false);
+        setViewMode('teacher');
+      } else if (path === '/sankul' && sessionStorage.getItem('ssm_sankul_token')) {
+        setShowSankulAuthModal(false);
+        setViewMode('sankul');
+      }
+    };
+
+    const onRemoteLogout = () => {
+      const path = window.location.pathname;
+      if (path === '/admin' && !sessionStorage.getItem('ssm_admin_token')) {
+        setViewMode('public');
+      } else if (path === '/teacher' && !sessionStorage.getItem('ssm_teacher_token')) {
+        setViewMode('public');
+      } else if (path === '/sankul' && !sessionStorage.getItem('ssm_sankul_token')) {
+        setViewMode('public');
+      }
+    };
+
+    window.addEventListener('ssm_session_synced', onSessionSynced);
+    window.addEventListener('ssm_remote_logout', onRemoteLogout);
+    return () => {
+      window.removeEventListener('ssm_session_synced', onSessionSynced);
+      window.removeEventListener('ssm_remote_logout', onRemoteLogout);
+    };
+  }, [setViewMode]);
 
   const isAnyPublicModalOpen = showAuthModal || showTeacherAuthModal || showSankulAuthModal || showSchoolModal || showSchoolLocatorModal || showTcVerificationModal || showHelpGuideModal;
 
@@ -309,6 +358,15 @@ const SchoolApp: React.FC = () => {
             onClose={() => setShowHelpGuideModal(false)}
           />
         </React.Suspense>
+      )}
+
+      {/* 30-Minute Idle Inactivity Auto-Lock Modal */}
+      {isPrivilegedView && (
+        <IdleLockModal
+          isOpen={isIdleLocked}
+          onUnlock={unlockIdle}
+          viewMode={viewMode as 'admin' | 'teacher' | 'sankul'}
+        />
       )}
     </>
   );

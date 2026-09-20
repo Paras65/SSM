@@ -750,6 +750,39 @@ Output MUST be strictly valid JSON without markdown formatting:
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-5 sm:space-y-6 overflow-x-hidden">
 
+        {/* Default PIN Security Advisory Banner */}
+        {teacherProfile?.isDefaultPin && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
+                <AlertTriangle className="w-5 h-5 text-amber-800" />
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-amber-950">
+                  🔐 सुरक्षा सूचना: आप प्रारंभिक डिफ़ॉल्ट पिन (1234) का उपयोग कर रहे हैं
+                </h4>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  अपने खाते, छात्र उपस्थिति एवं परीक्षा अंकों की सुरक्षा हेतु कृपया अपना व्यक्तिगत 4-अंकीय पिन अभी बदलें।
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowChangePinModal(true);
+                setPinChangeError('');
+                setCurrentPinInput('1234');
+                setNewPinInput('');
+                setConfirmPinInput('');
+              }}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>नया पिन सेट करें</span>
+            </button>
+          </div>
+        )}
+
         {/* Sub-tab In-line Back Navigation Bar */}
         {currentTab !== 'attendance' && (
           <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-orange-200/80 shadow-2xs">

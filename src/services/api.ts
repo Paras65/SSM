@@ -17,6 +17,7 @@ import type {
   InventoryItem,
   AuditLogEntry
 } from '../types';
+import { sessionSync } from './sessionSync';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -29,7 +30,8 @@ function getAuthHeaders(): Record<string, string> {
     : null;
   const teacherToken = sessionStorage.getItem('ssm_teacher_token');
   const studentToken = sessionStorage.getItem('ssm_student_token');
-  const token = adminToken || teacherToken || studentToken;
+  const sankulToken = sessionStorage.getItem('ssm_sankul_token');
+  const token = adminToken || teacherToken || studentToken || sankulToken;
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
@@ -78,6 +80,8 @@ async function handleJsonResponse<T>(res: Response, defaultError = 'अनपे
       sessionStorage.removeItem('ssm_teacher_school_id');
       sessionStorage.removeItem('ssm_student_token');
       sessionStorage.removeItem('ssm_student_id');
+      sessionStorage.removeItem('ssm_sankul_token');
+      sessionStorage.removeItem('ssm_sankul_name');
     }
     const message = data?.error || data?.message || defaultError;
     throw new Error(message);
@@ -112,6 +116,7 @@ export const api = {
       sessionStorage.setItem('ssm_admin_authenticated', 'true');
       sessionStorage.setItem('ssm_admin_role', data.role || 'admin');
       sessionStorage.setItem('ssm_admin_school_id', schoolId);
+      sessionSync.broadcastCurrentSession();
     }
     return data;
   },
@@ -161,6 +166,7 @@ export const api = {
     sessionStorage.setItem('ssm_teacher_id', data.teacher.id);
     sessionStorage.setItem('ssm_teacher_name', data.teacher.name || '');
     sessionStorage.setItem('ssm_teacher_school_id', schoolId);
+    sessionSync.broadcastCurrentSession();
     return data;
   },
 
@@ -170,6 +176,7 @@ export const api = {
     sessionStorage.removeItem('ssm_teacher_name');
     sessionStorage.removeItem('ssm_teacher_tab');
     sessionStorage.removeItem('ssm_teacher_school_id');
+    sessionSync.broadcastLogout('teacher');
   },
 
   logoutAdmin(): void {
@@ -184,6 +191,30 @@ export const api = {
     sessionStorage.removeItem('ssm_teacher_name');
     sessionStorage.removeItem('ssm_teacher_tab');
     sessionStorage.removeItem('ssm_teacher_school_id');
+    sessionSync.broadcastLogout('admin');
+  },
+
+  async loginSankul(clusterName: string, passcode: string): Promise<{ success: boolean; token: string; clusterName: string }> {
+    const res = await apiFetch('/auth/sankul-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clusterName, passcode })
+    });
+    const data = await handleJsonResponse<any>(res, 'संकुल प्रमाणीकरण विफल रहा');
+    sessionStorage.removeItem('ssm_admin_token');
+    sessionStorage.removeItem('ssm_admin_authenticated');
+    sessionStorage.removeItem('ssm_teacher_token');
+    sessionStorage.removeItem('ssm_student_token');
+    sessionStorage.setItem('ssm_sankul_token', data.token);
+    sessionStorage.setItem('ssm_sankul_name', data.clusterName || clusterName);
+    sessionSync.broadcastCurrentSession();
+    return data;
+  },
+
+  logoutSankul(): void {
+    sessionStorage.removeItem('ssm_sankul_token');
+    sessionStorage.removeItem('ssm_sankul_name');
+    sessionSync.broadcastLogout('sankul');
   },
 
   // ================= SCHOOLS =================

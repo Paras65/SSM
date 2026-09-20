@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { isValidAdminPasscode, isValidDeveloperPasscode, hashPasscode, verifyPasscode } = require('../utils/authValidation');
 const School = require('../models/School');
+const Staff = require('../models/Staff');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
 
@@ -107,6 +108,21 @@ async function requireTeacherAuth(req, res, next) {
       }
     }
 
+    // Mid-session teacher revocation guard: verify teacher account is active and not resigned
+    if (decoded.role === 'teacher' && decoded.staffId) {
+      try {
+        const staff = await Staff.findOne({ id: decoded.staffId, schoolId: decoded.schoolId }).select('status').lean();
+        if (!staff || staff.status === 'Resigned') {
+          return res.status(403).json({
+            error: 'यह आचार्य खाता सेवामुक्त (Resigned) अथवा निष्क्रिय है। प्रवेश निषेध है। (Teacher account resigned or inactive)',
+            code: 'ACCOUNT_RESIGNED'
+          });
+        }
+      } catch (staffErr) {
+        // Non-blocking if DB query fails during disconnection
+      }
+    }
+
     req.user = decoded;
     req.userSchoolId = decoded.schoolId;
     next();
@@ -121,6 +137,31 @@ async function requireTeacherAuth(req, res, next) {
   }
 }
 
+async function requireSankulAuth(req, res, next) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'संकुल प्रभारी लॉगिन आवश्यक है। (Sankul Prabhari login required)', code: 'AUTH_REQUIRED' });
+  }
+
+  try {
+    const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    if (!['sankul', 'developer', 'admin'].includes(decoded.role)) {
+      return res.status(403).json({ error: 'केवल संकुल प्रभारी प्रवेश की अनुमति है। (Sankul role required)', code: 'SANKUL_ROLE_REQUIRED' });
+    }
+    req.user = decoded;
+    req.clusterName = decoded.clusterName;
+    next();
+  } catch (err) {
+    const isExpired = err.name === 'TokenExpiredError';
+    return res.status(401).json({
+      error: isExpired
+        ? 'संकुल सत्र समाप्त हो गया है! कृपया पुनः लॉगिन करें। (Session expired)'
+        : 'अमान्य संकुल सुरक्षा टोकन। (Invalid token)',
+      code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID'
+    });
+  }
+}
+
 async function requirePortalAuth(req, res, next) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -129,7 +170,7 @@ async function requirePortalAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-    if (!['admin', 'developer', 'student', 'teacher', 'parent'].includes(decoded.role)) {
+    if (!['admin', 'developer', 'student', 'teacher', 'parent', 'sankul'].includes(decoded.role)) {
       return res.status(403).json({ error: 'अमान्य पोर्टल भूमिका। (Invalid portal role)', code: 'ROLE_FORBIDDEN' });
     }
 
@@ -145,6 +186,21 @@ async function requirePortalAuth(req, res, next) {
         }
       } catch (dbErr) {
         // Non-blocking if DB query fails during disconnection
+      }
+    }
+
+    // Mid-session teacher revocation check in portal endpoints
+    if (decoded.role === 'teacher' && decoded.staffId) {
+      try {
+        const staff = await Staff.findOne({ id: decoded.staffId, schoolId: decoded.schoolId }).select('status').lean();
+        if (!staff || staff.status === 'Resigned') {
+          return res.status(403).json({
+            error: 'यह आचार्य खाता सेवामुक्त (Resigned) अथवा निष्क्रिय है। प्रवेश निषेध है। (Teacher account resigned or inactive)',
+            code: 'ACCOUNT_RESIGNED'
+          });
+        }
+      } catch (staffErr) {
+        // Non-blocking
       }
     }
 
@@ -292,6 +348,7 @@ module.exports = {
   requireStudentAuth,
   requireTeacherAuth,
   requireParentAuth,
+  requireSankulAuth,
   requireClassTeacherScope,
   requirePortalAuth,
   requireSchoolScope,

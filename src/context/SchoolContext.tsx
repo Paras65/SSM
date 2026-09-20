@@ -146,6 +146,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (path === 'admin' && sessionStorage.getItem('ssm_admin_token')) return 'admin';
         if (path === 'teacher' && sessionStorage.getItem('ssm_teacher_token')) return 'teacher';
         if (path === 'student') return 'student';
+        if (path === 'sankul' && sessionStorage.getItem('ssm_sankul_token')) return 'sankul';
       }
     } catch {}
     return 'public';
@@ -174,6 +175,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setViewModeState(sessionStorage.getItem('ssm_teacher_token') ? 'teacher' : 'public');
       } else if (targetMode === 'student') {
         setViewModeState('student');
+      } else if (targetMode === 'sankul') {
+        setViewModeState(sessionStorage.getItem('ssm_sankul_token') ? 'sankul' : 'public');
       } else {
         setViewModeState('public');
       }
