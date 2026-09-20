@@ -54,6 +54,8 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
   const [filterTimeRange, setFilterTimeRange] = useState<'all' | 'today' | '7days' | '30days'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const activeFiltersCount = (filterRole !== 'all' ? 1 : 0) + (filterCategory !== 'all' ? 1 : 0) + (filterTimeRange !== 'all' ? 1 : 0);
 
   // Inspector Modal
   const [inspectedLog, setInspectedLog] = useState<AuditLogEntry | null>(null);
@@ -325,84 +327,84 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-stone-200 w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-1.5 sm:p-5 bg-stone-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-stone-200 w-full max-w-6xl h-[96vh] sm:h-[92vh] max-h-[96vh] flex flex-col overflow-hidden">
         
         {/* Top Header */}
-        <div className="px-6 py-4 border-b border-stone-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-400 flex items-center justify-center shadow-inner">
-              <Shield className="w-6 h-6" />
+        <div className="px-3.5 py-2.5 sm:px-6 sm:py-4 border-b border-stone-100 flex items-center justify-between gap-2 sm:gap-3 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
+              <Shield className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-white tracking-wide">
-                  सुरक्षा ऑडिट ट्रेल व सुशासन कंसोल (Security Audit Trail)
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-sm sm:text-lg font-bold text-white tracking-wide truncate">
+                  सुरक्षा ऑडिट ट्रेल व सुशासन कंसोल
                 </h2>
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                   <Lock className="w-2.5 h-2.5" /> अपरिवर्तनीय डिजिटल लेज़र
                 </span>
               </div>
-              <p className="text-xs text-stone-300">
-                शाखा: <span className="font-semibold text-amber-300">{currentSchool.name || 'सरस्वती शिशु मंदिर'}</span> ({currentSchool.id}) • समस्त प्रशासनिक, वित्तीय व प्रमाणीकरण कार्यों की अपरिवर्तनीय समय-सारणी
+              <p className="text-[11px] sm:text-xs text-stone-300 truncate">
+                शाखा: <span className="font-semibold text-amber-300">{currentSchool.name || 'सरस्वती शिशु मंदिर'}</span> ({currentSchool.id})
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={handleExportCSV}
               disabled={filteredLogs.length === 0}
-              className="px-3.5 py-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              className="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shadow-xs disabled:opacity-50"
               title="ऑडिट रिकॉर्ड्स CSV डाउनलोड करें"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span>CSV निर्यात</span>
+              <span className="hidden sm:inline">CSV निर्यात</span>
             </button>
             <button
               onClick={fetchLogs}
               disabled={loading}
-              className="p-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white transition disabled:opacity-50"
+              className="p-1.5 sm:p-2 rounded-xl bg-stone-700/80 hover:bg-stone-600 border border-stone-600 text-white transition disabled:opacity-50"
               title="रिफ्रेश करें"
             >
-              <RefreshCw className={`w-4 h-4 text-amber-400 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-stone-800 hover:bg-red-900/60 text-stone-300 hover:text-white transition"
+              className="p-1.5 sm:p-2 rounded-xl bg-stone-800 hover:bg-red-900/60 text-stone-300 hover:text-white transition"
               title="बंद करें"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
         {/* Dynamic Storage Optimization & Audit Logging Control Strip */}
-        <div className={`px-6 py-3 border-b flex flex-wrap items-center justify-between gap-3 transition-colors ${
+        <div className={`px-3.5 py-2 sm:px-6 sm:py-2.5 border-b flex flex-wrap items-center justify-between gap-2 sm:gap-3 transition-colors ${
           isLoggingEnabled 
             ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950' 
             : 'bg-amber-50/90 border-amber-200 text-amber-950'
         }`}>
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold ${
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 font-bold ${
               isLoggingEnabled ? 'bg-emerald-600 text-white shadow-xs' : 'bg-amber-600 text-white shadow-xs'
             }`}>
-              {isLoggingEnabled ? <Database className="w-5 h-5" /> : <HardDrive className="w-5 h-5" />}
+              {isLoggingEnabled ? <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <HardDrive className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-black tracking-wide">
-                  {isLoggingEnabled ? '🟢 ऑडिट लॉगिंग सक्रिय (Active)' : '📦 स्टोरेज बचत मोड सक्रिय (Storage Saver)'}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="text-[11px] sm:text-xs font-black tracking-wide">
+                  {isLoggingEnabled ? '🟢 ऑडिट लॉगिंग सक्रिय' : '📦 स्टोरेज बचत मोड'}
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                <span className={`px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold ${
                   isLoggingEnabled 
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
                     : 'bg-amber-100 text-amber-800 border border-amber-300'
                 }`}>
-                  {isLoggingEnabled ? 'डेटाबेस में लॉग दर्ज हो रहे हैं' : 'डिफ़ॉल्ट रूप से शून्य स्टोरेज खपत'}
+                  {isLoggingEnabled ? 'डेटाबेस में दर्ज' : 'शून्य स्टोरेज खपत'}
                 </span>
               </div>
-              <p className="text-[11px] text-stone-600 mt-0.5 leading-tight">
+              <p className="hidden sm:block text-[11px] text-stone-600 mt-0.5 leading-tight">
                 {isLoggingEnabled 
                   ? `शाखा "${currentSchool.name || currentSchool.id}" में समस्त प्रशासनिक, वित्तीय व सुरक्षा कार्यों का विस्तृत डिजिटल रिकॉर्ड सुरक्षित रखा जा रहा है।`
                   : `शाखा "${currentSchool.name || currentSchool.id}" में स्टोरेज बचत हेतु नवीन लॉगिंग बंद है। आवश्यकता पड़ने पर आप इसे 1-क्लिक में कभी भी चालू कर सकते हैं।`}
@@ -410,334 +412,389 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleToggleLogging}
               disabled={isToggling}
-              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer ${
+              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer ${
                 isLoggingEnabled
                   ? 'bg-stone-800 hover:bg-stone-900 text-white border border-stone-700'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
               }`}
             >
               {isToggling ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <RefreshCw className="w-3 h-3 animate-spin" />
               ) : isLoggingEnabled ? (
-                <PowerOff className="w-3.5 h-3.5 text-rose-400" />
+                <PowerOff className="w-3 h-3 text-rose-400" />
               ) : (
-                <Power className="w-3.5 h-3.5 text-emerald-200" />
+                <Power className="w-3 h-3 text-emerald-200" />
               )}
-              <span>{isLoggingEnabled ? 'लॉगिंग बंद करें (स्टोरेज बचाएं)' : 'ऑडिट लॉगिंग चालू करें'}</span>
+              <span>{isLoggingEnabled ? 'लॉगिंग बंद करें' : 'ऑडिट लॉगिंग चालू करें'}</span>
             </button>
           </div>
         </div>
 
         {/* KPI Metrics Strip */}
-        <div className="bg-stone-50 border-b border-stone-200 px-6 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white p-2.5 rounded-2xl border border-stone-200 shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <Clock className="w-5 h-5" />
+        <div className="bg-stone-50 border-b border-stone-200 px-3 py-1.5 sm:px-6 sm:py-2.5 grid grid-cols-4 gap-1.5 sm:gap-3">
+          <div className="bg-white p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl border border-stone-200 shadow-2xs flex flex-col sm:flex-row items-center sm:gap-3 text-center sm:text-left">
+            <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
+              <Clock className="w-3 h-3 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="text-[11px] font-semibold text-stone-500">कुल घटनाएं (Total)</div>
-              <div className="text-base font-extrabold text-stone-800">{kpis.total}</div>
-            </div>
-          </div>
-
-          <div className="bg-white p-2.5 rounded-2xl border border-stone-200 shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold text-stone-500">सफल लॉगिन (Logins)</div>
-              <div className="text-base font-extrabold text-emerald-700">{kpis.logins}</div>
+            <div className="min-w-0">
+              <div className="text-[9px] sm:text-[11px] font-semibold text-stone-500 truncate">कुल घटनाएं</div>
+              <div className="text-xs sm:text-base font-extrabold text-stone-800">{kpis.total}</div>
             </div>
           </div>
 
-          <div className="bg-white p-2.5 rounded-2xl border border-stone-200 shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-              <AlertTriangle className="w-5 h-5" />
+          <div className="bg-white p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl border border-stone-200 shadow-2xs flex flex-col sm:flex-row items-center sm:gap-3 text-center sm:text-left">
+            <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+              <CheckCircle2 className="w-3 h-3 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="text-[11px] font-semibold text-stone-500">सुरक्षा चेतावनी / विफलताएं</div>
-              <div className="text-base font-extrabold text-rose-700">{kpis.alerts}</div>
+            <div className="min-w-0">
+              <div className="text-[9px] sm:text-[11px] font-semibold text-stone-500 truncate">सफल लॉगिन</div>
+              <div className="text-xs sm:text-base font-extrabold text-emerald-700">{kpis.logins}</div>
             </div>
           </div>
 
-          <div className="bg-white p-2.5 rounded-2xl border border-stone-200 shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-              <IndianRupee className="w-5 h-5" />
+          <div className="bg-white p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl border border-stone-200 shadow-2xs flex flex-col sm:flex-row items-center sm:gap-3 text-center sm:text-left">
+            <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
+              <AlertTriangle className="w-3 h-3 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="text-[11px] font-semibold text-stone-500">वित्तीय / क्रेडेंशियल कार्य</div>
-              <div className="text-base font-extrabold text-teal-700">{kpis.financial + kpis.security}</div>
+            <div className="min-w-0">
+              <div className="text-[9px] sm:text-[11px] font-semibold text-stone-500 truncate">सुरक्षा चेतावनी</div>
+              <div className="text-xs sm:text-base font-extrabold text-rose-700">{kpis.alerts}</div>
+            </div>
+          </div>
+
+          <div className="bg-white p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl border border-stone-200 shadow-2xs flex flex-col sm:flex-row items-center sm:gap-3 text-center sm:text-left">
+            <div className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold shrink-0">
+              <IndianRupee className="w-3 h-3 sm:w-5 sm:h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[9px] sm:text-[11px] font-semibold text-stone-500 truncate">वित्तीय कार्य</div>
+              <div className="text-xs sm:text-base font-extrabold text-teal-700">{kpis.financial + kpis.security}</div>
             </div>
           </div>
         </div>
 
         {/* Filters Toolbar */}
-        <div className="p-4 border-b border-stone-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs">
-          {/* Search Box */}
-          <div className="relative flex-1 min-w-[240px] max-w-sm">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
-            <input
-              type="text"
-              placeholder="खोजें (कार्य, नाम, विवरण, IP पता)..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-9 pr-8 py-2 rounded-xl border border-stone-200 text-xs focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 bg-stone-50/50"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-700"
+        <div className="p-2.5 sm:p-4 border-b border-stone-200 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 text-xs">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Search Box */}
+            <div className="relative flex-1 min-w-0 max-w-sm">
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="खोजें (कार्य, नाम, विवरण, IP)..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-8 pr-7 py-1.5 sm:py-2 rounded-xl border border-stone-200 text-xs focus:outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500 bg-stone-50/50"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-700"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Mobile Filter Toggle Button */}
+            <button
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className={`sm:hidden px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 shrink-0 ${
+                showMobileFilters || activeFiltersCount > 0
+                  ? 'bg-amber-100 text-amber-900 border-amber-300'
+                  : 'bg-stone-100 text-stone-700 border-stone-200'
+              }`}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              <span>फ़िल्टर{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ''}</span>
+            </button>
+          </div>
+
+          {/* Collapsible Filter Row on Mobile / Always visible on sm+ */}
+          <div className={`${showMobileFilters ? 'flex' : 'hidden'} sm:flex flex-wrap items-center gap-2 sm:gap-3`}>
+            {/* Actor Filter */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="font-bold text-stone-600 flex items-center gap-1 text-[11px] sm:text-xs">
+                <User className="w-3 h-3 text-stone-400" /> कर्ता:
+              </span>
+              <div className="inline-flex rounded-lg sm:rounded-xl bg-stone-100 p-0.5 sm:p-1 border border-stone-200">
+                {[
+                  { id: 'all', label: 'सभी' },
+                  { id: 'admin', label: 'व्यवस्थापक' },
+                  { id: 'teacher', label: 'आचार्य' },
+                  { id: 'student', label: 'छात्र' },
+                  { id: 'developer', label: 'डेवलपर' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setFilterRole(tab.id);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-bold transition ${
+                      filterRole === tab.id
+                        ? 'bg-white text-stone-900 shadow-2xs'
+                        : 'text-stone-500 hover:text-stone-800'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex items-center gap-1">
+              <span className="font-bold text-stone-600 flex items-center gap-1 text-[11px] sm:text-xs">
+                <Filter className="w-3 h-3 text-stone-400" /> श्रेणी:
+              </span>
+              <select
+                value={filterCategory}
+                onChange={(e) => {
+                  setFilterCategory(e.target.value as ActionCategory);
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 rounded-lg sm:rounded-xl border border-stone-200 bg-stone-50 text-stone-700 text-[11px] sm:text-xs font-bold focus:outline-hidden focus:border-amber-500"
               >
-                <X className="w-3.5 h-3.5" />
+                <option value="all">समस्त क्रियाएं (All)</option>
+                <option value="auth">🔐 प्रमाणीकरण (Auth)</option>
+                <option value="security">🔑 सुरक्षा व पासकोड (Security)</option>
+                <option value="financial">💰 वित्तीय लेनदेन (Fees)</option>
+                <option value="exams">🎓 परीक्षा व प्राप्तांक (Exams)</option>
+                <option value="students_staff">👥 छात्र व कर्मचारी</option>
+              </select>
+            </div>
+
+            {/* Time Range */}
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-stone-400" />
+              <select
+                value={filterTimeRange}
+                onChange={(e) => {
+                  setFilterTimeRange(e.target.value as 'all' | 'today' | '7days' | '30days');
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 rounded-lg sm:rounded-xl border border-stone-200 bg-stone-50 text-stone-700 text-[11px] sm:text-xs font-bold focus:outline-hidden focus:border-amber-500"
+              >
+                <option value="all">समस्त अवधि</option>
+                <option value="today">आज</option>
+                <option value="7days">पिछले 7 दिन</option>
+                <option value="30days">पिछले 30 दिन</option>
+              </select>
+            </div>
+
+            {/* Reset Filters */}
+            {(filterRole !== 'all' || filterCategory !== 'all' || filterTimeRange !== 'all' || searchTerm) && (
+              <button
+                onClick={handleResetFilters}
+                className="text-amber-700 hover:text-amber-900 font-bold underline text-[11px] sm:text-xs cursor-pointer ml-auto sm:ml-0"
+              >
+                रीसेट करें
               </button>
             )}
           </div>
+        </div>
 
-          {/* Actor Filter */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-bold text-stone-600 flex items-center gap-1">
-              <User className="w-3.5 h-3.5 text-stone-400" /> कर्ता:
-            </span>
-            <div className="inline-flex rounded-xl bg-stone-100 p-1 border border-stone-200">
-              {[
-                { id: 'all', label: 'सभी' },
-                { id: 'admin', label: 'व्यवस्थापक' },
-                { id: 'teacher', label: 'आचार्य' },
-                { id: 'student', label: 'छात्र' },
-                { id: 'developer', label: 'डेवलपर' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setFilterRole(tab.id);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition ${
-                    filterRole === tab.id
-                      ? 'bg-white text-stone-900 shadow-2xs'
-                      : 'text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+        {/* Dedicated Audit Trail Container (Cards on Mobile, Table on Desktop) */}
+        <div className="flex-1 min-h-0 overflow-y-auto bg-stone-50/50">
+          {loading ? (
+            <div className="py-16 text-center text-stone-400">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-600" />
+              ऑडिट लॉग्स लोड हो रहे हैं...
             </div>
-          </div>
+          ) : fetchError ? (
+            <div className="py-16 text-center text-stone-400">
+              <AlertTriangle className="w-10 h-10 mx-auto mb-2 text-red-400" />
+              <p className="font-bold text-red-600">ऑडिट लॉग लोड करने में त्रुटि</p>
+              <p className="text-xs text-stone-400 mt-1">सर्वर से कनेक्ट नहीं हो सका। कृपया इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।</p>
+              <button
+                onClick={fetchLogs}
+                className="mt-3 px-4 py-1.5 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition"
+              >
+                🔄 पुनः प्रयास करें
+              </button>
+            </div>
+          ) : paginatedLogs.length === 0 ? (
+            <div className="py-16 text-center text-stone-400">
+              <Shield className="w-10 h-10 mx-auto mb-2 text-stone-300" />
+              <p className="font-bold text-stone-600">कोई ऑडिट लॉग रिकॉर्ड नहीं मिला</p>
+              <p className="text-xs text-stone-400 mt-1">दिए गए फ़िल्टर मानदंडों के अनुसार कोई घटना दर्ज नहीं है।</p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile View: Cards */}
+              <div className="sm:hidden p-2.5 space-y-2.5">
+                {paginatedLogs.map((log) => (
+                  <div key={log.id} className="bg-white p-3 rounded-2xl border border-stone-200 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {getRoleBadge(log.actorType)}
+                        <span className="font-bold text-xs text-stone-900 truncate max-w-[130px]" title={log.actorName}>
+                          {log.actorName || 'अज्ञात'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-stone-500 font-mono flex items-center gap-1 shrink-0">
+                        <Clock className="w-2.5 h-2.5" />
+                        {new Date(log.createdAt).toLocaleDateString('hi-IN', { day: '2-digit', month: 'short' })},{' '}
+                        {new Date(log.createdAt).toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                      </span>
+                    </div>
 
-          {/* Category Filter */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-bold text-stone-600 flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5 text-stone-400" /> श्रेणी:
-            </span>
-            <select
-              value={filterCategory}
-              onChange={(e) => {
-                setFilterCategory(e.target.value as ActionCategory);
-                setCurrentPage(1);
-              }}
-              className="px-2.5 py-1.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-700 font-bold focus:outline-hidden focus:border-amber-500"
-            >
-              <option value="all">समस्त क्रियाएं (All)</option>
-              <option value="auth">🔐 प्रमाणीकरण (Auth)</option>
-              <option value="security">🔑 सुरक्षा व पासकोड (Security)</option>
-              <option value="financial">💰 वित्तीय लेनदेन (Fees)</option>
-              <option value="exams">🎓 परीक्षा व प्राप्तांक (Exams)</option>
-              <option value="students_staff">👥 छात्र व कर्मचारी (Staff/Students)</option>
-            </select>
-          </div>
+                    <div>{getActionBadge(log.action)}</div>
 
-          {/* Time Range */}
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-stone-400" />
-            <select
-              value={filterTimeRange}
-              onChange={(e) => {
-                setFilterTimeRange(e.target.value as 'all' | 'today' | '7days' | '30days');
-                setCurrentPage(1);
-              }}
-              className="px-2.5 py-1.5 rounded-xl border border-stone-200 bg-stone-50 text-stone-700 font-bold focus:outline-hidden focus:border-amber-500"
-            >
-              <option value="all">समस्त अवधि (All Time)</option>
-              <option value="today">आज (Today)</option>
-              <option value="7days">पिछले 7 दिन (Past 7 Days)</option>
-              <option value="30days">पिछले 30 दिन (Past 30 Days)</option>
-            </select>
-          </div>
+                    <p className="text-xs text-stone-800 leading-relaxed font-medium">
+                      {log.description}
+                    </p>
 
-          {/* Reset Filters */}
-          {(filterRole !== 'all' || filterCategory !== 'all' || filterTimeRange !== 'all' || searchTerm) && (
-            <button
-              onClick={handleResetFilters}
-              className="text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer"
-            >
-              फ़िल्टर रीसेट करें
-            </button>
+                    <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-[11px]">
+                      <span className="text-stone-400 font-mono text-[10px] flex items-center gap-1">
+                        <Laptop className="w-3 h-3 text-stone-400" />
+                        {log.ip || 'No IP'}
+                      </span>
+                      <button
+                        onClick={() => setInspectedLog(log)}
+                        className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold flex items-center gap-1 transition"
+                      >
+                        <Eye className="w-3 h-3" /> विवरण
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View: Full Table */}
+              <table className="hidden sm:table w-full text-left border-collapse text-xs">
+                <thead className="sticky top-0 bg-stone-100/95 backdrop-blur-xs border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider z-10">
+                  <tr>
+                    <th
+                      onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                      className="py-3 px-4 cursor-pointer hover:bg-stone-200/60 transition select-none w-48"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>दिनांक व समय (Time)</span>
+                        <ArrowUpDown className="w-3 h-3 text-stone-400" />
+                      </div>
+                    </th>
+                    <th className="py-3 px-4 w-40">कर्ता (Actor)</th>
+                    <th className="py-3 px-4 w-52">कार्य (Action Code)</th>
+                    <th className="py-3 px-4">विवरण (Description)</th>
+                    <th className="py-3 px-4 w-32">IP पता (Client IP)</th>
+                    <th className="py-3 px-4 text-center w-24">कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 bg-white">
+                  {paginatedLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-amber-50/40 transition group">
+                      {/* Timestamp */}
+                      <td className="py-3 px-4 whitespace-nowrap text-stone-600 font-medium">
+                        <div className="font-bold text-stone-900">
+                          {new Date(log.createdAt).toLocaleDateString('hi-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </div>
+                        <div className="text-[11px] text-stone-400 flex items-center gap-1 font-mono">
+                          <Clock className="w-2.5 h-2.5" />
+                          {new Date(log.createdAt).toLocaleTimeString('hi-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                          })}
+                        </div>
+                      </td>
+
+                      {/* Actor */}
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-1">
+                          <div>{getRoleBadge(log.actorType)}</div>
+                          <span className="font-bold text-stone-800 truncate max-w-[140px]" title={log.actorName}>
+                            {log.actorName || 'अज्ञात'}
+                          </span>
+                          {log.actorId && (
+                            <span className="text-[10px] text-stone-400 font-mono">#{log.actorId}</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Action Code */}
+                      <td className="py-3 px-4">
+                        {getActionBadge(log.action)}
+                      </td>
+
+                      {/* Description */}
+                      <td className="py-3 px-4 text-stone-800 leading-relaxed font-medium">
+                        <p>{log.description}</p>
+                      </td>
+
+                      {/* Client IP */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {log.ip ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono bg-stone-100 text-stone-700 border border-stone-200">
+                            <Laptop className="w-3 h-3 text-stone-400" />
+                            {log.ip}
+                          </span>
+                        ) : (
+                          <span className="text-stone-300 font-mono text-xs">-</span>
+                        )}
+                      </td>
+
+                      {/* Details Action */}
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => setInspectedLog(log)}
+                          className="p-1.5 rounded-lg border border-stone-200 hover:border-amber-400 hover:bg-amber-50 text-stone-500 hover:text-amber-800 transition"
+                          title="विस्तृत विवरण देखें"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
 
-        {/* Dedicated Audit Trail Table */}
-        <div className="flex-1 overflow-auto bg-stone-50/50">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead className="sticky top-0 bg-stone-100/95 backdrop-blur-xs border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider z-10">
-              <tr>
-                <th
-                  onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-                  className="py-3 px-4 cursor-pointer hover:bg-stone-200/60 transition select-none w-48"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>दिनांक व समय (Time)</span>
-                    <ArrowUpDown className="w-3 h-3 text-stone-400" />
-                  </div>
-                </th>
-                <th className="py-3 px-4 w-40">कर्ता (Actor)</th>
-                <th className="py-3 px-4 w-52">कार्य (Action Code)</th>
-                <th className="py-3 px-4">विवरण (Description)</th>
-                <th className="py-3 px-4 w-32">IP पता (Client IP)</th>
-                <th className="py-3 px-4 text-center w-24">कार्रवाई</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100 bg-white">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center text-stone-400">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-600" />
-                    ऑडिट लॉग्स लोड हो रहे हैं...
-                  </td>
-                </tr>
-              ) : fetchError ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center text-stone-400">
-                    <AlertTriangle className="w-10 h-10 mx-auto mb-2 text-red-400" />
-                    <p className="font-bold text-red-600">ऑडिट लॉग लोड करने में त्रुटि</p>
-                    <p className="text-xs text-stone-400 mt-1">सर्वर से कनेक्ट नहीं हो सका। कृपया इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।</p>
-                    <button
-                      onClick={fetchLogs}
-                      className="mt-3 px-4 py-1.5 text-xs font-bold rounded-lg bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition"
-                    >
-                      🔄 पुनः प्रयास करें
-                    </button>
-                  </td>
-                </tr>
-              ) : paginatedLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center text-stone-400">
-                    <Shield className="w-10 h-10 mx-auto mb-2 text-stone-300" />
-                    <p className="font-bold text-stone-600">कोई ऑडिट लॉग रिकॉर्ड नहीं मिला</p>
-                    <p className="text-xs text-stone-400 mt-1">दिए गए फ़िल्टर मानदंडों के अनुसार कोई घटना दर्ज नहीं है।</p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-amber-50/40 transition group">
-                    {/* Timestamp */}
-                    <td className="py-3 px-4 whitespace-nowrap text-stone-600 font-medium">
-                      <div className="font-bold text-stone-900">
-                        {new Date(log.createdAt).toLocaleDateString('hi-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </div>
-                      <div className="text-[11px] text-stone-400 flex items-center gap-1 font-mono">
-                        <Clock className="w-2.5 h-2.5" />
-                        {new Date(log.createdAt).toLocaleTimeString('hi-IN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                          hour12: true
-                        })}
-                      </div>
-                    </td>
-
-                    {/* Actor */}
-                    <td className="py-3 px-4">
-                      <div className="flex flex-col gap-1">
-                        <div>{getRoleBadge(log.actorType)}</div>
-                        <span className="font-bold text-stone-800 truncate max-w-[140px]" title={log.actorName}>
-                          {log.actorName || 'अज्ञात'}
-                        </span>
-                        {log.actorId && (
-                          <span className="text-[10px] text-stone-400 font-mono">#{log.actorId}</span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Action Code */}
-                    <td className="py-3 px-4">
-                      {getActionBadge(log.action)}
-                    </td>
-
-                    {/* Description */}
-                    <td className="py-3 px-4 text-stone-800 leading-relaxed font-medium">
-                      <p>{log.description}</p>
-                    </td>
-
-                    {/* Client IP */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {log.ip ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono bg-stone-100 text-stone-700 border border-stone-200">
-                          <Laptop className="w-3 h-3 text-stone-400" />
-                          {log.ip}
-                        </span>
-                      ) : (
-                        <span className="text-stone-300 font-mono text-xs">-</span>
-                      )}
-                    </td>
-
-                    {/* Details Action */}
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => setInspectedLog(log)}
-                        className="p-1.5 rounded-lg border border-stone-200 hover:border-amber-400 hover:bg-amber-50 text-stone-500 hover:text-amber-800 transition"
-                        title="विस्तृत विवरण देखें"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
         {/* Footer & Pagination */}
-        <div className="p-3.5 border-t border-stone-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs text-stone-600">
-          <div className="flex items-center gap-2">
+        <div className="p-2.5 sm:p-3.5 border-t border-stone-200 bg-white flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs text-stone-600">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
             <span>
-              कुल रिकॉर्ड्स: <strong className="text-stone-900">{filteredLogs.length}</strong>
+              कुल: <strong className="text-stone-900">{filteredLogs.length}</strong>
             </span>
             <span className="text-stone-300">•</span>
             <span>
-              पृष्ठ <strong className="text-stone-900">{currentPage}</strong> of <strong className="text-stone-900">{totalPages}</strong>
+              पृष्ठ <strong className="text-stone-900">{currentPage}</strong> / <strong className="text-stone-900">{totalPages}</strong>
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1 rounded-lg border border-stone-200 hover:bg-stone-100 disabled:opacity-40 transition flex items-center gap-1"
+              className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg border border-stone-200 hover:bg-stone-100 disabled:opacity-40 transition flex items-center gap-1 text-[11px] sm:text-xs"
             >
-              <ChevronLeft className="w-3.5 h-3.5" /> पिछला
+              <ChevronLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> पिछला
             </button>
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage >= totalPages}
-              className="px-2.5 py-1 rounded-lg border border-stone-200 hover:bg-stone-100 disabled:opacity-40 transition flex items-center gap-1"
+              className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg border border-stone-200 hover:bg-stone-100 disabled:opacity-40 transition flex items-center gap-1 text-[11px] sm:text-xs"
             >
-              अगला <ChevronRight className="w-3.5 h-3.5" />
+              अगला <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </button>
             <button
               onClick={onClose}
-              className="ml-2 px-4 py-1.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl transition"
+              className="ml-1 sm:ml-2 px-3 py-1 sm:px-4 sm:py-1.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-lg sm:rounded-xl transition text-[11px] sm:text-xs"
             >
               बंद करें
             </button>
