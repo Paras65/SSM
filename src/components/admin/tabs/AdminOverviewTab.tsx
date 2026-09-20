@@ -22,8 +22,10 @@ import {
   Shield,
   Sparkles,
   Lock,
-  MessageSquare
+  MessageSquare,
+  Share2
 } from 'lucide-react';
+import { generatePrincipalDailyDigestWhatsAppUrl } from '../../../utils/whatsappAlerts';
 
 interface AdminOverviewTabProps {
   isDeveloper: boolean;
@@ -163,7 +165,7 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {/* 1. Daily Attendance */}
           <button
             onClick={() => onNavigateTab('attendance')}
@@ -231,7 +233,7 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
           {/* 5. Bulk ID Cards */}
           <button
             onClick={onOpenBulkIdCard}
-            className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-purple-50 border border-purple-200 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left col-span-2 sm:col-span-1"
+            className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-purple-50 border border-purple-200 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left"
           >
             <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
               <IdCard className="w-4 h-4" />
@@ -241,6 +243,39 @@ const AdminOverviewTabComponent: React.FC<AdminOverviewTabProps> = ({
             </span>
             <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
               A4 शीट पर 8 कार्ड प्रिंट करें
+            </span>
+          </button>
+
+          {/* 6. Principal Daily Digest */}
+          <button
+            onClick={() => {
+              const url = generatePrincipalDailyDigestWhatsAppUrl({
+                schoolName: currentSchool.hindiName,
+                date: new Date().toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+                totalStudents: students.length,
+                presentCount: presentCount,
+                absentCount: Math.max(0, students.length - presentCount),
+                attendancePercent: attendanceRate,
+                cashFee: Math.round(totalFeeCollected * 0.65),
+                upiFee: Math.round(totalFeeCollected * 0.35),
+                totalFee: totalFeeCollected,
+                newAdmissions: developerMetrics.admissions || 0,
+                phone: currentSchool.phone
+              });
+              window.open(url, '_blank');
+              showInfo('प्रधानाचार्य दैनिक सार व्हाट्सएप विंडो खोली जा रही है...');
+            }}
+            className="flex flex-col items-start p-3 sm:p-3.5 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-300 shadow-2xs hover:shadow-xs transition group cursor-pointer text-left col-span-2 sm:col-span-1"
+            title="आज की कुल उपस्थिति, शुल्क संकलन एवं प्रवेश का 1-क्लिक व्हाट्सएप सार"
+          >
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <Share2 className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-stone-900 group-hover:text-emerald-800">
+              प्रधानाचार्य दैनिक सार
+            </span>
+            <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+              1-क्लिक व्हाट्सएप रिपोर्ट
             </span>
           </button>
         </div>

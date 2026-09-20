@@ -175,3 +175,43 @@ export function generateReportCardWhatsAppLink(params: {
   return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
 }
 
+export function generatePrincipalDailyDigestWhatsAppUrl(params: {
+  schoolName: string;
+  date: string;
+  totalStudents: number;
+  presentCount: number;
+  absentCount: number;
+  attendancePercent: number;
+  cashFee: number;
+  upiFee: number;
+  totalFee: number;
+  newAdmissions: number;
+  phone?: string;
+}): string {
+  const cleanPhone = params.phone ? formatWhatsAppPhone(params.phone) : '';
+  const text = 
+`🚩 *दैनिक विद्यालय सार — प्रधानाचार्य प्रतिवेदन* 🚩
+*${params.schoolName}*
+दिनांक: ${params.date}
+--------------------------------
+📊 *दैनिक छात्र उपस्थिति:*
+• कुल पंजीकृत छात्र: ${params.totalStudents}
+• आज उपस्थित: ${params.presentCount} (${params.attendancePercent}%)
+• आज अनुपस्थित: ${params.absentCount}
+
+💰 *दैनिक शुल्क संकलन (DCR):*
+• नकद (Cash): ₹${params.cashFee.toLocaleString('en-IN')}
+• ऑनलाइन (UPI/Bank): ₹${params.upiFee.toLocaleString('en-IN')}
+• कुल संकलन: ₹${params.totalFee.toLocaleString('en-IN')}
+
+📋 *नवीन प्रवेश:* ${params.newAdmissions} छात्र पंजीकृत
+
+--------------------------------
+सरस्वती शिशु मंदिर डिजिटल ईआरपी`;
+
+  return cleanPhone
+    ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`
+    : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+}
+
+

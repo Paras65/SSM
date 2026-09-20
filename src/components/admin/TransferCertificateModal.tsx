@@ -227,8 +227,13 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
             className="w-full max-w-2xl mx-auto bg-white border-[4px] sm:border-[6px] border-double border-orange-800 p-4 sm:p-8 shadow-md relative print:shadow-none print:border-[4px] print:m-0"
           >
             {/* Watermark Background */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none select-none">
-              <span className="text-[140px] font-black text-orange-950">ॐ</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none overflow-hidden">
+              <span className="text-[140px] font-black text-orange-950 opacity-[0.04]">ॐ</span>
+              <div className="absolute inset-0 flex items-center justify-center rotate-[-30deg]">
+                <span className="text-3xl sm:text-5xl font-black font-serif uppercase tracking-widest text-orange-950/10 border-2 border-dashed border-orange-950/15 px-6 py-2 rounded-xl">
+                  प्रमाणित प्रति • विद्या भारती
+                </span>
+              </div>
             </div>
 
             {/* Header / Emblem */}

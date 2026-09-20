@@ -181,7 +181,14 @@ export const DakhilKharijRegisterModal: React.FC<DakhilKharijRegisterModalProps>
         </div>
 
         {/* Scrollable Register Body */}
-        <div className="flex-1 overflow-auto p-4 print:p-0 print:overflow-visible">
+        <div className="flex-1 overflow-auto p-4 print:p-0 print:overflow-visible relative">
+          
+          {/* Certified Copy Watermark for Print & View */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.03] select-none z-0">
+            <span className="text-6xl sm:text-9xl font-black font-serif uppercase tracking-widest text-stone-900 rotate-[-25deg]">
+              प्रमाणित प्रति • विद्या भारती
+            </span>
+          </div>
           
           {/* Official Printable Header */}
           <div className="text-center mb-4 border-b-2 border-stone-800 pb-3">

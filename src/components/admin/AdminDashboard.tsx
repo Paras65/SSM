@@ -72,7 +72,9 @@ import {
   LogOut,
   ArrowRight,
   Sliders,
-  Search
+  Search,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -169,6 +171,7 @@ export const AdminDashboard: React.FC = () => {
   const [showRegisterScannerModal, setShowRegisterScannerModal] = useState(false);
   const [printableFormsConfig, setPrintableFormsConfig] = useState<{ isOpen: boolean; initialMode: 'admission' | 'attendance' } | null>(null);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [dismissStorageAlert, setDismissStorageAlert] = useState(false);
   const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRestoreBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -636,6 +639,26 @@ export const AdminDashboard: React.FC = () => {
     return staffList.filter(s => s.status !== 'Resigned');
   }, [staffList]);
   const resignedStaffCount = staffList.length - activeStaffList.length;
+
+  // Storage & Capacity High-Watermark (512 MB Free Tier Ceiling)
+  const schoolStorageEstimates = useMemo(() => {
+    const photoCount = Math.round(students.length * 0.6);
+    const photoKb = photoCount * 30; // avg ~30KB client-side compressed
+    const attendanceCount = attendanceRecords.length || (students.length * 180);
+    const attendanceKb = Math.round(attendanceCount * 0.15);
+    const examKb = Math.round(students.length * 4 * 1.2);
+    const feeKb = Math.round(feeRecords.length * 0.5);
+
+    const totalKb = photoKb + attendanceKb + examKb + feeKb;
+    const totalMb = totalKb / 1024;
+    const usagePercent = Math.min(100, Math.round((totalMb / 512) * 100));
+
+    return {
+      totalMb: totalMb.toFixed(2),
+      usagePercent,
+      isHighWatermark: usagePercent >= 80
+    };
+  }, [students.length, attendanceRecords.length, feeRecords.length]);
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col w-full max-w-full overflow-x-hidden">
@@ -1262,6 +1285,49 @@ export const AdminDashboard: React.FC = () => {
             <span className="text-xs font-semibold text-stone-500 capitalize hidden sm:inline">
               वर्तमान अनुभाग: {currentTab}
             </span>
+          </div>
+        )}
+
+        {/* 80% Storage High-Watermark Pre-emptive Alert */}
+        {schoolStorageEstimates.isHighWatermark && !dismissStorageAlert && (
+          <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/20 text-amber-700 rounded-xl shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
+                  <span>⚠️ डेटाबेस स्टोरेज उच्च-सीमा चेतावनी (Storage High-Watermark Alert)</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-black">
+                    {schoolStorageEstimates.usagePercent}% प्रयुक्त ({schoolStorageEstimates.totalMb} MB / 512 MB)
+                  </span>
+                </h4>
+                <p className="text-xs text-stone-600 mt-0.5">
+                  डेटाबेस स्टोरेज 80% सीमा पार कर चुका है। सुचारू संचालन एवं बैकअप सुरक्षा हेतु 'डेटा बैकअप' (.JSON) डाउनलोड करें अथवा पुराने गैर-आवश्यक रिकॉर्ड्स को साफ करें।
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  downloadFullSchoolBackup(currentSchool, students, feeRecords, attendanceRecords, reportCards, notices);
+                  showSuccess('डेटा बैकअप फ़ाइल (.JSON) सफलतापूर्वक डाउनलोड हो गई!');
+                }}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>बैकअप डाउनलोड</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDismissStorageAlert(true)}
+                className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200 transition cursor-pointer"
+                title="चेतावनी छिपाएं"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
