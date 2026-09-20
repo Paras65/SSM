@@ -55,8 +55,18 @@ export async function compressPassportPhoto(
         ctx.drawImage(img, 0, 0, width, height);
 
         // Convert to optimized JPEG
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        const sizeInKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        let sizeInKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+
+        // Strict 100KB ceiling safeguard: Progressively re-encode if size exceeds 100KB
+        if (sizeInKb > 100) {
+          dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          sizeInKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+        }
+        if (sizeInKb > 100) {
+          dataUrl = canvas.toDataURL('image/jpeg', 0.45);
+          sizeInKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+        }
 
         resolve({
           dataUrl,
