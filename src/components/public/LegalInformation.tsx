@@ -6,7 +6,7 @@ export const LegalInformation: React.FC = () => {
   const content = language === 'hi'
     ? {
         dpdpTitle: 'डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम (DPDPA 2023) अनुपालन',
-        privacy: 'यह सॉफ्टवेयर मंच भारतीय डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023 (DPDP Act, 2023) के प्रावधानों के अनुरूप संचालित होता है। संबंधित विद्यालय संस्था अपने विद्यार्थियों एवं अभिभावकों के डेटा की विधिक संरक्षक (Data Fiduciary / Controller) है, तथा यह मंच केवल अधिकृत शैक्षणिक एवं प्रशासनिक प्रबंधन हेतु सुरक्षित डेटा संसाधन (Data Processor) उपलब्ध कराता है। छात्र-छात्राओं के व्यक्तिगत विवरण अभिभावक की सहमति से ही दर्ज किए जाते हैं।',
+        privacy: 'यह सॉफ्टवेयर मंच भारतीय डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023 (DPDP Act, 2023) के प्रावधानों के अनुरूप संचालित होता है। डेटा न्यासी (Data Fiduciary): संबंधित सरस्वती शिशु मंदिर विद्यालय प्रबंध समिति। डेटा संसाधक (Data Processor): init65 ईआरपी प्लेटफ़ॉर्म, जो केवल अधिकृत शैक्षणिक एवं प्रशासनिक प्रबंधन हेतु सुरक्षित तकनीकी सेवाएं उपलब्ध कराता है। छात्र-छात्राओं के व्यक्तिगत विवरण अभिभावक की सहमति से ही दर्ज किए जाते हैं।',
         rights: 'अभिभावकों को अपने बच्चे के डेटा तक पहुंच, उसमें संशोधन, तथा कानूनी आवश्यकताओं के अनुरूप डेटा हटाने का अधिकार है। विद्यार्थियों का डेटा किसी भी प्रकार के व्यावसायिक विज्ञापनों, ट्रैकिंग अथवा तृतीय-पक्ष प्रोफाइलिंग के लिए कदापि साझा या विक्रय नहीं किया जाता।',
         securityTitle: 'आईटी अधिनियम 2000 एवं संस्थागत डेटा सुरक्षा (IT Act 2000)',
         security: 'सभी पासवर्ड एवं सत्र उद्योग-मानक एन्क्रिप्शन, बहु-स्तरीय प्रमाणीकरण तथा रोल-आधारित अभिगम नियंत्रण द्वारा सुरक्षित हैं। आकस्मिक डेटा सुरक्षा एवं संस्थागत निरंतरता हेतु विद्यालय प्रबंधन को नियमित रूप से 1-क्लिक ऑफ़लाइन बैकअप डाउनलोड कर सुरक्षित रखने की सुविधा व अनुशंसा दी जाती है।',
@@ -16,7 +16,7 @@ export const LegalInformation: React.FC = () => {
       }
     : {
         dpdpTitle: 'Digital Personal Data Protection Act (DPDPA 2023) Compliance',
-        privacy: 'This platform operates in alignment with the Indian Digital Personal Data Protection Act, 2023 (DPDPA 2023). The respective school institution acts as the Data Fiduciary/Controller, while this ERP serves as a secure Data Processor for lawful educational administration. Student records are processed under parental or guardian consent.',
+        privacy: 'This platform operates in alignment with the Indian Digital Personal Data Protection Act, 2023 (DPDPA 2023). Data Fiduciary: Respective Saraswati Shishu Mandir School Management Committee. Data Processor: init65 ERP platform, providing secure technical services exclusively for authorized educational administration. Student records are processed under parental or guardian consent.',
         rights: 'Parents and guardians retain statutory rights to access, review, correct, or request deletion of student records in accordance with law. Student data is strictly confidential and is never sold, monetized, or shared for commercial advertising or profiling.',
         securityTitle: 'Information Technology Act (IT Act 2000) & Data Continuity',
         security: 'All administrative sessions are protected using industry-standard cryptographic encryption, multi-tenant isolation, and bounded access controls. To ensure institutional data sovereignty and disaster resilience, school administrators are provided with and advised to maintain regular 1-click offline encrypted backups.',
