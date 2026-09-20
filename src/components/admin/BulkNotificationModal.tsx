@@ -3,6 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { X, Send, MessageSquare, Sparkles, Mic, RefreshCw } from 'lucide-react';
 import { formatWhatsAppPhone } from '../../utils/whatsappAlerts';
 import { generateSmartJSON } from '../../services/aiService';
+import { createSpeechRecognitionInstance, isSpeechRecognitionSupported } from '../../utils/speechRecognition';
 
 interface BulkNotificationModalProps {
   isOpen: boolean;
@@ -22,27 +23,27 @@ export const BulkNotificationModal: React.FC<BulkNotificationModalProps> = ({ is
   const [isListeningMsg, setIsListeningMsg] = useState(false);
 
   const startVoiceForMsg = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    if (!isSpeechRecognitionSupported()) {
       alert('ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है।');
       return;
     }
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'hi-IN';
-      recognition.continuous = false;
-      setIsListeningMsg(true);
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
+    const recognition = createSpeechRecognitionInstance({
+      lang: 'hi-IN',
+      onStart: () => setIsListeningMsg(true),
+      onResult: (transcript) => {
         setSmartBrief(transcript);
         setIsListeningMsg(false);
         handleDraftSmartMsg(transcript);
-      };
-      recognition.onerror = () => setIsListeningMsg(false);
-      recognition.onend = () => setIsListeningMsg(false);
-      recognition.start();
-    } catch {
-      setIsListeningMsg(false);
+      },
+      onError: () => setIsListeningMsg(false),
+      onEnd: () => setIsListeningMsg(false)
+    });
+    if (recognition) {
+      try {
+        recognition.start();
+      } catch {
+        setIsListeningMsg(false);
+      }
     }
   };
 

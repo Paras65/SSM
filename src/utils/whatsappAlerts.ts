@@ -1,5 +1,13 @@
 import { cleanIndianPhone } from './whatsapp';
 
+export {
+  cleanIndianPhone,
+  generateAdmissionWhatsAppUrl,
+  generateFeeReminderWhatsAppUrl,
+  generateAttendanceAlertWhatsAppUrl,
+  generateSchoolOnboardingWhatsAppUrl
+} from './whatsapp';
+
 /**
  * Normalizes Indian phone numbers with country code (91XXXXXXXXXX)
  * Consolidated with cleanIndianPhone for unified single source of truth.

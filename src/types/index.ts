@@ -20,6 +20,11 @@ export const SSM_CLASSES = [
 
 export type SSMClass = typeof SSM_CLASSES[number];
 
+/**
+ * Standard numbered classes (Class 1 to Class 12) for exams, question papers, and marks matrices.
+ */
+export const SSM_STANDARD_CLASSES = SSM_CLASSES.filter(c => c.startsWith('Class')) as readonly string[];
+
 export type SchoolPlan = 'free' | 'pro';
 
 export type ProFeatureKey = 

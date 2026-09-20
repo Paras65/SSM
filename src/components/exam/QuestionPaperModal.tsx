@@ -38,6 +38,7 @@ import {
   SUBJECT_OPTIONS,
   CLASS_OPTIONS
 } from '../../services/questionBank';
+import { createSpeechRecognitionInstance, isSpeechRecognitionSupported } from '../../utils/speechRecognition';
 
 interface QuestionPaperModalProps {
   isOpen: boolean;
@@ -220,10 +221,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
   // Voice Input Handler (Hindi & English Web Speech API + Question Dictation + Voice Commands)
   const handleVoiceInput = (target: VoiceTarget) => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
+    if (!isSpeechRecognitionSupported()) {
       alert('आपके ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है। कृपया Google Chrome, Microsoft Edge या समर्थित ब्राउज़र का उपयोग करें।');
       return;
     }
@@ -263,118 +261,114 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         recognitionRef.current = null;
       }
 
-      const recognition = new SpeechRecognition();
+      const recognition = createSpeechRecognitionInstance({
+        lang: 'hi-IN',
+        continuous: false,
+        interimResults: true,
+        onStart: () => {
+          setIsListening(true);
+          setActiveVoiceTarget(target);
+          if (target.type === 'voice-command') {
+            setSaveToast('🎙️ बोलें: "सहेजें", "सेव करें", या "प्रिंट करें"...');
+          } else if (target.type === 'question') {
+            setSaveToast(`🎙️ प्र.${target.qIndex + 1} बोलकर लिखें...`);
+          } else if (target.type === 'choice') {
+            setSaveToast('🎙️ अथवा विकल्प बोलकर लिखें...');
+          } else if (target.type === 'mcq-opt') {
+            setSaveToast(`🎙️ विकल्प (${String.fromCharCode(97 + target.optIndex)}) बोलकर लिखें...`);
+          } else if (target.type === 'chapters') {
+            setSaveToast('🎙️ पाठ्यक्रम / अध्याय का नाम बोलें...');
+          }
+        },
+        onResult: (clean) => {
+          if (!clean) return;
+
+          // Detect voice command when listening for voice-command
+          if (target.type === 'voice-command') {
+            const lower = clean.toLowerCase();
+            if (
+              lower.includes('सहेज') ||
+              lower.includes('सेव') ||
+              lower.includes('save') ||
+              lower.includes('सुरक्षित')
+            ) {
+              handleSaveToDevice();
+              setSaveToast('🎙️ आवाज़ आदेश: प्रश्न पत्र डिवाइस में सहेजा गया!');
+              setTimeout(() => setSaveToast(null), 3500);
+              try { recognition?.stop(); } catch {}
+              return;
+            }
+
+            if (lower.includes('प्रिंट') || lower.includes('print')) {
+              setActiveTab('preview');
+              setSaveToast('🎙️ आवाज़ आदेश: प्रिंट पूर्वावलोकन खोला गया!');
+              setTimeout(() => {
+                setSaveToast(null);
+                handlePrint();
+              }, 600);
+              try { recognition?.stop(); } catch {}
+              return;
+            }
+          } else if (target.type === 'topic') {
+            setCustomTopic(clean);
+          } else if (target.type === 'chapters') {
+            setChapters(clean);
+          } else if (target.type === 'question') {
+            setPaper(prev => {
+              const updated = { ...prev };
+              const sections = [...updated.sections];
+              if (sections[target.secIndex]?.questions[target.qIndex]) {
+                sections[target.secIndex].questions[target.qIndex].text = clean;
+              }
+              return { ...updated, sections };
+            });
+          } else if (target.type === 'choice') {
+            setPaper(prev => {
+              const updated = { ...prev };
+              const sections = [...updated.sections];
+              if (sections[target.secIndex]?.questions[target.qIndex]) {
+                sections[target.secIndex].questions[target.qIndex].internalChoiceText = clean;
+              }
+              return { ...updated, sections };
+            });
+          } else if (target.type === 'mcq-opt') {
+            setPaper(prev => {
+              const updated = { ...prev };
+              const sections = [...updated.sections];
+              const q = sections[target.secIndex]?.questions[target.qIndex];
+              if (q && q.options && q.options[target.optIndex]) {
+                q.options[target.optIndex].text = clean;
+              }
+              return { ...updated, sections };
+            });
+          }
+        },
+        onError: (event: any) => {
+          console.warn('Speech recognition error:', event?.error);
+          setIsListening(false);
+          setActiveVoiceTarget(null);
+          recognitionRef.current = null;
+          if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
+            alert('माइक्रोफ़ोन की अनुमति नहीं मिली है। कृपया ब्राउज़र सेटिंग्स में माइक्रोफ़ोन की अनुमति (Allow Microphone) प्रदान करें।');
+          } else if (event?.error === 'network') {
+            alert('वॉइस इनपुट हेतु सक्रिय इंटरनेट कनेक्शन आवश्यक है।');
+          } else if (event?.error !== 'no-speech' && event?.error !== 'aborted') {
+            setSaveToast(`वॉइस पहचान: ${event?.error || 'त्रुटि'}`);
+            setTimeout(() => setSaveToast(null), 3000);
+          }
+        },
+        onEnd: () => {
+          setIsListening(false);
+          setActiveVoiceTarget(null);
+          recognitionRef.current = null;
+        }
+      });
+
+      if (!recognition) {
+        throw new Error('Could not create recognition instance');
+      }
+
       recognitionRef.current = recognition;
-      recognition.lang = 'hi-IN';
-      recognition.continuous = false;
-      recognition.interimResults = true;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-        setActiveVoiceTarget(target);
-        if (target.type === 'voice-command') {
-          setSaveToast('🎙️ बोलें: "सहेजें", "सेव करें", या "प्रिंट करें"...');
-        } else if (target.type === 'question') {
-          setSaveToast(`🎙️ प्र.${target.qIndex + 1} बोलकर लिखें...`);
-        } else if (target.type === 'choice') {
-          setSaveToast('🎙️ अथवा विकल्प बोलकर लिखें...');
-        } else if (target.type === 'mcq-opt') {
-          setSaveToast(`🎙️ विकल्प (${String.fromCharCode(97 + target.optIndex)}) बोलकर लिखें...`);
-        } else if (target.type === 'chapters') {
-          setSaveToast('🎙️ पाठ्यक्रम / अध्याय का नाम बोलें...');
-        }
-      };
-
-      recognition.onresult = (event: any) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        const clean = transcript.trim();
-        if (!clean) return;
-
-        // Detect voice command when listening for voice-command
-        if (target.type === 'voice-command') {
-          const lower = clean.toLowerCase();
-          if (
-            lower.includes('सहेज') ||
-            lower.includes('सेव') ||
-            lower.includes('save') ||
-            lower.includes('सुरक्षित')
-          ) {
-            handleSaveToDevice();
-            setSaveToast('🎙️ आवाज़ आदेश: प्रश्न पत्र डिवाइस में सहेजा गया!');
-            setTimeout(() => setSaveToast(null), 3500);
-            try { recognition.stop(); } catch {}
-            return;
-          }
-
-          if (lower.includes('प्रिंट') || lower.includes('print')) {
-            setActiveTab('preview');
-            setSaveToast('🎙️ आवाज़ आदेश: प्रिंट पूर्वावलोकन खोला गया!');
-            setTimeout(() => {
-              setSaveToast(null);
-              handlePrint();
-            }, 600);
-            try { recognition.stop(); } catch {}
-            return;
-          }
-        } else if (target.type === 'topic') {
-          setCustomTopic(clean);
-        } else if (target.type === 'chapters') {
-          setChapters(clean);
-        } else if (target.type === 'question') {
-          setPaper(prev => {
-            const updated = { ...prev };
-            const sections = [...updated.sections];
-            if (sections[target.secIndex]?.questions[target.qIndex]) {
-              sections[target.secIndex].questions[target.qIndex].text = clean;
-            }
-            return { ...updated, sections };
-          });
-        } else if (target.type === 'choice') {
-          setPaper(prev => {
-            const updated = { ...prev };
-            const sections = [...updated.sections];
-            if (sections[target.secIndex]?.questions[target.qIndex]) {
-              sections[target.secIndex].questions[target.qIndex].internalChoiceText = clean;
-            }
-            return { ...updated, sections };
-          });
-        } else if (target.type === 'mcq-opt') {
-          setPaper(prev => {
-            const updated = { ...prev };
-            const sections = [...updated.sections];
-            const q = sections[target.secIndex]?.questions[target.qIndex];
-            if (q && q.options && q.options[target.optIndex]) {
-              q.options[target.optIndex].text = clean;
-            }
-            return { ...updated, sections };
-          });
-        }
-      };
-
-      recognition.onerror = (event: any) => {
-        console.warn('Speech recognition error:', event.error);
-        setIsListening(false);
-        setActiveVoiceTarget(null);
-        recognitionRef.current = null;
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          alert('माइक्रोफ़ोन की अनुमति नहीं मिली है। कृपया ब्राउज़र सेटिंग्स में माइक्रोफ़ोन की अनुमति (Allow Microphone) प्रदान करें।');
-        } else if (event.error === 'network') {
-          alert('वॉइस इनपुट हेतु सक्रिय इंटरनेट कनेक्शन आवश्यक है।');
-        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
-          setSaveToast(`वॉइस पहचान: ${event.error}`);
-          setTimeout(() => setSaveToast(null), 3000);
-        }
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        setActiveVoiceTarget(null);
-        recognitionRef.current = null;
-      };
-
       recognition.start();
     } catch (err: any) {
       console.warn('Failed to start speech recognition:', err);

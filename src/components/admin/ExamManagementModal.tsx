@@ -3,6 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Exam, Student, ExamScheduleItem } from '../../types';
+import { SSM_STANDARD_CLASSES } from '../../types';
 import { X, Calendar, Plus, Trash2, CheckCircle2, FileSpreadsheet, Clock, Award, AlertTriangle, Lock, Unlock, Edit3 } from 'lucide-react';
 
 interface ExamManagementModalProps {
@@ -42,7 +43,7 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({
   const [isTogglingLock, setIsTogglingLock] = useState<string | null>(null);
 
   // Bulk Marks Entry state
-  const CLASSES = ['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'];
+  const CLASSES = SSM_STANDARD_CLASSES;
   const [marksClass, setMarksClass] = useState('Class 8');
   const [marksSubject, setMarksSubject] = useState('गणित');
   const [selectedExamId, setSelectedExamId] = useState('');

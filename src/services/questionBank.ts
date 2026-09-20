@@ -1,4 +1,4 @@
-import { QuestionItem, QuestionType, QuestionPaper, QuestionPaperSection, ExamPaperType } from '../types';
+import { QuestionItem, QuestionType, QuestionPaper, QuestionPaperSection, ExamPaperType, SSM_STANDARD_CLASSES } from '../types';
 import { generateSmartJSON } from './aiService';
 
 export interface GeneratePaperOptions {
@@ -36,20 +36,7 @@ export const SUBJECT_OPTIONS = [
   'संस्कृति बोध एवं नैतिक शिक्षा (Culture & Ethics)'
 ];
 
-export const CLASS_OPTIONS = [
-  'Class 1',
-  'Class 2',
-  'Class 3',
-  'Class 4',
-  'Class 5',
-  'Class 6',
-  'Class 7',
-  'Class 8',
-  'Class 9',
-  'Class 10',
-  'Class 11',
-  'Class 12'
-];
+export const CLASS_OPTIONS: readonly string[] = SSM_STANDARD_CLASSES;
 
 export function getDefaultChaptersForMonth(
   month: string,
