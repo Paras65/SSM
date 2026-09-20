@@ -116,6 +116,7 @@ function rateLimitEndpoint(maxAttempts = 10, useCompositeKey = false) {
     max: maxAttempts,
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { keyGeneratorIpFallback: false, xForwardedForHeader: false },
     keyGenerator: (req) => {
       const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
       if (!useCompositeKey) return ip;

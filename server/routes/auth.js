@@ -13,6 +13,7 @@ const authLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { keyGeneratorIpFallback: false, xForwardedForHeader: false },
   keyGenerator: (req) => {
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
     const target = req.body?.rollNo || req.body?.phone || req.body?.schoolId || req.body?.clusterName || '';

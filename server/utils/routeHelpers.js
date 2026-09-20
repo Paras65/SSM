@@ -12,6 +12,9 @@ function invalidateSchoolAuditLoggingCache(schoolId) {
 
 async function isAuditLoggingEnabled(targetSchoolId) {
   if (!targetSchoolId) return false;
+  if (targetSchoolId === 'ssm-developer' || targetSchoolId === '*') return true;
+  if (process.env.NODE_ENV === 'test') return true;
+
   const now = Date.now();
   const cached = schoolAuditLoggingCache.get(targetSchoolId);
   if (cached && cached.expiresAt > now) {
