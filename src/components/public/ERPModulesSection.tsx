@@ -98,8 +98,8 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
     {
       id: 'exams-evaluation',
       pillarNo: 'स्तम्भ २',
-      title: 'परीक्षा, AI पेपर व 360° मूल्यांकन',
-      englishTitle: 'Exams, AI Papers & 360° Evaluation',
+      title: 'परीक्षा, स्मार्ट प्रश्न पत्र व 360° मूल्यांकन',
+      englishTitle: 'Exams, Smart Papers & 360° Evaluation',
       subtitle: 'इकाई मूल्यांकन व त्रैमासिक परीक्षा से लेकर वार्षिक 360° प्रगति पत्र एवं TR शीट तक।',
       timingBadge: 'इकाई मूल्यांकन से वार्षिक परिणाम तक',
       badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
@@ -164,7 +164,7 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
         },
         {
           icon: FileSpreadsheet,
-          title: 'UDISE+ SDMS (PEN/APAAR) व AI स्कैनर',
+          title: 'UDISE+ SDMS (PEN/APAAR) व स्मार्ट स्कैनर',
           desc: '11-अंकीय PEN, 12-अंकीय APAAR ID, 21-कॉलम सरकारी CSV एक्सपोर्ट और पुराने रजिस्टरों की फोटो खींचकर OCR से त्वरित डेटा प्रविष्टि।',
           badge: 'Sec 22, 31'
         }
