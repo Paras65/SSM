@@ -1,4 +1,5 @@
 import { QuestionItem, QuestionType, QuestionPaper, QuestionPaperSection, ExamPaperType } from '../types';
+import { generateSmartJSON } from './aiService';
 
 export interface GeneratePaperOptions {
   schoolId?: string;
@@ -866,86 +867,11 @@ Strict Rules:
 Return ONLY valid JSON. No markdown code blocks, no backticks.`;
 
   try {
-    let parsed: any = null;
-
-    // 1. Try secure backend proxy first (keeps API key secure on server if configured)
-    try {
-      const proxyHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (effectiveKey) {
-        proxyHeaders['x-gemini-api-key'] = effectiveKey;
-      }
-      const proxyRes = await fetch('/api/ai/generate-question-paper', {
-        method: 'POST',
-        headers: proxyHeaders,
-        body: JSON.stringify({ prompt })
-      });
-      if (proxyRes.ok && proxyRes.headers.get('content-type')?.includes('application/json')) {
-        parsed = await proxyRes.json();
-      }
-    } catch {
-      // Backend proxy unavailable (e.g. static dev), will fallback to direct call
-    }
-
-    // 2. Direct call with multi-model resilient fallback loop
-    if (!parsed) {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-
-      if (effectiveKey.startsWith('AIzaSy') || !effectiveKey.startsWith('ya29.')) {
-        headers['x-goog-api-key'] = effectiveKey.trim();
-      } else {
-        headers['Authorization'] = `Bearer ${effectiveKey.trim()}`;
-      }
-
-      const modelsToTry = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
-      let response: Response | null = null;
-      let lastError: any = null;
-
-      for (const modelName of modelsToTry) {
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
-            {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  temperature: 0.3,
-                  responseMimeType: 'application/json'
-                }
-              })
-            }
-          );
-          if (res.ok) {
-            response = res;
-            break;
-          } else {
-            lastError = await res.json().catch(() => ({}));
-            if (res.status === 401 || res.status === 403) {
-              try {
-                localStorage.removeItem('ssm_smart_api_key');
-                localStorage.removeItem('ssm_gemini_api_key');
-              } catch {}
-              throw new Error('बौद्धिक सेवा प्रमाणीकरण त्रुटि: अमान्य अथवा समाप्त स्मार्ट कुंजी।');
-            }
-          }
-        } catch (err: any) {
-          if (err.message?.includes('प्रमाणीकरण')) throw err;
-          console.warn(`Model ${modelName} call failed, trying fallback...`, err);
-        }
-      }
-
-      if (!response) {
-        throw new Error(lastError?.error?.message || 'सभी मॉडल अनुपलब्ध हैं।');
-      }
-
-      const data = await response.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-      parsed = JSON.parse(cleanJson);
-    }
+    const parsed = await generateSmartJSON<any>(prompt, {
+      apiKey: effectiveKey,
+      temperature: 0.3,
+      maxOutputTokens: 2500
+    });
 
     if (parsed && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
       const validatedSections: QuestionPaperSection[] = parsed.sections.map(

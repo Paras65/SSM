@@ -5,6 +5,7 @@
  */
 
 export interface SmartGenerateOptions {
+  apiKey?: string;
   temperature?: number;
   maxOutputTokens?: number;
   responseMimeType?: string;
@@ -15,6 +16,34 @@ export interface SmartKeyHealthResult {
   message: string;
   latency?: number;
 }
+
+const apiBase = (import.meta.env.VITE_API_BASE as string || '').trim();
+
+/**
+ * Determines whether a backend API proxy should be attempted.
+ * On static hosting (like Vercel) where VITE_API_BASE is not set to an external server,
+ * calling /api/* results in Vercel rewriting to index.html and returning 405 Method Not Allowed.
+ */
+export const canUseBackendProxy = (): boolean => {
+  if (apiBase && (apiBase.startsWith('http://') || apiBase.startsWith('https://'))) {
+    return true;
+  }
+  if (import.meta.env.DEV) {
+    return true;
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return true;
+  }
+  return false;
+};
+
+export const getProxyUrl = (path: string): string => {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (apiBase && (apiBase.startsWith('http://') || apiBase.startsWith('https://'))) {
+    return `${apiBase.replace(/\/$/, '')}${cleanPath}`;
+  }
+  return `/api${cleanPath}`;
+};
 
 /**
  * Returns the effective smart API key configured on the client (if any).
@@ -49,32 +78,35 @@ export const generateSmartText = async (
   prompt: string,
   options: SmartGenerateOptions = {}
 ): Promise<string> => {
-  const effectiveKey = getEffectiveSmartKey();
+  const effectiveKey = (options.apiKey || getEffectiveSmartKey()).trim();
   const { temperature = 0.4, maxOutputTokens = 1000, responseMimeType } = options;
 
-  // 1. Try secure backend server proxy first (keeps key secure on server and enforces rate limiting)
-  try {
-    const proxyRes = await fetch('/api/ai/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(effectiveKey ? { 'x-gemini-api-key': effectiveKey } : {})
-      },
-      body: JSON.stringify({
-        prompt,
-        temperature,
-        maxOutputTokens,
-        ...(responseMimeType ? { responseMimeType } : {})
-      })
-    });
+  // 1. Try secure backend server proxy first if available (e.g. in dev or when remote API_BASE is configured)
+  if (canUseBackendProxy()) {
+    try {
+      const proxyUrl = getProxyUrl('/ai/generate');
+      const proxyRes = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(effectiveKey ? { 'x-gemini-api-key': effectiveKey } : {})
+        },
+        body: JSON.stringify({
+          prompt,
+          temperature,
+          maxOutputTokens,
+          ...(responseMimeType ? { responseMimeType } : {})
+        })
+      });
 
-    if (proxyRes.ok) {
-      const proxyData = await proxyRes.json();
-      const text = proxyData?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text.trim();
+      if (proxyRes.ok) {
+        const proxyData = await proxyRes.json();
+        const text = proxyData?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text.trim();
+      }
+    } catch {
+      // Backend proxy unavailable, fallback to direct call
     }
-  } catch {
-    // Backend proxy unavailable (e.g. offline dev), fallback to direct call
   }
 
   // 2. Direct fallback call if client key is present
@@ -143,28 +175,31 @@ export const generateSmartVision = async <T = any>(
   const effectiveKey = getEffectiveSmartKey();
   const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
-  // 1. Try secure backend server proxy first
-  try {
-    const proxyRes = await fetch('/api/ai/vision', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(effectiveKey ? { 'x-gemini-api-key': effectiveKey } : {})
-      },
-      body: JSON.stringify({
-        imageBase64: cleanBase64,
-        mimeType,
-        prompt
-      })
-    });
+  // 1. Try secure backend server proxy first if available
+  if (canUseBackendProxy()) {
+    try {
+      const proxyUrl = getProxyUrl('/ai/vision');
+      const proxyRes = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(effectiveKey ? { 'x-gemini-api-key': effectiveKey } : {})
+        },
+        body: JSON.stringify({
+          imageBase64: cleanBase64,
+          mimeType,
+          prompt
+        })
+      });
 
-    if (proxyRes.ok) {
-      const proxyData = await proxyRes.json();
-      const rawText = proxyData?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-      return JSON.parse(cleanJsonFence(rawText)) as T;
+      if (proxyRes.ok) {
+        const proxyData = await proxyRes.json();
+        const rawText = proxyData?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+        return JSON.parse(cleanJsonFence(rawText)) as T;
+      }
+    } catch {
+      // Backend proxy unavailable, fallback to direct call
     }
-  } catch {
-    // Backend proxy unavailable, fallback to direct call
   }
 
   // 2. Direct fallback call
@@ -216,20 +251,23 @@ export const testSmartKeyHealth = async (): Promise<SmartKeyHealthResult> => {
   const startTime = Date.now();
   const effectiveKey = getEffectiveSmartKey();
 
-  // 1. Try secure backend server endpoint
-  try {
-    const srvRes = await fetch('/api/ai/test-key');
-    if (srvRes.ok) {
-      const srvData = await srvRes.json();
-      const latency = srvData.latency || (Date.now() - startTime);
-      return {
-        success: true,
-        message: `कुंजी सर्वर पर 100% सुरक्षित एवं कार्यशील है! (प्रतिक्रिया समय: ${latency}ms)`,
-        latency
-      };
+  // 1. Try secure backend server endpoint if available
+  if (canUseBackendProxy()) {
+    try {
+      const proxyUrl = getProxyUrl('/ai/test-key');
+      const srvRes = await fetch(proxyUrl);
+      if (srvRes.ok) {
+        const srvData = await srvRes.json();
+        const latency = srvData.latency || (Date.now() - startTime);
+        return {
+          success: true,
+          message: `कुंजी सर्वर पर 100% सुरक्षित एवं कार्यशील है! (प्रतिक्रिया समय: ${latency}ms)`,
+          latency
+        };
+      }
+    } catch {
+      // Fall back to direct test
     }
-  } catch {
-    // Fall back to direct test
   }
 
   // 2. Direct fallback test
