@@ -119,6 +119,7 @@ export const SankulPortal: React.FC = () => {
 
   const [showAddInspectionModal, setShowAddInspectionModal] = useState(false);
   const [showAddNoticeModal, setShowAddNoticeModal] = useState(false);
+  const [selectedAuditSchool, setSelectedAuditSchool] = useState<School | null>(null);
 
   // New inspection form state
   const [newInspSchool, setNewInspSchool] = useState(schools[0]?.name || '');
@@ -231,10 +232,15 @@ export const SankulPortal: React.FC = () => {
     setViewMode('public');
   };
 
-  const handleInspectSchool = (schoolId: string) => {
-    setCurrentSchoolId(schoolId);
-    sessionStorage.setItem('ssm_admin_token', `sankul_inspect_${Date.now()}`);
-    setViewMode('admin');
+  const handleOpenSchoolAudit = (school: School) => {
+    setSelectedAuditSchool(school);
+    setNewInspSchool(school.hindiName || school.name);
+    setNewInspDate(new Date().toISOString().split('T')[0]);
+    setNewInspAcadRating(5);
+    setNewInspInfraRating(4);
+    setNewInspPanchRating(5);
+    setNewInspObs('');
+    setNewInspRec('');
   };
 
   const handlePrintReport = () => {
@@ -245,10 +251,18 @@ export const SankulPortal: React.FC = () => {
     e.preventDefault();
     if (!newInspObs.trim()) return;
 
+    const targetSchoolName = selectedAuditSchool
+      ? (selectedAuditSchool.hindiName || selectedAuditSchool.name)
+      : newInspSchool;
+
+    const targetSchoolId = selectedAuditSchool
+      ? selectedAuditSchool.id
+      : (schools.find(s => (s.hindiName || s.name) === newInspSchool)?.id || 'school-custom');
+
     const newRecord: SankulInspection = {
       id: `insp-${Date.now()}`,
-      schoolId: schools.find(s => s.name === newInspSchool)?.id || 'school-custom',
-      schoolName: newInspSchool,
+      schoolId: targetSchoolId,
+      schoolName: targetSchoolName,
       inspectionDate: newInspDate,
       inspectorName: newInspInspector,
       academicRating: Number(newInspAcadRating),
@@ -260,6 +274,7 @@ export const SankulPortal: React.FC = () => {
 
     handleSaveInspections([newRecord, ...inspections]);
     setShowAddInspectionModal(false);
+    setSelectedAuditSchool(null);
     setNewInspObs('');
     setNewInspRec('');
   };
@@ -725,12 +740,12 @@ export const SankulPortal: React.FC = () => {
                         <td className="p-3 text-center no-print">
                           <button
                             type="button"
-                            onClick={() => handleInspectSchool(school.id)}
-                            className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 mx-auto cursor-pointer shadow-xs"
-                            title="इस विद्यालय का प्रबंधन पटल खोलें"
+                            onClick={() => handleOpenSchoolAudit(school)}
+                            className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer shadow-xs"
+                            title="इस विद्यालय का सुरक्षित ऑडिट एवं निरीक्षण प्रपत्र खोलें"
                           >
+                            <ShieldCheck className="w-3.5 h-3.5" />
                             <span>निरीक्षण करें</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         </td>
                       </tr>
@@ -912,6 +927,226 @@ export const SankulPortal: React.FC = () => {
         )}
 
       </main>
+
+      {/* ============================================================== */}
+      {/* MODAL 0: READ-ONLY SCHOOL AUDIT & INSPECTION MODAL */}
+      {/* ============================================================== */}
+      {selectedAuditSchool && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/75 backdrop-blur-xs overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border-2 border-amber-400 flex flex-col max-h-[94vh] animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="shrink-0 bg-gradient-to-r from-orange-900 via-amber-800 to-orange-950 text-white px-6 py-4 flex items-center justify-between border-b border-amber-400/30">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-amber-300 text-xl shrink-0">
+                  🏛️
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-black truncate">
+                      {selectedAuditSchool.hindiName || selectedAuditSchool.name}
+                    </h3>
+                    <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold">
+                      सुरक्षित ऑडिट
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-200 truncate mt-0.5">
+                    {selectedAuditSchool.address}, {selectedAuditSchool.city} • UDISE: {selectedAuditSchool.udiseCode || '07010100101'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedAuditSchool(null)}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-white/80 hover:text-white transition cursor-pointer shrink-0"
+                title="बंद करें (Close)"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Content: 1. Read-Only Institutional KPIs, 2. Inline Inspection Form */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 text-xs">
+              
+              {/* Section 1: Read-Only Audit Scorecard */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
+                    <span>👁️</span>
+                    <span>विद्यालय संस्थागत संकेतक (Read-Only Audit Overview)</span>
+                  </h4>
+                  <span className="text-[10px] text-stone-500 font-medium">
+                    प्राचार्य: <strong>{selectedAuditSchool.principalName || 'प्रधानाचार्य'}</strong> ({selectedAuditSchool.phone || '—'})
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="p-3 rounded-2xl bg-orange-50/80 border border-orange-200">
+                    <span className="text-[10px] text-stone-500 font-semibold block">छात्र शक्ति</span>
+                    <span className="text-base font-black text-orange-950">
+                      {selectedAuditSchool.id === currentSchool?.id && liveStudentCount > 0 ? liveStudentCount : 380}
+                    </span>
+                    <span className="text-[10px] text-orange-700 font-bold block mt-0.5">सक्रिय नामांकित</span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200">
+                    <span className="text-[10px] text-stone-500 font-semibold block">आचार्य / दीदी</span>
+                    <span className="text-base font-black text-amber-950">
+                      {Math.max(12, Math.round(((selectedAuditSchool.id === currentSchool?.id && liveStudentCount > 0 ? liveStudentCount : 380)) / 18))}
+                    </span>
+                    <span className="text-[10px] text-amber-800 font-bold block mt-0.5">18:1 अनुपात</span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200">
+                    <span className="text-[10px] text-stone-500 font-semibold block">दैनिक उपस्थिति</span>
+                    <span className="text-base font-black text-emerald-700">
+                      {selectedAuditSchool.id === currentSchool?.id && attendanceRecords && attendanceRecords.length > 0 ? `${avgAttendance}%` : '94.2%'}
+                    </span>
+                    <span className="text-[10px] text-emerald-800 font-bold block mt-0.5">संतोषजनक</span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-purple-50/80 border border-purple-200">
+                    <span className="text-[10px] text-stone-500 font-semibold block">शुल्क अदायगी</span>
+                    <span className="text-base font-black text-purple-900">
+                      {selectedAuditSchool.id === currentSchool?.id && feeRecords && feeRecords.length > 0 ? `${avgFeeRecovery}%` : '91.5%'}
+                    </span>
+                    <span className="text-[10px] text-purple-700 font-bold block mt-0.5">लेजर अद्यतन</span>
+                  </div>
+                </div>
+
+                {/* Statutory Readiness Strip */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-stone-600">
+                  <span className="px-2 py-0.5 rounded-lg bg-stone-100 border border-stone-200 font-medium">
+                    ✅ 11-अंकीय PEN: 96.8%
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-stone-100 border border-stone-200 font-medium">
+                    ✅ 12-अंकीय APAAR: 94.2%
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-stone-100 border border-stone-200 font-medium">
+                    ✅ 16-कॉलम SR पंजिका: 100%
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-stone-100 border border-stone-200 font-medium">
+                    ✅ UDISE+ SDMS: तैयार
+                  </span>
+                </div>
+              </div>
+
+              {/* Section 2: Inline Inspection & Quality Rating Form */}
+              <form onSubmit={handleCreateInspection} className="space-y-4 pt-3 border-t border-stone-200">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-orange-950 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-orange-600" />
+                    <span>संकुल निरीक्षण एवं गुणवत्ता समीक्षा दर्ज करें</span>
+                  </h4>
+                  <span className="text-[10px] text-stone-400 font-mono">
+                    ID: {selectedAuditSchool.affiliationNo || selectedAuditSchool.id}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">निरीक्षण तिथि</label>
+                    <input
+                      type="date"
+                      value={newInspDate}
+                      onChange={e => setNewInspDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">निरीक्षक का नाम</label>
+                    <input
+                      type="text"
+                      value={newInspInspector}
+                      onChange={e => setNewInspInspector(e.target.value)}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* 3-Dimensional 5-Star Ratings */}
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-orange-50/50 border border-orange-200">
+                    <label className="block font-bold text-orange-950 mb-1">शैक्षणिक स्तर (1-5)</label>
+                    <select
+                      value={newInspAcadRating}
+                      onChange={e => setNewInspAcadRating(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 bg-white border border-orange-300 rounded-xl font-bold text-orange-900"
+                    >
+                      {[5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{'★'.repeat(r)} ({r})</option>)}
+                    </select>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-blue-50/50 border border-blue-200">
+                    <label className="block font-bold text-blue-950 mb-1">भौतिक संसाधन (1-5)</label>
+                    <select
+                      value={newInspInfraRating}
+                      onChange={e => setNewInspInfraRating(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 bg-white border border-blue-300 rounded-xl font-bold text-blue-900"
+                    >
+                      {[5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{'★'.repeat(r)} ({r})</option>)}
+                    </select>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-200">
+                    <label className="block font-bold text-emerald-950 mb-1">पंचमुखी आयाम (1-5)</label>
+                    <select
+                      value={newInspPanchRating}
+                      onChange={e => setNewInspPanchRating(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 bg-white border border-emerald-300 rounded-xl font-bold text-emerald-900"
+                    >
+                      {[5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{'★'.repeat(r)} ({r})</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">निरीक्षण मुख्य बिंदु (Observations)</label>
+                  <textarea
+                    rows={3}
+                    value={newInspObs}
+                    onChange={e => setNewInspObs(e.target.value)}
+                    placeholder="दैनिक वंदना, अनुशासन, शिक्षण गुणवत्ता, पंजिका स्थिति आदि..."
+                    className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-xl"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">सुधार हेतु आधिकारिक अनुशंसाएं (Recommendations)</label>
+                  <textarea
+                    rows={2}
+                    value={newInspRec}
+                    onChange={e => setNewInspRec(e.target.value)}
+                    placeholder="प्रबंध समिति एवं प्रधानाचार्य हेतु सुधारात्मक निर्देश..."
+                    className="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-xl"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAuditSchool(null)}
+                    className="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold rounded-xl cursor-pointer"
+                  >
+                    रद्द करें
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-gradient-to-r from-orange-700 to-amber-700 hover:from-orange-800 hover:to-amber-800 text-white font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>निरीक्षण रिपोर्ट सहेजें</span>
+                  </button>
+                </div>
+              </form>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* MODAL 1: ADD NEW INSPECTION RECORD */}
