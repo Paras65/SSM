@@ -28,9 +28,17 @@ import {
   Check,
   X,
   Copy,
-  ArrowLeft
+  ArrowLeft,
+  Wrench,
+  Clock
 } from 'lucide-react';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
+import {
+  getMaintenanceConfig,
+  setMaintenanceConfig,
+  DEFAULT_MAINTENANCE_CONFIG,
+  type MaintenanceConfig
+} from '../../utils/maintenanceConfig';
 
 interface DeveloperDashboardProps {
   onSwitchToBranch?: (schoolId: string) => void;
@@ -108,6 +116,21 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     } finally {
       setIsTestingKey(false);
     }
+  // Platform Maintenance & Downtime Control
+  const [maintConfig, setMaintConfig] = useState<MaintenanceConfig>(getMaintenanceConfig());
+
+  useEffect(() => {
+    const handleMaintUpdate = () => {
+      setMaintConfig(getMaintenanceConfig());
+    };
+    window.addEventListener('ssm_maintenance_updated', handleMaintUpdate);
+    return () => window.removeEventListener('ssm_maintenance_updated', handleMaintUpdate);
+  }, []);
+
+  const handleSaveMaintenance = (updated: Partial<MaintenanceConfig>) => {
+    setMaintenanceConfig(updated);
+    setMaintConfig(prev => ({ ...prev, ...updated }));
+    showSuccess('रखरखाव विन्यास सफलतापूर्वक अपडेट किया गया!');
   };
 
   // Fetch MongoDB Health & Network KPIs
@@ -1114,6 +1137,207 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 <p className="text-[10px] text-stone-500">
                   कोई क्रेडिट कार्ड अथवा भुगतान आवश्यक नहीं
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Platform Maintenance & Downtime Manager Card */}
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-2xs space-y-5 md:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-orange-100 text-orange-700">
+                  <Wrench className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-stone-900">
+                    प्लेटफ़ॉर्म मेंटेनेंस एवं डाउनटाइम कंट्रोल (Maintenance & Downtime Manager)
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    सर्वर माइग्रेशन, डेटाबेस अपग्रेड अथवा रखरखाव के समय उपयोगकर्ताओं को पूर्व-सूचना या मेंटेनेंस स्क्रीन प्रदर्शित करें।
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Badges */}
+              <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+                  maintConfig.enabled
+                    ? 'bg-red-50 text-red-700 border-red-300 animate-pulse'
+                    : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${maintConfig.enabled ? 'bg-red-600' : 'bg-emerald-600'}`} />
+                  <span>{maintConfig.enabled ? '🔴 मेंटेनेंस मोड सक्रिय (Portal Locked)' : '🟢 लाइव (Portal Online)'}</span>
+                </span>
+                {maintConfig.scheduledNotice && !maintConfig.enabled && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>पूर्व-सूचना बैनर सक्रिय</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Toggle Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              {/* Toggle 1: Scheduled Notice Banner */}
+              <div className={`p-4 rounded-xl border transition-all ${
+                maintConfig.scheduledNotice
+                  ? 'bg-amber-50/70 border-amber-300'
+                  : 'bg-stone-50 border-stone-200'
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-amber-600" />
+                      <span>१. आगामी रखरखाव पूर्व-सूचना बैनर</span>
+                    </h4>
+                    <p className="text-[11px] text-stone-600 mt-1 leading-relaxed">
+                      माइग्रेशन से 1-2 दिन पूर्व वेबसाइट के शीर्ष पर सूचना पट्टी दिखाता है ताकि उपयोगकर्ता पहले से सतर्क रहें।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveMaintenance({ scheduledNotice: !maintConfig.scheduledNotice })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      maintConfig.scheduledNotice ? 'bg-amber-600' : 'bg-stone-300'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        maintConfig.scheduledNotice ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Toggle 2: Full Maintenance Mode Screen */}
+              <div className={`p-4 rounded-xl border transition-all ${
+                maintConfig.enabled
+                  ? 'bg-red-50/70 border-red-300'
+                  : 'bg-stone-50 border-stone-200'
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                      <Wrench className="w-4 h-4 text-red-600" />
+                      <span>२. सक्रिय मेंटेनेंस स्क्रीन (Full Lock)</span>
+                    </h4>
+                    <p className="text-[11px] text-stone-600 mt-1 leading-relaxed">
+                      सक्रिय माइग्रेशन के दौरान सामान्य उपयोगकर्ताओं के लिए पोर्टल ब्लॉक करके सूचना स्क्रीन दिखाता है (व्यवस्थापक बाईपास उपलब्ध रहेगा)।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveMaintenance({ enabled: !maintConfig.enabled })}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      maintConfig.enabled ? 'bg-red-600' : 'bg-stone-300'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        maintConfig.enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Config Form Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  रखरखाव शीर्षक (Maintenance Title):
+                </label>
+                <input
+                  type="text"
+                  value={maintConfig.title}
+                  onChange={e => setMaintConfig({ ...maintConfig, title: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="उदा. सिस्टम अपग्रेड एवं सर्वर रखरखाव"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  रखरखाव समयावधि (Scheduled Window):
+                </label>
+                <input
+                  type="text"
+                  value={maintConfig.scheduledWindow}
+                  onChange={e => setMaintConfig({ ...maintConfig, scheduledWindow: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="उदा. आगामी रविवार, रात्रि 10:00 से 02:00 बजे तक"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  अपेक्षित बहाली समय (Estimated End Time):
+                </label>
+                <input
+                  type="text"
+                  value={maintConfig.estimatedEnd}
+                  onChange={e => setMaintConfig({ ...maintConfig, estimatedEnd: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="उदा. प्रातः 04:00 बजे तक"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  हेल्पडेस्क / आपातकालीन संपर्क:
+                </label>
+                <input
+                  type="text"
+                  value={maintConfig.supportContact}
+                  onChange={e => setMaintConfig({ ...maintConfig, supportContact: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="उदा. +91 98765 43210 | support@init65.co.in"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  विस्तृत संदेश (Detailed Operational Message):
+                </label>
+                <textarea
+                  rows={2}
+                  value={maintConfig.message}
+                  onChange={e => setMaintConfig({ ...maintConfig, message: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                  placeholder="रखरखाव का विस्तृत विवरण..."
+                />
+              </div>
+            </div>
+
+            {/* Save & Reset Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stone-100">
+              <span className="text-[11px] text-stone-500">
+                🔒 परिवर्तन तुरंत स्थानीय और सार्वजनिक सत्रों में प्रभावी हो जाते हैं।
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMaintConfig(DEFAULT_MAINTENANCE_CONFIG);
+                    handleSaveMaintenance(DEFAULT_MAINTENANCE_CONFIG);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold transition cursor-pointer"
+                >
+                  डिफ़ॉल्ट रीसेट
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveMaintenance(maintConfig)}
+                  className="px-4 py-1.5 rounded-lg bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>सेटिंग्स सुरक्षित करें</span>
+                </button>
               </div>
             </div>
           </div>
