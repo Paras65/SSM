@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Exam, Student, ExamScheduleItem } from '../../types';
 import { SSM_STANDARD_CLASSES } from '../../types';
+import { getTodayIsoDate } from '../../utils/formatters';
 import { X, Calendar, Plus, Trash2, CheckCircle2, FileSpreadsheet, Clock, Award, AlertTriangle, Lock, Unlock, Edit3 } from 'lucide-react';
 
 interface ExamManagementModalProps {
@@ -32,10 +33,10 @@ export const ExamManagementModal: React.FC<ExamManagementModalProps> = ({
   const [examTitle, setExamTitle] = useState('अर्धवार्षिक परीक्षा 2025-26');
   const [examAcademicYear, setExamAcademicYear] = useState(() => currentSchool.currentAcademicYear || '2025-26');
   const [examTerm, setExamTerm] = useState('Half-Yearly');
-  const [examStart, setExamStart] = useState(() => new Date().toISOString().split('T')[0]);
+  const [examStart, setExamStart] = useState(() => getTodayIsoDate());
   const [examEnd, setExamEnd] = useState(() => new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
   const [scheduleItems, setScheduleItems] = useState<ExamScheduleItem[]>([
-    { class: 'Class 8', subject: 'संस्कृत', date: new Date().toISOString().split('T')[0], timing: '09:00 AM - 12:00 PM', maxMarks: 100, roomNo: 'कक्ष 101' },
+    { class: 'Class 8', subject: 'संस्कृत', date: getTodayIsoDate(), timing: '09:00 AM - 12:00 PM', maxMarks: 100, roomNo: 'कक्ष 101' },
     { class: 'Class 8', subject: 'गणित', date: new Date(Date.now() + 86400000).toISOString().split('T')[0], timing: '09:00 AM - 12:00 PM', maxMarks: 100, roomNo: 'कक्ष 101' },
     { class: 'Class 8', subject: 'विज्ञान', date: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0], timing: '09:00 AM - 12:00 PM', maxMarks: 100, roomNo: 'कक्ष 101' }
   ]);
