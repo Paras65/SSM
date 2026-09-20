@@ -45,7 +45,7 @@ router.post('/generate', aiLimiter, async (req, res) => {
       generationConfig.responseMimeType = responseMimeType;
     }
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
@@ -96,7 +96,7 @@ router.post('/generate-question-paper', aiLimiter, async (req, res) => {
       return res.status(503).json({ error: 'सर्वर पर कोई बौद्धिक सेवा कुंजी विन्यासित नहीं है।' });
     }
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
@@ -155,7 +155,7 @@ router.post('/vision', aiLimiter, async (req, res) => {
     const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
       {
         method: 'POST',
         headers: {
@@ -210,7 +210,7 @@ router.get('/test-key', aiLimiter, async (req, res) => {
 
   try {
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
       {
         method: 'POST',
         headers: {
