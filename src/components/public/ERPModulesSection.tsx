@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   CheckCircle2,
   Receipt,
@@ -18,7 +18,11 @@ import {
   ChevronRight,
   Building2,
   FileText,
-  Sun
+  Sun,
+  Clock,
+  Users,
+  Lock,
+  Sparkle
 } from 'lucide-react';
 
 interface ERPModulesSectionProps {
@@ -27,243 +31,207 @@ interface ERPModulesSectionProps {
   onOpenHelpGuide?: () => void;
 }
 
-type PillarId = 'all' | 'daily' | 'academic' | 'compliance' | 'logistics';
-
-interface ModuleItem {
-  id: string;
+interface WorkflowItem {
   icon: React.ComponentType<{ className?: string }>;
-  badge: string;
-  badgeColor: string;
   title: string;
   desc: string;
-  features: string[];
+  badge?: string;
 }
 
-interface Pillar {
-  id: 'daily' | 'academic' | 'compliance' | 'logistics';
-  number: string;
+interface MasterPillar {
+  id: string;
+  pillarNo: string;
   title: string;
+  englishTitle: string;
   subtitle: string;
-  badge: string;
+  timingBadge: string;
   badgeColor: string;
-  headerBg: string;
-  icon: React.ComponentType<{ className?: string }>;
-  modules: ModuleItem[];
+  borderColor: string;
+  cardBg: string;
+  headerIcon: React.ComponentType<{ className?: string }>;
+  iconBg: string;
+  iconColor: string;
+  workflows: WorkflowItem[];
+  footerNote: string;
 }
 
 export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
   onOpenSignUp,
   onOpenHelpGuide
 }) => {
-  const [activePillar, setActivePillar] = useState<PillarId>('all');
-
-  const pillarTabs = [
-    { id: 'all', label: 'सभी ४ स्तम्भ (All 4 Pillars)', icon: Sparkles },
-    { id: 'daily', label: '🌅 १. दैनिक संचालन', icon: Sun },
-    { id: 'academic', label: '📚 २. परीक्षा व मूल्यांकन', icon: Award },
-    { id: 'compliance', label: '🏛️ ३. छात्र अभिलेख व सरकार', icon: BookOpen },
-    { id: 'logistics', label: '🚌 ४. संसाधन, संकुल व सुरक्षा', icon: ShieldCheck }
-  ];
-
-  const pillars: Pillar[] = [
+  const masterPillars: MasterPillar[] = [
     {
-      id: 'daily',
-      number: 'स्तम्भ १',
-      title: 'प्रातःकालीन व दैनिक विद्यालयी संचालन (Daily Operations)',
-      subtitle: 'प्रातः 07:00 से सायं 04:00 तक का दैनिक विद्यालयी प्रवाह — हाजिरी, शुल्क काउंटर, रोकड़ बही व नोटिस।',
-      badge: 'दैनिक दिनचर्या (Daily Core)',
+      id: 'daily-ops',
+      pillarNo: 'स्तम्भ १',
+      title: 'प्रातःकालीन व दैनिक विद्यालयी संचालन',
+      englishTitle: 'Daily School Operations',
+      subtitle: 'विद्यालय खुलते ही उपस्थिति, शुल्क काउंटर, दैनिक रोकड़ बही व सूचना प्रसारण।',
+      timingBadge: 'प्रातः 07:00 से सायं 04:00 (दैनिक दिनचर्या)',
       badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-      headerBg: 'from-emerald-500/10 via-teal-500/5 to-white border-emerald-200',
-      icon: Sun,
-      modules: [
+      borderColor: 'border-emerald-200 hover:border-emerald-400',
+      cardBg: 'bg-gradient-to-b from-emerald-50/30 via-white to-white',
+      headerIcon: Sun,
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-700',
+      workflows: [
         {
-          id: 'attendance-broadcaster',
           icon: CheckCircle2,
-          badge: '1-क्लिक ब्रॉडकास्ट (Sec 32)',
-          badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-          title: 'दैनिक उपस्थिति व अनुपस्थित व्हाट्सएप प्रसारण',
-          desc: 'आचार्य केवल 30 सेकंड में हाजिरी लगाएं। लाल अलर्ट बैज से 1-क्लिक बैच कतार में अनुपस्थित छात्रों के अभिभावकों को सीधे सम्मानजनक संदेश भेजें।',
-          features: ['सजीव अनुपस्थित पहचान कतार', 'आधिकारिक WhatsApp प्रोटोकॉल', 'शून्य स्पैम व बिना ब्लॉक जोखिम']
+          title: 'दैनिक उपस्थिति व 1-क्लिक WhatsApp अलर्ट',
+          desc: 'आचार्य केवल 30 सेकंड में हाजिरी लगाएं। अनुपस्थित भैया-बहिनों के अभिभावकों को 1-क्लिक में सम्मानजनक आधिकारिक संदेश स्वतः भेजें।',
+          badge: 'Sec 32'
         },
         {
-          id: 'dcr-cash-counter',
           icon: Receipt,
-          badge: 'रोकड़ मिलान (Sec 33)',
-          badgeColor: 'bg-amber-100 text-amber-800 border-amber-300',
-          title: 'शुल्क काउंटर, दैनिक रोकड़ बही (DCR) व नोट मिलान',
-          desc: '↵ Enter दबाकर तुरंत रोल नंबर खोजें और रसीद काटें। शाम को ₹500, ₹200, ₹100 आदि भौतिक नोटों का मिलान करें और A4 ऑडिट-रेडी रोकड़ बही प्रिंट करें।',
-          features: ['भौतिक नकद दराज नोट मिलान', 'पक्की द्विभाषी रसीद प्रिंट', 'ऑडिट-रेडी A4 दैनिक बही']
+          title: 'शुल्क काउंटर, रसीद व DCR भौतिक नोट मिलान',
+          desc: '↵ Enter दबाकर तुरंत छात्र खोजें और पक्की रसीद काटें। शाम को ₹500, ₹200, ₹100 नोटों का मिलान कर A4 ऑडिट-रेडी रोकड़ बही प्रिंट करें।',
+          badge: 'Sec 33'
         },
         {
-          id: 'school-logistics',
           icon: Bus,
-          badge: 'परिचालन (Sec 6, 8, 9, 10)',
-          badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-          title: 'समय सारिणी, पुस्तकालय, वाहन एवं भंडार स्टॉक',
-          desc: 'विद्यालय का संपूर्ण परिचालन एक ही जगह: 8-घंटी समय सारिणी रोस्टर, पुस्तक निर्गमन/वापसी, वाहन रूट व चालक संपर्क, और गणवेश/किताबों का इन्वेंट्री स्टॉक।',
-          features: ['आचार्य समय सारिणी (Timetable)', 'बारकोड/पुस्तक निर्गमन व जुर्माना', 'वाहन रूट व गणवेश भंडार स्टॉक']
+          title: 'आचार्य पटल, गृहकार्य व 8-घंटी समय-सारिणी',
+          desc: 'बोलकर (वॉइस) 1-क्लिक में गृहकार्य असाइन करें। 8-कालखंड टकराव-मुक्त रोस्टर, कक्षावार डायरी और आधिकारिक परिपत्र प्रसारण।',
+          badge: 'Sec 6, 30'
         }
-      ]
+      ],
+      footerNote: '✨ 90% दैनिक प्रशासनिक समय की बचत • शून्य कागज़ी झंझट'
     },
     {
-      id: 'academic',
-      number: 'स्तम्भ २',
-      title: 'परीक्षा, AI पेपर व 360° मूल्यांकन (Exams & Evaluation)',
-      subtitle: 'इकाई मूल्यांकन व त्रैमासिक परीक्षा से लेकर वार्षिक 360° प्रगति पत्र एवं परीक्षा परिणाम गजट तक।',
-      badge: 'शैक्षणिक व परीक्षा (Academics)',
+      id: 'exams-evaluation',
+      pillarNo: 'स्तम्भ २',
+      title: 'परीक्षा, AI पेपर व 360° मूल्यांकन',
+      englishTitle: 'Exams, AI Papers & 360° Evaluation',
+      subtitle: 'इकाई मूल्यांकन व त्रैमासिक परीक्षा से लेकर वार्षिक 360° प्रगति पत्र एवं TR शीट तक।',
+      timingBadge: 'इकाई मूल्यांकन से वार्षिक परिणाम तक',
       badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
-      headerBg: 'from-purple-500/10 via-indigo-500/5 to-white border-purple-200',
-      icon: Award,
-      modules: [
+      borderColor: 'border-purple-200 hover:border-purple-400',
+      cardBg: 'bg-gradient-to-b from-purple-50/30 via-white to-white',
+      headerIcon: Award,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-700',
+      workflows: [
         {
-          id: 'question-paper-generator',
           icon: FileText,
-          badge: 'स्मार्ट ब्लूप्रिंट (Sec 38)',
-          badgeColor: 'bg-orange-100 text-orange-800 border-orange-300',
-          title: 'स्मार्ट प्रश्न पत्र निर्माता (Unit Test & Traimasik)',
-          desc: 'मासिक इकाई मूल्यांकन एवं त्रैमासिक परीक्षा हेतु पाठ्यक्रम प्रगति (अध्याय) आधारित १-क्लिक संतुलित प्रश्न पत्र निर्माण, सजीव अंक मिलान व A4 परीक्षा मुद्रण।',
-          features: ['मासिक पाठ्यक्रम प्रगति चयन', 'सजीव अंक संतुलन (Live Balance)', 'A4 प्रिंट-रेडी परीक्षा लेआउट']
+          title: 'स्मार्ट प्रश्न पत्र निर्माता व बौद्धिक ब्लूप्रिंट',
+          desc: 'NEP 2020 ब्लूप्रिंट अनुसार ज्ञान, बोध, अनुप्रयोग व चिंतन आधारित संतुलित A4 प्रश्न पत्र तैयार करें। अंतर्निहित प्रश्न बैंक व सजीव अंक संतुलन।',
+          badge: 'Sec 38'
         },
         {
-          id: 'bulk-id-hall-ticket',
           icon: IdCard,
-          badge: 'A4 बल्क प्रिंट (Sec 5, 26)',
-          badgeColor: 'bg-amber-100 text-amber-800 border-amber-300',
-          title: 'कक्षावार 8-आईडी कार्ड प्रति A4 शीट व परीक्षा हॉल टिकट',
-          desc: 'A4 पेपर पर 8 पहचान पत्र कटिंग गाइड्स, फोटो, ब्लड ग्रुप व आपातकालीन संपर्क के साथ प्रिंट करें। साथ ही रोल नंबर वार परीक्षा प्रवेश पत्र जारी करें।',
-          features: ['8 कार्ड प्रति A4 शीट कटिंग गाइड', 'परीक्षा हॉल टिकट (Admit Cards)', 'चरित्र व अध्ययन प्रमाण पत्र']
+          title: 'परीक्षा समय-सारिणी व हॉल टिकट (Admit Cards)',
+          desc: 'परीक्षा डेट शीट, कक्ष आवंटन रोस्टर और A4 पेपर पर 8-पहचान पत्र कटिंग गाइड्स व परीक्षा प्रवेश पत्र 1-क्लिक में प्रिंट करें।',
+          badge: 'Sec 5, 26'
         },
         {
-          id: 'hpc-marks-matrix',
           icon: Award,
-          badge: 'NEP 2020 अनुरूप (Sec 25, 34)',
-          badgeColor: 'bg-purple-100 text-purple-800 border-purple-300',
-          title: '360° समग्र प्रगति पत्र (HPC) व कीबोर्ड अंक मैट्रिक्स',
-          desc: 'विद्या भारती के पंचमुखी आयामों सहित 360° रिपोर्ट कार्ड। बिना माउस केवल ↵ Enter व तीर कुंजियों (↑ / ↓) से द्रुत गति से परीक्षा अंक दर्ज करें।',
-          features: ['पंचमुखी आयाम समग्र ग्रेडिंग', 'बिना माउस वर्टिकल अंक प्रविष्टि', 'कक्षावार 40+ बल्क A4 प्रिंट']
+          title: '360° समग्र प्रगति पत्र (HPC) व TR शीट',
+          desc: 'पंचमुखी आयामों (शारीरिक, योग, संगीत, संस्कृत) सहित 360° रिपोर्ट कार्ड, कीबोर्ड अंक प्रविष्टि (↑ / ↓) व परीक्षा लॉक सुरक्षा।',
+          badge: 'Sec 25, 34'
         }
-      ]
+      ],
+      footerNote: '✨ NEP 2020 एवं पंचमुखी शिक्षा पूर्णतः समाहित'
     },
     {
-      id: 'compliance',
-      number: 'स्तम्भ ३',
-      title: 'छात्र अभिलेख, दाखिला व शासकीय अनुपालन (Registry & Govt Compliance)',
-      subtitle: 'प्रवेश से लेकर टी.सी. निर्गमन एवं भारत सरकार UDISE+ व APAAR ID तक का संपूर्ण वैधानिक अभिलेख।',
-      badge: 'वैधानिक व सरकारी (Govt Records)',
+      id: 'registry-compliance',
+      pillarNo: 'स्तम्भ ३',
+      title: 'छात्र अभिलेख, दाखिला व शासकीय अनुपालन',
+      englishTitle: 'Registry, Admissions & Govt Compliance',
+      subtitle: 'प्रवेश से लेकर टी.सी. निर्गमन एवं भारत सरकार UDISE+ व APAAR ID तक का वैधानिक अभिलेख।',
+      timingBadge: 'प्रवेश, वैधानिक पंजिका व UDISE+',
       badgeColor: 'bg-rose-100 text-rose-900 border-rose-300',
-      headerBg: 'from-rose-500/10 via-orange-500/5 to-white border-rose-200',
-      icon: BookOpen,
-      modules: [
+      borderColor: 'border-rose-200 hover:border-rose-400',
+      cardBg: 'bg-gradient-to-b from-rose-50/30 via-white to-white',
+      headerIcon: BookOpen,
+      iconBg: 'bg-rose-100',
+      iconColor: 'text-rose-700',
+      workflows: [
         {
-          id: 'register-ai-scanner',
-          icon: Camera,
-          badge: 'शून्य-जटिलता OCR (Sec 31)',
-          badgeColor: 'bg-orange-100 text-orange-800 border-orange-300',
-          title: 'हार्ड-कॉपी रजिस्टर AI स्कैनर व त्वरित प्रवेश',
-          desc: 'पुराने हस्तलिखित उपस्थिति या प्रवेश रजिस्टरों की फोटो खींचते ही स्प्लिट-स्क्रीन में छात्र विवरण स्वतः भरें। ↵ Enter कुंजी से तेज़ी से पंक्तियां जोड़ें।',
-          features: ['स्प्लिट-स्क्रीन रोटेट/ज़ूम फोटो', 'Google Gemini Vision AI', '↵ Enter ऑटो-जंप तेज़ टाइपिंग']
+          icon: Users,
+          title: 'नवीन दाखिला व सहोदर (Sibling) ऑटो-फिल',
+          desc: 'नए छात्र का पंजीकरण; यदि उसी परिवार का दूसरा बच्चा पढ़ता है तो 1-क्लिक में पारिवारिक विवरण व Family ID स्वतः भर जाती है।',
+          badge: 'Sec 1, 31'
         },
         {
-          id: 'dakhil-kharij-register',
           icon: BookOpen,
-          badge: 'वैधानिक पंजिका (Sec 28)',
-          badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
-          title: 'दाखिल-खारिज पंजिका (General S.R. Register)',
-          desc: '17-कॉलम पारंपरिक व कानूनी छात्र प्रवेश-निकासी पंजिका। आजीवन छात्र रिकॉर्ड, वर्णानुक्रम (Alphabetical) छात्र सूची और 1-क्लिक सरकारी ऑडिट प्रिंट।',
-          features: ['17-कॉलम वैधानिक लेआउट', 'दाखिल व खारिज स्थिति ट्रैकिंग', 'एक्सेल व PDF मुद्रण']
+          title: 'दाखिल-खारिज पंजिका (17-कॉलम SR Register)',
+          desc: '17-कॉलम पारंपरिक वैधानिक स्कॉलर पंजिका, आजीवन छात्र रिकॉर्ड, वर्णानुक्रम सूची और 1-क्लिक सरकारी ऑडिट मुद्रण।',
+          badge: 'Sec 28'
         },
         {
-          id: 'dynamic-tc-sync',
           icon: FileCheck,
-          badge: 'सजीव गणना (Sec 35)',
-          badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-300',
-          title: 'स्थानांतरण प्रमाण पत्र (Dynamic TC) व सजीव नो-ड्यूज',
-          desc: 'TC जनरेट करते ही सत्र के उपस्थित/कुल दिवसों की स्वतः गणना (उदा. 212/224 दिन) और वास्तविक समय में बकाया शुल्क स्थिति। 1-क्लिक नाम पृथक्करण।',
-          features: ['स्वचालित उपस्थिति दिवस गणना', 'सजीव शुल्क बकाया (No-Dues) जांच', 'ऑनलाइन QR कोड टीसी सत्यापन']
+          title: 'डायनामिक टी.सी. व सजीव नो-ड्यूज (Dynamic TC)',
+          desc: 'TC जनरेट करते ही उपस्थित दिवसों की स्वतः गणना (उदा. 212/224 दिन), वास्तविक समय बकाया शुल्क जांच व ऑनलाइन QR सत्यापन।',
+          badge: 'Sec 35'
         },
         {
-          id: 'udise-sdms',
           icon: FileSpreadsheet,
-          badge: 'भारत सरकार (Sec 22)',
-          badgeColor: 'bg-blue-100 text-blue-800 border-blue-300',
-          title: 'UDISE+ SDMS, 11-अंकीय PEN व APAAR ID',
-          desc: 'छात्रों के 11-अंकीय PEN, 12-अंकीय APAAR ID, सामाजिक श्रेणी (Gen/OBC/SC/ST) और CWSN का संधारण। 21-कॉलम सरकारी बैच CSV 1-क्लिक में डाउनलोड करें।',
-          features: ['स्थायी शिक्षा संख्या (PEN) ट्रैकर', 'APAAR ID डुप्लीकेट गार्ड', '21-कॉलम UDISE+ CSV एक्सपोर्ट']
+          title: 'UDISE+ SDMS (PEN/APAAR) व AI स्कैनर',
+          desc: '11-अंकीय PEN, 12-अंकीय APAAR ID, 21-कॉलम सरकारी CSV एक्सपोर्ट और पुराने रजिस्टरों की फोटो खींचकर OCR से त्वरित डेटा प्रविष्टि।',
+          badge: 'Sec 22, 31'
         }
-      ]
+      ],
+      footerNote: '✨ 100% भारत सरकार एवं शिक्षा विभाग मानकों के अनुरूप'
     },
     {
-      id: 'logistics',
-      number: 'स्तम्भ ४',
-      title: 'संसाधन, संकुल व संस्थागत सुरक्षा (Logistics, Cluster & Governance)',
-      subtitle: 'स्कूल की भौतिक संपत्ति, वाहन, पुस्तकालय, संकुल क्लस्टर निरीक्षण व सुरक्षित डेटा बैकअप।',
-      badge: 'प्रशासन व सुरक्षा (Governance)',
+      id: 'logistics-governance',
+      pillarNo: 'स्तम्भ ४',
+      title: 'संसाधन, संकुल व संस्थागत सुरक्षा',
+      englishTitle: 'Logistics, Cluster & Governance',
+      subtitle: 'विद्यालय की भौतिक संपत्ति, वाहन, पुस्तकालय, संकुल क्लस्टर निरीक्षण व सुरक्षित बैकअप।',
+      timingBadge: 'संपत्ति, संकुल क्लस्टर व डेटा सुरक्षा',
       badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
-      headerBg: 'from-amber-500/10 via-orange-500/5 to-white border-amber-200',
-      icon: ShieldCheck,
-      modules: [
+      borderColor: 'border-amber-200 hover:border-amber-400',
+      cardBg: 'bg-gradient-to-b from-amber-50/30 via-white to-white',
+      headerIcon: ShieldCheck,
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-800',
+      workflows: [
         {
-          id: 'paper-bridges',
-          icon: Printer,
-          badge: 'ऑफ़लाइन सेतु (Sec 36)',
-          badgeColor: 'bg-teal-100 text-teal-800 border-teal-300',
-          title: 'ऑफ़लाइन हार्ड-कॉपी सेतु: A4 फॉर्म्स व 31-दिवसीय पंजिका',
-          desc: 'इंटरनेट न होने पर भौतिक संचालन हेतु A4 रिक्त प्रवेश प्रपत्र (सहोदर छूट प्रभाग, वैदिक प्रारूप सहित) एवं 31-दिवसीय मासिक उपस्थिति शीट मुद्रण।',
-          features: ['A4 प्रिंट योग्य रिक्त प्रवेश फॉर्म', '31-दिवसीय मासिक उपस्थिति शीट', 'नामांकित अथवा रिक्त पंक्तियां']
+          icon: Bus,
+          title: 'बस रूट, पुस्तकालय व गणवेश भंडार स्टॉक',
+          desc: 'वाहन रूट व स्टॉप किराया, पुस्तक निर्गमन/वापसी व जुर्माना, तथा गणवेश, उत्तर-पुस्तिकाओं व खेल सामग्री का इन्वेंट्री स्टॉक।',
+          badge: 'Sec 8, 9, 10'
         },
         {
-          id: 'command-palette',
-          icon: Command,
-          badge: 'समय बचत (Sec 30)',
-          badgeColor: 'bg-stone-100 text-stone-800 border-stone-300',
-          title: 'ग्लोबल क्विक कमांड पैलेट (Ctrl + K Spotlight Search)',
-          desc: 'कीबोर्ड पर कहीं भी Ctrl + K दबाएं और छात्र का नाम, रोल नंबर, फीस काउंटर या कोई भी रिपोर्ट 1 सेकंड में खोजें। माउस क्लिक के समय की 90% बचत।',
-          features: ['कीबोर्ड शॉर्टकट (Ctrl + K)', 'फजी छात्र व मॉड्यूल सर्च', '1-क्लिक त्वरित क्रियान्वयन']
-        },
-        {
-          id: 'session-security',
-          icon: ShieldCheck,
-          badge: 'सुरक्षा व बैकअप (Sec 13, 23)',
-          badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-          title: 'वार्षिक सत्र परिवर्तन, छात्र प्रोन्नति व सुरक्षा ऑडिट लॉग्स',
-          desc: 'वार्षिक परीक्षा लॉक, पिछले सत्र का बकाया रोलओवर और कक्षा प्रोन्नति। शाम को 1-क्लिक एन्क्रिप्टेड डेटा बैकअप व DPDP Act 2023 गोपनीयता अनुपालन।',
-          features: ['वार्षिक सत्र प्रोन्नति व रोलओवर', '1-क्लिक ऑफ़लाइन JSON बैकअप', 'ऑडिट लॉग्स व DPDP 2023 सुरक्षा']
-        },
-        {
-          id: 'sankul-cluster-oversight',
           icon: Building2,
-          badge: 'क्लस्टर प्रबंधन (Sec 37)',
-          badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-          title: 'संकुल प्रभारी पटल: बहु-विद्यालय क्लस्टर निरीक्षण एवं संकलित प्रबंधन',
-          desc: 'संकुल (क्लस्टर) स्तर पर 5-15 संबद्ध विद्यालयों की समग्र समीक्षा, NEP 2020 व पंचमुखी शिक्षा अनुपालन, डिजिटल निरीक्षण व गुणवत्ता स्टार रेटिंग, और संकुल परिपत्र जारी करना।',
-          features: ['बहु-विद्यालय क्लस्टर एनालिटिक्स', 'पंचमुखी व भौतिक निरीक्षण पंजिका', 'संकुल परिपत्र एवं आधिकारिक प्रिंट']
+          title: 'संकुल प्रभारी पटल (Cluster Supervision)',
+          desc: 'संकुल स्तर पर 5-15 संबद्ध विद्यालयों की समग्र समीक्षा, पंचमुखी व भौतिक निरीक्षण पंजिका, स्टार रेटिंग और आधिकारिक परिपत्र।',
+          badge: 'Sec 37'
+        },
+        {
+          icon: Lock,
+          title: 'सत्र प्रोन्नति, DPDP सुरक्षा व 1-क्लिक बैकअप',
+          desc: 'वार्षिक कक्षा प्रोन्नति, बकाया शुल्क रोलओवर, शाम को 1-क्लिक सुरक्षित ऑफ़लाइन JSON बैकअप व DPDP 2023 गोपनीयता ऑडिट लॉग्स।',
+          badge: 'Sec 13, 23'
+        },
+        {
+          icon: Command,
+          title: 'ग्लोबल क्विक कमांड पैलेट (Ctrl + K)',
+          desc: 'कीबोर्ड पर Ctrl + K दबाएं और छात्र, रसीद या कोई भी मॉड्यूल 1 सेकंड में खोजें। माउस क्लिक के समय की 90% बचत।',
+          badge: 'Sec 30'
         }
-      ]
+      ],
+      footerNote: '✨ बहु-शाखा टेनेंट सुरक्षा एवं DPDP Act 2023 अनुपालन'
     }
   ];
-
-  const visiblePillars = activePillar === 'all'
-    ? pillars
-    : pillars.filter(p => p.id === activePillar);
 
   return (
     <section id="modules" className="py-16 sm:py-20 bg-gradient-to-b from-white via-orange-50/40 to-stone-50 border-b border-orange-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-orange-100 text-orange-950 text-xs font-bold uppercase tracking-wider mb-2.5 border border-orange-300 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-            <span>३८-अध्यायी आधिकारिक मार्गदर्शिका अनुरूप (User Manual Aligned)</span>
+            <span>४ प्रमुख उपयोग-मामले • शून्य जटिलता</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">
-            विद्यालय कार्यप्रवाह आधारित <br className="hidden sm:inline" />
+            सरस्वती शिशु मंदिर ईआरपी के <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-orange-700 via-amber-600 to-red-600 bg-clip-text text-transparent">
-              ४ प्रमुख उपयोग-मामले (Use-Case Pillars)
+              ४ प्रमुख डिजिटल स्तम्भ (4 Core Pillars)
             </span>
           </h2>
           <p className="mt-3 text-sm sm:text-base text-stone-600 leading-relaxed">
-            १४ बिखरे हुए टूल्स के बजाय, आपके विद्यालय के संपूर्ण संचालन को ४ स्पष्ट स्तम्भों में समेटा गया है — ताकि कोई भी गैर-तकनीकी उपयोगकर्ता १-क्लिक में अपना काम पूरा कर सके।
+            १४ बिखरे हुए टूल्स के बजाय, संपूर्ण विद्यालयी संचालन को ४ स्वाभाविक कार्यप्रवाह स्तम्भों में समेटा गया है — ताकि कोई भी गैर-तकनीकी उपयोगकर्ता १ नज़र में अपना काम समझ सके।
           </p>
 
           {/* User Manual Shortcut CTA Button */}
@@ -275,99 +243,93 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-100/80 hover:bg-amber-100 text-orange-950 font-bold text-xs border border-orange-300 shadow-2xs transition-all cursor-pointer hover:border-orange-400"
               >
                 <HelpCircle className="w-4 h-4 text-orange-600" />
-                <span>📖 संपूर्ण ३८-अध्यायी उपयोगकर्ता मार्गदर्शिका (User Manual) देखें</span>
+                <span>📖 संपूर्ण उपयोगकर्ता मार्गदर्शिका (User Manual) देखें</span>
                 <ChevronRight className="w-3.5 h-3.5 text-orange-600" />
               </button>
             </div>
           )}
         </div>
 
-        {/* Pillar Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
-          {pillarTabs.map(tab => {
-            const TabIcon = tab.icon;
-            const isActive = activePillar === tab.id;
+        {/* Exactly 4 Master Pillar Cards in 2x2 Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          {masterPillars.map((pillar) => {
+            const HeaderIcon = pillar.headerIcon;
             return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActivePillar(tab.id as PillarId)}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                  isActive
-                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md scale-102'
-                    : 'bg-white text-stone-700 hover:bg-orange-50 hover:text-orange-900 border border-stone-200'
-                }`}
+              <div
+                key={pillar.id}
+                className={`rounded-3xl border ${pillar.borderColor} ${pillar.cardBg} p-6 sm:p-7 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between group`}
               >
-                <TabIcon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-orange-600'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 4 Pillars Display */}
-        <div className="space-y-12">
-          {visiblePillars.map((pillar) => {
-            const PillarIcon = pillar.icon;
-            return (
-              <div key={pillar.id} className="space-y-4">
-                {/* Pillar Header Banner */}
-                <div className={`p-4 sm:p-5 rounded-2xl bg-gradient-to-r ${pillar.headerBg} border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white shadow-xs border border-stone-200 flex items-center justify-center text-xl shrink-0">
-                      <PillarIcon className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black uppercase tracking-wider text-orange-700">{pillar.number}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${pillar.badgeColor}`}>{pillar.badge}</span>
+                {/* Master Card Header */}
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-2xl ${pillar.iconBg} ${pillar.iconColor} flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform`}>
+                        <HeaderIcon className="w-6 h-6" />
                       </div>
-                      <h3 className="text-base sm:text-lg font-black text-stone-900 leading-snug">{pillar.title}</h3>
-                      <p className="text-xs text-stone-600 mt-0.5">{pillar.subtitle}</p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black uppercase tracking-wider text-orange-700">
+                            {pillar.pillarNo}
+                          </span>
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-black text-stone-900 leading-snug">
+                          {pillar.title}
+                        </h3>
+                        <span className="text-[11px] font-bold text-stone-600 tracking-wide">
+                          {pillar.englishTitle}
+                        </span>
+                      </div>
                     </div>
+
+                    <span className={`hidden sm:inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${pillar.badgeColor}`}>
+                      {pillar.timingBadge}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-stone-600 mb-5 leading-relaxed bg-white/60 p-2.5 rounded-xl border border-stone-200/70">
+                    {pillar.subtitle}
+                  </p>
+
+                  {/* Workflows List */}
+                  <div className="space-y-3.5">
+                    {pillar.workflows.map((wf, idx) => {
+                      const WfIcon = wf.icon;
+                      return (
+                        <div
+                          key={idx}
+                          className="bg-white rounded-2xl p-3.5 border border-stone-200/80 shadow-2xs hover:border-orange-300 transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-xl bg-orange-50 text-orange-700 shrink-0 mt-0.5">
+                              <WfIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <h4 className="text-xs sm:text-sm font-bold text-stone-900 leading-tight">
+                                  {wf.title}
+                                </h4>
+                                {wf.badge && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-stone-100 text-stone-600 border border-stone-200 shrink-0">
+                                    {wf.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                                {wf.desc}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Modules Grid under Pillar */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {pillar.modules.map((mod) => {
-                    const Icon = mod.icon;
-                    return (
-                      <div
-                        key={mod.id}
-                        className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200 shadow-xs hover:shadow-md hover:border-orange-300 transition-all flex flex-col justify-between group"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="w-11 h-11 rounded-2xl bg-orange-50 group-hover:bg-orange-600 text-orange-700 group-hover:text-white border border-orange-200 flex items-center justify-center transition-colors shadow-2xs">
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${mod.badgeColor}`}>
-                              {mod.badge}
-                            </span>
-                          </div>
-
-                          <h4 className="text-base font-bold text-stone-900 group-hover:text-orange-950 transition-colors leading-snug">
-                            {mod.title}
-                          </h4>
-                          <p className="text-xs text-stone-600 mt-2 leading-relaxed">
-                            {mod.desc}
-                          </p>
-                        </div>
-
-                        <div className="mt-5 pt-4 border-t border-stone-100">
-                          <ul className="space-y-1.5 text-xs text-stone-700 font-medium">
-                            {mod.features.map((feat, fIdx) => (
-                              <li key={fIdx} className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-600 shrink-0" />
-                                <span>{feat}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    );
-                  })}
+                {/* Master Card Footer */}
+                <div className="mt-6 pt-4 border-t border-stone-200/70 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-stone-600">
+                    {pillar.footerNote}
+                  </span>
                 </div>
               </div>
             );
@@ -375,7 +337,7 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
         </div>
 
         {/* 3-Step How It Works Banner */}
-        <div className="mt-14 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white rounded-3xl p-6 sm:p-10 border border-orange-700 shadow-xl">
+        <div className="mt-14 sm:mt-16 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white rounded-3xl p-6 sm:p-10 border border-orange-700 shadow-xl">
           <div className="text-center max-w-2xl mx-auto mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-amber-300">सरल शुरुआत (Quick Onboarding)</span>
             <h3 className="text-2xl sm:text-3xl font-black text-white mt-1">
