@@ -133,6 +133,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   const [printDensity, setPrintDensity] = useState<'compact' | 'normal'>('compact');
   const [showAnswerKey, setShowAnswerKey] = useState<boolean>(false);
   const [showSymbols, setShowSymbols] = useState<boolean>(false);
+  const [showMobileConfig, setShowMobileConfig] = useState<boolean>(false);
   const [focusedQuestionTarget, setFocusedQuestionTarget] = useState<{ secIndex: number; qIndex: number } | null>(null);
 
   const MATH_SYMBOLS = ['√', 'π', '°', '×', '÷', '±', '²', '³', '½', '¼', '≠', '≤', '≥', '∠', 'Δ', '≈', '∞', '%'];
@@ -550,6 +551,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
       setTimeout(() => setSaveToast(null), 3500);
     } finally {
       setIsGenerating(false);
+      setShowMobileConfig(false);
     }
   };
 
@@ -802,8 +804,46 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
         </div>
 
-        {/* Simple & Clean Configuration Panel */}
-        <div className="p-3 sm:p-4 bg-amber-50/70 border-b border-orange-200 space-y-3 shrink-0">
+        {/* Mobile Quick Status Bar & Settings Toggle (sm:hidden) */}
+        <div className="sm:hidden px-3.5 py-2 bg-amber-100/90 border-b border-orange-200 flex items-center justify-between gap-2 shrink-0 text-xs">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-black text-orange-950 truncate text-[11px]">
+              {classLevel} • {subject.split(' ')[0]} • {targetMarks} अंक
+            </span>
+            <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black shrink-0 ${
+              marksBalance === 0 ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-950'
+            }`}>
+              {marksBalance === 0 ? '✓ संतुलित' : `${marksBalance > 0 ? `+${marksBalance}` : marksBalance} अंक`}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowMobileConfig(!showMobileConfig)}
+              className={`px-2 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition ${
+                showMobileConfig
+                  ? 'bg-orange-600 text-white border-orange-700 shadow-xs'
+                  : 'bg-white border-amber-300 text-amber-950'
+              }`}
+            >
+              <Sliders className="w-3 h-3" />
+              <span>{showMobileConfig ? 'छुपाएं' : 'सेटिंग्स'}</span>
+            </button>
+            <button
+              type="button"
+              disabled={isGenerating}
+              onClick={handleAutoGenerate}
+              className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-black text-[11px] flex items-center gap-1 shadow-xs disabled:opacity-60"
+              title="नया प्रश्न पत्र बनाएं"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>{isGenerating ? '...' : 'बनाएं'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Simple & Clean Configuration Panel (Collapsible on Mobile, always open on sm+) */}
+        <div className={`${showMobileConfig ? 'block' : 'hidden'} sm:block p-3 sm:p-4 bg-amber-50/70 border-b border-orange-200 space-y-3 shrink-0 animate-in fade-in duration-150`}>
           {/* Row 1: Key Selectors (Class, Subject, Exam Type, Target Marks) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
             {/* Class */}
@@ -978,13 +1018,13 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         </div>
 
         {/* View Switcher & Toolbar: Editor vs A4 Preview */}
-        <div className="px-3 sm:px-5 py-2 bg-stone-100 border-b border-stone-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 p-1 bg-white rounded-xl border border-stone-200 shadow-2xs">
+        <div className="px-2.5 sm:px-5 py-2 bg-stone-100 border-b border-stone-200 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-white rounded-xl border border-stone-200 shadow-2xs">
               <button
                 type="button"
                 onClick={() => setActiveTab('editor')}
-                className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
                   activeTab === 'editor'
                     ? 'bg-stone-900 text-white shadow-xs'
                     : 'text-stone-700 hover:bg-stone-100'
@@ -996,14 +1036,14 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
-                className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
                   activeTab === 'preview'
                     ? 'bg-orange-700 text-white shadow-xs'
                     : 'text-stone-700 hover:bg-orange-50'
                 }`}
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>A4 पूर्वावलोकन (Preview)</span>
+                <span>A4 पूर्वावलोकन</span>
               </button>
             </div>
 
@@ -1012,23 +1052,23 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowSymbols(!showSymbols)}
-                className={`h-8 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+                className={`h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 border shadow-2xs ${
                   showSymbols
                     ? 'bg-amber-100 text-amber-950 border-amber-400 ring-1 ring-amber-300'
                     : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
                 }`}
                 title="गणित व संस्कृत विशेष चिन्ह पैलेट खोलें"
               >
-                <span>📐 गणित व संस्कृत चिन्ह</span>
+                <span>📐 चिन्ह पैलेट</span>
               </button>
             ) : (
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
                 {/* Print Density Toggle */}
                 <div className="flex items-center p-0.5 bg-white rounded-lg border border-stone-200 text-xs shadow-2xs">
                   <button
                     type="button"
                     onClick={() => setPrintDensity('compact')}
-                    className={`px-2 py-1 rounded font-bold transition cursor-pointer ${
+                    className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                       printDensity === 'compact'
                         ? 'bg-orange-100 text-orange-950 font-black'
                         : 'text-stone-600 hover:bg-stone-50'
@@ -1040,7 +1080,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setPrintDensity('normal')}
-                    className={`px-2 py-1 rounded font-bold transition cursor-pointer ${
+                    className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                       printDensity === 'normal'
                         ? 'bg-stone-800 text-white'
                         : 'text-stone-600 hover:bg-stone-50'
@@ -1056,37 +1096,37 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowAnswerKey(false)}
-                    className={`px-2 py-1 rounded font-bold transition cursor-pointer ${
+                    className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                       !showAnswerKey
                         ? 'bg-stone-900 text-white'
                         : 'text-stone-600 hover:bg-stone-50'
                     }`}
                     title="छात्रों के लिए प्रश्न पत्र (बिना उत्तर)"
                   >
-                    छात्र प्रश्न पत्र
+                    छात्र पत्र
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAnswerKey(true)}
-                    className={`px-2 py-1 rounded font-bold transition cursor-pointer ${
+                    className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                       showAnswerKey
                         ? 'bg-emerald-700 text-white font-black'
                         : 'text-stone-600 hover:bg-stone-50'
                     }`}
                     title="शिक्षकों हेतु उत्तर कुंजी व अंक विभाजन सहित"
                   >
-                    🔑 शिक्षक उत्तर कुंजी
+                    🔑 उत्तर कुंजी
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <button
               type="button"
               onClick={handleSaveToDevice}
-              className="h-8 sm:h-9 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              className="h-7 sm:h-9 px-2 sm:px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] sm:text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1 sm:gap-1.5"
               title="वर्तमान प्रश्न पत्र को सहेजें"
             >
               <Save className="w-3.5 h-3.5" />
@@ -1096,17 +1136,17 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="h-8 sm:h-9 px-3.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              className="h-7 sm:h-9 px-2.5 sm:px-3.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-[11px] sm:text-xs font-bold shadow-xs transition cursor-pointer flex items-center gap-1 sm:gap-1.5"
               title="A4 प्रिंट करें अथवा PDF के रूप में सहेजें"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>A4 प्रिंट / PDF</span>
+              <span>A4 प्रिंट</span>
             </button>
           </div>
         </div>
 
         {/* Modal Body: Editor vs Preview */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-stone-50">
+        <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-6 bg-stone-50">
           {(paper.generationSource === 'gemini' || paper.generationSource === 'baudhik') && !paper.generationWarning && (
             <div className="max-w-4xl mx-auto mb-4 p-2.5 bg-orange-50 border border-orange-200 rounded-2xl text-xs text-orange-950 flex items-center justify-between gap-2 shadow-2xs">
               <div className="flex items-center gap-2">
@@ -1402,8 +1442,8 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             /* TAB 2: A4 PRINT PREVIEW */
             <div className="overflow-x-auto pb-4">
               <div
-                className={`bg-white min-w-[300px] max-w-[210mm] mx-auto rounded-xl shadow-lg border border-stone-200 text-stone-900 font-sans print:p-0 print:shadow-none print:border-none print:max-w-none ${
-                  printDensity === 'compact' ? 'p-3 sm:p-5 text-[11px]' : 'p-4 sm:p-8 md:p-12 text-xs'
+                className={`bg-white w-full max-w-full sm:max-w-[210mm] mx-auto rounded-xl shadow-lg border border-stone-200 text-stone-900 font-sans print:p-0 print:shadow-none print:border-none print:max-w-none ${
+                  printDensity === 'compact' ? 'p-2.5 sm:p-5 text-[11px]' : 'p-3 sm:p-8 md:p-12 text-xs'
                 }`}
               >
                 {/* Exam Header */}
