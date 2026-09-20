@@ -93,7 +93,7 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
           badge: 'Sec 6, 30'
         }
       ],
-      footerNote: '✨ 90% दैनिक प्रशासनिक समय की बचत • शून्य कागज़ी झंझट'
+      footerNote: '✨ दैनिक प्रशासनिक समय की बचत • व्यवस्थित विद्यालयी संचालन'
     },
     {
       id: 'exams-evaluation',
@@ -169,7 +169,7 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
           badge: 'Sec 22, 31'
         }
       ],
-      footerNote: '✨ 100% भारत सरकार एवं शिक्षा विभाग मानकों के अनुरूप'
+      footerNote: '✨ भारत सरकार एवं शिक्षा विभाग मानकों के अनुरूप'
     },
     {
       id: 'logistics-governance',
@@ -206,7 +206,7 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
         {
           icon: Command,
           title: 'ग्लोबल क्विक कमांड पैलेट (Ctrl + K)',
-          desc: 'कीबोर्ड पर Ctrl + K दबाएं और छात्र, रसीद या कोई भी मॉड्यूल 1 सेकंड में खोजें। माउस क्लिक के समय की 90% बचत।',
+          desc: 'कीबोर्ड पर Ctrl + K दबाएं और छात्र, रसीद या कोई भी मॉड्यूल तुरंत खोजें। सुगम व त्वरित नेविगेशन।',
           badge: 'Sec 30'
         }
       ],
