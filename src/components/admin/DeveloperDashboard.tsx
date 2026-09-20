@@ -1156,24 +1156,17 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 </p>
               </div>
 
-              <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl space-y-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-stone-500 uppercase block">
-                    आधिकारिक कोटा एवं लाइव ग्राफ़
-                  </span>
-                  <p className="text-[11px] text-stone-600 mt-0.5">
-                    Google AI Studio पर लाइव यूसेज, बची हुई सीमा व ग्राफ़ देखें
-                  </p>
+              <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold text-stone-500 uppercase block">
+                  लागत एवं व्यय (Cost & Billing)
+                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-lg font-black text-emerald-800">₹0</span>
+                  <span className="text-xs text-stone-500 font-semibold">आजीवन निःशुल्क</span>
                 </div>
-                <a
-                  href="https://aistudio.google.com/app/plan_information"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-700 hover:text-orange-800 hover:underline mt-1 cursor-pointer"
-                >
-                  <span>Google कोटा डैशबोर्ड खोलें</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                <p className="text-[10px] text-stone-500">
+                  कोई क्रेडिट कार्ड अथवा भुगतान आवश्यक नहीं
+                </p>
               </div>
             </div>
           </div>
