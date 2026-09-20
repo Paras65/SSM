@@ -1288,7 +1288,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* 80% Storage High-Watermark Pre-emptive Alert */}
+        {/* 80% Storage High-Watermark Pre-emptive Alert / Data Safety Advisory */}
         {schoolStorageEstimates.isHighWatermark && !dismissStorageAlert && (
           <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 shadow-sm animate-in fade-in">
             <div className="flex items-center gap-3">
@@ -1297,13 +1297,17 @@ export const AdminDashboard: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-bold text-sm text-stone-900 flex items-center gap-2">
-                  <span>⚠️ डेटाबेस स्टोरेज उच्च-सीमा चेतावनी (Storage High-Watermark Alert)</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-black">
-                    {schoolStorageEstimates.usagePercent}% प्रयुक्त ({schoolStorageEstimates.totalMb} MB / 512 MB)
-                  </span>
+                  <span>{isDeveloper ? '⚠️ डेटाबेस स्टोरेज उच्च-सीमा चेतावनी (Storage High-Watermark Alert)' : '💡 डेटा सुरक्षा एवं बैकअप अनुशंसा (Data Safety Advisory)'}</span>
+                  {isDeveloper && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-black">
+                      {schoolStorageEstimates.usagePercent}% प्रयुक्त ({schoolStorageEstimates.totalMb} MB / 512 MB)
+                    </span>
+                  )}
                 </h4>
                 <p className="text-xs text-stone-600 mt-0.5">
-                  डेटाबेस स्टोरेज 80% सीमा पार कर चुका है। सुचारू संचालन एवं बैकअप सुरक्षा हेतु 'डेटा बैकअप' (.JSON) डाउनलोड करें अथवा पुराने गैर-आवश्यक रिकॉर्ड्स को साफ करें।
+                  {isDeveloper
+                    ? "डेटाबेस स्टोरेज 80% सीमा पार कर चुका है। सुचारू संचालन एवं बैकअप सुरक्षा हेतु 'डेटा बैकअप' (.JSON) डाउनलोड करें अथवा पुराने गैर-आवश्यक रिकॉर्ड्स को साफ करें।"
+                    : "नियमित रिकॉर्ड सुरक्षा एवं निर्बाध संचालन हेतु महीने में एक बार सम्पूर्ण 'डेटा बैकअप' (.JSON) डाउनलोड कर विद्यालय के कंप्यूटर अथवा सुरक्षित पेनड्राइव में सहेज कर रखें।"}
                 </p>
               </div>
             </div>
@@ -1323,7 +1327,7 @@ export const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setDismissStorageAlert(true)}
                 className="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200 transition cursor-pointer"
-                title="चेतावनी छिपाएं"
+                title="सलाह छिपाएं"
               >
                 <X className="w-4 h-4" />
               </button>
