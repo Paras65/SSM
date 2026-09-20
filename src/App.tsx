@@ -213,10 +213,10 @@ const SchoolApp: React.FC = () => {
               onOpenLogin={handleOpenLogin}
               onOpenHelpGuide={() => setShowHelpGuideModal(true)}
             />
-            <CulturalHeritageSection />
-            <AdmissionInquiry />
             <AboutSection onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)} />
+            <CulturalHeritageSection />
             <SchoolShowcaseSection />
+            <AdmissionInquiry />
             <ContactSection
               onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)}
               onOpenBranchList={handleOpenBranchList}
