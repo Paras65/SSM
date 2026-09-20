@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import type { Exam } from '../../types';
 import {
@@ -44,6 +45,7 @@ const CLASS_PROGRESSION_MAP: Record<string, string> = {
 
 export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool, students, feeRecords, refreshFromDb } = useSchool();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const [activeTab, setActiveTab] = useState<'promotion' | 'fee_rollover' | 'exam_lock'>('promotion');
   const [fromSession, setFromSession] = useState('2024-25');
@@ -159,7 +161,7 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
       }));
 
     if (promotions.length === 0) {
-      alert('कृपया कम से कम एक छात्र का चयन करें।');
+      showWarning('कृपया कम से कम एक छात्र का चयन करें।');
       return;
     }
 
@@ -174,16 +176,20 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
         promotions
       });
 
+      const successMsg = res.message || `${res.count} छात्रों की प्रोन्नति सफलतापूर्वक संपन्न हुई!`;
       setPromotionResult({
         success: true,
-        message: res.message || `${res.count} छात्रों की प्रोन्नति सफलतापूर्वक संपन्न हुई!`
+        message: successMsg
       });
+      showSuccess(successMsg);
       await refreshFromDb();
     } catch (err: any) {
+      const errorMsg = err.message || 'छात्र प्रोन्नति विफल रही।';
       setPromotionResult({
         success: false,
-        message: err.message || 'छात्र प्रोन्नति विफल रही।'
+        message: errorMsg
       });
+      showError(errorMsg);
     } finally {
       setIsPromoting(false);
     }
@@ -191,7 +197,7 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
 
   const handleRolloverFees = async () => {
     if (pendingArrearsList.length === 0) {
-      alert(`सत्र ${fromSession} में कोई बकाया शुल्क शेष नहीं है।`);
+      showInfo(`सत्र ${fromSession} में कोई बकाया शुल्क शेष नहीं है।`);
       return;
     }
 
@@ -209,18 +215,22 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
         toAcademicYear: toSession
       });
 
+      const successMsg = res.message || `सत्र ${toSession} में कुल ₹${res.totalArrearsAmount?.toLocaleString()} बकाया शुल्क सफलतापूर्वक रोलओवर किया गया!`;
       setFeeRolloverResult({
         success: true,
-        message: res.message,
+        message: successMsg,
         amount: res.totalArrearsAmount,
         count: res.rolledOverCount
       });
+      showSuccess(successMsg);
       await refreshFromDb();
     } catch (err: any) {
+      const errorMsg = err.message || 'शुल्क रोलओवर में समस्या उत्पन्न हुई।';
       setFeeRolloverResult({
         success: false,
-        message: err.message || 'शुल्क रोलओवर में समस्या उत्पन्न हुई।'
+        message: errorMsg
       });
+      showError(errorMsg);
     } finally {
       setIsRollingOverFees(false);
     }
@@ -232,8 +242,9 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
       const targetLock = !exam.isLocked;
       const res = await api.toggleExamLock(exam.id, targetLock);
       setExams(prev => prev.map(e => e.id === exam.id ? { ...e, isLocked: res.isLocked } : e));
+      showSuccess(res.isLocked ? 'परीक्षा सफलतापूर्वक लॉक (स्थिर) कर दी गई है।' : 'परीक्षा सफलतापूर्वक अनलॉक कर दी गई है।');
     } catch (err: any) {
-      alert(err.message || 'परीक्षा लॉक बदलने में विफल।');
+      showError(err.message || 'परीक्षा लॉक बदलने में विफल।');
     } finally {
       setExamActionId(null);
     }

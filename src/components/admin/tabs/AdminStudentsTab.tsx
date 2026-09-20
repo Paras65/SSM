@@ -379,9 +379,10 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
                       <span>📄 अध्ययनरत</span>
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (confirm(`क्या आप '${student.name}' का रिकॉर्ड हटाना चाहते हैं?`)) {
-                          deleteStudent(student.id);
+                          await deleteStudent(student.id);
+                          showSuccess(`'${student.name}' का रिकॉर्ड सफलतापूर्वक हटाया गया!`);
                         }
                       }}
                       className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"

@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '../../../context/SchoolContext';
+import { useToast } from '../../../context/ToastContext';
 import { generateSmartJSON } from '../../../services/aiService';
+import { createSpeechRecognitionInstance } from '../../../utils/speechRecognition';
 import type { Notice } from '../../../types';
 import {
   AlertTriangle,
@@ -19,6 +21,7 @@ import {
 
 const AdminNoticesTabComponent: React.FC = () => {
   const { currentSchool, notices, addNotice, updateNotice, deleteNotice } = useSchool();
+  const { showSuccess, showError, showWarning } = useToast();
 
   // New Notice form state
   const [newNoticeTitle, setNewNoticeTitle] = useState('');
@@ -35,24 +38,23 @@ const AdminNoticesTabComponent: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
 
   const startVoiceForNotice = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है।');
-      return;
-    }
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'hi-IN';
-      recognition.continuous = false;
-      setIsListening(true);
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
+    const recognition = createSpeechRecognitionInstance({
+      lang: 'hi-IN',
+      continuous: false,
+      onResult: (transcript) => {
         setSmartTopic(transcript);
         setIsListening(false);
         handleDraftSmartNotice(transcript);
-      };
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+      },
+      onError: () => setIsListening(false),
+      onEnd: () => setIsListening(false)
+    });
+    if (!recognition) {
+      showWarning('ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है।');
+      return;
+    }
+    try {
+      setIsListening(true);
       recognition.start();
     } catch {
       setIsListening(false);
@@ -151,19 +153,27 @@ Output MUST be strictly valid JSON without markdown formatting:
 
   const handleCreateNotice = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNoticeTitle || !newNoticeContent) return;
-    addNotice({
-      title: newNoticeTitle,
-      category: newNoticeCategory,
-      content: newNoticeContent,
-      date: today,
-      isUrgent: newNoticeUrgent,
-      ...(newNoticeExpiresAt ? { expiresAt: newNoticeExpiresAt } : {})
-    });
-    setNewNoticeTitle('');
-    setNewNoticeContent('');
-    setNewNoticeUrgent(false);
-    setNewNoticeExpiresAt('');
+    if (!newNoticeTitle.trim() || !newNoticeContent.trim()) {
+      showWarning('कृपया शीर्षक एवं सूचना विवरण भरें।');
+      return;
+    }
+    try {
+      addNotice({
+        title: newNoticeTitle.trim(),
+        category: newNoticeCategory,
+        content: newNoticeContent.trim(),
+        date: today,
+        isUrgent: newNoticeUrgent,
+        ...(newNoticeExpiresAt ? { expiresAt: newNoticeExpiresAt } : {})
+      });
+      showSuccess(`सूचना "${newNoticeTitle.trim()}" सफलतापूर्वक प्रकाशित की गई!`);
+      setNewNoticeTitle('');
+      setNewNoticeContent('');
+      setNewNoticeUrgent(false);
+      setNewNoticeExpiresAt('');
+    } catch (err: any) {
+      showError(err.message || 'सूचना प्रकाशित करने में त्रुटि।');
+    }
   };
 
   const openEditModal = (notice: Notice) => {
@@ -178,20 +188,30 @@ Output MUST be strictly valid JSON without markdown formatting:
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingNotice) return;
-    await updateNotice(editingNotice.id, {
-      title: editTitle,
-      category: editCategory,
-      content: editContent,
-      isUrgent: editUrgent,
-      expiresAt: editExpiresAt || undefined
-    });
-    setEditingNotice(null);
+    try {
+      await updateNotice(editingNotice.id, {
+        title: editTitle.trim(),
+        category: editCategory,
+        content: editContent.trim(),
+        isUrgent: editUrgent,
+        expiresAt: editExpiresAt || undefined
+      });
+      showSuccess(`सूचना "${editTitle.trim()}" सफलतापूर्वक अद्यतित की गई!`);
+      setEditingNotice(null);
+    } catch (err: any) {
+      showError(err.message || 'सूचना अद्यतन करने में त्रुटि।');
+    }
   };
 
   const handleConfirmDelete = async () => {
     if (!noticeToDelete) return;
-    await deleteNotice(noticeToDelete.id);
-    setNoticeToDelete(null);
+    try {
+      await deleteNotice(noticeToDelete.id);
+      showSuccess(`सूचना "${noticeToDelete.title}" सफलतापूर्वक हटाई गई!`);
+      setNoticeToDelete(null);
+    } catch (err: any) {
+      showError(err.message || 'सूचना हटाने में त्रुटि।');
+    }
   };
 
   // Filtered notices
