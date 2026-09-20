@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '../../../context/SchoolContext';
+import { generateSmartJSON } from '../../../services/aiService';
 import type { Notice } from '../../../types';
 import {
   AlertTriangle,
@@ -63,13 +64,6 @@ const AdminNoticesTabComponent: React.FC = () => {
     if (!topic) return;
     setIsDrafting(true);
 
-    const effectiveKey =
-      (import.meta.env.VITE_SMART_API_KEY as string) ||
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-      localStorage.getItem('ssm_smart_api_key') ||
-      localStorage.getItem('ssm_gemini_api_key') ||
-      '';
-
     const fallbackDraft = (t: string) => {
       const schoolHindi = currentSchool.hindiName || currentSchool.name;
       if (t.includes('अवकाश') || t.includes('छुट्टी') || t.includes('होली') || t.includes('दीपावली') || t.includes('शीतकालीन') || t.includes('गर्मी')) {
@@ -100,17 +94,6 @@ const AdminNoticesTabComponent: React.FC = () => {
       };
     };
 
-    if (!effectiveKey) {
-      setTimeout(() => {
-        const d = fallbackDraft(topic);
-        setNewNoticeTitle(d.title);
-        setNewNoticeCategory(d.category);
-        setNewNoticeContent(d.content);
-        setIsDrafting(false);
-      }, 300);
-      return;
-    }
-
     try {
       const schoolHindi = currentSchool.hindiName || currentSchool.name;
       const prompt = `You are the Principal of ${schoolHindi} (Vidya Bharati school).
@@ -122,28 +105,12 @@ Output MUST be strictly valid JSON without markdown formatting:
   "content": "Full formal Hindi notice content with salutation 'सादर प्रणाम/सादर वन्दे', clear instructions, and sign-off '— प्रधानाचार्य कार्यालय, ${schoolHindi}'"
 }`;
 
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': effectiveKey
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.2,
-              responseMimeType: 'application/json'
-            }
-          })
-        }
-      );
+      const parsed = await generateSmartJSON<{
+        title?: string;
+        category?: Notice['category'];
+        content?: string;
+      }>(prompt, { temperature: 0.2 });
 
-      if (!response.ok) throw new Error('API request failed');
-      const data = await response.json();
-      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      const parsed = JSON.parse(raw);
       if (parsed && parsed.title && parsed.content) {
         setNewNoticeTitle(parsed.title);
         setNewNoticeCategory(parsed.category || 'Academics');

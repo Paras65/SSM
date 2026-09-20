@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
+import { testSmartKeyHealth } from '../../services/aiService';
 import type { School, AuditLogEntry } from '../../types';
 import {
   ShieldAlert,
@@ -87,75 +88,21 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
   } | null>(null);
 
   const handleTestSmartKey = async () => {
-    if (!envSmartKey) {
-      setKeyTestResult({
-        success: false,
-        message: 'पर्यावरण (.env) में कोई कुंजी नहीं मिली। कृपया पहले VITE_SMART_API_KEY सेट करें।'
-      });
-      return;
-    }
-
     setIsTestingKey(true);
     setKeyTestResult(null);
-    const startTime = Date.now();
 
     try {
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': envSmartKey.trim()
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: 'Respond with the single word: OK' }] }],
-            generationConfig: {
-              maxOutputTokens: 5,
-              temperature: 0.1
-            }
-          })
-        }
-      );
-
-      const latency = Date.now() - startTime;
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        const errMsg = errData?.error?.message || `HTTP ${response.status} (${response.statusText})`;
-        setKeyTestResult({
-          success: false,
-          message: `कुंजी सत्यापन विफल (${errMsg})। कृपया Google AI Studio से सही कुंजी जांचें।`,
-          latency
-        });
-        showError(`कुंजी सत्यापन विफल (${response.status})`);
-        return;
-      }
-
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-
-      if (text) {
-        setKeyTestResult({
-          success: true,
-          message: `कुंजी 100% कार्यशील एवं सक्रिय है! (प्रतिक्रिया समय: ${latency}ms)`,
-          latency
-        });
-        showSuccess(`बौद्धिक सेवा कुंजी सफलतापूर्वक सत्यापित! (${latency}ms)`);
+      const result = await testSmartKeyHealth();
+      setKeyTestResult(result);
+      if (result.success) {
+        showSuccess(`बौद्धिक सेवा कुंजी सत्यापित! (${result.latency || 0}ms)`);
       } else {
-        setKeyTestResult({
-          success: false,
-          message: 'कुंजी से रिक्त प्रतिक्रिया प्राप्त हुई।',
-          latency
-        });
-        showWarning('कुंजी से कोई उत्तर प्राप्त नहीं हुआ।');
+        showError(result.message || 'कुंजी सत्यापन विफल');
       }
     } catch (err: any) {
-      const latency = Date.now() - startTime;
       setKeyTestResult({
         success: false,
-        message: `नेटवर्क या कनेक्शन त्रुटि: ${err.message || 'सर्वर से संपर्क नहीं हो सका।'}`,
-        latency
+        message: `सत्यापन त्रुटि: ${err.message || 'सर्वर से संपर्क नहीं हो सका।'}`
       });
       showError('सत्यापन के दौरान कनेक्शन त्रुटि आई।');
     } finally {

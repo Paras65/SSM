@@ -16,6 +16,7 @@ const staffRoutes = require('./staff');
 const salarySlipRoutes = require('./salarySlips');
 const examRoutes = require('./exams');
 const operationRoutes = require('./operations');
+const aiRoutes = require('./ai');
 
 // Healthcheck & Database status
 router.get('/status', (req, res) => {
@@ -47,6 +48,7 @@ router.use('/homework', homeworkRoutes);
 router.use('/staff', staffRoutes);
 router.use('/salary-slips', salarySlipRoutes);
 router.use('/exams', examRoutes);
+router.use('/ai', aiRoutes);
 router.use('/', operationRoutes); // Timetable, Leaves, Transport, Library, Inventory, Audit Logs
 
 module.exports = router;

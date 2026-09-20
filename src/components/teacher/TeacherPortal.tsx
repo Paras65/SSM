@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
+import { generateSmartJSON } from '../../services/aiService';
 import type { Homework, Staff, Exam, Timetable, LeaveRequest } from '../../types';
 import { SSM_CLASSES } from '../../types';
 import { StaffSalarySlipModal } from '../admin/StaffSalarySlipModal';
@@ -301,13 +302,6 @@ export const TeacherPortal: React.FC = () => {
     const topic = (overrideTopic || smartHwTopic || hwTitle || hwSubject).trim();
     setIsDraftingHw(true);
 
-    const effectiveKey =
-      (import.meta.env.VITE_SMART_API_KEY as string) ||
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-      localStorage.getItem('ssm_smart_api_key') ||
-      localStorage.getItem('ssm_gemini_api_key') ||
-      '';
-
     const fallbackHomework = (t: string, subj: string) => {
       if (subj.includes('गणित')) {
         return {
@@ -339,16 +333,6 @@ export const TeacherPortal: React.FC = () => {
       };
     };
 
-    if (!effectiveKey) {
-      setTimeout(() => {
-        const d = fallbackHomework(topic, hwSubject);
-        setHwTitle(d.title);
-        setHwDesc(d.description);
-        setIsDraftingHw(false);
-      }, 300);
-      return;
-    }
-
     try {
       const schoolHindi = currentSchool.hindiName || currentSchool.name;
       const prompt = `You are an expert teacher at ${schoolHindi} (Vidya Bharati school).
@@ -360,34 +344,11 @@ Output MUST be strictly valid JSON without markdown formatting:
   "description": "Clear step-by-step instructions in Hindi including:\\n1. स्वाध्याय निर्देश (Reading page numbers/concepts)\\n2. अभ्यास प्रश्न (3 graded practice questions)\\n3. प्रस्तुतिकरण निर्देश (Submission instructions)"
 }`;
 
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': effectiveKey
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.4,
-              maxOutputTokens: 600,
-              responseMimeType: 'application/json'
-            }
-          })
-        }
-      );
+      const parsed = await generateSmartJSON<{ title?: string; description?: string }>(prompt, {
+        temperature: 0.4,
+        maxOutputTokens: 600
+      });
 
-      if (!response.ok) {
-        throw new Error(`Smart drafting API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!rawText) throw new Error('Empty response');
-
-      const parsed = JSON.parse(rawText);
       if (parsed.title) setHwTitle(parsed.title);
       if (parsed.description) setHwDesc(parsed.description);
     } catch {

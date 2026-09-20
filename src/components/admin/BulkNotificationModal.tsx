@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { X, Send, MessageSquare, Sparkles, Mic, RefreshCw } from 'lucide-react';
 import { formatWhatsAppPhone } from '../../utils/whatsappAlerts';
+import { generateSmartJSON } from '../../services/aiService';
 
 interface BulkNotificationModalProps {
   isOpen: boolean;
@@ -50,13 +51,6 @@ export const BulkNotificationModal: React.FC<BulkNotificationModalProps> = ({ is
     if (!brief) return;
     setIsDraftingMsg(true);
 
-    const effectiveKey =
-      (import.meta.env.VITE_SMART_API_KEY as string) ||
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-      localStorage.getItem('ssm_smart_api_key') ||
-      localStorage.getItem('ssm_gemini_api_key') ||
-      '';
-
     const fallbackDraft = (b: string) => {
       const schoolHindi = currentSchool.hindiName || currentSchool.name;
       return {
@@ -64,16 +58,6 @@ export const BulkNotificationModal: React.FC<BulkNotificationModalProps> = ({ is
         message: `सादर प्रणाम,\n\n${schoolHindi} के समस्त आदरणीय अभिभावकों को सूचित किया जाता है कि ${b}।\n\nकृपया इस सूचना का संज्ञान लें एवं आवश्यक सहयोग प्रदान करें। किसी भी जिज्ञासा हेतु विद्यालय कार्यालय से संपर्क करें।\n\n— प्रधानाचार्य कार्यालय`
       };
     };
-
-    if (!effectiveKey) {
-      setTimeout(() => {
-        const d = fallbackDraft(brief);
-        setCustomTitle(d.title);
-        setCustomMessage(d.message);
-        setIsDraftingMsg(false);
-      }, 300);
-      return;
-    }
 
     try {
       const schoolHindi = currentSchool.hindiName || currentSchool.name;
@@ -84,24 +68,10 @@ Output strictly valid JSON:
   "message": "Polite, formal Hindi WhatsApp message with salutation 'सादर प्रणाम', brief details, and closing '— प्रधानाचार्य कार्यालय'"
 }`;
 
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': effectiveKey
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
-          })
-        }
-      );
+      const parsed = await generateSmartJSON<{ title?: string; message?: string }>(prompt, {
+        temperature: 0.2
+      });
 
-      if (!response.ok) throw new Error('API failed');
-      const data = await response.json();
-      const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}');
       if (parsed.title && parsed.message) {
         setCustomTitle(parsed.title);
         setCustomMessage(parsed.message);

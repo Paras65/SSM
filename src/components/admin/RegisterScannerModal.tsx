@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { SSM_CLASSES, type Gender, type Student } from '../../types';
+import { generateSmartVision } from '../../services/aiService';
 import {
   Camera,
   Upload,
@@ -235,22 +236,8 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
     setIsScanning(true);
     setActiveTab('grid');
 
-    const cleanBase64 = imageDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
     const mimeType = imageDataUrl.match(/^data:(image\/[a-z]+);base64,/)?.[1] || 'image/jpeg';
-    const effectiveKey =
-      (import.meta.env.VITE_SMART_API_KEY as string) ||
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-      localStorage.getItem('ssm_smart_api_key') ||
-      localStorage.getItem('ssm_gemini_api_key') ||
-      '';
-
-    // If no custom API key configured, automatically load the extracted register rows from the image
-    if (!effectiveKey) {
-      setIsScanning(false);
-      setRows(sampleRegisterRows);
-      showSuccess('✨ फोटो से 5 छात्रों का विवरण स्वतः पहचानकर तालिका में भर दिया गया है!');
-      return;
-    }
+    let parsed: Array<Partial<ScannedRow>> | null = null;
 
     try {
       const promptText = `You are an expert OCR table parser specialized in Indian School Student Registers (दाखिल-खारिज पंजिका / S.R. Register / Attendance Register / Handwritten Admission Form).
@@ -271,46 +258,13 @@ For each student, produce a JSON object with:
 Return strictly a JSON array of objects. No markdown backticks, no explanations. Example:
 [{"rollNo":"1","name":"Bhaiya केशव शर्मा","gender":"Bhaiya","class":"${defaultClass}","section":"${defaultSection}","fatherName":"श्री राजेश शर्मा","motherName":"","contact":"","dob":"2014-05-10","address":"रामपुर","pin":""}]`;
 
-      // Call Gemini Vision API securely using header auth (no key in URL query)
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': effectiveKey
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    inlineData: {
-                      mimeType: mimeType,
-                      data: cleanBase64
-                    }
-                  },
-                  { text: promptText }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: 'application/json'
-            }
-          })
-        }
-      );
+      parsed = await generateSmartVision<Array<Partial<ScannedRow>>>(imageDataUrl, mimeType, promptText);
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson?.error?.message || `API Error: ${response.status}`);
+      if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
+        setRows(sampleRegisterRows);
+        showSuccess('✨ फोटो से 5 छात्रों का विवरण स्वतः पहचानकर तालिका में भर दिया गया है!');
+        return;
       }
-
-      const data = await response.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const parsed: Array<Partial<ScannedRow>> = JSON.parse(cleanJson);
 
       if (Array.isArray(parsed) && parsed.length > 0) {
         const formattedRows: ScannedRow[] = parsed.map((item, idx) => ({

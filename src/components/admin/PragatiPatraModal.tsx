@@ -10,6 +10,7 @@ import type {
 } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
+import { generateSmartText } from '../../services/aiService';
 import {
   Printer,
   X,
@@ -203,13 +204,6 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
   // 1-Click Smart Culturally-Grounded Hindi Remarks Generator
   const handleGenerateSmartRemarks = async () => {
     setIsGeneratingRemarks(true);
-    const effectiveKey =
-      (import.meta.env.VITE_SMART_API_KEY as string) ||
-      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
-      localStorage.getItem('ssm_smart_api_key') ||
-      localStorage.getItem('ssm_gemini_api_key') ||
-      '';
-
     const fallbackRemark = () => {
       const isSister = student.gender === 'Bahin' || student.name.includes('Bahin') || student.name.includes('बहन');
       const prefix = isSister ? 'बहिन' : 'भैया';
@@ -227,15 +221,6 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
       }
     };
 
-    if (!effectiveKey) {
-      setTimeout(() => {
-        setCurrentRemarks(fallbackRemark());
-        setIsGeneratingRemarks(false);
-        showSuccess('✨ बौद्धिक शिक्षक सम्मति स्वतः जोड़ी गई!');
-      }, 300);
-      return;
-    }
-
     try {
       const prompt = `You are an experienced, affectionate Vidya Bharati (सरस्वती शिशु मंदिर) class teacher writing an annual report card remark (कक्षाचार्य सम्मति) for a student.
 Student Details:
@@ -249,24 +234,7 @@ Instructions:
 - Mention their academic effort and positive character/discipline.
 - Return ONLY the 2 sentences. No quotes, no markdown, no preamble.`;
 
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': effectiveKey
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.3, maxOutputTokens: 120 }
-          })
-        }
-      );
-
-      if (!response.ok) throw new Error('API request failed');
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      const text = await generateSmartText(prompt, { temperature: 0.3, maxOutputTokens: 120 });
       if (text) {
         setCurrentRemarks(text);
         showSuccess('✨ बौद्धिक शिक्षक सम्मति स्वतः जोड़ी गई!');
