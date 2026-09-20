@@ -12,6 +12,8 @@ import { Footer } from './components/public/Footer';
 import { LegalInformation } from './components/public/LegalInformation';
 import { OfflineBadge } from './components/common/OfflineBadge';
 import { DemoBanner } from './components/common/DemoBanner';
+import { MaintenanceBanner } from './components/common/MaintenanceBanner';
+import { MaintenanceScreen } from './components/common/MaintenanceScreen';
 import { PwaInstallBanner } from './components/common/PwaInstallBanner';
 import { AdminAuthModal } from './components/admin/AdminAuthModal';
 import { ERPModulesSection } from './components/public/ERPModulesSection';
@@ -160,6 +162,8 @@ const SchoolApp: React.FC = () => {
 
   return (
     <>
+      <MaintenanceBanner />
+      <MaintenanceScreen onOpenAdminLogin={() => setShowAuthModal(true)} />
       <DemoBanner />
       <OfflineBadge />
       {viewMode === 'admin' ? (
