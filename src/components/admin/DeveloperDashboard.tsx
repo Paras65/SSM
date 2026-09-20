@@ -72,6 +72,60 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
   const [seedingSchoolId, setSeedingSchoolId] = useState<string>('ssm-demo');
   const [isSeeding, setIsSeeding] = useState(false);
 
+  // Smart / Baudhik API Key State (Super Admin Access)
+  const [smartKeyInput, setSmartKeyInput] = useState('');
+  const [smartKeyStatus, setSmartKeyStatus] = useState<{
+    source: 'env' | 'storage' | 'none';
+    isConfigured: boolean;
+    maskedKey?: string;
+  }>({ source: 'none', isConfigured: false });
+  const [showKeyInput, setShowKeyInput] = useState(false);
+
+  const checkSmartKeyStatus = () => {
+    const envKey = (import.meta.env.VITE_SMART_API_KEY as string) || (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
+    const storageKey = localStorage.getItem('ssm_smart_api_key') || localStorage.getItem('ssm_gemini_api_key') || '';
+    if (envKey) {
+      setSmartKeyStatus({
+        source: 'env',
+        isConfigured: true,
+        maskedKey: envKey.slice(0, 6) + '...' + envKey.slice(-4)
+      });
+    } else if (storageKey) {
+      setSmartKeyStatus({
+        source: 'storage',
+        isConfigured: true,
+        maskedKey: storageKey.slice(0, 6) + '...' + storageKey.slice(-4)
+      });
+    } else {
+      setSmartKeyStatus({ source: 'none', isConfigured: false });
+    }
+  };
+
+  useEffect(() => {
+    checkSmartKeyStatus();
+  }, []);
+
+  const handleSaveSmartKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = smartKeyInput.trim();
+    if (!clean) return;
+    localStorage.setItem('ssm_smart_api_key', clean);
+    setSmartKeyInput('');
+    setShowKeyInput(false);
+    checkSmartKeyStatus();
+    showSuccess('बौद्धिक सहायक स्मार्ट कुंजी सफलतापूर्वक सहेजी गई!');
+  };
+
+  const handleRemoveSmartKey = () => {
+    if (!window.confirm('क्या आप सुपर एडमिन स्टोरेज से स्मार्ट कुंजी हटाना चाहते हैं?')) return;
+    localStorage.removeItem('ssm_smart_api_key');
+    localStorage.removeItem('ssm_gemini_api_key');
+    setSmartKeyInput('');
+    setShowKeyInput(false);
+    checkSmartKeyStatus();
+    showSuccess('स्मार्ट कुंजी सफलतापूर्वक हटा दी गई। अब अंतर्निहित प्रश्न बैंक सक्रिय रहेगा।');
+  };
+
   // Fetch MongoDB Health & Network KPIs
   const loadNetworkData = async () => {
     setIsLoadingMetrics(true);
@@ -939,6 +993,127 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 <span>शाखा डेटा आर्काइव (JSON) डाउनलोड करें</span>
               </button>
             </div>
+          </div>
+
+          {/* Smart Service / Intelligent Assistant Configuration Card */}
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-2xs space-y-4 md:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-orange-600" />
+                <h3 className="text-base font-bold text-stone-900">
+                  बौद्धिक सहायक एवं स्मार्ट सेवा विन्यास (Intelligent Assistant & Smart Key)
+                </h3>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                smartKeyStatus.source === 'env'
+                  ? 'bg-purple-50 text-purple-900 border-purple-300'
+                  : smartKeyStatus.source === 'storage'
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                    : 'bg-stone-100 text-stone-700 border-stone-300'
+              }`}>
+                {smartKeyStatus.source === 'env'
+                  ? '⚡ पर्यावरण चर (.env) से सक्रिय'
+                  : smartKeyStatus.source === 'storage'
+                    ? '✅ सुपर एडमिन स्टोरेज से सक्रिय'
+                    : '⚪ निष्क्रिय (अंतर्निहित प्रश्न बैंक सक्रिय)'}
+              </span>
+            </div>
+
+            <p className="text-xs text-stone-600 leading-relaxed">
+              शिक्षकों के स्मार्ट प्रश्न पत्र निर्माता में बिना किसी बाहरी कुंजी पूछे स्वतः नवीन संतुलित प्रश्न पत्र तैयार करने हेतु केंद्रीय सेवा कुंजी का विन्यास। यदि कुंजी कॉन्फ़िगर नहीं है अथवा हटा दी जाती है, तो भी प्रणाली अंतर्निहित पाठ्यक्रम प्रश्न बैंक से शत-प्रतिशत सटीक प्रश्न पत्र बनाती है।
+            </p>
+
+            {smartKeyStatus.isConfigured ? (
+              <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-stone-800">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>सक्रिय कुंजी: <span className="font-mono bg-white px-2 py-0.5 rounded border border-stone-300">{smartKeyStatus.maskedKey}</span></span>
+                  </div>
+                  <p className="text-[11px] text-stone-500">
+                    {smartKeyStatus.source === 'env'
+                      ? 'यह कुंजी .env फ़ाइल (VITE_SMART_API_KEY) से सीधे लोड की गई है।'
+                      : 'यह कुंजी सुपर एडमिन द्वारा डिवाइस स्टोरेज में सुरक्षित सहेजी गई है।'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowKeyInput(!showKeyInput)}
+                    className="px-3 py-1.5 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 text-xs font-bold transition cursor-pointer"
+                  >
+                    {showKeyInput ? 'रद्द करें' : 'कुंजी बदलें'}
+                  </button>
+                  {smartKeyStatus.source === 'storage' && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveSmartKey}
+                      className="px-3 py-1.5 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold transition cursor-pointer"
+                      title="सुपर एडमिन स्टोरेज से कुंजी हटाएं"
+                    >
+                      कुंजी हटाएं
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs font-bold text-amber-900 block">
+                    वर्तमान में कोई स्मार्ट सेवा कुंजी सक्रिय नहीं है।
+                  </span>
+                  <p className="text-[11px] text-amber-800">
+                    आप नीचे से नई कुंजी जोड़ सकते हैं अथवा .env में VITE_SMART_API_KEY सेट कर सकते हैं।
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowKeyInput(true)}
+                  className="px-4 py-2 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>कुंजी जोड़ें</span>
+                </button>
+              </div>
+            )}
+
+            {/* Form to Add or Update Key */}
+            {showKeyInput && (
+              <form onSubmit={handleSaveSmartKey} className="p-4 bg-white border-2 border-orange-300 rounded-xl space-y-3 animate-in fade-in duration-150">
+                <label className="block text-xs font-bold text-stone-800">
+                  नई स्मार्ट सेवा कुंजी (API Key) दर्ज करें:
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="password"
+                    required
+                    value={smartKeyInput}
+                    onChange={e => setSmartKeyInput(e.target.value)}
+                    placeholder="AIzaSy..."
+                    className="flex-1 px-3 py-2 text-xs font-mono rounded-xl border border-stone-300 bg-stone-50 focus:outline-hidden focus:border-orange-500"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setShowKeyInput(false); setSmartKeyInput(''); }}
+                      className="px-4 py-2 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-50 text-xs font-bold cursor-pointer"
+                    >
+                      रद्द करें
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs cursor-pointer"
+                    >
+                      सहेजें
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] text-stone-500">
+                  यह कुंजी केवल सुपर एडमिन अधिकृत सत्र में सहेजी जाएगी और सभी प्रश्न पत्र निर्माण कॉल्स में पृष्ठभूमि में उपयोग होगी।
+                </p>
+              </form>
+            )}
           </div>
 
         </div>

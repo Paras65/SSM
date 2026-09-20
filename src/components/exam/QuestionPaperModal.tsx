@@ -177,17 +177,16 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     setPaper({ ...paper, sections: updatedSections });
   };
 
-  // Smart / Baudhik Key State
-  const [smartKey, setSmartKey] = useState<string>(() => {
+  // Smart / Baudhik Key (Auto-detected from .env or Super Admin configuration)
+  const smartKey = useMemo(() => {
     return (
+      (import.meta.env.VITE_SMART_API_KEY as string) ||
       (import.meta.env.VITE_GEMINI_API_KEY as string) ||
       localStorage.getItem('ssm_smart_api_key') ||
       localStorage.getItem('ssm_gemini_api_key') ||
       ''
     );
-  });
-  const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
-  const [tempKey, setTempKey] = useState<string>('');
+  }, []);
 
   // Voice Input State & Ref
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -780,23 +779,6 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                setTempKey(smartKey);
-                setShowKeyModal(true);
-              }}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                smartKey
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30 hover:bg-emerald-500/30'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-400/30 hover:bg-amber-500/30'
-              }`}
-              title={smartKey ? 'बौद्धिक सहायक सक्रिय (कुंजी बदलने हेतु क्लिक करें)' : 'बौद्धिक सहायक स्मार्ट कुंजी जोड़ें'}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">{smartKey ? 'बौद्धिक सहायक: सक्रिय' : 'स्मार्ट कुंजी जोड़ें'}</span>
-            </button>
-
             <button
               type="button"
               onClick={() => setShowSavedModal(true)}
@@ -1772,90 +1754,6 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               >
                 बंद करें
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Smart Key Modal (बौद्धिक सहायक स्मार्ट कुंजी) */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-md p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-orange-600" />
-                <h3 className="font-bold text-stone-900 text-sm sm:text-base">
-                  बौद्धिक सहायक स्मार्ट कुंजी
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowKeyModal(false)}
-                className="p-1 text-stone-400 hover:text-stone-700 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-stone-600 leading-relaxed">
-              नवीन बौद्धिक ब्लूप्रिंट आधारित प्रश्न पत्र निर्माण हेतु अपनी सुरक्षित स्मार्ट कुंजी यहाँ दर्ज करें। यह कुंजी केवल आपके ब्राउज़र में सुरक्षित रहेगी।
-            </p>
-
-            <div>
-              <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                स्मार्ट सेवा कुंजी (API Key)
-              </label>
-              <input
-                type="password"
-                value={tempKey}
-                onChange={e => setTempKey(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-stone-300 focus:outline-hidden focus:border-orange-500"
-              />
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-[11px] text-stone-400 font-semibold">
-                ॥ सा विद्या या विमुक्तये ॥
-              </span>
-              <div className="flex gap-2">
-                {smartKey && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      localStorage.removeItem('ssm_smart_api_key');
-                      localStorage.removeItem('ssm_gemini_api_key');
-                      setSmartKey('');
-                      setTempKey('');
-                      setShowKeyModal(false);
-                      setSaveToast('स्मार्ट कुंजी हटा दी गई।');
-                      setTimeout(() => setSaveToast(null), 3000);
-                    }}
-                    className="px-3 py-1.5 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold cursor-pointer"
-                  >
-                    कुंजी हटाएं
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const clean = tempKey.trim();
-                    if (clean) {
-                      localStorage.setItem('ssm_smart_api_key', clean);
-                      setSmartKey(clean);
-                      setSaveToast('स्मार्ट कुंजी सुरक्षित सहेजी गई!');
-                    } else {
-                      localStorage.removeItem('ssm_smart_api_key');
-                      setSmartKey('');
-                    }
-                    setShowKeyModal(false);
-                    setTimeout(() => setSaveToast(null), 3000);
-                  }}
-                  className="px-4 py-1.5 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold cursor-pointer"
-                >
-                  सहेजें
-                </button>
-              </div>
             </div>
           </div>
         </div>
