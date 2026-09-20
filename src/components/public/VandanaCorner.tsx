@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { PRAYERS } from '../../data/mockData';
 import { Copy, Check, BookOpen, Sparkles, Printer } from 'lucide-react';
 
-export const VandanaCorner: React.FC = () => {
+interface VandanaCornerProps {
+  isEmbedded?: boolean;
+}
+
+export const VandanaCorner: React.FC<VandanaCornerProps> = ({ isEmbedded = false }) => {
   const [selectedPrayerId, setSelectedPrayerId] = useState(PRAYERS[0].id);
   const [copied, setCopied] = useState(false);
 
@@ -15,11 +19,9 @@ export const VandanaCorner: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <section id="vandana" className="py-16 bg-gradient-to-b from-orange-50/50 via-amber-50/30 to-white border-b border-orange-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
+  const content = (
+    <div className={isEmbedded ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
+      {!isEmbedded && (
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-900 text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles className="w-3.5 h-3.5 text-orange-600" />
@@ -33,9 +35,10 @@ export const VandanaCorner: React.FC = () => {
             प्रत्येक दिन ईश वंदना और राष्ट्र स्मरण के साथ आरंभ व संपन्न होता है।
           </p>
         </div>
+      )}
 
-        {/* Prayer Selector Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
+      {/* Prayer Selector Tabs */}
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
           {PRAYERS.map(prayer => {
             const isSelected = selectedPrayerId === prayer.id;
             return (
@@ -123,8 +126,16 @@ export const VandanaCorner: React.FC = () => {
           </div>
 
         </div>
-
       </div>
+  );
+
+  if (isEmbedded) {
+    return <div id="vandana">{content}</div>;
+  }
+
+  return (
+    <section id="vandana" className="py-16 bg-gradient-to-b from-orange-50/50 via-amber-50/30 to-white border-b border-orange-200">
+      {content}
     </section>
   );
 };

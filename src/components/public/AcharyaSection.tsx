@@ -4,7 +4,11 @@ import { api } from '../../services/api';
 import type { Staff } from '../../types';
 import { Users, Sparkles, Award, GraduationCap, BookOpen, Heart } from 'lucide-react';
 
-export const AcharyaSection: React.FC = () => {
+interface AcharyaSectionProps {
+  isEmbedded?: boolean;
+}
+
+export const AcharyaSection: React.FC<AcharyaSectionProps> = ({ isEmbedded = false }) => {
   const { currentSchool, isDemoMode } = useSchool();
   const [liveStaff, setLiveStaff] = useState<Staff[]>([]);
 
@@ -62,11 +66,9 @@ export const AcharyaSection: React.FC = () => {
     });
   }, [liveStaff]);
 
-  return (
-    <section id="acharyas" className="py-16 bg-gradient-to-b from-stone-50 via-amber-50/30 to-white border-b border-orange-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
+  const content = (
+    <div className={isEmbedded ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
+      {!isEmbedded && (
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-900 text-xs font-bold uppercase tracking-wider mb-2">
             <Users className="w-3.5 h-3.5 text-orange-600" />
@@ -79,6 +81,7 @@ export const AcharyaSection: React.FC = () => {
             विद्या भारती के आदर्शों के अनुरूप आत्मीय भाव, अनुशासन और ज्ञान से भैया-बहिनों के जीवन को गढ़ने वाले प्रेरक शिक्षक।
           </p>
         </div>
+      )}
 
         {/* Faculty Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -154,8 +157,16 @@ export const AcharyaSection: React.FC = () => {
             नवीन प्रवेश हेतु मिलें
           </a>
         </div>
-
       </div>
+  );
+
+  if (isEmbedded) {
+    return <div id="acharyas">{content}</div>;
+  }
+
+  return (
+    <section id="acharyas" className="py-16 bg-gradient-to-b from-stone-50 via-amber-50/30 to-white border-b border-orange-200">
+      {content}
     </section>
   );
 };

@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { PANCHMUKHI_PILLARS } from '../../data/mockData';
 import { Shield, Flower2, Music, BookMarked, Heart, CheckCircle2, Sparkles } from 'lucide-react';
 
-export const PanchmukhiShiksha: React.FC = () => {
+interface PanchmukhiShikshaProps {
+  isEmbedded?: boolean;
+}
+
+export const PanchmukhiShiksha: React.FC<PanchmukhiShikshaProps> = ({ isEmbedded = false }) => {
   const [activeTab, setActiveTab] = useState(PANCHMUKHI_PILLARS[0].id);
 
   const getPillarIcon = (id: string) => {
@@ -24,11 +28,9 @@ export const PanchmukhiShiksha: React.FC = () => {
 
   const selectedPillar = PANCHMUKHI_PILLARS.find(p => p.id === activeTab) || PANCHMUKHI_PILLARS[0];
 
-  return (
-    <section id="panchmukhi" className="py-16 bg-white border-b border-orange-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
+  const content = (
+    <div className={isEmbedded ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
+      {!isEmbedded && (
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-orange-800 text-xs font-bold uppercase tracking-wider mb-2">
             विद्या भारती की विशिष्ट शिक्षण पद्धति
@@ -41,6 +43,7 @@ export const PanchmukhiShiksha: React.FC = () => {
             अपितु जीवन के पांच आधारभूत स्तंभों पर संतुलित शिक्षा प्रदान की जाती है।
           </p>
         </div>
+      )}
 
         {/* Tab Buttons */}
         <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10">
@@ -137,8 +140,16 @@ export const PanchmukhiShiksha: React.FC = () => {
             </div>
           ))}
         </div>
-
       </div>
+  );
+
+  if (isEmbedded) {
+    return <div id="panchmukhi">{content}</div>;
+  }
+
+  return (
+    <section id="panchmukhi" className="py-16 bg-white border-b border-orange-200">
+      {content}
     </section>
   );
 };

@@ -76,7 +76,11 @@ const NAKSHATRAS = [
   'पूर्वाभाद्रपद', 'उत्तराभाद्रपद', 'रेवती'
 ];
 
-export const DailyPanchang: React.FC = () => {
+interface DailyPanchangProps {
+  isEmbedded?: boolean;
+}
+
+export const DailyPanchang: React.FC<DailyPanchangProps> = ({ isEmbedded = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Compute dynamic daily panchang data based on real system date
@@ -175,8 +179,15 @@ export const DailyPanchang: React.FC = () => {
   };
 
   return (
-    <div id="panchang" className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-700 text-white py-6 border-y border-orange-400/50 shadow-inner">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div
+      id="panchang"
+      className={
+        isEmbedded
+          ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-700 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-orange-400/50'
+          : 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-700 text-white py-6 border-y border-orange-400/50 shadow-inner'
+      }
+    >
+      <div className={isEmbedded ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           

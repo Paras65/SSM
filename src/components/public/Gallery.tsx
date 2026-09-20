@@ -61,7 +61,11 @@ const GALLERY_ITEMS: GalleryItem[] = [
   }
 ];
 
-export const Gallery: React.FC = () => {
+interface GalleryProps {
+  isEmbedded?: boolean;
+}
+
+export const Gallery: React.FC<GalleryProps> = ({ isEmbedded = false }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const categories = ['All', 'Ghosh & Drill', 'Yog Divas', 'Vigyan Mela', 'Saraswati Puja', 'Khel Kood'];
@@ -70,10 +74,9 @@ export const Gallery: React.FC = () => {
     ? GALLERY_ITEMS
     : GALLERY_ITEMS.filter(item => item.category === selectedCategory);
 
-  return (
-    <section id="gallery" className="py-16 bg-stone-50 border-b border-orange-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+  const content = (
+    <div className={isEmbedded ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
+      {!isEmbedded && (
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-orange-900 text-xs font-bold uppercase tracking-wider mb-2">
             <Camera className="w-3.5 h-3.5 text-orange-600" />
@@ -86,6 +89,7 @@ export const Gallery: React.FC = () => {
             सरस्वती शिशु मंदिर में वर्षभर विविध उत्सवों, राष्ट्रीय पर्वों एवं प्रतियोगिताओं के माध्यम से जीवन मूल्यों का निर्माण होता है।
           </p>
         </div>
+      )}
 
         {/* Filter chips */}
         <div className="flex flex-wrap justify-center gap-1.5 mb-8">
@@ -130,8 +134,16 @@ export const Gallery: React.FC = () => {
             </div>
           ))}
         </div>
-
       </div>
+  );
+
+  if (isEmbedded) {
+    return <div id="gallery">{content}</div>;
+  }
+
+  return (
+    <section id="gallery" className="py-16 bg-stone-50 border-b border-orange-200">
+      {content}
     </section>
   );
 };

@@ -2,13 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { SchoolProvider, useSchool } from './context/SchoolContext';
 import { Navbar } from './components/public/Navbar';
 import { Hero } from './components/public/Hero';
-import { DailyPanchang } from './components/public/DailyPanchang';
+import { CulturalHeritageSection } from './components/public/CulturalHeritageSection';
 import { AboutSection } from './components/public/AboutSection';
-import { PanchmukhiShiksha } from './components/public/PanchmukhiShiksha';
-import { VandanaCorner } from './components/public/VandanaCorner';
-import { AcharyaSection } from './components/public/AcharyaSection';
 import { AdmissionInquiry } from './components/public/AdmissionInquiry';
-import { Gallery } from './components/public/Gallery';
+import { SchoolShowcaseSection } from './components/public/SchoolShowcaseSection';
 import { ContactSection } from './components/public/ContactSection';
 import { TCVerificationModal } from './components/public/TCVerificationModal';
 import { Footer } from './components/public/Footer';
@@ -216,13 +213,10 @@ const SchoolApp: React.FC = () => {
               onOpenLogin={handleOpenLogin}
               onOpenHelpGuide={() => setShowHelpGuideModal(true)}
             />
-            <DailyPanchang />
+            <CulturalHeritageSection />
             <AdmissionInquiry />
             <AboutSection onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)} />
-            <PanchmukhiShiksha />
-            <VandanaCorner />
-            <AcharyaSection />
-            <Gallery />
+            <SchoolShowcaseSection />
             <ContactSection
               onOpenSignUp={(plan = 'pro') => handleOpenSignUp(plan)}
               onOpenBranchList={handleOpenBranchList}
