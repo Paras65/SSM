@@ -28,7 +28,8 @@ import {
   CornerDownLeft,
   Camera,
   Printer,
-  FileText
+  FileText,
+  Mic
 } from 'lucide-react';
 
 export interface CommandPaletteModalProps {
@@ -63,6 +64,32 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है।');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.continuous = false;
+      setIsListening(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setQuery(transcript);
+        setSelectedIndex(0);
+        setIsListening(false);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
 
   // Auto-focus input when opened
   useEffect(() => {
@@ -444,6 +471,23 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
             placeholder="छात्र का नाम, रोल नंबर, शुल्क, उपस्थिति, या कार्य खोजें... (Ctrl + K)"
             className="w-full text-sm sm:text-base font-medium text-stone-900 placeholder-stone-400 bg-transparent border-none focus:outline-none focus:ring-0"
           />
+          {/* Voice Search Button */}
+          <button
+            type="button"
+            onClick={startVoiceSearch}
+            className={`p-1.5 px-2.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shrink-0 mr-2 shadow-2xs ${
+              isListening
+                ? 'bg-red-600 text-white border-red-700 animate-pulse'
+                : 'bg-white text-stone-700 border-orange-200 hover:bg-orange-50 hover:text-orange-700'
+            }`}
+            title="बोलकर खोजें (हिन्दी / Voice Search)"
+          >
+            <Mic className={`w-3.5 h-3.5 ${isListening ? 'text-white' : 'text-orange-600'}`} />
+            <span className="text-[11px] hidden sm:inline">
+              {isListening ? 'सुन रहे हैं...' : 'बोलें'}
+            </span>
+          </button>
+
           {query ? (
             <button
               type="button"

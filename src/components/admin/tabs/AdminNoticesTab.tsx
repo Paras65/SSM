@@ -10,7 +10,10 @@ import {
   MessageSquare,
   Search,
   Trash2,
-  X
+  X,
+  Sparkles,
+  Mic,
+  RefreshCw
 } from 'lucide-react';
 
 const AdminNoticesTabComponent: React.FC = () => {
@@ -24,6 +27,142 @@ const AdminNoticesTabComponent: React.FC = () => {
   const [newNoticeContent, setNewNoticeContent] = useState('');
   const [newNoticeUrgent, setNewNoticeUrgent] = useState(false);
   const [newNoticeExpiresAt, setNewNoticeExpiresAt] = useState('');
+
+  // Smart Notice Drafter State
+  const [smartTopic, setSmartTopic] = useState('');
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceForNotice = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है।');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.continuous = false;
+      setIsListening(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setSmartTopic(transcript);
+        setIsListening(false);
+        handleDraftSmartNotice(transcript);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
+
+  const handleDraftSmartNotice = async (overrideTopic?: string) => {
+    const topic = (overrideTopic || smartTopic).trim();
+    if (!topic) return;
+    setIsDrafting(true);
+
+    const effectiveKey =
+      (import.meta.env.VITE_SMART_API_KEY as string) ||
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_smart_api_key') ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      '';
+
+    const fallbackDraft = (t: string) => {
+      const schoolHindi = currentSchool.hindiName || currentSchool.name;
+      if (t.includes('अवकाश') || t.includes('छुट्टी') || t.includes('होली') || t.includes('दीपावली') || t.includes('शीतकालीन') || t.includes('गर्मी')) {
+        return {
+          title: `${t} सम्बन्धी आवश्यक सूचना`,
+          category: 'Holidays' as const,
+          content: `सादर प्रणाम,\n\nविद्या भारती अखिल भारतीय शिक्षा संस्थान के पंचांग अनुसार, समस्त अभिभावकों एवं भैया-बहिनों को सूचित किया जाता है कि विद्यालय में ${t} के उपलक्ष्य में अवकाश रहेगा।\n\nअवकाश उपरांत विद्यालय पूर्व निर्धारित समयानुसार खुलेगा। समस्त भैया-बहिन दैनिक स्वाध्याय निरंतर रखें।\n\n— प्रधानाचार्य कार्यालय,\n${schoolHindi}`
+        };
+      }
+      if (t.includes('परीक्षा') || t.includes('मूल्यांकन') || t.includes('प्रवेश पत्र') || t.includes('डेट शीट')) {
+        return {
+          title: `${t} समय-सारिणी एवं दिशा-निर्देश`,
+          category: 'Examinations' as const,
+          content: `सादर वन्दे,\n\nसमस्त अभिभावकों एवं विद्यार्थियों को सूचित किया जाता है कि आगामी ${t} की घोषणा कर दी गई है।\n\nसमस्त भैया-बहिन नियत समय पर पूर्ण गणवेश एवं प्रवेश पत्र के साथ उपस्थित हों। अधिक जानकारी हेतु कक्षाचार्य से संपर्क करें।\n\n— परीक्षा विभाग,\n${schoolHindi}`
+        };
+      }
+      if (t.includes('गोष्ठी') || t.includes('बैठक') || t.includes('PTM') || t.includes('सम्मेलन')) {
+        return {
+          title: `अभिभावक-आचार्य गोष्ठी (PTM) आमंत्रण`,
+          category: 'Events' as const,
+          content: `सादर प्रणाम,\n\nविद्यार्थियों के सर्वांगीण विकास एवं पंचमुखी मूल्यांकन की समीक्षा हेतु ${t} का आयोजन विद्यालय परिसर में किया जा रहा है।\n\nसमस्त आदरणीय अभिभावकों से सानुरोध प्रार्थना है कि निर्धारित समय पर पधारकर अपने पाल्य की प्रगति पर आचार्यों से विचार-विमर्श करें।\n\n— प्रधानाचार्य,\n${schoolHindi}`
+        };
+      }
+      return {
+        title: `${t} सम्बन्धी आधिकारिक परिपत्र`,
+        category: 'Academics' as const,
+        content: `सादर प्रणाम,\n\nसमस्त भैया-बहिनों एवं अभिभावकों को सूचित किया जाता है कि ${t} के संदर्भ में आवश्यक दिशा-निर्देश जारी किए गए हैं।\n\nकृपया नियमों का पालन सुनिश्चित करें एवं अधिक जानकारी हेतु विद्यालय कार्यालय में संपर्क करें।\n\n— प्रधानाचार्य कार्यालय,\n${schoolHindi}`
+      };
+    };
+
+    if (!effectiveKey) {
+      setTimeout(() => {
+        const d = fallbackDraft(topic);
+        setNewNoticeTitle(d.title);
+        setNewNoticeCategory(d.category);
+        setNewNoticeContent(d.content);
+        setIsDrafting(false);
+      }, 300);
+      return;
+    }
+
+    try {
+      const schoolHindi = currentSchool.hindiName || currentSchool.name;
+      const prompt = `You are the Principal of ${schoolHindi} (Vidya Bharati school).
+Draft a formal, respectful official school notice in Hindi based on this brief topic: "${topic}".
+Output MUST be strictly valid JSON without markdown formatting:
+{
+  "title": "Short Hindi notice title",
+  "category": "Academics",
+  "content": "Full formal Hindi notice content with salutation 'सादर प्रणाम/सादर वन्दे', clear instructions, and sign-off '— प्रधानाचार्य कार्यालय, ${schoolHindi}'"
+}`;
+
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': effectiveKey
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.2,
+              responseMimeType: 'application/json'
+            }
+          })
+        }
+      );
+
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.title && parsed.content) {
+        setNewNoticeTitle(parsed.title);
+        setNewNoticeCategory(parsed.category || 'Academics');
+        setNewNoticeContent(parsed.content);
+      } else {
+        const d = fallbackDraft(topic);
+        setNewNoticeTitle(d.title);
+        setNewNoticeCategory(d.category);
+        setNewNoticeContent(d.content);
+      }
+    } catch {
+      const d = fallbackDraft(topic);
+      setNewNoticeTitle(d.title);
+      setNewNoticeCategory(d.category);
+      setNewNoticeContent(d.content);
+    } finally {
+      setIsDrafting(false);
+    }
+  };
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -165,6 +304,57 @@ const AdminNoticesTabComponent: React.FC = () => {
           </div>
 
           <form onSubmit={handleCreateNotice} className="space-y-4 text-xs">
+            {/* Smart 1-Click Notice Drafter Box */}
+            <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-950 flex items-center gap-1.5 text-[11px]">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                  <span>बौद्धिक नोटिस लेखक (बोलें या २ शब्द लिखें)</span>
+                </span>
+                <span className="text-[10px] text-amber-800 font-medium">१-क्लिक स्वतः ड्राफ्ट</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={smartTopic}
+                  onChange={e => setSmartTopic(e.target.value)}
+                  placeholder="उदा. होली अवकाश 3 दिन, या रविवार गोष्ठी..."
+                  className="flex-1 px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs text-stone-800 focus:outline-hidden focus:border-orange-500 shadow-2xs"
+                />
+                <button
+                  type="button"
+                  onClick={startVoiceForNotice}
+                  className={`p-1.5 rounded-lg border transition cursor-pointer shrink-0 ${
+                    isListening
+                      ? 'bg-red-600 text-white animate-pulse border-red-700'
+                      : 'bg-white text-stone-600 hover:text-orange-700 border-amber-300 hover:bg-amber-100'
+                  }`}
+                  title="बोलकर विषय बताएं"
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  disabled={isDrafting || !smartTopic.trim()}
+                  onClick={() => handleDraftSmartNotice()}
+                  className="px-3 py-1.5 rounded-lg bg-orange-700 hover:bg-orange-800 text-white font-bold text-xs transition cursor-pointer shadow-xs disabled:opacity-50 shrink-0 flex items-center gap-1"
+                  title="औपचारिक परिपत्र तैयार करें"
+                >
+                  {isDrafting ? (
+                    <>
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                      <span>तैयार...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3" />
+                      <span>ड्राफ्ट करें</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="block font-semibold text-stone-700 mb-1">
                 सूचना का शीर्षक (Notice Title) *

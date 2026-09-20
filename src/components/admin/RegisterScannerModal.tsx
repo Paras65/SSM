@@ -237,7 +237,12 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
 
     const cleanBase64 = imageDataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
     const mimeType = imageDataUrl.match(/^data:(image\/[a-z]+);base64,/)?.[1] || 'image/jpeg';
-    const effectiveKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || localStorage.getItem('ssm_gemini_api_key') || '';
+    const effectiveKey =
+      (import.meta.env.VITE_SMART_API_KEY as string) ||
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_smart_api_key') ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      '';
 
     // If no custom API key configured, automatically load the extracted register rows from the image
     if (!effectiveKey) {

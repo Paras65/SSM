@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
-import { X, Send, MessageSquare } from 'lucide-react';
+import { X, Send, MessageSquare, Sparkles, Mic, RefreshCw } from 'lucide-react';
 import { formatWhatsAppPhone } from '../../utils/whatsappAlerts';
 
 interface BulkNotificationModalProps {
@@ -14,6 +14,110 @@ export const BulkNotificationModal: React.FC<BulkNotificationModalProps> = ({ is
   const [customTitle, setCustomTitle] = useState('विद्यालय आवश्यक सूचना');
   const [customMessage, setCustomMessage] = useState('');
   const [selectedClass, setSelectedClass] = useState('all');
+
+  // Smart Message Drafter State
+  const [smartBrief, setSmartBrief] = useState('');
+  const [isDraftingMsg, setIsDraftingMsg] = useState(false);
+  const [isListeningMsg, setIsListeningMsg] = useState(false);
+
+  const startVoiceForMsg = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है।');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.continuous = false;
+      setIsListeningMsg(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setSmartBrief(transcript);
+        setIsListeningMsg(false);
+        handleDraftSmartMsg(transcript);
+      };
+      recognition.onerror = () => setIsListeningMsg(false);
+      recognition.onend = () => setIsListeningMsg(false);
+      recognition.start();
+    } catch {
+      setIsListeningMsg(false);
+    }
+  };
+
+  const handleDraftSmartMsg = async (overrideBrief?: string) => {
+    const brief = (overrideBrief || smartBrief).trim();
+    if (!brief) return;
+    setIsDraftingMsg(true);
+
+    const effectiveKey =
+      (import.meta.env.VITE_SMART_API_KEY as string) ||
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_smart_api_key') ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      '';
+
+    const fallbackDraft = (b: string) => {
+      const schoolHindi = currentSchool.hindiName || currentSchool.name;
+      return {
+        title: `${b} सूचना`,
+        message: `सादर प्रणाम,\n\n${schoolHindi} के समस्त आदरणीय अभिभावकों को सूचित किया जाता है कि ${b}।\n\nकृपया इस सूचना का संज्ञान लें एवं आवश्यक सहयोग प्रदान करें। किसी भी जिज्ञासा हेतु विद्यालय कार्यालय से संपर्क करें।\n\n— प्रधानाचार्य कार्यालय`
+      };
+    };
+
+    if (!effectiveKey) {
+      setTimeout(() => {
+        const d = fallbackDraft(brief);
+        setCustomTitle(d.title);
+        setCustomMessage(d.message);
+        setIsDraftingMsg(false);
+      }, 300);
+      return;
+    }
+
+    try {
+      const schoolHindi = currentSchool.hindiName || currentSchool.name;
+      const prompt = `You are writing a polite, respectful WhatsApp message from ${schoolHindi} (Vidya Bharati school) to parents based on: "${brief}".
+Output strictly valid JSON:
+{
+  "title": "Short Hindi title",
+  "message": "Polite, formal Hindi WhatsApp message with salutation 'सादर प्रणाम', brief details, and closing '— प्रधानाचार्य कार्यालय'"
+}`;
+
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': effectiveKey
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
+          })
+        }
+      );
+
+      if (!response.ok) throw new Error('API failed');
+      const data = await response.json();
+      const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}');
+      if (parsed.title && parsed.message) {
+        setCustomTitle(parsed.title);
+        setCustomMessage(parsed.message);
+      } else {
+        const d = fallbackDraft(brief);
+        setCustomTitle(d.title);
+        setCustomMessage(d.message);
+      }
+    } catch {
+      const d = fallbackDraft(brief);
+      setCustomTitle(d.title);
+      setCustomMessage(d.message);
+    } finally {
+      setIsDraftingMsg(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -120,6 +224,57 @@ export const BulkNotificationModal: React.FC<BulkNotificationModalProps> = ({ is
         <div className="flex-1 overflow-y-auto py-4 space-y-4 text-xs">
           {broadcastType === 'general' && (
             <div className="space-y-3 bg-stone-50 p-4 rounded-2xl border border-stone-200">
+              {/* Smart Message Drafter Bar */}
+              <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-emerald-950 flex items-center gap-1.5 text-[11px]">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>बौद्धिक संदेश लेखक (बोलें या २ शब्द लिखें)</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-800 font-medium">१-क्लिक विनम्र ड्राफ्ट</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={smartBrief}
+                    onChange={e => setSmartBrief(e.target.value)}
+                    placeholder="उदा. कल भारी वर्षा के कारण अवकाश, या रविवार मातृ सम्मेलन..."
+                    className="flex-1 px-2.5 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs text-stone-800 focus:outline-hidden focus:border-emerald-500 shadow-2xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={startVoiceForMsg}
+                    className={`p-1.5 rounded-lg border transition cursor-pointer shrink-0 ${
+                      isListeningMsg
+                        ? 'bg-red-600 text-white animate-pulse border-red-700'
+                        : 'bg-white text-stone-600 hover:text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                    }`}
+                    title="बोलकर संदेश का विषय बताएं"
+                  >
+                    <Mic className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDraftingMsg || !smartBrief.trim()}
+                    onClick={() => handleDraftSmartMsg()}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition cursor-pointer shadow-xs disabled:opacity-50 shrink-0 flex items-center gap-1"
+                    title="विनम्र हिंदी संदेश तैयार करें"
+                  >
+                    {isDraftingMsg ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>तैयार...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3" />
+                        <span>ड्राफ्ट करें</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold text-stone-700 mb-1">संदेश शीर्षक</label>
                 <input

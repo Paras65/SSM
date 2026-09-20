@@ -32,7 +32,10 @@ import {
   Lock,
   KeyRound,
   FileText,
-  X
+  X,
+  Sparkles,
+  Mic,
+  Loader2
 } from 'lucide-react';
 import { QuestionPaperModal } from '../exam/QuestionPaperModal';
 
@@ -74,6 +77,9 @@ export const TeacherPortal: React.FC = () => {
   const [hwTitle, setHwTitle] = useState('');
   const [hwDesc, setHwDesc] = useState('');
   const [hwDueDate, setHwDueDate] = useState(() => new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+  const [smartHwTopic, setSmartHwTopic] = useState('');
+  const [isDraftingHw, setIsDraftingHw] = useState(false);
+  const [isListeningHw, setIsListeningHw] = useState(false);
 
   // Exam Marks Entry state
   const [exams, setExams] = useState<Exam[]>([]);
@@ -264,6 +270,133 @@ export const TeacherPortal: React.FC = () => {
     setHwDesc(hw.description);
     setHwDueDate(hw.dueDate);
     setShowAddHw(true);
+  };
+
+  const startVoiceForHw = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('ब्राउज़र में आवाज़ पहचान (Voice Input) समर्थित नहीं है।');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.continuous = false;
+      setIsListeningHw(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setSmartHwTopic(transcript);
+        setIsListeningHw(false);
+        handleDraftSmartHomework(transcript);
+      };
+      recognition.onerror = () => setIsListeningHw(false);
+      recognition.onend = () => setIsListeningHw(false);
+      recognition.start();
+    } catch {
+      setIsListeningHw(false);
+    }
+  };
+
+  const handleDraftSmartHomework = async (overrideTopic?: string) => {
+    const topic = (overrideTopic || smartHwTopic || hwTitle || hwSubject).trim();
+    setIsDraftingHw(true);
+
+    const effectiveKey =
+      (import.meta.env.VITE_SMART_API_KEY as string) ||
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_smart_api_key') ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      '';
+
+    const fallbackHomework = (t: string, subj: string) => {
+      if (subj.includes('गणित')) {
+        return {
+          title: `${t || 'अध्याय अभ्यास'} - सूत्र एवं प्रश्न हल`,
+          description: `1. स्वाध्याय निर्देश: पाठ्यपुस्तक के संबंधित अध्याय के सूत्र एवं उदाहरण पृष्ठ सं. 35-38 ध्यानपूर्वक समझें।\n2. अभ्यास प्रश्न:\n   क) सूत्र कंठस्थ करके 5 मूलभूत प्रश्न हल करें।\n   ख) अभ्यास प्रश्नावली के प्रश्न संख्या 1 से 4 फेयर कॉपी में हल करें।\n   ग) एक व्यावहारिक समस्या का उदाहरण लिखकर हल दर्शाएं।\n3. प्रस्तुतिकरण: कार्य स्वच्छ एवं क्रमबद्ध लिखकर कल प्रथम कालांश में प्रस्तुत करें।`
+        };
+      }
+      if (subj.includes('विज्ञान')) {
+        return {
+          title: `${t || 'अध्याय स्वाध्याय'} - परिभाषा एवं चित्र निरूपण`,
+          description: `1. स्वाध्याय निर्देश: आज पढ़ाए गए पाठ के मुख्य बिंदु व परिभाषाएं ध्यानपूर्वक स्मरण करें।\n2. अभ्यास प्रश्न:\n   क) मुख्य वैज्ञानिक शब्दावली के अर्थ व परिभाषा लिखिए।\n   ख) संबंधित नामांकित चित्र पेंसिल से स्पष्ट बनाइए।\n   ग) दैनिक जीवन में इसके 2 व्यावहारिक उपयोग या प्रभाव लिखिए।\n3. प्रस्तुतिकरण: गृहकार्य पुस्तिका में दिनांक सहित पूर्ण करें।`
+        };
+      }
+      if (subj.includes('संस्कृत')) {
+        return {
+          title: `${t || 'पाठ स्वाध्याय'} - श्लोक एवं व्याकरण अभ्यास`,
+          description: `1. स्वाध्याय निर्देश: पाठ के श्लोक/गद्यांश का सस्वर वाचन करें।\n2. अभ्यास प्रश्न:\n   क) दिए गए श्लोक का सप्रसंग हिन्दी अनुवाद लिखिए।\n   ख) पाठ में आए 5 कठिन शब्दों के अर्थ एवं संधि विच्छेद करें।\n   ग) व्याकरण अभ्यास के रिक्त स्थानों की पूर्ति करें।\n3. प्रस्तुतिकरण: कल प्रातः कक्षा में वाचन हेतु प्रस्तुत करें।`
+        };
+      }
+      if (subj.includes('अंग्रेज़ी') || subj.includes('English')) {
+        return {
+          title: `${t || 'Chapter Practice'} - Vocabulary & Comprehension`,
+          description: `1. Reading: Read the chapter carefully and underline new words.\n2. Practice Questions:\n   a) Write word meanings and make sentences for 5 new words.\n   b) Answer questions 1 to 3 from textbook exercise.\n   c) Write a short 5-sentence summary of today's lesson.\n3. Submission: Complete in homework notebook neatly.`
+        };
+      }
+      return {
+        title: `${t || 'दैनिक स्वाध्याय'} - मुख्य बिंदु एवं अभ्यास प्रश्न`,
+        description: `1. स्वाध्याय निर्देश: आज पढ़ाए गए विषय के पृष्ठ ध्यानपूर्वक पढ़ें एवं स्मरण करें।\n2. अभ्यास प्रश्न:\n   क) पाठ के 3 महत्वपूर्ण प्रश्नोत्तर फेयर कॉपी में लिखें।\n   ख) मुख्य अवधारणा को अपने शब्दों में संक्षेप में लिखें।\n   ग) कठिन शब्दों का अर्थ शब्दकोश से देखकर लिखें।\n3. प्रस्तुतिकरण: कल प्रथम कालांश में आचार्य जी के समक्ष प्रस्तुत करें।`
+      };
+    };
+
+    if (!effectiveKey) {
+      setTimeout(() => {
+        const d = fallbackHomework(topic, hwSubject);
+        setHwTitle(d.title);
+        setHwDesc(d.description);
+        setIsDraftingHw(false);
+      }, 300);
+      return;
+    }
+
+    try {
+      const schoolHindi = currentSchool.hindiName || currentSchool.name;
+      const prompt = `You are an expert teacher at ${schoolHindi} (Vidya Bharati school).
+Subject: ${hwSubject}, Class: ${selectedClass}, Topic/Chapter: "${topic || hwSubject}".
+Generate structured daily homework and practice questions in Hindi.
+Output MUST be strictly valid JSON without markdown formatting:
+{
+  "title": "Concise Hindi homework title with chapter name",
+  "description": "Clear step-by-step instructions in Hindi including:\\n1. स्वाध्याय निर्देश (Reading page numbers/concepts)\\n2. अभ्यास प्रश्न (3 graded practice questions)\\n3. प्रस्तुतिकरण निर्देश (Submission instructions)"
+}`;
+
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': effectiveKey
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.4,
+              maxOutputTokens: 600,
+              responseMimeType: 'application/json'
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Smart drafting API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error('Empty response');
+
+      const parsed = JSON.parse(rawText);
+      if (parsed.title) setHwTitle(parsed.title);
+      if (parsed.description) setHwDesc(parsed.description);
+    } catch {
+      const d = fallbackHomework(topic, hwSubject);
+      setHwTitle(d.title);
+      setHwDesc(d.description);
+    } finally {
+      setIsDraftingHw(false);
+    }
   };
 
   const handleSaveHomework = async (e: React.FormEvent) => {
@@ -953,6 +1086,53 @@ export const TeacherPortal: React.FC = () => {
                 <h4 className="font-bold text-stone-900 text-sm">
                   {editingHw ? 'गृहकार्य विवरण संशोधित करें (Edit Homework)' : 'नवीन गृहकार्य प्रविष्टि'}
                 </h4>
+
+                {/* 1-Click Smart Homework Drafter */}
+                <div className="p-3 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 rounded-xl border border-orange-200/80 flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                    <Sparkles className="w-4 h-4 text-orange-600 shrink-0" />
+                    <input
+                      type="text"
+                      value={smartHwTopic}
+                      onChange={(e) => setSmartHwTopic(e.target.value)}
+                      placeholder="अध्याय या विषय बोलें या लिखें (उदा. प्रकाश का परावर्तन, वर्ग व वर्गमूल)..."
+                      className="w-full bg-white px-3 py-1.5 rounded-lg border border-orange-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={startVoiceForHw}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
+                        isListeningHw
+                          ? 'bg-red-600 text-white border-red-700 animate-pulse'
+                          : 'bg-white text-stone-700 border-orange-200 hover:bg-orange-100/50'
+                      }`}
+                      title="बोलकर पाठ का नाम बताएं"
+                    >
+                      <Mic className={`w-3.5 h-3.5 ${isListeningHw ? 'text-white' : 'text-orange-600'}`} />
+                      <span>{isListeningHw ? 'सुन रहे हैं...' : 'बोलें'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDraftingHw}
+                      onClick={() => handleDraftSmartHomework()}
+                      className="px-3.5 py-1.5 rounded-lg bg-orange-700 hover:bg-orange-800 disabled:opacity-60 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                    >
+                      {isDraftingHw ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>रचना हो रही है...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>✨ बौद्धिक गृहकार्य तैयार करें</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block font-bold text-stone-700 mb-1">विषय (Subject)</label>

@@ -198,6 +198,89 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
     }
   };
 
+  const [isGeneratingRemarks, setIsGeneratingRemarks] = useState(false);
+
+  // 1-Click Smart Culturally-Grounded Hindi Remarks Generator
+  const handleGenerateSmartRemarks = async () => {
+    setIsGeneratingRemarks(true);
+    const effectiveKey =
+      (import.meta.env.VITE_SMART_API_KEY as string) ||
+      (import.meta.env.VITE_GEMINI_API_KEY as string) ||
+      localStorage.getItem('ssm_smart_api_key') ||
+      localStorage.getItem('ssm_gemini_api_key') ||
+      '';
+
+    const fallbackRemark = () => {
+      const isSister = student.gender === 'Bahin' || student.name.includes('Bahin') || student.name.includes('बहन');
+      const prefix = isSister ? 'बहिन' : 'भैया';
+      const cleanName = student.name.replace(/^(Bhaiya|Bahin|भैया|बहिन)\s*/i, '');
+      const pct = reportCard.percentage;
+
+      if (pct >= 85) {
+        return `${prefix} ${cleanName} का अध्ययन, आचरण एवं अनुशासन अत्यंत अनुकरणीय है। विद्या भारती के सांस्कृतिक मूल्यों के अनुरूप निरंतर शीर्ष प्रदर्शन हेतु साधुवाद।`;
+      } else if (pct >= 70) {
+        return `${prefix} ${cleanName} का शैक्षिक स्तर उत्तम है। कक्षा सहभागिता एवं नियमित स्वाध्याय से और अधिक श्रेष्ठता संभव है। स्वभाव विनीत व आज्ञाकारी है।`;
+      } else if (pct >= 50) {
+        return `${prefix} ${cleanName} में अपार संभावनाएं हैं। विषयगत अभ्यास एवं दैनिक गृहकार्य पर थोड़ा और ध्यान अपेक्षित है। सदैव प्रगति के पथ पर अग्रसर रहें।`;
+      } else {
+        return `${prefix} ${cleanName} को मूलभूत अवधारणाओं में विशेष मार्गदर्शन दिया जा रहा है। नियमित उपस्थिति एवं आचार्यों के परामर्श से सुधार निश्चित है।`;
+      }
+    };
+
+    if (!effectiveKey) {
+      setTimeout(() => {
+        setCurrentRemarks(fallbackRemark());
+        setIsGeneratingRemarks(false);
+        showSuccess('✨ बौद्धिक शिक्षक सम्मति स्वतः जोड़ी गई!');
+      }, 300);
+      return;
+    }
+
+    try {
+      const prompt = `You are an experienced, affectionate Vidya Bharati (सरस्वती शिशु मंदिर) class teacher writing an annual report card remark (कक्षाचार्य सम्मति) for a student.
+Student Details:
+- Name: ${student.name} (${student.gender === 'Bahin' ? 'बहन/बालिका' : 'भैया/बालक'})
+- Class: ${student.class} '${student.section}'
+- Academic Score: ${reportCard.percentage.toFixed(1)}% (Grade: ${reportCard.grade})
+- Moral Conduct: ${reportCard.moralConduct}
+
+Instructions:
+- Write exactly 2 polite, positive, inspiring, and culturally grounded sentences in pure formal Hindi.
+- Mention their academic effort and positive character/discipline.
+- Return ONLY the 2 sentences. No quotes, no markdown, no preamble.`;
+
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': effectiveKey
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 120 }
+          })
+        }
+      );
+
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (text) {
+        setCurrentRemarks(text);
+        showSuccess('✨ बौद्धिक शिक्षक सम्मति स्वतः जोड़ी गई!');
+      } else {
+        setCurrentRemarks(fallbackRemark());
+      }
+    } catch {
+      setCurrentRemarks(fallbackRemark());
+      showSuccess('✨ बौद्धिक शिक्षक सम्मति स्वतः जोड़ी गई!');
+    } finally {
+      setIsGeneratingRemarks(false);
+    }
+  };
+
   const pe = reportCard.panchmukhiEvaluation;
   const panchmukhiList = [
     {
@@ -951,17 +1034,29 @@ export const PragatiPatraModal: React.FC<PragatiPatraModalProps> = ({ reportCard
                     <span className="font-bold text-stone-800">
                       कक्षाचार्य सम्मति (Acharya Remarks):
                     </span>
-                    <button
-                      type="button"
-                      onClick={startVoiceDictation}
-                      className={`no-print flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                        isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 hover:bg-orange-200 text-orange-900'
-                      }`}
-                      title="बोलकर टिप्पणी दर्ज करें (Hindi Voice-to-Text)"
-                    >
-                      <Mic className="w-3 h-3" />
-                      <span>{isListening ? 'सुन रहे हैं...' : 'बोलकर लिखें'}</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 no-print">
+                      <button
+                        type="button"
+                        disabled={isGeneratingRemarks}
+                        onClick={handleGenerateSmartRemarks}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 transition cursor-pointer disabled:opacity-50"
+                        title="१-क्लिक में छात्र के अनुसार व्यक्तिगत बौद्धिक सम्मति तैयार करें"
+                      >
+                        <Sparkles className={`w-3 h-3 text-amber-800 ${isGeneratingRemarks ? 'animate-spin' : ''}`} />
+                        <span>{isGeneratingRemarks ? 'तैयार हो रहा है...' : '✨ बौद्धिक टिप्पणी'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={startVoiceDictation}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                          isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-orange-100 hover:bg-orange-200 text-orange-900'
+                        }`}
+                        title="बोलकर टिप्पणी दर्ज करें (Hindi Voice-to-Text)"
+                      >
+                        <Mic className="w-3 h-3" />
+                        <span>{isListening ? 'सुन रहे हैं...' : 'बोलकर लिखें'}</span>
+                      </button>
+                    </div>
                   </div>
                   <textarea
                     value={currentRemarks}
