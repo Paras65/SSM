@@ -79,6 +79,90 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     ? envSmartKey.slice(0, 6) + '...' + envSmartKey.slice(-4)
     : '';
 
+  const [isTestingKey, setIsTestingKey] = useState(false);
+  const [keyTestResult, setKeyTestResult] = useState<{
+    success: boolean;
+    message: string;
+    latency?: number;
+  } | null>(null);
+
+  const handleTestSmartKey = async () => {
+    if (!envSmartKey) {
+      setKeyTestResult({
+        success: false,
+        message: 'पर्यावरण (.env) में कोई कुंजी नहीं मिली। कृपया पहले VITE_SMART_API_KEY सेट करें।'
+      });
+      return;
+    }
+
+    setIsTestingKey(true);
+    setKeyTestResult(null);
+    const startTime = Date.now();
+
+    try {
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': envSmartKey.trim()
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Respond with the single word: OK' }] }],
+            generationConfig: {
+              maxOutputTokens: 5,
+              temperature: 0.1
+            }
+          })
+        }
+      );
+
+      const latency = Date.now() - startTime;
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        const errMsg = errData?.error?.message || `HTTP ${response.status} (${response.statusText})`;
+        setKeyTestResult({
+          success: false,
+          message: `कुंजी सत्यापन विफल (${errMsg})। कृपया Google AI Studio से सही कुंजी जांचें।`,
+          latency
+        });
+        showError(`कुंजी सत्यापन विफल (${response.status})`);
+        return;
+      }
+
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+      if (text) {
+        setKeyTestResult({
+          success: true,
+          message: `कुंजी 100% कार्यशील एवं सक्रिय है! (प्रतिक्रिया समय: ${latency}ms)`,
+          latency
+        });
+        showSuccess(`बौद्धिक सेवा कुंजी सफलतापूर्वक सत्यापित! (${latency}ms)`);
+      } else {
+        setKeyTestResult({
+          success: false,
+          message: 'कुंजी से रिक्त प्रतिक्रिया प्राप्त हुई।',
+          latency
+        });
+        showWarning('कुंजी से कोई उत्तर प्राप्त नहीं हुआ।');
+      }
+    } catch (err: any) {
+      const latency = Date.now() - startTime;
+      setKeyTestResult({
+        success: false,
+        message: `नेटवर्क या कनेक्शन त्रुटि: ${err.message || 'सर्वर से संपर्क नहीं हो सका।'}`,
+        latency
+      });
+      showError('सत्यापन के दौरान कनेक्शन त्रुटि आई।');
+    } finally {
+      setIsTestingKey(false);
+    }
+  };
+
   // Fetch MongoDB Health & Network KPIs
   const loadNetworkData = async () => {
     setIsLoadingMetrics(true);
@@ -983,8 +1067,20 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                     कुंजी सर्वर पर्यावरण (.env) से सुरक्षित लोड है। सभी शिक्षक बिना किसी तकनीकी सेटिंग के स्वतः बौद्धिक सेवाओं का लाभ ले रहे हैं।
                   </p>
                 </div>
-                <div className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
-                  ✓ सम्पूर्ण विद्यालय सक्रिय
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isTestingKey}
+                    onClick={handleTestSmartKey}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                    title="Google AI Studio सर्वर से लाइव पिंग द्वारा कुंजी का परीक्षण करें"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isTestingKey ? 'animate-spin' : ''}`} />
+                    <span>{isTestingKey ? 'जांच हो रही है...' : 'कुंजी परीक्षण करें'}</span>
+                  </button>
+                  <div className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
+                    ✓ सम्पूर्ण विद्यालय सक्रिय
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1001,6 +1097,34 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 <div className="text-[11px] font-mono bg-white px-3 py-1.5 rounded-lg border border-amber-300 text-stone-700">
                   विन्यास: .env ➔ VITE_SMART_API_KEY=...
                 </div>
+              </div>
+            )}
+
+            {/* Test Result Display */}
+            {keyTestResult && (
+              <div className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs animate-in fade-in duration-150 ${
+                keyTestResult.success
+                  ? 'bg-green-50 border-green-200 text-green-900'
+                  : 'bg-red-50 border-red-200 text-red-900'
+              }`}>
+                {keyTestResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <span className="font-bold block">
+                    {keyTestResult.success ? 'सत्यापन सफल:' : 'सत्यापन विफल:'}
+                  </span>
+                  <span className="text-[11px] leading-relaxed block mt-0.5">
+                    {keyTestResult.message}
+                  </span>
+                </div>
+                {keyTestResult.latency && (
+                  <span className="text-[10px] font-mono bg-white/80 px-2 py-0.5 rounded border border-stone-200 shrink-0">
+                    {keyTestResult.latency}ms
+                  </span>
+                )}
               </div>
             )}
           </div>
