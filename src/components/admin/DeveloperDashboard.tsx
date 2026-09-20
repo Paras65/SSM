@@ -116,6 +116,8 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     } finally {
       setIsTestingKey(false);
     }
+  };
+
   // Platform Maintenance & Downtime Control
   const [maintConfig, setMaintConfig] = useState<MaintenanceConfig>(getMaintenanceConfig());
 
