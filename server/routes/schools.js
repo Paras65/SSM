@@ -13,7 +13,7 @@ const Book = require('../models/Book');
 const InventoryItem = require('../models/InventoryItem');
 const { requireAdminAuth, requireSchoolScope, hashPasscode } = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
-const { generateUniqueId, recordAuditLog } = require('../utils/routeHelpers');
+const { generateUniqueId, recordAuditLog, invalidateSchoolAuditLoggingCache } = require('../utils/routeHelpers');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
 
@@ -153,6 +153,9 @@ router.put('/:id', requireAdminAuth, requireSchoolScope, async (req, res) => {
       { returnDocument: 'after', runValidators: true }
     ).select('-adminPasscode');
     if (!school) return res.status(404).json({ error: 'School not found' });
+
+    // Invalidate cached audit logging toggle for this school
+    invalidateSchoolAuditLoggingCache(school.id);
 
     if (updatePayload.adminPasscode) {
       await recordAuditLog({

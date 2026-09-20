@@ -37,6 +37,7 @@ export interface SchoolFeatures {
   upiPayeeName?: string;
   enableStaffAttendanceLop?: boolean;
   lopDeductionRate?: number;
+  enableAuditLogging?: boolean;
 }
 
 export interface School {

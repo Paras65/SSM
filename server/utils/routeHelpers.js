@@ -1,4 +1,35 @@
 const AuditLog = require('../models/AuditLog');
+const School = require('../models/School');
+
+// In-memory cache for school audit logging feature status to avoid repeated DB queries (1-minute TTL)
+const schoolAuditLoggingCache = new Map();
+const CACHE_TTL_MS = 60 * 1000;
+
+function invalidateSchoolAuditLoggingCache(schoolId) {
+  if (!schoolId) return;
+  schoolAuditLoggingCache.delete(schoolId);
+}
+
+async function isAuditLoggingEnabled(targetSchoolId) {
+  if (!targetSchoolId) return false;
+  const now = Date.now();
+  const cached = schoolAuditLoggingCache.get(targetSchoolId);
+  if (cached && cached.expiresAt > now) {
+    return cached.enabled;
+  }
+
+  try {
+    const school = await School.findOne({ id: targetSchoolId }).select('features.enableAuditLogging').lean();
+    const enabled = Boolean(school?.features?.enableAuditLogging);
+    schoolAuditLoggingCache.set(targetSchoolId, {
+      enabled,
+      expiresAt: now + CACHE_TTL_MS
+    });
+    return enabled;
+  } catch {
+    return false;
+  }
+}
 
 function generateUniqueId(prefix = 'item') {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
@@ -6,10 +37,17 @@ function generateUniqueId(prefix = 'item') {
 
 async function recordAuditLog({ schoolId, actorType, actorId, actorName, action, description, req }) {
   try {
+    const targetSchoolId = schoolId || req?.user?.schoolId || 'ssm-gorakhpur';
+    // Dynamic per-school audit logging toggle: skipped by default to optimize database storage
+    const isEnabled = await isAuditLoggingEnabled(targetSchoolId);
+    if (!isEnabled) {
+      return; // Skip DB write when audit logging is disabled
+    }
+
     const ip = req?.ip || req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '';
     const log = new AuditLog({
       id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      schoolId: schoolId || req?.user?.schoolId || 'ssm-gorakhpur',
+      schoolId: targetSchoolId,
       actorType: actorType || req?.user?.role || 'admin',
       actorId: actorId || req?.user?.studentId || req?.user?.teacherId || '',
       actorName: actorName || req?.user?.schoolName || 'प्रशासक / आचार्य',
@@ -71,6 +109,8 @@ async function executeSafeQuery(Model, filter, req, res, sort = { createdAt: -1 
 module.exports = {
   generateUniqueId,
   recordAuditLog,
-  executeSafeQuery
+  executeSafeQuery,
+  invalidateSchoolAuditLoggingCache,
+  isAuditLoggingEnabled
 };
 

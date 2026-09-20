@@ -99,6 +99,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [upiPayeeName, setUpiPayeeName] = useState('');
   const [enableStaffAttendanceLop, setEnableStaffAttendanceLop] = useState(false);
   const [lopDeductionRate, setLopDeductionRate] = useState(1);
+  const [enableAuditLogging, setEnableAuditLogging] = useState(false);
   const [isSavingFeatures, setIsSavingFeatures] = useState(false);
 
   const handleExportArchive = async (schoolId: string) => {
@@ -161,7 +162,8 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
           upiVpa: upiVpa.trim(),
           upiPayeeName: upiPayeeName.trim() || currentSchool.hindiName || currentSchool.name,
           enableStaffAttendanceLop,
-          lopDeductionRate: Number(lopDeductionRate) || 1
+          lopDeductionRate: Number(lopDeductionRate) || 1,
+          enableAuditLogging
         }
       });
       showSuccess('शाखा सुविधा सेटिंग्स सफलतापूर्वक सुरक्षित की गईं!');
@@ -185,12 +187,14 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
         setUpiPayeeName(currentSchool.features.upiPayeeName || currentSchool.hindiName || currentSchool.name || '');
         setEnableStaffAttendanceLop(Boolean(currentSchool.features.enableStaffAttendanceLop));
         setLopDeductionRate(currentSchool.features.lopDeductionRate ?? 1);
+        setEnableAuditLogging(Boolean(currentSchool.features.enableAuditLogging));
       } else {
         setEnableDynamicUpi(false);
         setUpiVpa('');
         setUpiPayeeName(currentSchool?.hindiName || currentSchool?.name || '');
         setEnableStaffAttendanceLop(false);
         setLopDeductionRate(1);
+        setEnableAuditLogging(false);
       }
     }
   }, [isOpen, initialMode, initialPlan, currentSchool]);
@@ -1293,6 +1297,53 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Feature 3: Dynamic Audit Logging & Storage Saver */}
+              <div className={`p-5 sm:p-6 rounded-2xl border-2 transition-all bg-white shadow-xs ${enableAuditLogging ? 'border-indigo-500 ring-2 ring-indigo-500/10' : 'border-stone-200'}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${enableAuditLogging ? 'bg-indigo-100 text-indigo-700' : 'bg-stone-100 text-stone-500'}`}>
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-bold text-stone-900">
+                          गतिशील सुरक्षा ऑडिट लॉगिंग एवं स्टोरेज संवर्धन (Audit Logging & Storage Saver)
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-300">
+                          स्टोरेज नियंत्रण
+                        </span>
+                        {enableAuditLogging ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            सक्रिय (Logging Enabled)
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                            स्टोरेज बचत मोड (Disabled by Default)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                        डेटाबेस स्टोरेज बचाने हेतु यह सुविधा डिफ़ॉल्ट रूप से बंद (Disabled) रहती है जिससे शून्य अतिरिक्त डेटाबेस स्टोरेज खर्च होता है। यदि इस शाखा में प्रशासनिक, वित्तीय व सुरक्षा कार्यों का विस्तृत डिजिटल रिकॉर्ड रखना आवश्यक हो, तो इसे कभी भी चालू (Enable) किया जा सकता है।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <button
+                    type="button"
+                    onClick={() => setEnableAuditLogging(!enableAuditLogging)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${enableAuditLogging ? 'bg-indigo-600' : 'bg-stone-300'}`}
+                    role="switch"
+                    aria-checked={enableAuditLogging}
+                    title={enableAuditLogging ? 'क्लिक करके सुविधा बंद करें (स्टोरेज बचाएं)' : 'क्लिक करके ऑडिट लॉगिंग चालू करें'}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${enableAuditLogging ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </button>
+                </div>
               </div>
 
               {/* Action Buttons */}

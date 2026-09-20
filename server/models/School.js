@@ -29,7 +29,8 @@ const schoolSchema = new mongoose.Schema({
     upiVpa: { type: String, default: '' },
     upiPayeeName: { type: String, default: '' },
     enableStaffAttendanceLop: { type: Boolean, default: false },
-    lopDeductionRate: { type: Number, default: 1 }
+    lopDeductionRate: { type: Number, default: 1 },
+    enableAuditLogging: { type: Boolean, default: false }
   }
 }, {
   timestamps: true

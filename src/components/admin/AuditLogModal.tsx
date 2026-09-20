@@ -25,7 +25,11 @@ import {
   ArrowUpDown,
   Lock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Database,
+  HardDrive,
+  Power,
+  PowerOff
 } from 'lucide-react';
 
 interface AuditLogModalProps {
@@ -36,11 +40,13 @@ interface AuditLogModalProps {
 type ActionCategory = 'all' | 'auth' | 'security' | 'financial' | 'exams' | 'students_staff' | 'other';
 
 export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose }) => {
-  const { currentSchool } = useSchool();
+  const { currentSchool, updateSchoolInfo, refreshFromDb } = useSchool();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isToggling, setIsToggling] = useState(false);
+  const isLoggingEnabled = Boolean(currentSchool?.features?.enableAuditLogging);
 
   // Filters
   const [filterRole, setFilterRole] = useState<string>('all');
@@ -213,6 +219,29 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Toggle audit logging for current school branch
+  const handleToggleLogging = async () => {
+    if (!currentSchool?.id) return;
+    setIsToggling(true);
+    try {
+      const nextState = !isLoggingEnabled;
+      await updateSchoolInfo(currentSchool.id, {
+        features: {
+          ...currentSchool.features,
+          enableAuditLogging: nextState
+        }
+      });
+      await refreshFromDb();
+      if (nextState) {
+        fetchLogs();
+      }
+    } catch (err) {
+      console.error('Failed to toggle audit logging:', err);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   // Visual Badges Helpers
@@ -344,6 +373,61 @@ export const AuditLogModal: React.FC<AuditLogModalProps> = ({ isOpen, onClose })
               title="बंद करें"
             >
               <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Storage Optimization & Audit Logging Control Strip */}
+        <div className={`px-6 py-3 border-b flex flex-wrap items-center justify-between gap-3 transition-colors ${
+          isLoggingEnabled 
+            ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950' 
+            : 'bg-amber-50/90 border-amber-200 text-amber-950'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold ${
+              isLoggingEnabled ? 'bg-emerald-600 text-white shadow-xs' : 'bg-amber-600 text-white shadow-xs'
+            }`}>
+              {isLoggingEnabled ? <Database className="w-5 h-5" /> : <HardDrive className="w-5 h-5" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black tracking-wide">
+                  {isLoggingEnabled ? '🟢 ऑडिट लॉगिंग सक्रिय (Active)' : '📦 स्टोरेज बचत मोड सक्रिय (Storage Saver)'}
+                </span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  isLoggingEnabled 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}>
+                  {isLoggingEnabled ? 'डेटाबेस में लॉग दर्ज हो रहे हैं' : 'डिफ़ॉल्ट रूप से शून्य स्टोरेज खपत'}
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-600 mt-0.5 leading-tight">
+                {isLoggingEnabled 
+                  ? `शाखा "${currentSchool.name || currentSchool.id}" में समस्त प्रशासनिक, वित्तीय व सुरक्षा कार्यों का विस्तृत डिजिटल रिकॉर्ड सुरक्षित रखा जा रहा है।`
+                  : `शाखा "${currentSchool.name || currentSchool.id}" में स्टोरेज बचत हेतु नवीन लॉगिंग बंद है। आवश्यकता पड़ने पर आप इसे 1-क्लिक में कभी भी चालू कर सकते हैं।`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleLogging}
+              disabled={isToggling}
+              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer ${
+                isLoggingEnabled
+                  ? 'bg-stone-800 hover:bg-stone-900 text-white border border-stone-700'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
+              }`}
+            >
+              {isToggling ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : isLoggingEnabled ? (
+                <PowerOff className="w-3.5 h-3.5 text-rose-400" />
+              ) : (
+                <Power className="w-3.5 h-3.5 text-emerald-200" />
+              )}
+              <span>{isLoggingEnabled ? 'लॉगिंग बंद करें (स्टोरेज बचाएं)' : 'ऑडिट लॉगिंग चालू करें'}</span>
             </button>
           </div>
         </div>
