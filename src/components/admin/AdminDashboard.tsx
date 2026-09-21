@@ -834,12 +834,20 @@ export const AdminDashboard: React.FC = () => {
                 </select>
               </div>
             ) : (
-              <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-950/80 border border-orange-800/60 text-[11px] font-bold text-amber-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setSchoolModalMode('list');
+                  setShowSchoolModal(true);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 border border-orange-800/60 text-[11px] font-bold text-amber-200 shrink-0 transition cursor-pointer"
+                title={`${currentSchool.name} - शाखा प्रबंधन एवं सुविधा सेटिंग्स देखने हेतु क्लिक करें`}
+              >
                 <Building2 className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-                <span className="truncate max-w-[130px] sm:max-w-[200px]" title={currentSchool.name}>
+                <span className="truncate max-w-[130px] sm:max-w-[200px]">
                   {currentSchool.city} ({currentSchool.prant})
                 </span>
-              </div>
+              </button>
             )}
 
             <div className="flex items-center gap-1.5 shrink-0">

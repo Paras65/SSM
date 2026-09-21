@@ -132,6 +132,12 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       setDiscontinuingSchool(null);
       setDiscontinueConfirmText('');
       setDiscontinueReason('');
+      if (schoolId === currentSchool.id && !isDeveloper) {
+        api.logoutAdmin();
+        setViewMode('public');
+        onClose();
+        return;
+      }
       await refreshFromDb();
     } catch (err: any) {
       showError('शाखा विसर्जन विफल: ' + (err.message || 'त्रुटि'));
@@ -1050,7 +1056,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                             </button>
                           )}
 
-                          {isDeveloper && sch.status !== 'discontinued' && (
+                          {sch.status !== 'discontinued' && (
                             <button
                               type="button"
                               onClick={() => {
@@ -1058,10 +1064,11 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                                 setDiscontinueConfirmText('');
                                 setDiscontinueReason('');
                               }}
-                              className="px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-700 text-xs font-semibold transition cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
                               title="शाखा सेवा विसर्जन / निष्क्रियन (Offboard School)"
                             >
-                              विसर्जन
+                              <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                              <span>विसर्जन</span>
                             </button>
                           )}
                         </div>
@@ -1345,6 +1352,44 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* Danger Zone: School Discontinuation */}
+              {currentSchool && currentSchool.status !== 'discontinued' && (
+                <div className="bg-red-50/70 border-2 border-red-200 rounded-2xl p-5 sm:p-6 space-y-3">
+                  <div className="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-red-100 border border-red-200 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <AlertTriangle className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm sm:text-base font-bold text-red-950 flex items-center gap-2">
+                          <span>खतरा क्षेत्र: शाखा सेवा विसर्जन (Danger Zone: Discontinue School)</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">
+                            सावधानी
+                          </span>
+                        </h4>
+                        <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                          यदि यह विद्यालय शाखा अब ईआरपी सेवा का उपयोग नहीं कर रही है या शाखा बंद/स्थानांतरित हो चुकी है, तो आप यहां से शाखा को विसर्जित (निष्क्रिय) कर सकते हैं। विसर्जन से पूर्व <strong>डेटा आर्काइव बैकअप</strong> अवश्य डाउनलोड कर लें।
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDiscontinuingSchool(currentSchool);
+                        setDiscontinueConfirmText('');
+                        setDiscontinueReason('');
+                      }}
+                      className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition flex items-center gap-2 shrink-0 cursor-pointer"
+                      title="शाखा सेवा विसर्जित करें"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>शाखा सेवा विसर्जित करें</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="pt-4 border-t border-stone-200 flex items-center justify-end gap-3">
