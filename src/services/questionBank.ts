@@ -1,4 +1,4 @@
-import { QuestionItem, QuestionType, QuestionPaper, QuestionPaperSection, ExamPaperType, SSM_STANDARD_CLASSES } from '../types';
+import { QuestionItem, QuestionType, QuestionPaper, QuestionPaperSection, ExamPaperType, SSM_STANDARD_CLASSES, MatchPair } from '../types';
 import { generateSmartJSON } from './aiService';
 
 export interface GeneratePaperOptions {
@@ -223,6 +223,33 @@ export const SAMPLE_QUESTION_BANK: Record<string, QuestionItem[]> = {
       chapter: 'क्षेत्रमिति एवं परिमाप',
       internalChoiceText: 'अथवा: किसी समांतर चतुर्भुज का आधार १८ सेमी और ऊंचाई १२ सेमी है। यदि एक अन्य समांतर चतुर्भुज का क्षेत्रफल इसके समान हो तथा आधार २४ सेमी हो, तो उसकी ऊंचाई ज्ञात कीजिए।',
       difficulty: 'hard'
+    },
+    {
+      id: 'math-fib-1',
+      type: 'fill-blanks',
+      text: 'सम संख्या और विषम संख्या का योग सदैव एक _______ संख्या होता है।',
+      marks: 1,
+      subject: 'गणित',
+      classLevel: 'Class 6',
+      chapter: 'संख्या पद्धति',
+      blankAnswer: 'विषम (Odd)',
+      difficulty: 'easy'
+    },
+    {
+      id: 'math-match-1',
+      type: 'match',
+      text: 'स्तम्भ "क" को स्तम्भ "ख" से सुमेलित कर सही जोड़ी बनाइए:',
+      marks: 4,
+      subject: 'गणित',
+      classLevel: 'Class 6',
+      chapter: 'ज्यामिति एवं मूल अवधारणाएं',
+      matchPairs: [
+        { id: 'm1', left: 'त्रिभुज के तीनों कोणों का योग', right: '१८०°' },
+        { id: 'm2', left: 'समकोण का माप', right: '९०°' },
+        { id: 'm3', left: 'वृत्त का व्यास', right: '२ × त्रिज्या' },
+        { id: 'm4', left: 'वर्ग का परिमाप', right: '४ × भुजा' }
+      ],
+      difficulty: 'medium'
     }
   ],
   'विज्ञान': [
@@ -308,6 +335,33 @@ export const SAMPLE_QUESTION_BANK: Record<string, QuestionItem[]> = {
       chapter: 'मानव पोषण',
       internalChoiceText: 'अथवा: विद्युत धारा के उष्मीय प्रभाव (Heating Effect of Electric Current) को समझाइए और इसके दैनिक जीवन में तीन उपयोग व सुरक्षा फ्यूज का कार्य लिखिए।',
       difficulty: 'hard'
+    },
+    {
+      id: 'sci-fib-1',
+      type: 'fill-blanks',
+      text: 'पौधों की हरी पत्तियों में सूर्य के प्रकाश को अवशोषित करने वाला वर्णक _______ कहलाता है।',
+      marks: 1,
+      subject: 'विज्ञान',
+      classLevel: 'Class 6',
+      chapter: 'पादपों में पोषण',
+      blankAnswer: 'क्लोरोफिल (पर्णहरित)',
+      difficulty: 'easy'
+    },
+    {
+      id: 'sci-match-1',
+      type: 'match',
+      text: 'स्तम्भ "क" के वैज्ञानिक तथ्यों का स्तम्भ "ख" से सही मिलान कीजिए:',
+      marks: 4,
+      subject: 'विज्ञान',
+      classLevel: 'Class 7',
+      chapter: 'सजीव, पदार्थ एवं ऊर्जा',
+      matchPairs: [
+        { id: 'sm1', left: 'विटामिन सी का स्रोत', right: 'आंवला एवं खट्टे फल' },
+        { id: 'sm2', left: 'रक्त परिसंचरण तंत्र', right: 'हृदय एवं रुधिर वाहिकाएं' },
+        { id: 'sm3', left: 'वायुमंडलीय दाब मापक', right: 'बैरोमीटर' },
+        { id: 'sm4', left: 'प्राणवायु', right: 'ऑक्सीजन गैस' }
+      ],
+      difficulty: 'medium'
     }
   ],
   'हिन्दी': [
@@ -382,6 +436,33 @@ export const SAMPLE_QUESTION_BANK: Record<string, QuestionItem[]> = {
       classLevel: 'Class 7',
       chapter: 'निबंध लेखन',
       difficulty: 'hard'
+    },
+    {
+      id: 'hin-fib-1',
+      type: 'fill-blanks',
+      text: '‘अंधे की लाठी होना’ मुहावरे का अर्थ _______ सहारा होना है।',
+      marks: 1,
+      subject: 'हिन्दी',
+      classLevel: 'Class 6',
+      chapter: 'व्याकरण - मुहावरे',
+      blankAnswer: 'एकमात्र',
+      difficulty: 'easy'
+    },
+    {
+      id: 'hin-match-1',
+      type: 'match',
+      text: 'स्तम्भ "क" के शब्दों का स्तम्भ "ख" के विलोम शब्दों से सही मिलान कीजिए:',
+      marks: 4,
+      subject: 'हिन्दी',
+      classLevel: 'Class 7',
+      chapter: 'व्याकरण - विलोम शब्द',
+      matchPairs: [
+        { id: 'hm1', left: 'अमृत', right: 'विष' },
+        { id: 'hm2', left: 'उदय', right: 'अस्त' },
+        { id: 'hm3', left: 'सत्य', right: 'असत्य' },
+        { id: 'hm4', left: 'नवीन', right: 'प्राचीन' }
+      ],
+      difficulty: 'medium'
     }
   ],
   'संस्कृत': [
@@ -429,6 +510,33 @@ export const SAMPLE_QUESTION_BANK: Record<string, QuestionItem[]> = {
       subject: 'संस्कृत',
       classLevel: 'Class 7',
       chapter: 'संस्कृत अनुवाद',
+      difficulty: 'medium'
+    },
+    {
+      id: 'skt-fib-1',
+      type: 'fill-blanks',
+      text: 'सत्यमेव जयते _______ (सत्य की ही विजय होती है)।',
+      marks: 1,
+      subject: 'संस्कृत',
+      classLevel: 'Class 6',
+      chapter: 'सदाचारः',
+      blankAnswer: 'नानृतम्',
+      difficulty: 'easy'
+    },
+    {
+      id: 'skt-match-1',
+      type: 'match',
+      text: 'उचित पदस्य मेलनं कुरुत (स्तम्भ "क" का स्तम्भ "ख" से सही मिलान कीजिए):',
+      marks: 4,
+      subject: 'संस्कृत',
+      classLevel: 'Class 7',
+      chapter: 'व्याकरणम् एवं शब्दार्थाः',
+      matchPairs: [
+        { id: 'skt-m1', left: 'सूर्यः', right: 'दिनकरः' },
+        { id: 'skt-m2', left: 'विद्यालयः', right: 'विद्यायाः आलयः' },
+        { id: 'skt-m3', left: 'माता', right: 'जननी' },
+        { id: 'skt-m4', left: 'अश्वः', right: 'घोटकः' }
+      ],
       difficulty: 'medium'
     }
   ],
@@ -792,7 +900,7 @@ Create a complete, beautifully balanced examination question paper in Hindi for:
 Strict Rules:
 1. The sum of marks of all questions MUST EXACTLY EQUAL ${targetMarks} marks.
 2. Structure into 2 to 3 sections:
-   - खण्ड "क": Objective / MCQs (type: "mcq", 1 mark each with 4 options labeled क, ख, ग, घ) and/or Very Short Answer (type: "vsa", 1 mark each).
+   - खण्ड "क": Objective / MCQs (type: "mcq", 1 mark each with 4 options labeled क, ख, ग, घ), Fill in the blanks (type: "fill-blanks", 1 mark each with "text" containing "_______" and "blankAnswer"), Match the column (type: "match", 2-4 marks with "matchPairs": [{"id": "m1", "left": "...", "right": "..."}]), and/or Very Short Answer (type: "vsa", 1 mark each).
    - खण्ड "ख": Short Answer (type: "sa", 2 or 3 marks each).
    - खण्ड "ग": Long Answer (type: "la", 4 or 5 marks each). For long answers, provide an internalChoiceText ("अथवा: ...").
 3. Output strictly a JSON object with this structure:
@@ -819,6 +927,24 @@ Strict Rules:
             { "id": "opt-3", "text": "(ग) विकल्प ३" },
             { "id": "opt-4", "text": "(घ) विकल्प ४" }
           ]
+        },
+        {
+          "id": "q2",
+          "type": "fill-blanks",
+          "text": "भारत की राष्ट्रभाषा _______ है।",
+          "marks": 1,
+          "blankAnswer": "हिन्दी"
+        },
+        {
+          "id": "q3",
+          "type": "match",
+          "text": "स्तम्भ 'क' का स्तम्भ 'ख' से सही मिलान कीजिए:",
+          "marks": 3,
+          "matchPairs": [
+            { "id": "m1", "left": "तथ्य १", "right": "उत्तर १" },
+            { "id": "m2", "left": "तथ्य २", "right": "उत्तर २" },
+            { "id": "m3", "left": "तथ्य ३", "right": "उत्तर ३" }
+          ]
         }
       ]
     },
@@ -828,7 +954,7 @@ Strict Rules:
       "instructions": "संक्षेप में उत्तर दीजिए।",
       "questions": [
         {
-          "id": "q2",
+          "id": "q4",
           "type": "sa",
           "text": "प्रश्न पाठ...",
           "marks": 2
@@ -841,7 +967,7 @@ Strict Rules:
       "instructions": "विस्तृत उत्तर दीजिए।",
       "questions": [
         {
-          "id": "q3",
+          "id": "q5",
           "type": "la",
           "text": "प्रश्न पाठ...",
           "marks": 4,
@@ -868,7 +994,7 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
           instructions: sec.instructions || 'निर्देशानुसार हल करें।',
           questions: (sec.questions || []).map((q: any, qIdx: number): QuestionItem => ({
             id: q.id || `q-${sIdx + 1}-${qIdx + 1}`,
-            type: (['mcq', 'vsa', 'sa', 'la', 'sanskriti'].includes(q.type) ? q.type : 'sa') as QuestionType,
+            type: (['mcq', 'vsa', 'sa', 'la', 'sanskriti', 'fill-blanks', 'match'].includes(q.type) ? q.type : 'sa') as QuestionType,
             text: q.text || 'प्रश्न',
             marks: Number(q.marks) || 1,
             subject,
@@ -880,6 +1006,14 @@ Return ONLY valid JSON. No markdown code blocks, no backticks.`;
                   text: typeof opt === 'string' ? opt : opt.text || ''
                 }))
               : undefined,
+            matchPairs: Array.isArray(q.matchPairs)
+              ? q.matchPairs.map((p: any, pIdx: number) => ({
+                  id: p.id || `pair-${pIdx + 1}`,
+                  left: typeof p.left === 'string' ? p.left : '',
+                  right: typeof p.right === 'string' ? p.right : ''
+                }))
+              : undefined,
+            blankAnswer: typeof q.blankAnswer === 'string' ? q.blankAnswer : undefined,
             internalChoiceText: q.internalChoiceText || undefined
           }))
         })

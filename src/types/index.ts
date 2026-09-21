@@ -559,12 +559,18 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
-export type QuestionType = 'mcq' | 'vsa' | 'sa' | 'la' | 'sanskriti';
+export type QuestionType = 'mcq' | 'vsa' | 'sa' | 'la' | 'sanskriti' | 'fill-blanks' | 'match';
 export type ExamPaperType = 'unit-test' | 'traimasik' | 'ardhavarshik' | 'varshik' | 'practice';
 
 export interface QuestionOption {
   id: string;
   text: string;
+}
+
+export interface MatchPair {
+  id: string;
+  left: string;
+  right: string;
 }
 
 export interface QuestionItem {
@@ -576,6 +582,8 @@ export interface QuestionItem {
   classLevel: string;
   chapter?: string;
   options?: QuestionOption[];
+  matchPairs?: MatchPair[];
+  blankAnswer?: string;
   internalChoiceText?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
 }

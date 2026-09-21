@@ -29,7 +29,9 @@ import {
   QuestionPaper,
   QuestionItem,
   QuestionPaperSection,
-  ExamPaperType
+  ExamPaperType,
+  QuestionType,
+  MatchPair
 } from '../../types';
 import {
   generateSmartQuestionPaper,
@@ -90,6 +92,36 @@ const getRecommendedPrompt = (
   return `${classLvl} ${cleanSubject} के ${examName} हेतु (${baseChapters}) पर आधारित संतुलित विद्या भारती ब्लूप्रिंट अनुसार प्रश्न पत्र।`;
 };
 
+// Helper: Hindi Devanagari labels for match-the-column right side options
+const HINDI_OPTION_LETTERS = ['(क)', '(ख)', '(ग)', '(घ)', '(ङ)', '(च)', '(छ)', '(ज)'];
+
+// Helper: Get shifted Column B items for student print view so answers aren't directly adjacent
+export const getDisplayMatchColumnB = (pairs?: MatchPair[]): { origIdx: number; text: string }[] => {
+  if (!pairs || pairs.length <= 1) return (pairs || []).map((p, i) => ({ origIdx: i, text: p.right }));
+  const shift = Math.max(1, Math.floor(pairs.length / 2));
+  return pairs.map((_, i) => {
+    const targetIdx = (i + shift) % pairs.length;
+    return {
+      origIdx: targetIdx,
+      text: pairs[targetIdx]?.right || ''
+    };
+  });
+};
+
+// Helper: Get matching solution string for teacher answer key
+export const getMatchSolutionString = (pairs?: MatchPair[]): string => {
+  if (!pairs || pairs.length === 0) return '';
+  if (pairs.length === 1) return '१ ➔ (क)';
+  const colB = getDisplayMatchColumnB(pairs);
+  return pairs
+    .map((_, leftIdx) => {
+      const bPos = colB.findIndex(b => b.origIdx === leftIdx);
+      const letter = HINDI_OPTION_LETTERS[bPos] || `(${String.fromCharCode(97 + bPos)})`;
+      return `${leftIdx + 1} ➔ ${letter}`;
+    })
+    .join(', ');
+};
+
 export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   isOpen,
   onClose,
@@ -126,7 +158,10 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     | { type: 'voice-command' }
     | { type: 'question'; secIndex: number; qIndex: number }
     | { type: 'choice'; secIndex: number; qIndex: number }
-    | { type: 'mcq-opt'; secIndex: number; qIndex: number; optIndex: number };
+    | { type: 'mcq-opt'; secIndex: number; qIndex: number; optIndex: number }
+    | { type: 'blank-answer'; secIndex: number; qIndex: number }
+    | { type: 'match-left'; secIndex: number; qIndex: number; pairIndex: number }
+    | { type: 'match-right'; secIndex: number; qIndex: number; pairIndex: number };
 
   // Special Focus & Generation State
   const [customTopic, setCustomTopic] = useState<string>(initialPrompt);
@@ -241,7 +276,21 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         (activeVoiceTarget.type === 'mcq-opt' &&
           activeVoiceTarget.secIndex === target.secIndex &&
           activeVoiceTarget.qIndex === target.qIndex &&
-          activeVoiceTarget.optIndex === target.optIndex));
+          activeVoiceTarget.optIndex === target.optIndex)) &&
+      (target.type !== 'blank-answer' ||
+        (activeVoiceTarget.type === 'blank-answer' &&
+          activeVoiceTarget.secIndex === target.secIndex &&
+          activeVoiceTarget.qIndex === target.qIndex)) &&
+      (target.type !== 'match-left' ||
+        (activeVoiceTarget.type === 'match-left' &&
+          activeVoiceTarget.secIndex === target.secIndex &&
+          activeVoiceTarget.qIndex === target.qIndex &&
+          activeVoiceTarget.pairIndex === target.pairIndex)) &&
+      (target.type !== 'match-right' ||
+        (activeVoiceTarget.type === 'match-right' &&
+          activeVoiceTarget.secIndex === target.secIndex &&
+          activeVoiceTarget.qIndex === target.qIndex &&
+          activeVoiceTarget.pairIndex === target.pairIndex));
 
     if (isListening && recognitionRef.current) {
       try {
@@ -276,6 +325,12 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             showInfo(`🎙️ विकल्प (${String.fromCharCode(97 + target.optIndex)}) बोलकर लिखें...`);
           } else if (target.type === 'chapters') {
             showInfo('🎙️ पाठ्यक्रम / अध्याय का नाम बोलें...');
+          } else if (target.type === 'blank-answer') {
+            showInfo('🎙️ रिक्त स्थान का अपेक्षित उत्तर बोलें...');
+          } else if (target.type === 'match-left') {
+            showInfo(`🎙️ स्तम्भ 'क' पद (${target.pairIndex + 1}) बोलें...`);
+          } else if (target.type === 'match-right') {
+            showInfo(`🎙️ स्तम्भ 'ख' उत्तर (${target.pairIndex + 1}) बोलें...`);
           }
         },
         onResult: (clean) => {
@@ -334,6 +389,35 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
               const q = sections[target.secIndex]?.questions[target.qIndex];
               if (q && q.options && q.options[target.optIndex]) {
                 q.options[target.optIndex].text = clean;
+              }
+              return { ...updated, sections };
+            });
+          } else if (target.type === 'blank-answer') {
+            setPaper(prev => {
+              const updated = { ...prev };
+              const sections = [...updated.sections];
+              if (sections[target.secIndex]?.questions[target.qIndex]) {
+                sections[target.secIndex].questions[target.qIndex].blankAnswer = clean;
+              }
+              return { ...updated, sections };
+            });
+          } else if (target.type === 'match-left') {
+            setPaper(prev => {
+              const updated = { ...prev };
+              const sections = [...updated.sections];
+              const q = sections[target.secIndex]?.questions[target.qIndex];
+              if (q && q.matchPairs && q.matchPairs[target.pairIndex]) {
+                q.matchPairs[target.pairIndex].left = clean;
+              }
+              return { ...updated, sections };
+            });
+          } else if (target.type === 'match-right') {
+            setPaper(prev => {
+              const updated = { ...prev };
+              const sections = [...updated.sections];
+              const q = sections[target.secIndex]?.questions[target.qIndex];
+              if (q && q.matchPairs && q.matchPairs[target.pairIndex]) {
+                q.matchPairs[target.pairIndex].right = clean;
               }
               return { ...updated, sections };
             });
@@ -710,21 +794,188 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
     setPaper({ ...paper, sections: updatedSections });
   };
 
-  // Add custom question to section
-  const handleAddQuestion = (secIndex: number) => {
+  // Add custom question with specific type to section
+  const handleAddQuestion = (secIndex: number, type: QuestionType = 'sa') => {
     const updatedSections = [...paper.sections];
-    const newQ: QuestionItem = {
-      id: `custom-q-${Date.now()}`,
-      type: 'sa',
-      text: 'नया प्रश्न यहाँ लिखें...',
-      marks: 2,
-      subject,
-      classLevel,
-      chapter: chapters,
-      difficulty: 'medium'
-    };
+    let newQ: QuestionItem;
+
+    if (type === 'fill-blanks') {
+      newQ = {
+        id: `custom-q-${Date.now()}`,
+        type: 'fill-blanks',
+        text: 'निम्न वाक्य में रिक्त स्थान की पूर्ति कीजिए: _______',
+        marks: 1,
+        subject,
+        classLevel,
+        chapter: chapters,
+        blankAnswer: '',
+        difficulty: 'easy'
+      };
+    } else if (type === 'match') {
+      newQ = {
+        id: `custom-q-${Date.now()}`,
+        type: 'match',
+        text: 'स्तम्भ "क" का स्तम्भ "ख" से सही मिलान कीजिए:',
+        marks: 4,
+        subject,
+        classLevel,
+        chapter: chapters,
+        matchPairs: [
+          { id: `p1-${Date.now()}`, left: 'पद १', right: 'उत्तर १' },
+          { id: `p2-${Date.now()}`, left: 'पद २', right: 'उत्तर २' },
+          { id: `p3-${Date.now()}`, left: 'पद ३', right: 'उत्तर ३' },
+          { id: `p4-${Date.now()}`, left: 'पद ४', right: 'उत्तर ४' }
+        ],
+        difficulty: 'medium'
+      };
+    } else if (type === 'mcq') {
+      newQ = {
+        id: `custom-q-${Date.now()}`,
+        type: 'mcq',
+        text: 'सही विकल्प का चयन कीजिए:',
+        marks: 1,
+        subject,
+        classLevel,
+        chapter: chapters,
+        options: [
+          { id: 'a', text: 'विकल्प क' },
+          { id: 'b', text: 'विकल्प ख' },
+          { id: 'c', text: 'विकल्प ग' },
+          { id: 'd', text: 'विकल्प घ' }
+        ],
+        difficulty: 'easy'
+      };
+    } else if (type === 'la') {
+      newQ = {
+        id: `custom-q-${Date.now()}`,
+        type: 'la',
+        text: 'दीर्घ उत्तरीय प्रश्न यहाँ लिखें...',
+        marks: 4,
+        subject,
+        classLevel,
+        chapter: chapters,
+        internalChoiceText: 'अथवा: वैकल्पिक प्रश्न पाठ यहाँ लिखें...',
+        difficulty: 'hard'
+      };
+    } else if (type === 'vsa') {
+      newQ = {
+        id: `custom-q-${Date.now()}`,
+        type: 'vsa',
+        text: 'अति लघु उत्तरीय प्रश्न यहाँ लिखें...',
+        marks: 1,
+        subject,
+        classLevel,
+        chapter: chapters,
+        difficulty: 'easy'
+      };
+    } else if (type === 'sanskriti') {
+      newQ = {
+        id: `custom-q-${Date.now()}`,
+        type: 'sanskriti',
+        text: 'संस्कृति बोध एवं नैतिक संस्कार संबंधी प्रश्न यहाँ लिखें...',
+        marks: 2,
+        subject: 'संस्कृति बोध',
+        classLevel,
+        chapter: 'संस्कार एवं संस्कृति',
+        difficulty: 'easy'
+      };
+    } else {
+      newQ = {
+        id: `custom-q-${Date.now()}`,
+        type: 'sa',
+        text: 'नया प्रश्न यहाँ लिखें...',
+        marks: 2,
+        subject,
+        classLevel,
+        chapter: chapters,
+        difficulty: 'medium'
+      };
+    }
+
     updatedSections[secIndex].questions.push(newQ);
     setPaper({ ...paper, sections: updatedSections });
+  };
+
+  // Change question type dynamically
+  const handleQuestionTypeChange = (secIndex: number, qIndex: number, newType: QuestionType) => {
+    const updatedSections = [...paper.sections];
+    const q = { ...updatedSections[secIndex].questions[qIndex] };
+    q.type = newType;
+
+    if (newType === 'mcq' && (!q.options || q.options.length === 0)) {
+      q.options = [
+        { id: 'a', text: 'विकल्प क' },
+        { id: 'b', text: 'विकल्प ख' },
+        { id: 'c', text: 'विकल्प ग' },
+        { id: 'd', text: 'विकल्प घ' }
+      ];
+    }
+    if (newType === 'fill-blanks') {
+      if (!q.text.includes('_______')) {
+        q.text += ' _______';
+      }
+      if (q.blankAnswer === undefined) {
+        q.blankAnswer = '';
+      }
+    }
+    if (newType === 'match' && (!q.matchPairs || q.matchPairs.length === 0)) {
+      q.matchPairs = [
+        { id: `p1-${Date.now()}`, left: 'पद १', right: 'उत्तर १' },
+        { id: `p2-${Date.now()}`, left: 'पद २', right: 'उत्तर २' },
+        { id: `p3-${Date.now()}`, left: 'पद ३', right: 'उत्तर ३' },
+        { id: `p4-${Date.now()}`, left: 'पद ४', right: 'उत्तर ४' }
+      ];
+      if (q.marks < 2) q.marks = 4;
+    }
+    if (newType === 'la' && q.internalChoiceText === undefined) {
+      q.internalChoiceText = 'अथवा: वैकल्पिक प्रश्न पाठ यहाँ लिखें...';
+    }
+
+    updatedSections[secIndex].questions[qIndex] = q;
+    setPaper({ ...paper, sections: updatedSections });
+  };
+
+  // Helper: Insert blank line (_______) into question text
+  const handleInsertBlank = (secIndex: number, qIndex: number) => {
+    const updatedSections = [...paper.sections];
+    const q = updatedSections[secIndex].questions[qIndex];
+    q.text = (q.text + ' _______').trim();
+    setPaper({ ...paper, sections: updatedSections });
+    showInfo('रिक्त स्थान (_______) प्रविष्ट हुआ!');
+  };
+
+  // Helper: Add match pair
+  const handleAddMatchPair = (secIndex: number, qIndex: number) => {
+    const updatedSections = [...paper.sections];
+    const q = updatedSections[secIndex].questions[qIndex];
+    if (!q.matchPairs) q.matchPairs = [];
+    const count = q.matchPairs.length + 1;
+    q.matchPairs.push({
+      id: `pair-${Date.now()}`,
+      left: `पद ${count}`,
+      right: `उत्तर ${count}`
+    });
+    setPaper({ ...paper, sections: updatedSections });
+  };
+
+  // Helper: Remove match pair
+  const handleRemoveMatchPair = (secIndex: number, qIndex: number, pairIndex: number) => {
+    const updatedSections = [...paper.sections];
+    const q = updatedSections[secIndex].questions[qIndex];
+    if (q.matchPairs && q.matchPairs.length > 1) {
+      q.matchPairs.splice(pairIndex, 1);
+      setPaper({ ...paper, sections: updatedSections });
+    }
+  };
+
+  // Helper: Update match pair side
+  const handleMatchPairChange = (secIndex: number, qIndex: number, pairIndex: number, side: 'left' | 'right', value: string) => {
+    const updatedSections = [...paper.sections];
+    const q = updatedSections[secIndex].questions[qIndex];
+    if (q.matchPairs && q.matchPairs[pairIndex]) {
+      q.matchPairs[pairIndex][side] = value;
+      setPaper({ ...paper, sections: updatedSections });
+    }
   };
 
   // Trigger Print
@@ -1211,7 +1462,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                         type="button"
                         onClick={() => {
                           const newQIndex = section.questions.length;
-                          handleAddQuestion(secIndex);
+                          handleAddQuestion(secIndex, 'sa');
                           setTimeout(() => {
                             handleVoiceInput({ type: 'question', secIndex, qIndex: newQIndex });
                           }, 150);
@@ -1224,12 +1475,30 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleAddQuestion(secIndex)}
+                        onClick={() => handleAddQuestion(secIndex, 'fill-blanks')}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-850 text-xs font-bold border border-emerald-300 cursor-pointer transition"
+                        title="खाली स्थान (रिक्त स्थान) प्रश्न जोड़ें"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>+ ✏️ खाली स्थान</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddQuestion(secIndex, 'match')}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-850 text-xs font-bold border border-blue-300 cursor-pointer transition"
+                        title="सही जोड़ी (स्तम्भ मिलान) प्रश्न जोड़ें"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-blue-700" />
+                        <span>+ 🔗 सही जोड़ी</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddQuestion(secIndex, 'sa')}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-bold border border-orange-200 cursor-pointer transition"
-                        title="इस खण्ड में प्रश्न जोड़ें"
+                        title="इस खण्ड में सामान्य प्रश्न जोड़ें"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>प्रश्न जोड़ें</span>
+                        <span>+ प्रश्न जोड़ें</span>
                       </button>
                     </div>
                   </div>
@@ -1268,13 +1537,65 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                           </div>
 
                           <div className="flex-1">
+                            {/* Question Type Selector & Type-Specific Quick Actions */}
+                            <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-stone-500 uppercase">प्रकार:</span>
+                                <select
+                                  value={q.type}
+                                  onChange={e => handleQuestionTypeChange(secIndex, qIndex, e.target.value as QuestionType)}
+                                  className="text-xs font-bold px-2 py-0.5 rounded-md border border-stone-300 bg-white text-stone-800 focus:outline-hidden focus:border-orange-500 cursor-pointer shadow-2xs"
+                                  title="प्रश्न का प्रकार चुनें"
+                                >
+                                  <option value="sa">📝 लघु उत्तरीय (SA)</option>
+                                  <option value="fill-blanks">✏️ खाली स्थान (Fill Blanks)</option>
+                                  <option value="match">🔗 सही जोड़ी (Match Columns)</option>
+                                  <option value="mcq">🔘 बहुविकल्पीय (MCQ)</option>
+                                  <option value="vsa">⚡ अति लघु (VSA)</option>
+                                  <option value="la">📖 दीर्घ उत्तरीय (LA)</option>
+                                  <option value="sanskriti">🚩 संस्कृति बोध</option>
+                                </select>
+                              </div>
+
+                              {/* Quick Insert Blank for fill-blanks */}
+                              {q.type === 'fill-blanks' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleInsertBlank(secIndex, qIndex)}
+                                  className="px-2 py-0.5 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-900 text-[11px] font-bold border border-amber-300 cursor-pointer transition flex items-center gap-1"
+                                  title="प्रश्न में खाली स्थान (_______) प्रविष्ट करें"
+                                >
+                                  <span>+ [ _______ ] खाली स्थान डालें</span>
+                                </button>
+                              )}
+
+                              {/* Quick Add Pair for match */}
+                              {q.type === 'match' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddMatchPair(secIndex, qIndex)}
+                                  className="px-2 py-0.5 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-900 text-[11px] font-bold border border-blue-300 cursor-pointer transition flex items-center gap-1"
+                                  title="नई जोड़ी (स्तम्भ क व ख) जोड़ें"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  <span>+ नई जोड़ी जोड़ें</span>
+                                </button>
+                              )}
+                            </div>
+
                             <div className="relative">
                               <textarea
                                 rows={2}
                                 value={q.text}
                                 onFocus={() => setFocusedQuestionTarget({ secIndex, qIndex })}
                                 onChange={e => handleQuestionTextChange(secIndex, qIndex, e.target.value)}
-                                placeholder="प्रश्न यहाँ लिखें अथवा माइक दबाकर बोलें..."
+                                placeholder={
+                                  q.type === 'fill-blanks'
+                                    ? 'उदा. भारत की राष्ट्रभाषा _______ है।'
+                                    : q.type === 'match'
+                                    ? 'स्तम्भ "क" को स्तम्भ "ख" से सुमेलित कर सही जोड़ी बनाइए:'
+                                    : 'प्रश्न यहाँ लिखें अथवा माइक दबाकर बोलें...'
+                                }
                                 className={`w-full p-2 pr-9 text-xs font-medium text-stone-900 bg-white border rounded-lg focus:outline-hidden focus:border-orange-400 shadow-2xs resize-y ${
                                   isListening &&
                                   activeVoiceTarget?.type === 'question' &&
@@ -1300,6 +1621,151 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                                 <Mic className="w-3.5 h-3.5" />
                               </button>
                             </div>
+
+                            {/* Fill in the Blanks: Answer Key Input with Voice */}
+                            {q.type === 'fill-blanks' && (
+                              <div className="mt-2 p-2 bg-amber-50/80 border border-amber-200 rounded-lg space-y-1">
+                                <div className="flex items-center justify-between text-[10px] font-bold text-amber-950 uppercase">
+                                  <span>🔑 अपेक्षित उत्तर (रिक्त स्थान में आने वाला सही शब्द):</span>
+                                  <span className="text-stone-500 font-normal">शिक्षक उत्तर कुंजी में दिखेगा</span>
+                                </div>
+                                <div className="relative flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={q.blankAnswer || ''}
+                                    onChange={e => {
+                                      const updatedSections = [...paper.sections];
+                                      updatedSections[secIndex].questions[qIndex].blankAnswer = e.target.value;
+                                      setPaper({ ...paper, sections: updatedSections });
+                                    }}
+                                    placeholder="उदा. हिन्दी, विषम, क्लोरोफिल..."
+                                    className={`flex-1 p-1.5 pr-8 text-xs text-stone-800 bg-white border rounded-md focus:outline-hidden ${
+                                      isListening &&
+                                      activeVoiceTarget?.type === 'blank-answer' &&
+                                      activeVoiceTarget.secIndex === secIndex &&
+                                      activeVoiceTarget.qIndex === qIndex
+                                        ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20'
+                                        : 'border-stone-300'
+                                    }`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVoiceInput({ type: 'blank-answer', secIndex, qIndex })}
+                                    className={`p-1.5 rounded-md transition cursor-pointer flex items-center justify-center shrink-0 ${
+                                      isListening &&
+                                      activeVoiceTarget?.type === 'blank-answer' &&
+                                      activeVoiceTarget.secIndex === secIndex &&
+                                      activeVoiceTarget.qIndex === qIndex
+                                        ? 'bg-red-600 text-white animate-pulse'
+                                        : 'text-stone-400 hover:text-orange-700 hover:bg-orange-50'
+                                    }`}
+                                    title="बोलकर अपेक्षित उत्तर लिखें"
+                                  >
+                                    <Mic className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Match the Column: Dual Column Pair Editor with Voice */}
+                            {q.type === 'match' && (
+                              <div className="mt-2 p-2.5 bg-blue-50/40 border border-blue-200 rounded-xl space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-blue-950 flex items-center gap-1">
+                                    <span>🔗 स्तम्भ 'क' एवं स्तम्भ 'ख' जोड़ियां</span>
+                                    <span className="text-[10px] text-stone-500">({q.matchPairs?.length || 0} जोड़ियां)</span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddMatchPair(secIndex, qIndex)}
+                                    className="px-2 py-0.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition cursor-pointer flex items-center gap-1"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    <span>+ नई जोड़ी</span>
+                                  </button>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  {(q.matchPairs || []).map((pair, pIdx) => (
+                                    <div
+                                      key={pair.id || pIdx}
+                                      className="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-stone-200 text-xs shadow-2xs"
+                                    >
+                                      <span className="w-5 text-center font-bold text-stone-500 shrink-0 text-[11px]">
+                                        {pIdx + 1}.
+                                      </span>
+
+                                      {/* Column A (Left) */}
+                                      <div className="flex-1 relative flex items-center min-w-0">
+                                        <input
+                                          type="text"
+                                          value={pair.left}
+                                          onChange={e => handleMatchPairChange(secIndex, qIndex, pIdx, 'left', e.target.value)}
+                                          placeholder={`स्तम्भ 'क' पद ${pIdx + 1}`}
+                                          className={`w-full p-1 pr-6 text-xs text-stone-800 bg-transparent border-b border-stone-200 focus:outline-hidden focus:border-blue-500 ${
+                                            isListening &&
+                                            activeVoiceTarget?.type === 'match-left' &&
+                                            activeVoiceTarget.secIndex === secIndex &&
+                                            activeVoiceTarget.qIndex === qIndex &&
+                                            activeVoiceTarget.pairIndex === pIdx
+                                              ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20'
+                                              : ''
+                                          }`}
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleVoiceInput({ type: 'match-left', secIndex, qIndex, pairIndex: pIdx })}
+                                          className="absolute right-0 p-1 text-stone-400 hover:text-blue-700 transition"
+                                          title={`बोलकर स्तम्भ 'क' पद ${pIdx + 1} लिखें`}
+                                        >
+                                          <Mic className="w-3 h-3" />
+                                        </button>
+                                      </div>
+
+                                      <span className="font-black text-blue-700 shrink-0 px-1 text-xs">➔</span>
+
+                                      {/* Column B (Right) */}
+                                      <div className="flex-1 relative flex items-center min-w-0">
+                                        <input
+                                          type="text"
+                                          value={pair.right}
+                                          onChange={e => handleMatchPairChange(secIndex, qIndex, pIdx, 'right', e.target.value)}
+                                          placeholder={`स्तम्भ 'ख' उत्तर ${pIdx + 1}`}
+                                          className={`w-full p-1 pr-6 text-xs text-stone-800 bg-transparent border-b border-stone-200 focus:outline-hidden focus:border-blue-500 ${
+                                            isListening &&
+                                            activeVoiceTarget?.type === 'match-right' &&
+                                            activeVoiceTarget.secIndex === secIndex &&
+                                            activeVoiceTarget.qIndex === qIndex &&
+                                            activeVoiceTarget.pairIndex === pIdx
+                                              ? 'border-red-500 ring-2 ring-red-200 bg-red-50/20'
+                                              : ''
+                                          }`}
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleVoiceInput({ type: 'match-right', secIndex, qIndex, pairIndex: pIdx })}
+                                          className="absolute right-0 p-1 text-stone-400 hover:text-blue-700 transition"
+                                          title={`बोलकर स्तम्भ 'ख' उत्तर ${pIdx + 1} लिखें`}
+                                        >
+                                          <Mic className="w-3 h-3" />
+                                        </button>
+                                      </div>
+
+                                      {(q.matchPairs?.length || 0) > 2 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveMatchPair(secIndex, qIndex, pIdx)}
+                                          className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition cursor-pointer shrink-0"
+                                          title="यह जोड़ी हटाएं"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
                             {/* Internal Choice if exists */}
                             {q.internalChoiceText !== undefined && (
@@ -1552,11 +2018,29 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                                 {showAnswerKey && (
                                   <div className="mt-1 pl-3 py-0.5 bg-emerald-50/70 border-l-2 border-emerald-600 text-[10px] text-emerald-950 rounded-r">
                                     <span className="font-bold text-emerald-900">उत्तर संकेत / अंक विभाजन: </span>
-                                    <span className="italic">
-                                      {q.type === 'mcq' && q.options && q.options.length > 0
-                                        ? `सही उत्तर विकल्प: (${String.fromCharCode(97)}) ${q.options[0].text} (पूर्ण: ${q.marks} अंक)`
-                                        : `मुख्य बिंदु / सूत्र / परिभाषा। (पूर्ण उत्तर: ${q.marks} अंक, आंशिक: ${Math.max(1, Math.floor(q.marks / 2))} अंक)`}
-                                    </span>
+                                    {q.type === 'mcq' && q.options && q.options.length > 0 ? (
+                                      <span className="italic">
+                                        सही उत्तर विकल्प: ({String.fromCharCode(97)}) {q.options[0].text} (पूर्ण: {q.marks} अंक)
+                                      </span>
+                                    ) : q.type === 'fill-blanks' ? (
+                                      <span className="italic">
+                                        रिक्त स्थान का सही उत्तर = <strong className="font-bold text-emerald-900 font-mono">[{q.blankAnswer || 'अपेक्षित उत्तर'}]</strong> (पूर्ण: {q.marks} अंक)
+                                      </span>
+                                    ) : q.type === 'match' && q.matchPairs ? (
+                                      <span>
+                                        सही मिलान:{' '}
+                                        <strong className="font-bold text-emerald-900 font-mono tracking-wide">
+                                          {getMatchSolutionString(q.matchPairs)}
+                                        </strong>{' '}
+                                        <span className="italic text-emerald-800">
+                                          (प्रत्येक जोड़ी = {(q.marks / (q.matchPairs.length || 1)).toFixed(1)} अंक, कुल: {q.marks} अंक)
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="italic">
+                                        मुख्य बिंदु / सूत्र / परिभाषा। (पूर्ण उत्तर: {q.marks} अंक, आंशिक: {Math.max(1, Math.floor(q.marks / 2))} अंक)
+                                      </span>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1564,6 +2048,45 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
                                 [{q.marks}]
                               </span>
                             </div>
+
+                            {/* Match the Column Dual Column Table */}
+                            {q.type === 'match' && q.matchPairs && q.matchPairs.length > 0 && (
+                              <div className={`mt-1 pl-3 sm:pl-4 pr-1 sm:pr-2 ${printDensity === 'compact' ? 'text-[10px]' : 'text-[11px]'}`}>
+                                <div className="grid grid-cols-2 gap-3 sm:gap-6 border border-stone-300 rounded-lg p-2 sm:p-2.5 bg-stone-50/40">
+                                  {/* Column A */}
+                                  <div>
+                                    <div className="font-bold text-stone-900 border-b border-stone-300 pb-0.5 mb-1 text-[10px] sm:text-[11px] uppercase tracking-wider">
+                                      स्तम्भ 'क' (Column A)
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      {q.matchPairs.map((pair, idx) => (
+                                        <div key={pair.id || idx} className="flex items-start gap-1 leading-tight">
+                                          <span className="font-bold text-stone-700 shrink-0">({idx + 1})</span>
+                                          <span className="text-stone-900">{pair.left}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Column B */}
+                                  <div>
+                                    <div className="font-bold text-stone-900 border-b border-stone-300 pb-0.5 mb-1 text-[10px] sm:text-[11px] uppercase tracking-wider">
+                                      स्तम्भ 'ख' (Column B)
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      {getDisplayMatchColumnB(q.matchPairs).map((colBItem, idx) => (
+                                        <div key={idx} className="flex items-start gap-1 leading-tight">
+                                          <span className="font-bold text-stone-700 shrink-0">
+                                            {HINDI_OPTION_LETTERS[idx] || `(${String.fromCharCode(97 + idx)})`}
+                                          </span>
+                                          <span className="text-stone-900">{colBItem.text}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
                             {/* MCQ Options in Grid */}
                             {q.type === 'mcq' && q.options && (
