@@ -73,7 +73,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenHelpGuide }) => {
                     onClick={onOpenHelpGuide}
                     className="hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-semibold cursor-pointer"
                   >
-                    <span>📖 संपूर्ण उपयोगकर्ता मार्गदर्शिका (36 अध्याय)</span>
+                    <span>📖 संपूर्ण उपयोगकर्ता मार्गदर्शिका (43 अध्याय)</span>
                   </button>
                 </li>
               )}

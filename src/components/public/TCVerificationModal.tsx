@@ -96,20 +96,20 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
     : '';
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 print:p-0">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-orange-200 overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="printable-modal fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-orange-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:rounded-none print:m-0">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-stone-900 via-orange-950 to-stone-900 text-white px-5 sm:px-6 py-4 flex items-center justify-between shrink-0 border-b border-amber-500/30">
+        <div className="bg-gradient-to-r from-stone-900 via-orange-950 to-stone-900 text-white px-5 sm:px-6 py-4 flex items-center justify-between shrink-0 border-b border-amber-500/30 print:bg-none print:text-stone-900 print:border-b-2 print:border-orange-800 print:py-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-xl">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-xl print:hidden">
               🔍
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-amber-200 tracking-tight">
+              <h3 className="text-base sm:text-lg font-black text-amber-200 tracking-tight print:text-orange-950">
                 स्थानांतरण प्रमाण पत्र (TC) सत्यापन
               </h3>
-              <p className="text-xs text-stone-300">
+              <p className="text-xs text-stone-300 print:text-stone-600">
                 विद्या भारती अखिल भारतीय शिक्षा संस्थान • डिजिटल अभिलेख सत्यापन
               </p>
             </div>
@@ -117,17 +117,17 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+            className="no-print p-1.5 text-stone-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 print:p-0 print:overflow-visible">
           
           {/* Search Box */}
-          <div className="bg-amber-50/70 border border-orange-200 rounded-2xl p-4 space-y-3">
+          <div className="no-print bg-amber-50/70 border border-orange-200 rounded-2xl p-4 space-y-3">
             {schools.length > 1 && (
               <div>
                 <label className="block text-[11px] font-bold text-orange-950 mb-1">
@@ -288,7 +288,7 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
                   </div>
 
                   {/* Actions */}
-                  <div className="flex justify-end gap-2 pt-1">
+                  <div className="no-print flex justify-end gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => window.print()}
@@ -313,7 +313,7 @@ export const TCVerificationModal: React.FC<TCVerificationModalProps> = ({ isOpen
         </div>
 
         {/* Footer */}
-        <div className="bg-stone-50 px-5 py-3 border-t border-stone-200 flex justify-between items-center text-xs text-stone-500">
+        <div className="no-print bg-stone-50 px-5 py-3 border-t border-stone-200 flex justify-between items-center text-xs text-stone-500">
           <span>डिजिटल सुरक्षा प्रमाण पत्र • विद्या भारती राष्ट्रीय पोर्टल</span>
           <button
             type="button"

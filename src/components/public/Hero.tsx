@@ -198,7 +198,7 @@ export const Hero: React.FC<HeroProps> = ({
                   type="button"
                   onClick={onOpenHelpGuide}
                   className="px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-orange-950 font-bold border border-orange-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                  title="सम्पूर्ण ४२-अध्यायी उपयोगकर्ता मार्गदर्शिका व सहायता देखें"
+                  title="सम्पूर्ण ४३-अध्यायी उपयोगकर्ता मार्गदर्शिका व सहायता देखें"
                 >
                   <HelpCircle className="w-3.5 h-3.5 text-orange-600" />
                   <span>📖 ईआरपी मार्गदर्शिका</span>
@@ -209,7 +209,7 @@ export const Hero: React.FC<HeroProps> = ({
             {/* Highlights row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-orange-200/80">
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">
-                <span className="block text-2xl font-black text-orange-700">४२+</span>
+                <span className="block text-2xl font-black text-orange-700">४३+</span>
                 <span className="text-xs text-stone-600 font-medium">ईआरपी मॉड्यूल</span>
               </div>
               <div className="text-left bg-white/70 p-2.5 rounded-lg border border-orange-100">

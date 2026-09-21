@@ -271,7 +271,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className="w-full text-left block px-3.5 py-1.5 text-xs text-amber-950 bg-amber-50 hover:bg-amber-100 font-bold border-t border-orange-100 cursor-pointer transition"
                       >
-                        📖 उपयोगकर्ता मार्गदर्शिका (37 अध्याय)
+                        📖 उपयोगकर्ता मार्गदर्शिका (43 अध्याय)
                       </button>
                     )}
                   </div>
@@ -640,7 +640,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }}
                     className="w-full text-left block px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-orange-950 font-bold border border-amber-300 cursor-pointer"
                   >
-                    📖 उपयोगकर्ता मार्गदर्शिका (37 अध्याय)
+                    📖 उपयोगकर्ता मार्गदर्शिका (43 अध्याय)
                   </button>
                 )}
                 <a

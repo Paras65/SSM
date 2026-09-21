@@ -389,7 +389,7 @@ export const AdmissionInquiry: React.FC = () => {
                     className="w-full py-3 bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:opacity-60 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isSubmitting ? 'पंजीकरण हो रहा है (Saving to MongoDB)...' : 'प्रवेश आवेदन प्रेषित करें (Submit Admission Form)'}</span>
+                    <span>{isSubmitting ? 'पंजीकरण हो रहा है...' : 'प्रवेश आवेदन प्रेषित करें (Submit Admission Form)'}</span>
                   </button>
                 </form>
               )}
