@@ -65,6 +65,25 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [selectedGender, setSelectedGender] = useState('ALL');
 
+  // Delete student confirmation state
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return;
+    const studentName = studentToDelete.name;
+    setIsDeleting(true);
+    try {
+      await deleteStudent(studentToDelete.id);
+      showSuccess(`'${studentName}' का रिकॉर्ड सफलतापूर्वक हटाया गया!`);
+    } catch {
+      // deleteStudent in SchoolContext handles rollback and error toast
+    } finally {
+      setIsDeleting(false);
+      setStudentToDelete(null);
+    }
+  };
+
   // Filtered students (memoized search & filter)
   const filteredStudents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -379,14 +398,9 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
                       <span>📄 अध्ययनरत</span>
                     </button>
                     <button
-                      onClick={async () => {
-                        if (confirm(`क्या आप '${student.name}' का रिकॉर्ड हटाना चाहते हैं?`)) {
-                          await deleteStudent(student.id);
-                          showSuccess(`'${student.name}' का रिकॉर्ड सफलतापूर्वक हटाया गया!`);
-                        }
-                      }}
-                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
-                      title="Delete Student"
+                      onClick={() => setStudentToDelete(student)}
+                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer transition"
+                      title="Delete Student (छात्र रिकॉर्ड हटाएं)"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -397,6 +411,70 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Styled Delete Confirmation Dialog */}
+      {studentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h4 className="font-bold text-stone-900 text-base">छात्र रिकॉर्ड हटाएं</h4>
+                <p className="text-xs text-stone-500">स्थायी विलोपन पुष्टि (Permanent Deletion)</p>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl space-y-1 text-xs text-stone-700">
+              <p className="leading-relaxed">
+                क्या आप निश्चित रूप से छात्र <strong>"{studentToDelete.name}"</strong> का रिकॉर्ड हटाना चाहते हैं?
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1 font-semibold text-rose-950">
+                <span>कक्षा: {studentToDelete.class} ({studentToDelete.section || 'A'})</span>
+                <span>•</span>
+                <span>अनुक्रमांक: {studentToDelete.rollNo}</span>
+                {studentToDelete.pen && (
+                  <>
+                    <span>•</span>
+                    <span className="font-mono">PEN: {studentToDelete.pen}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <p className="text-[11px] text-stone-500">
+              ⚠️ ध्यान दें: छात्र का रिकॉर्ड हटाने पर उनकी संबंधित उपस्थिति व परीक्षा प्रविष्टियां भी स्वतः हटा दी जाएंगी।
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setStudentToDelete(null)}
+                className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-xl text-xs transition cursor-pointer disabled:opacity-50"
+              >
+                रद्द करें
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs transition shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                {isDeleting ? (
+                  <span>हटाया जा रहा है...</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>हां, हटाएं</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
