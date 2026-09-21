@@ -43,13 +43,31 @@ const CLASS_PROGRESSION_MAP: Record<string, string> = {
   'Class 12': 'Alumni'
 };
 
+// Generate academic year options dynamically: current year-1 through current year+2
+function generateAcademicYears(): string[] {
+  const currentYear = new Date().getFullYear();
+  const years: string[] = [];
+  for (let y = currentYear - 3; y <= currentYear + 3; y++) {
+    years.push(`${y}-${String(y + 1).slice(-2)}`);
+  }
+  return years;
+}
+
 export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ isOpen, onClose }) => {
   const { currentSchool, students, feeRecords, refreshFromDb } = useSchool();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'promotion' | 'fee_rollover' | 'exam_lock'>('promotion');
-  const [fromSession, setFromSession] = useState('2024-25');
-  const [toSession, setToSession] = useState(currentSchool.currentAcademicYear || '2025-26');
+  const academicYears = generateAcademicYears();
+
+  const [activeTab, setActiveTab] = useState<'promotion' | 'fee_rollover' | 'exam_lock' | 'update_year'>('promotion');
+  const [fromSession, setFromSession] = useState(() => {
+    const cy = new Date().getFullYear();
+    return `${cy - 1}-${String(cy).slice(-2)}`;
+  });
+  const [toSession, setToSession] = useState(currentSchool.currentAcademicYear || (() => {
+    const cy = new Date().getFullYear();
+    return `${cy}-${String(cy + 1).slice(-2)}`;
+  })());
 
   // Promotion Tab State
   const [selectedClass, setSelectedClass] = useState('Class 5');
@@ -68,6 +86,10 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
   const [exams, setExams] = useState<Exam[]>([]);
   const [isLoadingExams, setIsLoadingExams] = useState(false);
   const [examActionId, setExamActionId] = useState<string | null>(null);
+
+  // Step 4: Update School currentAcademicYear State
+  const [isUpdatingSchoolYear, setIsUpdatingSchoolYear] = useState(false);
+  const [schoolYearUpdateResult, setSchoolYearUpdateResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Filter students by selectedClass
   const classStudents = useMemo(() => {
@@ -250,7 +272,33 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
     }
   };
 
+  const handleUpdateSchoolYear = async () => {
+    if (!currentSchool.id || !toSession) return;
+    if (currentSchool.currentAcademicYear === toSession) {
+      showInfo(`विद्यालय का वर्तमान शैक्षणिक सत्र पहले से ही ${toSession} है।`);
+      return;
+    }
+    setIsUpdatingSchoolYear(true);
+    setSchoolYearUpdateResult(null);
+    try {
+      await api.updateSchool(currentSchool.id, { currentAcademicYear: toSession });
+      setSchoolYearUpdateResult({
+        success: true,
+        message: `✅ विद्यालय का शैक्षणिक सत्र सफलतापूर्वक ${toSession} में अद्यतन किया गया!`
+      });
+      showSuccess(`विद्यालय का वर्तमान शैक्षणिक सत्र ${toSession} में अद्यतन किया गया।`);
+      await refreshFromDb();
+    } catch (err: any) {
+      const msg = err.message || 'शैक्षणिक सत्र अद्यतन विफल।';
+      setSchoolYearUpdateResult({ success: false, message: msg });
+      showError(msg);
+    } finally {
+      setIsUpdatingSchoolYear(false);
+    }
+  };
+
   const availableClasses = Object.keys(CLASS_PROGRESSION_MAP);
+
 
   return (
     <div className="fixed inset-0 z-50 bg-stone-900/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
@@ -295,10 +343,7 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
               onChange={e => setFromSession(e.target.value)}
               className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white font-bold text-stone-800 focus:ring-2 focus:ring-orange-500"
             >
-              <option value="2023-24">2023-24</option>
-              <option value="2024-25">2024-25</option>
-              <option value="2025-26">2025-26</option>
-              <option value="2026-27">2026-27</option>
+              {academicYears.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
 
             <ArrowRight className="w-4 h-4 text-orange-600" />
@@ -309,9 +354,7 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
               onChange={e => setToSession(e.target.value)}
               className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-white font-bold text-orange-900 focus:ring-2 focus:ring-orange-500"
             >
-              <option value="2025-26">2025-26</option>
-              <option value="2026-27">2026-27</option>
-              <option value="2027-28">2027-28</option>
+              {academicYears.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
         </div>
@@ -366,13 +409,30 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
             </span>
             <span>चरण ३: परीक्षा परिणाम स्थिरीकरण</span>
           </button>
+
+          <ArrowRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('update_year')}
+            className={`flex items-center gap-1.5 font-bold transition cursor-pointer shrink-0 ${
+              activeTab === 'update_year' ? 'text-orange-800' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+              activeTab === 'update_year' ? 'bg-emerald-700 text-white shadow-xs' : 'bg-stone-200 text-stone-700'
+            }`}>
+              4
+            </span>
+            <span>चरण ४: विद्यालय सत्र अद्यतन</span>
+          </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-stone-200 bg-stone-50 px-4 sm:px-6 text-xs sm:text-sm font-bold shrink-0">
+        <div className="flex border-b border-stone-200 bg-stone-50 px-4 sm:px-6 text-xs sm:text-sm font-bold shrink-0 overflow-x-auto">
           <button
             onClick={() => setActiveTab('promotion')}
-            className={`py-3 px-4 border-b-2 transition flex items-center gap-2 ${
+            className={`py-3 px-4 border-b-2 transition flex items-center gap-2 shrink-0 ${
               activeTab === 'promotion'
                 ? 'border-orange-700 text-orange-800 bg-white'
                 : 'border-transparent text-stone-600 hover:text-stone-900'
@@ -387,7 +447,7 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
           </button>
           <button
             onClick={() => setActiveTab('fee_rollover')}
-            className={`py-3 px-4 border-b-2 transition flex items-center gap-2 ${
+            className={`py-3 px-4 border-b-2 transition flex items-center gap-2 shrink-0 ${
               activeTab === 'fee_rollover'
                 ? 'border-orange-700 text-orange-800 bg-white'
                 : 'border-transparent text-stone-600 hover:text-stone-900'
@@ -402,7 +462,7 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
           </button>
           <button
             onClick={() => setActiveTab('exam_lock')}
-            className={`py-3 px-4 border-b-2 transition flex items-center gap-2 ${
+            className={`py-3 px-4 border-b-2 transition flex items-center gap-2 shrink-0 ${
               activeTab === 'exam_lock'
                 ? 'border-orange-700 text-orange-800 bg-white'
                 : 'border-transparent text-stone-600 hover:text-stone-900'
@@ -413,6 +473,21 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
             <HelpTooltip
               title="परीक्षा स्थिरीकरण"
               content="परीक्षा को लॉक करने के बाद शिक्षक या अन्य उपयोगकर्ता अंकों में अनपेक्षित फेरबदल नहीं कर सकेंगे।"
+            />
+          </button>
+          <button
+            onClick={() => setActiveTab('update_year')}
+            className={`py-3 px-4 border-b-2 transition flex items-center gap-2 shrink-0 ${
+              activeTab === 'update_year'
+                ? 'border-emerald-700 text-emerald-800 bg-white'
+                : 'border-transparent text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>4. विद्यालय सत्र अद्यतन 🎯</span>
+            <HelpTooltip
+              title="विद्यालय शैक्षणिक सत्र अद्यतन"
+              content="छात्र प्रोन्नति और शुल्क रोलओवर के बाद यह अंतिम चरण है। इससे विद्यालय का डिफ़ॉल्ट शैक्षणिक सत्र नए सत्र में अद्यतन हो जाता है जो सभी डैशबोर्ड और रिपोर्ट में प्रदर्शित होगा।"
             />
           </button>
         </div>
@@ -689,6 +764,58 @@ export const SessionManagementModal: React.FC<SessionManagementModalProps> = ({ 
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* ================= TAB 4: UPDATE SCHOOL ACADEMIC YEAR ================= */}
+          {activeTab === 'update_year' && (
+            <div className="space-y-5">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+                <h3 className="text-sm sm:text-base font-black text-emerald-900 flex items-center gap-2 mb-2">
+                  <Calendar className="w-5 h-5 text-emerald-700" />
+                  चरण ४ (अंतिम): विद्यालय का वर्तमान शैक्षणिक सत्र अद्यतन करें
+                </h3>
+                <p className="text-xs text-stone-600">
+                  यह अंतिम चरण है। छात्र प्रोन्नति और बकाया शुल्क रोलओवर के बाद विद्यालय का डिफ़ॉल्ट शैक्षणिक सत्र भी अद्यतन करें।
+                  इसके बाद सभी डैशबोर्ड, रिपोर्ट और शुल्क काउंटर नए सत्र <strong>{toSession}</strong> पर स्वतः स्विच हो जाएंगे।
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-white border border-stone-200">
+                  <span className="text-xs font-semibold text-stone-500">वर्तमान सक्रिय सत्र</span>
+                  <p className="text-xl font-black text-orange-800 mt-1">{currentSchool.currentAcademicYear || '—'}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white border border-emerald-300">
+                  <span className="text-xs font-semibold text-stone-500">नया लक्ष्य सत्र</span>
+                  <p className="text-xl font-black text-emerald-800 mt-1">{toSession}</p>
+                </div>
+              </div>
+
+              {schoolYearUpdateResult && (
+                <div className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2 ${
+                  schoolYearUpdateResult.success ? 'bg-emerald-50 border border-emerald-300 text-emerald-800' : 'bg-red-50 border border-red-300 text-red-800'
+                }`}>
+                  {schoolYearUpdateResult.success ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />}
+                  <span>{schoolYearUpdateResult.message}</span>
+                </div>
+              )}
+
+              {currentSchool.currentAcademicYear === toSession ? (
+                <div className="p-5 text-center text-emerald-700 bg-emerald-50 rounded-2xl border border-emerald-200 font-semibold text-sm flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  विद्यालय का वर्तमान शैक्षणिक सत्र पहले से ही <strong className="ml-1">{toSession}</strong> है। कोई कार्यवाही आवश्यक नहीं।
+                </div>
+              ) : (
+                <button
+                  onClick={handleUpdateSchoolYear}
+                  disabled={isUpdatingSchoolYear}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-bold text-sm shadow-md transition flex items-center gap-2 cursor-pointer"
+                >
+                  {isUpdatingSchoolYear ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+                  <span>विद्यालय का शैक्षणिक सत्र {toSession} में अद्यतन करें</span>
+                </button>
               )}
             </div>
           )}
