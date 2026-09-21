@@ -3,10 +3,13 @@ const router = express.Router();
 const Fee = require('../models/Fee');
 const FeePaymentTransaction = require('../models/FeePaymentTransaction');
 const Student = require('../models/Student');
+const School = require('../models/School');
+const Parent = require('../models/Parent');
 const { requireAdminAuth, requireSchoolScope } = require('../middleware/auth');
 const { cleanStringParam } = require('../middleware/sanitize');
 const { calculateCurrentAcademicYear } = require('../utils/sessionHelper');
 const { generateUniqueId, recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
+const { sendFeeReceiptEmail, isEmailConfigured } = require('../utils/emailService');
 
 // GET /api/fees - List fee records
 router.get('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
@@ -178,6 +181,47 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
       description: `शुल्क भुगतान प्राप्त: छात्र #${fee.studentId} - रसीद संख्या: ${fee.receiptNo}, राशि: ₹${fee.paidAmount} (${fee.status}), माध्यम: ${fee.paymentMode}${instrumentNo ? `, इंस्ट्रूमेंट नं: ${instrumentNo}` : ''}`,
       req
     });
+
+    // Non-blocking email receipt dispatch — never delays or fails the API response
+    if (isEmailConfigured()) {
+      setImmediate(async () => {
+        try {
+          const [student, school] = await Promise.all([
+            Student.findOne({ id: fee.studentId, schoolId: fee.schoolId }).lean(),
+            School.findOne({ id: fee.schoolId }).lean()
+          ]);
+          if (!student || !school) return;
+
+          // Find parent email: check Parent model first, then student contact field
+          const parent = await Parent.findOne({ studentIds: fee.studentId, schoolId: fee.schoolId, email: { $exists: true, $ne: '' } }).lean();
+          const recipientEmail = parent?.email || student?.email || '';
+          if (!recipientEmail || !recipientEmail.includes('@')) return;
+
+          await sendFeeReceiptEmail({
+            to: recipientEmail,
+            studentName: student.name,
+            fatherName: student.fatherName,
+            className: student.class,
+            section: student.section || 'A',
+            rollNo: student.rollNo,
+            receiptNo: fee.receiptNo,
+            amountPaid: installmentAmount > 0 ? installmentAmount : collectedAmount,
+            totalAmount: fee.totalAmount,
+            paidAmount: fee.paidAmount,
+            term: fee.term || 'सामान्य शुल्क',
+            paymentMode: fee.paymentMode,
+            academicYear: fee.academicYear,
+            schoolHindiName: school.hindiName || school.name,
+            schoolName: school.name,
+            paidDate: fee.paidDate,
+            status: fee.status
+          });
+        } catch (emailErr) {
+          console.error('[FeeReceipt] Email dispatch error (non-fatal):', emailErr.message);
+        }
+      });
+    }
+
     res.json(fee);
   } catch (err) {
     res.status(400).json({ error: err.message });
