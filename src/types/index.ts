@@ -43,6 +43,15 @@ export interface SchoolFeatures {
   enableStaffAttendanceLop?: boolean;
   lopDeductionRate?: number;
   enableAuditLogging?: boolean;
+  enableEmailReceipts?: boolean;
+}
+
+export interface EmailDiagnosticInfo {
+  configured: boolean;
+  host: string;
+  port: number;
+  sender: string;
+  rawSenderConfigured: boolean;
 }
 
 export interface School {

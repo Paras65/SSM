@@ -187,5 +187,96 @@ async function sendFeeReceiptEmail(opts) {
   });
 }
 
-module.exports = { isEmailConfigured, sendMail, sendFeeReceiptEmail };
+function maskEmail(email) {
+  if (!email || !email.includes('@')) return '';
+  const [local, domain] = email.split('@');
+  if (local.length <= 2) return `${local[0]}***@${domain}`;
+  return `${local.slice(0, 2)}***${local.slice(-1)}@${domain}`;
+}
+
+/**
+ * Returns safe SMTP diagnostic details for Developer Dashboard
+ */
+function getEmailDiagnosticInfo() {
+  const configured = isEmailConfigured();
+  return {
+    configured,
+    host: EMAIL_HOST || 'Not Configured',
+    port: EMAIL_PORT,
+    sender: configured ? maskEmail(EMAIL_USER) : '',
+    rawSenderConfigured: Boolean(EMAIL_USER)
+  };
+}
+
+/**
+ * Sends a branded SMTP connectivity test email
+ */
+async function sendTestEmail({ to, requestedBy = 'Super Admin' }) {
+  const timeStr = new Date().toLocaleString('hi-IN', { timeZone: 'Asia/Kolkata' });
+  const html = `
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<title>SSM ERP — SMTP टेस्ट ईमेल</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #fefce8; margin: 0; padding: 20px; }
+  .container { max-width: 540px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #fef08a; }
+  .header { background: linear-gradient(135deg, #ea580c, #c2410c); color: white; padding: 24px; text-align: center; }
+  .body { padding: 24px; }
+  .badge { display: inline-block; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: bold; }
+  .details { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 13px; }
+  .details table { width: 100%; border-collapse: collapse; }
+  .details td { padding: 6px 0; }
+  .details td:first-child { color: #64748b; width: 40%; font-weight: 600; }
+  .details td:last-child { color: #0f172a; font-weight: 700; }
+  .footer { background: #fafaf9; border-top: 1px solid #f3f4f6; padding: 14px 24px; text-align: center; font-size: 11px; color: #78716c; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h2 style="margin:0;font-size:20px;">🪷 सरस्वती शिशु मंदिर ERP</h2>
+    <p style="margin:4px 0 0;font-size:12px;opacity:0.9;">केंद्रीय SMTP सेवा परीक्षण (Diagnostic Test)</p>
+  </div>
+  <div class="body">
+    <div style="text-align:center;margin-bottom:16px;">
+      <span class="badge">✅ SMTP सर्वर सफलतापूर्वक कनेक्टेड</span>
+    </div>
+    <p style="font-size:13px;color:#334155;line-height:1.6;margin:0 0 12px;">
+      यह एक स्वचालित परीक्षण ईमेल है। यदि आपको यह संदेश प्राप्त हुआ है, तो इसका अर्थ है कि आपका <strong>SMTP मेल सर्वर एवं Google App Password</strong> पूर्णतः कार्यशील है।
+    </p>
+    <div class="details">
+      <table>
+        <tr><td>परीक्षण समय</td><td>${timeStr} IST</td></tr>
+        <tr><td>अनुरोधकर्ता</td><td>${requestedBy}</td></tr>
+        <tr><td>SMTP होस्ट</td><td>${EMAIL_HOST} (Port: ${EMAIL_PORT})</td></tr>
+        <tr><td>प्रेषक खाता</td><td>${maskEmail(EMAIL_USER)}</td></tr>
+      </table>
+    </div>
+    <p style="font-size:12px;color:#64748b;margin:0;">
+      अब आपकी अधिकृत विद्यालय शाखाएं अभिभावकों को डिजिटल शुल्क रसीदें ईमेल द्वारा स्वतः भेज सकती हैं।
+    </p>
+  </div>
+  <div class="footer">
+    सरस्वती शिशु मंदिर विद्यालयी प्रबंधन प्रणाली • <strong>init65.co.in</strong>
+  </div>
+</div>
+</body>
+</html>`;
+
+  return sendMail({
+    to,
+    subject: `✅ [परीक्षण सफल] सरस्वती शिशु मंदिर ERP — SMTP ईमेल सेवा जांच (${timeStr})`,
+    html
+  });
+}
+
+module.exports = {
+  isEmailConfigured,
+  sendMail,
+  sendFeeReceiptEmail,
+  getEmailDiagnosticInfo,
+  sendTestEmail
+};
 

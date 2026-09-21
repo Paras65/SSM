@@ -16,7 +16,8 @@ import type {
   BookIssueRecord,
   InventoryItem,
   AuditLogEntry,
-  SankulCluster
+  SankulCluster,
+  EmailDiagnosticInfo
 } from '../types';
 import { sessionSync } from './sessionSync';
 
@@ -986,5 +987,20 @@ export const api = {
       body: JSON.stringify({ isLocked })
     });
     return handleJsonResponse<any>(res, 'परीक्षा लॉक स्थिति बदलने में विफल');
+  },
+
+  // ================= SYSTEM EMAIL DIAGNOSTIC & TEST =================
+  async getEmailStatus(): Promise<EmailDiagnosticInfo> {
+    const res = await apiFetch('/system/email-status');
+    return handleJsonResponse<EmailDiagnosticInfo>(res, 'ईमेल स्थिति जांच विफल');
+  },
+
+  async sendTestEmail(to: string): Promise<{ success: boolean; message: string }> {
+    const res = await apiFetch('/system/send-test-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to })
+    });
+    return handleJsonResponse<{ success: boolean; message: string }>(res, 'टेस्ट ईमेल भेजने में विफल');
   }
 };

@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import { testSmartKeyHealth } from '../../services/aiService';
-import type { School, AuditLogEntry, SankulCluster } from '../../types';
+import type { School, AuditLogEntry, SankulCluster, EmailDiagnosticInfo } from '../../types';
 import {
   ShieldAlert,
   Building2,
@@ -38,7 +38,8 @@ import {
   Eye,
   EyeOff,
   Layers,
-  Mail
+  Mail,
+  Send
 } from 'lucide-react';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import {
@@ -145,6 +146,53 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
       showError('सत्यापन के दौरान कनेक्शन त्रुटि आई।');
     } finally {
       setIsTestingKey(false);
+    }
+  };
+
+  // Central SMTP Email Service State
+  const [emailStatus, setEmailStatus] = useState<EmailDiagnosticInfo | null>(null);
+  const [isLoadingEmailStatus, setIsLoadingEmailStatus] = useState(false);
+  const [testEmailRecipient, setTestEmailRecipient] = useState('');
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+
+  const loadEmailStatus = async () => {
+    setIsLoadingEmailStatus(true);
+    try {
+      const res = await api.getEmailStatus();
+      setEmailStatus(res);
+    } catch {
+      setEmailStatus(null);
+    } finally {
+      setIsLoadingEmailStatus(false);
+    }
+  };
+
+  const handleSendTestEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testEmailRecipient || !testEmailRecipient.trim()) {
+      showError('कृपया वैध प्राप्तकर्ता ईमेल पता दर्ज करें।');
+      return;
+    }
+    setIsSendingTestEmail(true);
+    setTestEmailResult(null);
+    try {
+      const res = await api.sendTestEmail(testEmailRecipient.trim());
+      setTestEmailResult(res);
+      if (res.success) {
+        showSuccess(res.message || 'टेस्ट ईमेल सफलतापूर्वक भेजा गया!');
+      } else {
+        showError(res.message || 'टेस्ट ईमेल भेजने में विफलता।');
+      }
+    } catch (err: any) {
+      const errMsg = err.message || 'टेस्ट ईमेल भेजने के दौरान सर्वर त्रुटि आई।';
+      setTestEmailResult({ success: false, message: errMsg });
+      showError(errMsg);
+    } finally {
+      setIsSendingTestEmail(false);
     }
   };
 
@@ -290,6 +338,9 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     }
     if (activeSection === 'sankul') {
       loadSankuls();
+    }
+    if (activeSection === 'tools') {
+      loadEmailStatus();
     }
   }, [activeSection]);
 
@@ -1573,6 +1624,117 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Central SMTP Email Service & Diagnostic Test Card */}
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-2xs space-y-4 md:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-200">
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base font-bold text-stone-900">
+                  केंद्रीय SMTP ईमेल सेवा एवं डायग्नोस्टिक परीक्षण (Central Email Service)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+                  emailStatus?.configured
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                    : 'bg-amber-50 text-amber-900 border-amber-300'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${emailStatus?.configured ? 'bg-emerald-600' : 'bg-amber-500'}`} />
+                  {emailStatus?.configured
+                    ? '🟢 सक्रिय (SMTP सर्वर कनेक्टेड)'
+                    : '🟡 निष्क्रिय (.env में क्रेडेंशियल्स अनुपलब्ध)'}
+                </span>
+                <button
+                  type="button"
+                  onClick={loadEmailStatus}
+                  disabled={isLoadingEmailStatus}
+                  className="p-1.5 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-600 transition cursor-pointer"
+                  title="ईमेल स्थिति पुनः जांचें"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingEmailStatus ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs text-stone-600 leading-relaxed">
+              यह सेवा शुल्क संकलन पर अभिभावकों को <strong>स्वचालित डिजिटल शुल्क रसीदें</strong> ईमेल प्रेषित करने हेतु सर्वर स्तर (केंद्रीय <code>.env</code>) पर सुरक्षित रूप से संचालित होती है। प्रत्येक शाखा अपने <em>शाखा प्रबंधन</em> में जाकर इस सुविधा को स्वतंत्र रूप से चालू या बंद कर सकती है।
+            </p>
+
+            {emailStatus?.configured ? (
+              <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 font-bold text-emerald-950">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>प्रेषक पता (Sender): <span className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">{emailStatus.sender}</span></span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-800">
+                    <span>होस्ट: <strong>{emailStatus.host}</strong></span>
+                    <span>•</span>
+                    <span>पोर्ट: <strong>{emailStatus.port}</strong></span>
+                  </div>
+                </div>
+
+                {/* 1-Click Live Test Dispatch Form */}
+                <form onSubmit={handleSendTestEmail} className="pt-2 border-t border-emerald-200/80 flex flex-col sm:flex-row items-center gap-2">
+                  <div className="w-full sm:flex-1">
+                    <input
+                      type="email"
+                      required
+                      placeholder="परीक्षण ईमेल प्राप्तकर्ता दर्ज करें (उदा. admin@gmail.com)"
+                      value={testEmailRecipient}
+                      onChange={e => setTestEmailRecipient(e.target.value)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-emerald-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSendingTestEmail}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                  >
+                    <Send className={`w-3.5 h-3.5 ${isSendingTestEmail ? 'animate-pulse' : ''}`} />
+                    <span>{isSendingTestEmail ? 'ईमेल भेजा जा रहा है...' : '📧 1-क्लिक टेस्ट ईमेल भेजें'}</span>
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-950">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>सर्वर पर्यावरण चर (.env) में SMTP ईमेल क्रेडेंशियल्स अनुपलब्ध हैं।</span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  स्वचालित ईमेल रसीदें प्रेषित करने हेतु सर्वर वातावरण में <code>SMTP_USER</code> एवं <code>SMTP_PASS</code> (Google Workspace/Gmail 16-अंकीय App Password) कॉन्फ़िगर करें। इसके अभाव में भी सॉफ्टवेयर की सभी कोर सुविधाएं (ऑफ़लाइन रसीदें, प्रिंट, रिपोर्ट) बिना किसी व्यवधान के 100% कार्य करती रहेंगी।
+                </p>
+                <div className="text-[11px] font-mono bg-white px-3 py-1.5 rounded-lg border border-amber-300 text-stone-700">
+                  विन्यास: .env ➔ SMTP_USER=your-school@gmail.com | SMTP_PASS=xxxx-xxxx-xxxx-xxxx
+                </div>
+              </div>
+            )}
+
+            {/* Test Result Display */}
+            {testEmailResult && (
+              <div className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs animate-in fade-in duration-150 ${
+                testEmailResult.success
+                  ? 'bg-green-50 border-green-200 text-green-900'
+                  : 'bg-red-50 border-red-200 text-red-900'
+              }`}>
+                {testEmailResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <span className="font-bold block">
+                    {testEmailResult.success ? 'सत्यापन सफल:' : 'सत्यापन विफल:'}
+                  </span>
+                  <span className="text-[11px] leading-relaxed block mt-0.5">
+                    {testEmailResult.message}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Platform Maintenance & Downtime Manager Card */}

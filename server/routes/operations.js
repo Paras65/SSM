@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 const { requireAdminAuth, requireTeacherAuth, requirePortalAuth, requireSchoolScope } = require('../middleware/auth');
 const { cleanStringParam, escapeRegex } = require('../middleware/sanitize');
 const { recordAuditLog, executeSafeQuery } = require('../utils/routeHelpers');
+const { getEmailDiagnosticInfo, sendTestEmail } = require('../utils/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-ssm-jwt-secret';
 
@@ -509,6 +510,53 @@ router.post('/ai/generate-question-paper', async (req, res) => {
     res.json(parsed);
   } catch (err) {
     res.status(500).json({ error: 'AI प्रश्न पत्र उत्पन्न करने में तकनीकी त्रुटि।' });
+  }
+});
+
+// ================= SYSTEM EMAIL DIAGNOSTIC & TEST =================
+router.get('/system/email-status', requireAdminAuth, async (req, res) => {
+  try {
+    if (req.user?.role !== 'developer') {
+      return res.status(403).json({ error: 'केवल डेवलपर / सुपर एडमिन हेतु अधिकृत।' });
+    }
+    const info = getEmailDiagnosticInfo();
+    res.json(info);
+  } catch (err) {
+    res.status(500).json({ error: 'ईमेल स्थिति जांच विफल: ' + err.message });
+  }
+});
+
+router.post('/system/send-test-email', requireAdminAuth, async (req, res) => {
+  try {
+    if (req.user?.role !== 'developer') {
+      return res.status(403).json({ error: 'केवल डेवलपर / सुपर एडमिन हेतु अधिकृत।' });
+    }
+    const { to } = req.body;
+    if (!to || typeof to !== 'string' || !to.includes('@')) {
+      return res.status(400).json({ error: 'कृपया एक मान्य ईमेल पता दर्ज करें।' });
+    }
+    const result = await sendTestEmail({
+      to: to.trim(),
+      requestedBy: req.user.schoolName || 'SSM Developer Administration'
+    });
+    if (result.sent) {
+      await recordAuditLog({
+        schoolId: 'ssm-developer',
+        actorType: 'developer',
+        action: 'TEST_EMAIL_SENT',
+        description: `SMTP टेस्ट ईमेल सफलतापूर्वक भेजा गया: ${to.trim()}`,
+        req
+      });
+      return res.json({ success: true, message: `टेस्ट ईमेल ${to.trim()} पर सफलतापूर्वक भेजा गया!` });
+    } else {
+      return res.status(500).json({
+        error: result.reason === 'EMAIL_NOT_CONFIGURED'
+          ? 'सर्वर पर SMTP ईमेल सेवा कॉन्फ़िगर नहीं है (EMAIL_HOST/USER/PASS अनुपस्थित)।'
+          : `ईमेल प्रेषण विफल: ${result.reason}`
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'टेस्ट ईमेल भेजने में त्रुटि: ' + err.message });
   }
 });
 
