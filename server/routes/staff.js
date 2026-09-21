@@ -116,6 +116,9 @@ router.post('/', requireAdminAuth, requireSchoolScope, async (req, res) => {
     } else if (Array.isArray(data.assignedClasses)) {
       data.assignedClasses = data.assignedClasses.map(s => String(s).trim()).filter(Boolean);
     }
+    if (!data.pin || typeof data.pin !== 'string' || !data.pin.trim()) {
+      data.pin = Math.floor(1000 + Math.random() * 9000).toString();
+    }
     const member = new Staff(data);
     await member.save();
     const sanitizedMember = member.toObject ? member.toObject() : { ...member };

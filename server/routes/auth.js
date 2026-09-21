@@ -319,7 +319,13 @@ router.post('/teacher-login', authLimiter, async (req, res) => {
       });
     }
 
-    const expectedPin = teacher.pin || '1234';
+    const expectedPin = teacher.pin;
+    if (!expectedPin) {
+      return res.status(401).json({
+        error: 'इस खाते के लिए सुरक्षा पिन कॉन्फ़िगर नहीं है। कृपया विद्यालय व्यवस्थापक से पिन प्राप्त करें।',
+        code: 'PIN_NOT_SET'
+      });
+    }
     if (!verifyPasscode(expectedPin, safePin)) {
       await recordAuditLog({
         schoolId: teacher.schoolId,
@@ -462,12 +468,17 @@ router.post('/sankul-login', authLimiter, async (req, res) => {
     const cleanPasscode = passcode.trim();
     const cleanClusterName = clusterName.trim();
 
-    // Verify against configured developer passcode, Vidyabharati master code (1952), or any registered school admin passcode
+    // Verify against configured developer passcode, Vidyabharati master code, or registered school admin passcodes
     const schools = await School.find({ status: { $ne: 'discontinued' } }).select('adminPasscode').lean();
     const schoolPasscodes = schools.map(s => s.adminPasscode).filter(Boolean);
+    const configuredCodes = [
+      process.env.SANKUL_MASTER_PASSCODE,
+      process.env.DEVELOPER_ADMIN_PASSCODE,
+      process.env.DEVELOPER_PASSCODE
+    ].filter(Boolean);
+
     const validCodes = [
-      process.env.SANKUL_MASTER_PASSCODE || '1952',
-      process.env.DEVELOPER_PASSCODE || '2026',
+      ...configuredCodes,
       ...schoolPasscodes
     ];
 

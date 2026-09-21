@@ -37,6 +37,8 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
   const { currentSchool } = useSchool();
   const { showSuccess, showError, showWarning } = useToast();
 
+  const generateRandomPin = () => Math.floor(1000 + Math.random() * 9000).toString();
+
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [stfName, setStfName] = useState('');
@@ -45,7 +47,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
   const [stfQualification, setStfQualification] = useState('');
   const [stfSubjects, setStfSubjects] = useState('');
   const [stfPhone, setStfPhone] = useState('');
-  const [stfPin, setStfPin] = useState('1234');
+  const [stfPin, setStfPin] = useState(generateRandomPin);
   const [stfMonthlySalary, setStfMonthlySalary] = useState<number | ''>('');
   const [stfStatus, setStfStatus] = useState<'Active' | 'OnLeave' | 'Resigned'>('Active');
   const [stfAssignedClasses, setStfAssignedClasses] = useState('');
@@ -64,7 +66,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     setStfQualification('');
     setStfSubjects('');
     setStfPhone('');
-    setStfPin('1234');
+    setStfPin(generateRandomPin());
     setStfMonthlySalary('');
     setStfStatus('Active');
     setStfAssignedClasses('');
@@ -79,7 +81,7 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
     setStfQualification(staff.qualification || '');
     setStfSubjects(staff.subjects || '');
     setStfPhone(staff.phone || '');
-    setStfPin(staff.pin || '1234');
+    setStfPin(staff.pin || generateRandomPin());
     setStfMonthlySalary(staff.monthlySalary || '');
     setStfStatus((staff.status as any) || 'Active');
     setStfAssignedClasses((staff.assignedClasses || []).join(', '));
@@ -326,12 +328,24 @@ const AdminStaffTabComponent: React.FC<AdminStaffTabProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-stone-700 font-bold">लॉगिन सुरक्षा पिन (PIN)*</label>
-                <span className="text-[10px] text-orange-600 font-semibold">डिफ़ॉल्ट: 1234</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    सुरक्षित 4-अंकीय पिन
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setStfPin(generateRandomPin())}
+                    className="text-[10px] text-orange-700 hover:text-orange-900 font-bold hover:underline cursor-pointer"
+                    title="नया यादृच्छिक पिन जनरेट करें"
+                  >
+                    🔄 नया पिन
+                  </button>
+                </div>
               </div>
               <input
                 type="text"
                 maxLength={6}
-                placeholder="1234"
+                placeholder="उदा. 4829"
                 value={stfPin}
                 onChange={e => setStfPin(e.target.value)}
                 className="w-full bg-white border border-stone-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-orange-500 font-mono tracking-widest font-bold"

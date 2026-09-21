@@ -16,7 +16,7 @@ const staffSchema = new mongoose.Schema({
   pfDeduction: { type: Number, default: 1800 },
   samitiDeduction: { type: Number, default: 500 },
   joiningDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
-  pin: { type: String, default: '1234' },
+  pin: { type: String, default: () => Math.floor(1000 + Math.random() * 9000).toString() },
   assignedClasses: [{ type: String }],
   status: { type: String, enum: ['Active', 'OnLeave', 'Resigned'], default: 'Active' }
 }, {

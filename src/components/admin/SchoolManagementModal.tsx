@@ -428,7 +428,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                     <button
                       onClick={async () => {
                         try {
-                          await api.loginAdmin(createdSchool.id, createdSchool.adminPasscode || '1952');
+                          await api.loginAdmin(createdSchool.id, createdSchool.adminPasscode || '');
                           setCurrentSchoolId(createdSchool.id);
                           setViewMode('admin');
                           onClose();

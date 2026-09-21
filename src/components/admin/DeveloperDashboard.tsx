@@ -802,7 +802,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                           <button
                             onClick={() => {
                               setEditingPasscodeSchool(sch);
-                              setNewPasscode(sch.adminPasscode || '1952');
+                              setNewPasscode(sch.adminPasscode || Math.floor(100000 + Math.random() * 900000).toString());
                             }}
                             className="p-1 text-stone-600 hover:text-orange-700 rounded transition border border-stone-200 bg-white"
                             title="सुरक्षा पासकोड बदलें / रीसेट करें"
