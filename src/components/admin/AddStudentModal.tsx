@@ -42,6 +42,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
     fatherName: studentToEdit?.fatherName || '',
     motherName: studentToEdit?.motherName || '',
     contact: studentToEdit?.contact || '',
+    parentEmail: studentToEdit?.parentEmail || '',
     address: studentToEdit?.address || '',
     dob: studentToEdit?.dob || '2014-01-01',
     pin: studentToEdit?.pin || '',
@@ -94,6 +95,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
       address: sibling.address || prev.address,
       pin: sibling.pin || prev.pin,
       familyId: familyCode,
+      parentEmail: sibling.parentEmail || prev.parentEmail,
       socialCategory: (sibling.socialCategory as SocialCategory) || prev.socialCategory,
     }));
     showSuccess(`सहोदर छात्र '${sibling.name}' का पारिवारिक विवरण एवं Family ID (${familyCode}) स्वतः भर दिया गया!`);
@@ -142,6 +144,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
           fatherName: '',
           motherName: '',
           contact: '',
+          parentEmail: '',
           dob: '2014-01-01',
           pen: '',
           apaarId: '',
@@ -365,7 +368,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-stone-700 mb-1">
                 संपर्क मोबाइल नंबर *
@@ -376,6 +379,19 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose, stude
                 placeholder="10-अंकीय मोबाइल नंबर"
                 value={formData.contact}
                 onChange={e => setFormData({ ...formData, contact: e.target.value.replace(/[^\d+ ]/g, '').slice(0, 14) })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
+                अभिभावक ईमेल (रसीद हेतु, ऐच्छिक)
+              </label>
+              <input
+                type="email"
+                placeholder="parent@example.com"
+                value={formData.parentEmail}
+                onChange={e => setFormData({ ...formData, parentEmail: e.target.value })}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 focus:ring-2 focus:ring-orange-500"
               />
             </div>

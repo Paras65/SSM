@@ -195,9 +195,12 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
           // Guard: email receipts must be explicitly enabled per branch by super admin
           if (!school.features?.enableEmailReceipts) return;
 
-          // Find parent email: check Parent model first
-          const parent = await Parent.findOne({ studentIds: fee.studentId, schoolId: fee.schoolId, email: { $exists: true, $ne: '' } }).lean();
-          const recipientEmail = parent?.email || student?.email || '';
+          // Find parent email: check student.parentEmail first, then Parent model, then student.email
+          let recipientEmail = student.parentEmail || '';
+          if (!recipientEmail) {
+            const parent = await Parent.findOne({ studentIds: fee.studentId, schoolId: fee.schoolId, email: { $exists: true, $ne: '' } }).lean();
+            recipientEmail = parent?.email || student?.email || '';
+          }
           if (!recipientEmail || !recipientEmail.includes('@')) return;
 
           await sendFeeReceiptEmail({

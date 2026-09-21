@@ -113,6 +113,7 @@ export interface Student {
   fatherName: string;
   motherName: string;
   contact: string;
+  parentEmail?: string;
   address: string;
   dob: string;
   pin?: string;

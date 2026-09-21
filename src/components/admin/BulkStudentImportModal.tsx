@@ -87,6 +87,7 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
         const colFather = findCol(['father', 'pita', 'guardian']);
         const colMother = findCol(['mother', 'mata']);
         const colContact = findCol(['contact', 'phone', 'mobile', 'sampark']);
+        const colParentEmail = findCol(['parentemail', 'email', 'patra', 'emailid']);
         const colAddress = findCol(['address', 'pata', 'city']);
         const colDob = findCol(['dob', 'birth', 'janma']);
         const colAdmissionDate = findCol(['admissiondate', 'admitdate', 'praveshtithi', 'pravesh', 'admission']);
@@ -131,6 +132,7 @@ export const BulkStudentImportModal: React.FC<BulkStudentImportModalProps> = ({ 
             fatherName: (colFather !== -1 ? row[colFather] : 'श्री अभिभावक') || 'श्री अभिभावक',
             motherName: (colMother !== -1 ? row[colMother] : 'श्रीमती माता जी') || 'श्रीमती माता जी',
             contact: (colContact !== -1 ? row[colContact] : '+91 98765 43210') || '+91 98765 43210',
+            parentEmail: colParentEmail !== -1 ? (row[colParentEmail] || '').trim() : '',
             address: (colAddress !== -1 ? row[colAddress] : currentSchool.city || 'गोरखपुर') || 'गोरखपुर',
             dob: (colDob !== -1 ? row[colDob] : '2014-01-01') || '2014-01-01',
             admissionDate,

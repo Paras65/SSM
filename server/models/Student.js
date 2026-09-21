@@ -11,6 +11,7 @@ const studentSchema = new mongoose.Schema({
   fatherName: { type: String, required: true },
   motherName: { type: String, default: '' },
   contact: { type: String, required: true },
+  parentEmail: { type: String, default: '', trim: true, lowercase: true },
   address: { type: String, default: '' },
   dob: { type: String, default: '' },
   pin: { type: String, default: '' },
