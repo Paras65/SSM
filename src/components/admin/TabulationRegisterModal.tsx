@@ -159,8 +159,8 @@ export const TabulationRegisterModal: React.FC<TabulationRegisterModalProps> = (
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/75 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-stone-300 w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden">
+    <div className="printable-modal print-landscape fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/75 backdrop-blur-xs animate-in fade-in duration-200 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-3xl shadow-2xl border border-stone-300 w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden print:max-h-none print:h-auto print:shadow-none print:border-none print:max-w-none print:w-full print:rounded-none print:p-0 print:m-0 print:overflow-visible">
         
         {/* Top App Bar (Hidden on Print) */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-orange-950 via-stone-900 to-orange-950 text-white shrink-0 print:hidden">
@@ -340,7 +340,7 @@ export const TabulationRegisterModal: React.FC<TabulationRegisterModalProps> = (
             </div>
 
             {/* Matrix Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto print:overflow-visible">
               <table className="w-full border-collapse border border-stone-900 text-center text-xs">
                 <thead>
                   <tr className="bg-stone-200 text-stone-950 font-black border-b border-stone-900">

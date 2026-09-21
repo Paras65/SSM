@@ -738,11 +738,11 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-stone-950/75 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-stone-200 w-full max-w-5xl my-0 sm:my-auto h-full sm:h-auto sm:max-h-[92vh] flex flex-col overflow-hidden">
+    <div className="printable-modal fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-stone-950/75 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-none sm:rounded-3xl shadow-2xl border-0 sm:border border-stone-200 w-full max-w-5xl my-0 sm:my-auto h-full sm:h-auto sm:max-h-[92vh] flex flex-col overflow-hidden print:max-h-none print:h-auto print:shadow-none print:border-none print:max-w-none print:rounded-none print:p-0 print:m-0 print:overflow-visible">
         
         {/* Modal Header */}
-        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-orange-200 bg-gradient-to-r from-orange-900 via-amber-900 to-stone-900 text-white flex items-center justify-between shrink-0">
+        <div className="no-print px-4 sm:px-5 py-3.5 sm:py-4 border-b border-orange-200 bg-gradient-to-r from-orange-900 via-amber-900 to-stone-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-300 flex items-center justify-center shadow-inner shrink-0">
               <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -787,7 +787,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         </div>
 
         {/* Mobile Quick Status Bar & Settings Toggle (sm:hidden) */}
-        <div className="sm:hidden px-3.5 py-2 bg-amber-100/90 border-b border-orange-200 flex items-center justify-between gap-2 shrink-0 text-xs">
+        <div className="no-print sm:hidden px-3.5 py-2 bg-amber-100/90 border-b border-orange-200 flex items-center justify-between gap-2 shrink-0 text-xs">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-black text-orange-950 truncate text-[11px]">
               {classLevel} • {subject.split(' ')[0]} • {targetMarks} अंक
@@ -825,7 +825,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         </div>
 
         {/* Simple & Clean Configuration Panel (Collapsible on Mobile, always open on sm+) */}
-        <div className={`${showMobileConfig ? 'block' : 'hidden'} sm:block p-3 sm:p-4 bg-amber-50/70 border-b border-orange-200 space-y-3 shrink-0 animate-in fade-in duration-150`}>
+        <div className={`no-print ${showMobileConfig ? 'block' : 'hidden'} sm:block p-3 sm:p-4 bg-amber-50/70 border-b border-orange-200 space-y-3 shrink-0 animate-in fade-in duration-150`}>
           {/* Row 1: Key Selectors (Class, Subject, Exam Type, Target Marks) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
             {/* Class */}
@@ -1000,7 +1000,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         </div>
 
         {/* View Switcher & Toolbar: Editor vs A4 Preview */}
-        <div className="px-2.5 sm:px-5 py-2 bg-stone-100 border-b border-stone-200 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 shrink-0">
+        <div className="no-print px-2.5 sm:px-5 py-2 bg-stone-100 border-b border-stone-200 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 shrink-0">
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <div className="flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-white rounded-xl border border-stone-200 shadow-2xs">
               <button
@@ -1128,9 +1128,9 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
         </div>
 
         {/* Modal Body: Editor vs Preview */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-6 bg-stone-50">
+        <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-6 bg-stone-50 print:p-0 print:bg-white print:overflow-visible">
           {(paper.generationSource === 'gemini' || paper.generationSource === 'baudhik') && !paper.generationWarning && (
-            <div className="max-w-4xl mx-auto mb-4 p-2.5 bg-orange-50 border border-orange-200 rounded-2xl text-xs text-orange-950 flex items-center justify-between gap-2 shadow-2xs">
+            <div className="no-print max-w-4xl mx-auto mb-4 p-2.5 bg-orange-50 border border-orange-200 rounded-2xl text-xs text-orange-950 flex items-center justify-between gap-2 shadow-2xs">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-orange-600 shrink-0" />
                 <span className="font-bold">बौद्धिक ब्लूप्रिंट अनुसार नवीन संतुलित प्रश्न पत्र तैयार है</span>
@@ -1143,7 +1143,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
           {activeTab === 'editor' ? (
             /* TAB 1: QUESTION EDITOR */
-            <div className="space-y-4 max-w-4xl mx-auto">
+            <div className="no-print space-y-4 max-w-4xl mx-auto">
               {/* Quick Symbol Palette for Math & Sanskrit */}
               {showSymbols && (
                 <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-2xl space-y-2 shadow-2xs">
@@ -1422,7 +1422,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
             </div>
           ) : (
             /* TAB 2: A4 PRINT PREVIEW */
-            <div className="overflow-x-auto pb-4">
+            <div className="overflow-x-auto pb-4 print:p-0 print:overflow-visible">
               <div
                 className={`bg-white w-full max-w-full sm:max-w-[210mm] mx-auto rounded-xl shadow-lg border border-stone-200 text-stone-900 font-sans print:p-0 print:shadow-none print:border-none print:max-w-none ${
                   printDensity === 'compact' ? 'p-2.5 sm:p-5 text-[11px]' : 'p-3 sm:p-8 md:p-12 text-xs'
@@ -1670,7 +1670,7 @@ export const QuestionPaperModal: React.FC<QuestionPaperModalProps> = ({
 
       {/* Saved Papers Modal / Drawer */}
       {showSavedModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-stone-950/80 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="no-print fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-stone-950/80 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
             <div className="px-5 py-3.5 bg-stone-900 text-white flex items-center justify-between border-b border-stone-800">
               <div className="flex items-center gap-2">

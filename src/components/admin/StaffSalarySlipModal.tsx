@@ -110,7 +110,7 @@ export const StaffSalarySlipModal: React.FC<StaffSalarySlipModalProps> = ({ staf
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:bg-white print:p-0 print:m-0 print:overflow-visible">
+    <div className="printable-modal fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:bg-white print:p-0 print:m-0 print:overflow-visible">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 print:max-h-none print:shadow-none print:border-none print:overflow-visible print:w-full print:m-0">
         
         {/* Header - Screen only */}

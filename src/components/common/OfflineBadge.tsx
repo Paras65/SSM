@@ -12,7 +12,7 @@ export const OfflineBadge: React.FC = () => {
   if (isOnline) return null;
 
   return (
-    <div className="bg-stone-900 text-amber-200 px-4 py-2 text-xs font-semibold flex items-center justify-between border-b border-amber-600/40 shadow-md">
+    <div className="no-print bg-stone-900 text-amber-200 px-4 py-2 text-xs font-semibold flex items-center justify-between border-b border-amber-600/40 shadow-md">
       <div className="flex items-center gap-2">
         <WifiOff className="w-4 h-4 text-amber-400 animate-pulse" />
         <span>

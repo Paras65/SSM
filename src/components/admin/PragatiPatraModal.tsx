@@ -334,7 +334,7 @@ Instructions:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-2 sm:p-4 overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+    <div className="printable-modal fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-2 sm:p-4 overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-orange-300 flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:rounded-none print:p-0 print:m-0">
         
         {/* Action Header (Hidden in Print) - Pinned at top */}

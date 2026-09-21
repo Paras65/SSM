@@ -22,7 +22,7 @@ export const CharacterCertificateModal: React.FC<CharacterCertificateModalProps>
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+    <div className="printable-modal fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-900/70 backdrop-blur-xs overflow-hidden print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
       <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:max-w-none print:rounded-none print:m-0">
         {/* Action Header - Pinned at top */}
         <div className="shrink-0 bg-stone-900 text-white px-3.5 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-stone-800 print:hidden">

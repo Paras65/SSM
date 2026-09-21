@@ -73,8 +73,8 @@ export const DakhilKharijRegisterModal: React.FC<DakhilKharijRegisterModalProps>
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-[96vw] w-full border border-stone-200 overflow-hidden flex flex-col my-2 max-h-[96vh] print:max-h-none print:shadow-none print:border-none print:w-full print:rounded-none">
+    <div className="printable-modal print-landscape fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[96vw] w-full border border-stone-200 overflow-hidden flex flex-col my-2 max-h-[96vh] print:max-h-none print:h-auto print:shadow-none print:border-none print:w-full print:rounded-none print:p-0 print:m-0 print:overflow-visible">
         
         {/* Top Header & Controls Bar (Hidden in Print) */}
         <div className="bg-stone-900 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-3 print:hidden shrink-0">
@@ -215,7 +215,7 @@ export const DakhilKharijRegisterModal: React.FC<DakhilKharijRegisterModalProps>
           </div>
 
           {/* 16-Column Legal Register Table */}
-          <div className="overflow-x-auto border border-stone-900 shadow-xs">
+          <div className="overflow-x-auto border border-stone-900 shadow-xs print:overflow-visible">
             <table className="w-full border-collapse text-[10.5px] leading-tight text-left">
               <thead>
                 <tr className="bg-stone-900 text-white text-center font-bold">

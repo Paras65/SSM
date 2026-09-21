@@ -58,7 +58,7 @@ export const PrintableBlankFormsModal: React.FC<PrintableBlankFormsModalProps> =
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/75 backdrop-blur-sm flex flex-col p-2 sm:p-6 print:static print:p-0 print:bg-white print:overflow-visible">
+    <div className="printable-modal fixed inset-0 z-[9999] overflow-y-auto bg-black/75 backdrop-blur-sm flex flex-col p-2 sm:p-6 print:static print:p-0 print:bg-white print:overflow-visible">
       {/* Top Action Toolbar (Hidden in Print) */}
       <div className="no-print bg-stone-900 text-white rounded-2xl p-4 mb-4 shadow-xl border border-stone-800 flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto w-full shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">

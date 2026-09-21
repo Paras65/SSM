@@ -740,7 +740,7 @@ export const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-stone-100 flex flex-col w-full max-w-full overflow-x-hidden">
       
       {/* Top Bar for Admin */}
-      <header className="bg-orange-900 text-white sticky top-0 z-30 shadow-md w-full max-w-full">
+      <header className="no-print bg-orange-900 text-white sticky top-0 z-30 shadow-md w-full max-w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2 sm:min-h-16 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
           
           {/* Brand & Left Actions */}

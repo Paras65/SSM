@@ -25,9 +25,9 @@ export const SchoolProposalModal: React.FC<SchoolProposalModalProps> = ({ isOpen
   });
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+    <div className="printable-modal fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
       <div
-        className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden my-auto border-2 border-orange-300 print:border-none print:shadow-none print:rounded-none print:max-w-none print:m-0"
+        className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden my-auto border-2 border-orange-300 print:max-h-none print:h-auto print:border-none print:shadow-none print:rounded-none print:max-w-none print:m-0 print:p-0 print:overflow-visible"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Action Header (Hidden in Print) */}

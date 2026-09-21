@@ -85,7 +85,7 @@ export const TransferCertificateModal: React.FC<TransferCertificateModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-[70] overflow-hidden bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
+    <div className="printable-modal fixed inset-0 z-[70] overflow-hidden bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:static print:p-0 print:m-0 print:bg-transparent print:overflow-visible">
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full border border-stone-200 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] print:max-h-none print:shadow-none print:border-none print:w-full">
         
         {/* Controls Bar (Hidden during print) */}

@@ -8,7 +8,7 @@ export const DemoBanner: React.FC = () => {
   if (!isDemoMode) return null;
 
   return (
-    <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-md z-50 sticky top-0 border-b border-yellow-300/40 animate-fade-in">
+    <div className="no-print bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-md z-50 sticky top-0 border-b border-yellow-300/40 animate-fade-in">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <span className="bg-yellow-300 text-orange-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-xs">
           🎮 लाइव सैंडबॉक्स
