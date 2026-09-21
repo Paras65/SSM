@@ -70,6 +70,18 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     totalAdmissionsPending: 0
   });
 
+  // Per-branch analytics for comparison table
+  const [branchAnalytics, setBranchAnalytics] = useState<Array<{
+    school: typeof schools[0];
+    studentsCount: number;
+    presentCount: number;
+    markedCount: number;
+    attendanceRate: number;
+    collected: number;
+    pending: number;
+    pendingAdmissions: number;
+  }>>([]);
+
   // School Branch Management
   const [schoolSearch, setSchoolSearch] = useState('');
   const [schoolStatusFilter, setSchoolStatusFilter] = useState<'all' | 'active' | 'discontinued'>('all');
@@ -232,6 +244,18 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
         totalPending: totals.totalPending,
         totalAdmissionsPending: totals.totalAdmissionsPending
       });
+
+      // Populate per-branch analytics for comparison table
+      const analytics = schools.map((school, idx) => {
+        const r = branchResults[idx];
+        const d = r.status === 'fulfilled' ? r.value : { studentsCount: 0, presentCount: 0, markedCount: 0, collected: 0, pending: 0, pendingAdmissions: 0 };
+        return {
+          school,
+          ...d,
+          attendanceRate: d.studentsCount > 0 ? Math.round((d.presentCount / Math.max(d.markedCount, d.studentsCount)) * 100) : 0
+        };
+      });
+      setBranchAnalytics(analytics);
     } catch (err: any) {
       showError('नेटवर्क डेटा लोड करने में त्रुटि: ' + err.message);
     } finally {
@@ -739,6 +763,82 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
               </div>
             </div>
           </div>
+
+          {/* Per-Branch Comparison Analytics Table */}
+          {branchAnalytics.length > 0 && (
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-2xs overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 bg-stone-50">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-orange-600" />
+                  <h3 className="text-sm font-bold text-stone-900">शाखा-वार तुलनात्मक विश्लेषण</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[10px] font-bold">
+                    आज की स्थिति
+                  </span>
+                </div>
+                <span className="text-[11px] text-stone-500">{branchAnalytics.filter(b => b.school.status !== 'discontinued').length} सक्रिय शाखाएं</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-stone-50 text-stone-600 font-bold border-b border-stone-200">
+                    <tr>
+                      <th className="px-4 py-2.5">विद्यालय शाखा</th>
+                      <th className="px-4 py-2.5 text-center">छात्र</th>
+                      <th className="px-4 py-2.5 text-center">आज उपस्थिति</th>
+                      <th className="px-4 py-2.5 text-right">प्राप्त शुल्क</th>
+                      <th className="px-4 py-2.5 text-right">बकाया शुल्क</th>
+                      <th className="px-4 py-2.5 text-center">लंबित प्रवेश</th>
+                      <th className="px-4 py-2.5 text-center">योजना</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {[...branchAnalytics]
+                      .filter(b => b.school.status !== 'discontinued')
+                      .sort((a, b) => b.studentsCount - a.studentsCount)
+                      .map(b => (
+                        <tr key={b.school.id} className="hover:bg-amber-50/40 transition">
+                          <td className="px-4 py-2.5">
+                            <div className="font-bold text-stone-900">{b.school.hindiName}</div>
+                            <div className="text-[10px] text-stone-400 font-mono">{b.school.city} • {b.school.id}</div>
+                          </td>
+                          <td className="px-4 py-2.5 text-center font-black text-stone-900">{b.studentsCount}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className={`font-bold ${b.attendanceRate >= 75 ? 'text-emerald-700' : b.attendanceRate >= 50 ? 'text-amber-700' : 'text-rose-700'}`}>
+                                {b.attendanceRate}%
+                              </span>
+                              <div className="w-14 h-1 rounded-full bg-stone-200 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${b.attendanceRate >= 75 ? 'bg-emerald-500' : b.attendanceRate >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                                  style={{ width: `${b.attendanceRate}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-emerald-700">
+                            ₹{b.collected.toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-rose-700">
+                            ₹{b.pending.toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            {b.pendingAdmissions > 0 ? (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold">{b.pendingAdmissions}</span>
+                            ) : (
+                              <span className="text-stone-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${b.school.plan === 'pro' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-stone-100 text-stone-700 border border-stone-300'}`}>
+                              {b.school.plan === 'pro' ? '👑 PRO' : 'FREE'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
