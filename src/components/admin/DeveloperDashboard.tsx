@@ -1669,10 +1669,9 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>प्रेषक पता (Sender): <span className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">{emailStatus.sender || 'सक्रिय (Configured)'}</span></span>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-800">
-                    <span>होस्ट: <strong>{emailStatus.host}</strong></span>
-                    <span>•</span>
-                    <span>पोर्ट: <strong>{emailStatus.port}</strong></span>
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-white/80 px-2.5 py-1 rounded-lg border border-emerald-300">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>सुरक्षित क्लाउड रिले (TLS / SSL एन्क्रिप्टेड)</span>
                   </div>
                 </div>
 

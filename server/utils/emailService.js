@@ -230,14 +230,13 @@ function maskEmail(emailOrUser) {
 
 /**
  * Returns safe SMTP diagnostic details for Developer Dashboard
+ * Excludes internal hostnames, ports, and credentials to prevent reconnaissance
  */
 function getEmailDiagnosticInfo() {
   const configured = isEmailConfigured();
   const effectiveSender = getEffectiveSenderEmail();
   return {
     configured,
-    host: EMAIL_HOST || 'Not Configured',
-    port: EMAIL_PORT,
     sender: configured ? maskEmail(effectiveSender) : ''
   };
 }
@@ -284,7 +283,7 @@ async function sendTestEmail({ to, requestedBy = 'Super Admin' }) {
       <table>
         <tr><td>परीक्षण समय</td><td>${timeStr} IST</td></tr>
         <tr><td>अनुरोधकर्ता</td><td>${requestedBy}</td></tr>
-        <tr><td>SMTP होस्ट</td><td>${EMAIL_HOST} (Port: ${EMAIL_PORT})</td></tr>
+        <tr><td>कनेक्शन सुरक्षा</td><td>सुरक्षित क्लाउड रिले (TLS एन्क्रिप्टेड)</td></tr>
         <tr><td>प्रेषक खाता</td><td>${maskEmail(getEffectiveSenderEmail())}</td></tr>
       </table>
     </div>
