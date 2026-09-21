@@ -188,3 +188,4 @@ async function sendFeeReceiptEmail(opts) {
 }
 
 module.exports = { isEmailConfigured, sendMail, sendFeeReceiptEmail };
+

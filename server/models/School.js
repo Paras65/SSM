@@ -30,7 +30,8 @@ const schoolSchema = new mongoose.Schema({
     upiPayeeName: { type: String, default: '' },
     enableStaffAttendanceLop: { type: Boolean, default: false },
     lopDeductionRate: { type: Number, default: 1 },
-    enableAuditLogging: { type: Boolean, default: false }
+    enableAuditLogging: { type: Boolean, default: false },
+    enableEmailReceipts: { type: Boolean, default: false }
   },
   youtubeChannelUrl: { type: String, default: '' },
   mediaVideos: [{

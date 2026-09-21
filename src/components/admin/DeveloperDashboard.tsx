@@ -37,7 +37,8 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  Layers
+  Layers,
+  Mail
 } from 'lucide-react';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import {
@@ -362,6 +363,25 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
       await refreshFromDb();
     } catch (err: any) {
       showError('योजना परिवर्तन विफल: ' + err.message);
+    } finally {
+      setUpdatingSchoolId(null);
+    }
+  };
+
+  // Email Receipts Per-Branch Toggle Handler
+  const handleEmailReceiptsToggle = async (school: typeof schools[0]) => {
+    const currentValue = (school as any).features?.enableEmailReceipts ?? false;
+    const nextValue = !currentValue;
+    setUpdatingSchoolId(school.id);
+    try {
+      await api.updateSchool(school.id, { 'features.enableEmailReceipts': nextValue } as any);
+      showSuccess(nextValue
+        ? `📧 शाखा '${school.hindiName}' के लिए ईमेल रसीद सक्रिय की गई।`
+        : `📧 शाखा '${school.hindiName}' के लिए ईमेल रसीद निष्क्रिय की गई।`
+      );
+      await refreshFromDb();
+    } catch (err: any) {
+      showError('ईमेल रसीद सेटिंग अपडेट विफल: ' + err.message);
     } finally {
       setUpdatingSchoolId(null);
     }
@@ -892,13 +912,14 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                   <th className="p-3">प्रधानाचार्य व संपर्क</th>
                   <th className="p-3">स्थिति</th>
                   <th className="p-3">सदस्यता योजना</th>
+                  <th className="p-3 text-center">ईमेल रसीद</th>
                   <th className="p-3 text-right">डेवलपर नियंत्रण</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {filteredSchools.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-stone-500">
+                    <td colSpan={8} className="p-8 text-center text-stone-500">
                       कोई विद्यालय शाखा नहीं मिली।
                     </td>
                   </tr>
@@ -969,6 +990,23 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                               <option value="pro">PRO 👑 (उन्नत)</option>
                             </select>
                           </div>
+                        </td>
+
+                        {/* Email Receipts Toggle */}
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={() => handleEmailReceiptsToggle(sch)}
+                            disabled={updatingSchoolId === sch.id || isDiscontinued}
+                            title={(sch as any).features?.enableEmailReceipts ? 'ईमेल रसीद बंद करें' : 'ईमेल रसीद चालू करें'}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer disabled:opacity-40 ${
+                              (sch as any).features?.enableEmailReceipts
+                                ? 'bg-blue-100 text-blue-900 border-blue-300 hover:bg-blue-200'
+                                : 'bg-stone-100 text-stone-500 border-stone-300 hover:bg-stone-200'
+                            }`}
+                          >
+                            <Mail className="w-3 h-3" />
+                            <span>{(sch as any).features?.enableEmailReceipts ? 'चालू' : 'बंद'}</span>
+                          </button>
                         </td>
 
                         <td className="p-3 text-right space-x-1.5 whitespace-nowrap">

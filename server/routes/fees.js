@@ -182,7 +182,7 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
       req
     });
 
-    // Non-blocking email receipt dispatch — never delays or fails the API response
+    // Non-blocking email receipt dispatch — only if SMTP configured AND branch has opted in
     if (isEmailConfigured()) {
       setImmediate(async () => {
         try {
@@ -192,7 +192,10 @@ router.put('/:id/pay', requireAdminAuth, requireSchoolScope, async (req, res) =>
           ]);
           if (!student || !school) return;
 
-          // Find parent email: check Parent model first, then student contact field
+          // Guard: email receipts must be explicitly enabled per branch by super admin
+          if (!school.features?.enableEmailReceipts) return;
+
+          // Find parent email: check Parent model first
           const parent = await Parent.findOne({ studentIds: fee.studentId, schoolId: fee.schoolId, email: { $exists: true, $ne: '' } }).lean();
           const recipientEmail = parent?.email || student?.email || '';
           if (!recipientEmail || !recipientEmail.includes('@')) return;
