@@ -15,7 +15,8 @@ import type {
   LibraryBook,
   BookIssueRecord,
   InventoryItem,
-  AuditLogEntry
+  AuditLogEntry,
+  SankulCluster
 } from '../types';
 import { sessionSync } from './sessionSync';
 
@@ -215,6 +216,30 @@ export const api = {
     sessionStorage.removeItem('ssm_sankul_token');
     sessionStorage.removeItem('ssm_sankul_name');
     sessionSync.broadcastLogout('sankul');
+  },
+
+  // ================= SANKUL CLUSTERS =================
+  async getSankuls(): Promise<SankulCluster[]> {
+    const res = await apiFetch('/sankuls');
+    return handleJsonResponse<SankulCluster[]>(res, 'संकुल सूची प्राप्त नहीं हो सकी');
+  },
+
+  async updateSankulPasscode(id: string, passcode?: string): Promise<{ success: boolean; passcode: string; message: string; sankul: SankulCluster }> {
+    const res = await apiFetch(`/sankuls/${id}/passcode`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passcode })
+    });
+    return handleJsonResponse<any>(res, 'संकुल पासकोड अपडेट विफल रहा');
+  },
+
+  async createSankul(cluster: Partial<SankulCluster>): Promise<{ success: boolean; message: string; sankul: SankulCluster }> {
+    const res = await apiFetch('/sankuls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cluster)
+    });
+    return handleJsonResponse<any>(res, 'नया संकुल जोड़ने में त्रुटि हुई');
   },
 
   // ================= SCHOOLS =================

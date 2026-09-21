@@ -338,6 +338,19 @@ export interface SankulNotice {
   issuedBy: string;
 }
 
+export interface SankulCluster {
+  id: string;
+  name: string;
+  prant: string;
+  passcode?: string;
+  inchargeName?: string;
+  inchargeContact?: string;
+  assignedSchools?: string[];
+  status?: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Homework {
   id: string;
   schoolId?: string;

@@ -58,4 +58,10 @@ describe('admin auth passcode validation', () => {
 
     expect(continued).toBe(true);
   });
+
+  it('validates cluster passcode verification logic accurately', () => {
+    expect(isValidAdminPasscode('654321', '654321')).toBe(true);
+    expect(isValidAdminPasscode('654321', '000000')).toBe(false);
+    expect(isValidAdminPasscode('654321', '')).toBe(false);
+  });
 });

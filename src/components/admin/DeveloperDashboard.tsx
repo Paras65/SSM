@@ -3,7 +3,7 @@ import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import { testSmartKeyHealth } from '../../services/aiService';
-import type { School, AuditLogEntry } from '../../types';
+import type { School, AuditLogEntry, SankulCluster } from '../../types';
 import {
   ShieldAlert,
   Building2,
@@ -34,7 +34,10 @@ import {
   HardDrive,
   Database,
   Image as ImageIcon,
-  Trash2
+  Trash2,
+  Eye,
+  EyeOff,
+  Layers
 } from 'lucide-react';
 import { generateRichDemoData } from '../../utils/demoDataSeeder';
 import {
@@ -53,7 +56,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
   const { schools, refreshFromDb, setCurrentSchoolId, bulkAddStudents, addFeeRecord, addOrUpdateReportCard, addNotice } = useSchool();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
-  const [activeSection, setActiveSection] = useState<'overview' | 'schools' | 'audit' | 'tools'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'schools' | 'sankul' | 'audit' | 'tools'>('overview');
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
   const [dbHealth, setDbHealth] = useState<{ status: string; database: string; databaseHost?: string; timestamp?: string } | null>(null);
 
@@ -74,6 +77,16 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
   const [editingPasscodeSchool, setEditingPasscodeSchool] = useState<School | null>(null);
   const [newPasscode, setNewPasscode] = useState('');
   const [copiedSchoolId, setCopiedSchoolId] = useState<string | null>(null);
+
+  // Sankul Cluster Management
+  const [sankulClusters, setSankulClusters] = useState<SankulCluster[]>([]);
+  const [isLoadingSankuls, setIsLoadingSankuls] = useState(false);
+  const [sankulSearch, setSankulSearch] = useState('');
+  const [editingPasscodeSankul, setEditingPasscodeSankul] = useState<SankulCluster | null>(null);
+  const [newSankulPasscode, setNewSankulPasscode] = useState('');
+  const [copiedSankulId, setCopiedSankulId] = useState<string | null>(null);
+  const [isGeneratingSankulPin, setIsGeneratingSankulPin] = useState<string | null>(null);
+  const [revealedPasscodeIds, setRevealedPasscodeIds] = useState<Record<string, boolean>>({});
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
@@ -250,7 +263,71 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
     if (activeSection === 'audit') {
       loadAuditLogs();
     }
+    if (activeSection === 'sankul') {
+      loadSankuls();
+    }
   }, [activeSection]);
+
+  const loadSankuls = async () => {
+    setIsLoadingSankuls(true);
+    try {
+      const data = await api.getSankuls();
+      setSankulClusters(data);
+    } catch (err: any) {
+      showError('संकुल सूची लोड करने में त्रुटि: ' + err.message);
+    } finally {
+      setIsLoadingSankuls(false);
+    }
+  };
+
+  const handleRegenerateSankulPasscode = async (cluster: SankulCluster) => {
+    setIsGeneratingSankulPin(cluster.id);
+    try {
+      const randomPin = Math.floor(100000 + Math.random() * 900000).toString();
+      await api.updateSankulPasscode(cluster.id, randomPin);
+      showSuccess(`संकुल '${cluster.name}' का नया पासकोड (${randomPin}) सेट हुआ!`);
+      setSankulClusters(prev => prev.map(c => c.id === cluster.id ? { ...c, passcode: randomPin } : c));
+    } catch (err: any) {
+      showError('संकुल पासकोड अपडेट विफल: ' + err.message);
+    } finally {
+      setIsGeneratingSankulPin(null);
+    }
+  };
+
+  const handleSaveCustomSankulPasscode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPasscodeSankul || !newSankulPasscode.trim()) return;
+    try {
+      await api.updateSankulPasscode(editingPasscodeSankul.id, newSankulPasscode.trim());
+      showSuccess(`संकुल '${editingPasscodeSankul.name}' का पासकोड सफलतापूर्वक अपडेट हुआ!`);
+      setSankulClusters(prev => prev.map(c => c.id === editingPasscodeSankul.id ? { ...c, passcode: newSankulPasscode.trim() } : c));
+      setEditingPasscodeSankul(null);
+      setNewSankulPasscode('');
+    } catch (err: any) {
+      showError('पासकोड अपडेट विफल: ' + err.message);
+    }
+  };
+
+  const togglePasscodeReveal = (id: string) => {
+    setRevealedPasscodeIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleCopySankulPasscode = (id: string, code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedSankulId(id);
+    showSuccess('पासकोड क्लिपबोर्ड पर कॉपी किया गया!');
+    setTimeout(() => setCopiedSankulId(null), 2000);
+  };
+
+  const filteredSankuls = useMemo(() => {
+    return sankulClusters.filter(c => {
+      const q = sankulSearch.trim().toLowerCase();
+      if (!q) return true;
+      return (c.name || '').toLowerCase().includes(q) ||
+        (c.prant || '').toLowerCase().includes(q) ||
+        (c.inchargeName || '').toLowerCase().includes(q);
+    });
+  }, [sankulClusters, sankulSearch]);
 
   // School Plan Change Handler
   const handlePlanChange = async (schoolId: string, nextPlan: 'free' | 'pro') => {
@@ -502,6 +579,18 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
         >
           <Building2 className="w-3.5 h-3.5" />
           <span>शाखाएं एवं सदस्यता ({schools.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSection('sankul')}
+          className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+            activeSection === 'sankul'
+              ? 'bg-orange-700 text-white shadow-xs'
+              : 'bg-white hover:bg-stone-100 text-stone-700 border border-stone-200'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>संकुल क्लस्टर व पासकोड ({sankulClusters.length || 7})</span>
         </button>
 
         <button
@@ -840,6 +929,179 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
             </table>
           </div>
 
+        </div>
+      )}
+
+      {/* SECTION 2.5: SANKUL CLUSTERS & PASSCODE CONTROL */}
+      {activeSection === 'sankul' && (
+        <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 space-y-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-stone-200">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-amber-100 text-amber-800">
+                  <Layers className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-stone-900">
+                    केंद्रीय संकुल क्लस्टर एवं पासकोड नियंत्रण (Sankul Passcode Management)
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    प्रत्येक संकुल क्लस्टर का स्वतंत्र डेटाबेस पासकोड। बदलने पर बिना सर्वर रीस्टार्ट के तुरंत प्रभावी।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <input
+                  type="text"
+                  placeholder="संकुल या प्रांत खोजें..."
+                  value={sankulSearch}
+                  onChange={e => setSankulSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+
+              <button
+                onClick={loadSankuls}
+                disabled={isLoadingSankuls}
+                className="p-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 transition cursor-pointer"
+                title="संकुल सूची रीफ्रेश करें"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSankuls ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Notice Info Box */}
+          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-950">
+            <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <strong className="font-bold">सुरक्षा एवं शून्य-डाउनटाइम नीति (Zero-Downtime Passcode Policy):</strong>
+              <p className="text-[11px] text-amber-900 leading-relaxed">
+                यहाँ से संकुल का नया पासकोड जनरेट या एडिट करने पर वह सीधे डेटाबेस में अपडेट हो जाता है। 
+                आपको <strong>.env फ़ाइल बदलने अथवा Node.js सर्वर रीस्टार्ट करने की आवश्यकता नहीं है।</strong> 
+                पासकोड जनरेट करने के उपरांत 📋 कॉपी बटन से सीधे संकुल प्रभारी को प्रेषित करें।
+              </p>
+            </div>
+          </div>
+
+          {/* Sankuls Grid / Table */}
+          <div className="overflow-x-auto border border-stone-200 rounded-xl">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-stone-50 text-stone-700 font-bold border-b border-stone-200">
+                <tr>
+                  <th className="p-3">संकुल क्लस्टर का नाम</th>
+                  <th className="p-3">संबद्ध प्रांत / क्षेत्र</th>
+                  <th className="p-3">संकुल प्रभारी / संपर्क</th>
+                  <th className="p-3">संबद्ध शाखाएं</th>
+                  <th className="p-3">सक्रिय सुरक्षा पासकोड</th>
+                  <th className="p-3 text-right">कार्यवाही (Actions)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-200">
+                {isLoadingSankuls ? (
+                  <tr>
+                    <td colSpan={6} className="text-center p-8 text-stone-400">
+                      डेटाबेस से संकुल सूची लोड हो रही है...
+                    </td>
+                  </tr>
+                ) : filteredSankuls.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center p-8 text-stone-400">
+                      कोई संकुल क्लस्टर नहीं मिला।
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSankuls.map(cluster => {
+                    const isRevealed = revealedPasscodeIds[cluster.id];
+                    const isCopied = copiedSankulId === cluster.id;
+                    const isGenerating = isGeneratingSankulPin === cluster.id;
+                    const assignedCount = schools.filter(s => s.prant === cluster.prant || s.sankulCluster === cluster.name).length;
+
+                    return (
+                      <tr key={cluster.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="p-3 font-bold text-stone-900">
+                          <div className="flex items-center gap-2">
+                            <Layers className="w-4 h-4 text-amber-700 shrink-0" />
+                            <span>{cluster.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 font-semibold text-stone-700">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200 text-stone-800 text-[11px]">
+                            {cluster.prant || 'गोरक्ष प्रांत'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-stone-700">
+                          <div className="font-semibold">{cluster.inchargeName || 'संकुल प्रभारी'}</div>
+                          {cluster.inchargeContact && (
+                            <div className="text-[10px] text-stone-500 font-mono">{cluster.inchargeContact}</div>
+                          )}
+                        </td>
+                        <td className="p-3 text-stone-700 font-bold font-mono">
+                          <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-900 text-[11px]">
+                            {assignedCount > 0 ? `${assignedCount} शाखाएं` : 'समस्त शाखाएं'}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-black text-xs tracking-wider px-2.5 py-1 rounded-lg bg-stone-100 border border-stone-300 text-stone-900">
+                              {isRevealed ? (cluster.passcode || '—') : '••••••'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => togglePasscodeReveal(cluster.id)}
+                              className="p-1 rounded-lg hover:bg-stone-100 text-stone-500 hover:text-stone-800 transition cursor-pointer"
+                              title={isRevealed ? 'पासकोड छुपाएं' : 'पासकोड देखें'}
+                            >
+                              {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                            {cluster.passcode && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopySankulPasscode(cluster.id, cluster.passcode!)}
+                                className={`p-1 rounded-lg transition cursor-pointer ${isCopied ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-stone-100 text-stone-500 hover:text-stone-800'}`}
+                                title="पासकोड कॉपी करें"
+                              >
+                                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleRegenerateSankulPasscode(cluster)}
+                              disabled={isGenerating}
+                              className="px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] transition shadow-2xs inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              title="नया 6-अंकीय सुरक्षित पासकोड बनाएं"
+                            >
+                              <RefreshCw className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} />
+                              <span>🔄 नया पिन</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingPasscodeSankul(cluster);
+                                setNewSankulPasscode(cluster.passcode || '');
+                              }}
+                              className="p-1.5 text-stone-600 hover:text-orange-700 rounded-xl transition border border-stone-200 bg-white hover:bg-stone-50 cursor-pointer"
+                              title="कस्टम पासकोड सेट करें"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -1552,6 +1814,66 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                   className="px-5 py-2 rounded-xl bg-orange-700 hover:bg-orange-800 text-white text-xs font-bold shadow-xs cursor-pointer"
                 >
                   सहेजें
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Sankul Passcode Modal */}
+      {editingPasscodeSankul && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-amber-400 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-stone-200">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-amber-600" />
+                <h4 className="text-sm font-bold text-stone-900">संकुल पासकोड बदलें</h4>
+              </div>
+              <button
+                onClick={() => setEditingPasscodeSankul(null)}
+                className="p-1 text-stone-400 hover:text-stone-700 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-600">
+              संकुल क्लस्टर: <strong>{editingPasscodeSankul.name}</strong>
+            </p>
+
+            <form onSubmit={handleSaveCustomSankulPasscode} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  नया संकुल पासकोड दर्ज करें:
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="उदा: 789456 या सुरक्षित कोड"
+                  value={newSankulPasscode}
+                  onChange={e => setNewSankulPasscode(e.target.value)}
+                  className="w-full px-3 py-2 border border-stone-300 rounded-xl text-center font-mono font-bold text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <p className="text-[10px] text-stone-400 mt-1">
+                  पासकोड तुरंत डेटाबेस में सेव होगा। सर्वर रीस्टार्ट करने की आवश्यकता नहीं है।
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingPasscodeSankul(null)}
+                  className="px-4 py-2 rounded-xl border border-stone-300 text-xs font-semibold text-stone-700 hover:bg-stone-50 cursor-pointer"
+                >
+                  रद्द करें
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  सहेजें (Save)
                 </button>
               </div>
             </form>

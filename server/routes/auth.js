@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const School = require('../models/School');
 const Student = require('../models/Student');
 const Staff = require('../models/Staff');
+const Sankul = require('../models/Sankul');
 const { generateAdminToken, isValidAdminPasscode, isValidDeveloperPasscode, verifyPasscode } = require('../middleware/auth');
 const { escapeRegex } = require('../middleware/sanitize');
 const { recordAuditLog } = require('../utils/routeHelpers');
@@ -468,21 +469,26 @@ router.post('/sankul-login', authLimiter, async (req, res) => {
     const cleanPasscode = passcode.trim();
     const cleanClusterName = clusterName.trim();
 
-    // Verify against configured developer passcode, Vidyabharati master code, or registered school admin passcodes
-    const schools = await School.find({ status: { $ne: 'discontinued' } }).select('adminPasscode').lean();
-    const schoolPasscodes = schools.map(s => s.adminPasscode).filter(Boolean);
-    const configuredCodes = [
-      process.env.SANKUL_MASTER_PASSCODE,
-      process.env.DEVELOPER_ADMIN_PASSCODE,
-      process.env.DEVELOPER_PASSCODE
-    ].filter(Boolean);
+    // 1. Verify against database-driven Sankul cluster record
+    const sankul = await Sankul.findOne({
+      name: { $regex: new RegExp(`^${escapeRegex(cleanClusterName)}$`, 'i') },
+      status: { $ne: 'inactive' }
+    }).lean();
 
-    const validCodes = [
-      ...configuredCodes,
-      ...schoolPasscodes
-    ];
+    let isMatch = false;
+    if (sankul && sankul.passcode) {
+      isMatch = verifyPasscode(sankul.passcode, cleanPasscode) || sankul.passcode === cleanPasscode;
+    }
 
-    const isMatch = validCodes.some(code => verifyPasscode(code, cleanPasscode) || code === cleanPasscode);
+    // 2. Emergency fallback to configured developer / master environment variables
+    if (!isMatch) {
+      const emergencyCodes = [
+        process.env.SANKUL_MASTER_PASSCODE,
+        process.env.DEVELOPER_ADMIN_PASSCODE,
+        process.env.DEVELOPER_PASSCODE
+      ].filter(Boolean);
+      isMatch = emergencyCodes.some(code => verifyPasscode(code, cleanPasscode) || code === cleanPasscode);
+    }
 
     if (!isMatch) {
       await recordAuditLog({
