@@ -1667,7 +1667,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onSwitch
                 <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2 font-bold text-emerald-950">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>प्रेषक पता (Sender): <span className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">{emailStatus.sender}</span></span>
+                    <span>प्रेषक पता (Sender): <span className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">{emailStatus.sender || 'सक्रिय (Configured)'}</span></span>
                   </div>
                   <div className="flex items-center gap-2 text-[11px] font-mono text-emerald-800">
                     <span>होस्ट: <strong>{emailStatus.host}</strong></span>

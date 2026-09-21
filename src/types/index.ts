@@ -51,7 +51,7 @@ export interface EmailDiagnosticInfo {
   host: string;
   port: number;
   sender: string;
-  rawSenderConfigured: boolean;
+  rawSenderConfigured?: boolean;
 }
 
 export interface School {

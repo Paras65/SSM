@@ -187,11 +187,45 @@ async function sendFeeReceiptEmail(opts) {
   });
 }
 
-function maskEmail(email) {
-  if (!email || !email.includes('@')) return '';
-  const [local, domain] = email.split('@');
-  if (local.length <= 2) return `${local[0]}***@${domain}`;
-  return `${local.slice(0, 2)}***${local.slice(-1)}@${domain}`;
+/**
+ * Extracts a clean email address from EMAIL_FROM or EMAIL_USER
+ */
+function getEffectiveSenderEmail() {
+  const fromStr = process.env.EMAIL_FROM || EMAIL_FROM || '';
+  const userStr = process.env.EMAIL_USER || EMAIL_USER || '';
+
+  // 1. Extract email from angle brackets: e.g. "सरस्वती शिशु मंदिर ERP <support@init65.co.in>"
+  const angleMatch = fromStr.match(/<([^>]+)>/);
+  if (angleMatch && angleMatch[1] && angleMatch[1].includes('@')) {
+    return angleMatch[1].trim();
+  }
+
+  // 2. Extract plain email from EMAIL_FROM: e.g. "support@init65.co.in"
+  const emailMatch = fromStr.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  if (emailMatch) {
+    return emailMatch[0].trim();
+  }
+
+  // 3. Fall back to EMAIL_USER if it has an '@' (e.g. standard Gmail)
+  if (userStr.includes('@')) {
+    return userStr.trim();
+  }
+
+  // 4. Return username or from string as fallback
+  return userStr.trim() || fromStr.trim() || '';
+}
+
+function maskEmail(emailOrUser) {
+  if (!emailOrUser) return '';
+  const str = emailOrUser.trim();
+  if (str.includes('@')) {
+    const [local, domain] = str.split('@');
+    if (local.length <= 2) return `${local[0]}***@${domain}`;
+    return `${local.slice(0, 2)}***${local.slice(-1)}@${domain}`;
+  }
+  // For API keys / usernames without '@' (e.g. 'emailapikey' in ZeptoMail/SendGrid)
+  if (str.length <= 4) return `${str.slice(0, 1)}***`;
+  return `${str.slice(0, 2)}***${str.slice(-2)}`;
 }
 
 /**
@@ -199,12 +233,12 @@ function maskEmail(email) {
  */
 function getEmailDiagnosticInfo() {
   const configured = isEmailConfigured();
+  const effectiveSender = getEffectiveSenderEmail();
   return {
     configured,
     host: EMAIL_HOST || 'Not Configured',
     port: EMAIL_PORT,
-    sender: configured ? maskEmail(EMAIL_USER) : '',
-    rawSenderConfigured: Boolean(EMAIL_USER)
+    sender: configured ? maskEmail(effectiveSender) : ''
   };
 }
 
@@ -251,7 +285,7 @@ async function sendTestEmail({ to, requestedBy = 'Super Admin' }) {
         <tr><td>परीक्षण समय</td><td>${timeStr} IST</td></tr>
         <tr><td>अनुरोधकर्ता</td><td>${requestedBy}</td></tr>
         <tr><td>SMTP होस्ट</td><td>${EMAIL_HOST} (Port: ${EMAIL_PORT})</td></tr>
-        <tr><td>प्रेषक खाता</td><td>${maskEmail(EMAIL_USER)}</td></tr>
+        <tr><td>प्रेषक खाता</td><td>${maskEmail(getEffectiveSenderEmail())}</td></tr>
       </table>
     </div>
     <p style="font-size:12px;color:#64748b;margin:0;">
