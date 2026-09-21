@@ -22,7 +22,8 @@ import {
   Clock,
   Users,
   Lock,
-  Sparkle
+  Sparkle,
+  Film
 } from 'lucide-react';
 
 interface ERPModulesSectionProps {
@@ -208,6 +209,12 @@ export const ERPModulesSection: React.FC<ERPModulesSectionProps> = ({
           title: 'ग्लोबल क्विक कमांड पैलेट (Ctrl + K)',
           desc: 'कीबोर्ड पर Ctrl + K दबाएं और छात्र, रसीद या कोई भी मॉड्यूल तुरंत खोजें। सुगम व त्वरित नेविगेशन।',
           badge: 'Sec 30'
+        },
+        {
+          icon: Film,
+          title: 'आधिकारिक YouTube चैनल व वीडियो वीथिका',
+          desc: 'वार्षिकोत्सव, सांस्कृतिक व क्रीड़ा कार्यक्रमों के वीडियो एवं YouTube चैनल का सुरक्षित नो-कुकी प्राइवेसी प्लेयर में प्रदर्शन।',
+          badge: 'Sec 29.4, 40.3'
         }
       ],
       footerNote: '✨ बहु-शाखा टेनेंट सुरक्षा एवं DPDP Act 2023 अनुपालन'

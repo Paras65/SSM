@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Users, Sparkles } from 'lucide-react';
+import { Camera, Users, Sparkles, PlayCircle } from 'lucide-react';
 import { Gallery } from './Gallery';
 import { AcharyaSection } from './AcharyaSection';
+import { VideoShowcaseSection } from './VideoShowcaseSection';
 
-type ShowcaseTab = 'gallery' | 'acharyas';
+type ShowcaseTab = 'gallery' | 'videos' | 'acharyas';
 
 export const SchoolShowcaseSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ShowcaseTab>('gallery');
@@ -14,6 +15,8 @@ export const SchoolShowcaseSection: React.FC = () => {
       const hash = window.location.hash.toLowerCase();
       if (hash === '#gallery') {
         setActiveTab('gallery');
+      } else if (hash === '#videos') {
+        setActiveTab('videos');
       } else if (hash === '#acharyas') {
         setActiveTab('acharyas');
       }
@@ -30,6 +33,12 @@ export const SchoolShowcaseSection: React.FC = () => {
       label: 'विद्यालय दर्शन एवं गतिविधियां',
       icon: <Camera className="w-4 h-4" />,
       badge: 'Activities & Gallery'
+    },
+    {
+      id: 'videos',
+      label: 'वार्षिकोत्सव एवं वीडियो वीथिका',
+      icon: <PlayCircle className="w-4 h-4" />,
+      badge: 'YouTube & Events'
     },
     {
       id: 'acharyas',
@@ -98,6 +107,7 @@ export const SchoolShowcaseSection: React.FC = () => {
         {/* Tab Content Panels */}
         <div className="transition-all duration-300">
           {activeTab === 'gallery' && <Gallery isEmbedded />}
+          {activeTab === 'videos' && <VideoShowcaseSection isEmbedded />}
           {activeTab === 'acharyas' && <AcharyaSection isEmbedded />}
         </div>
 

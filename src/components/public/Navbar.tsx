@@ -256,6 +256,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                       चित्रदीर्घा (Gallery)
                     </a>
                     <a
+                      href="#videos"
+                      onClick={() => setMoreLinksOpen(false)}
+                      className="block px-3.5 py-1.5 text-xs text-rose-700 hover:bg-rose-50 font-bold"
+                    >
+                      🎥 वार्षिकोत्सव व वीडियो वीथिका
+                    </a>
+                    <a
                       href="#contact"
                       onClick={() => setMoreLinksOpen(false)}
                       className="block px-3.5 py-1.5 text-xs text-orange-800 hover:bg-orange-50 font-bold"
@@ -691,6 +698,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="block px-3 py-2 rounded-lg hover:bg-orange-100 text-stone-800"
                 >
                   चित्रदीर्घा (School Gallery)
+                </a>
+                <a
+                  href="#videos"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold border border-rose-200"
+                >
+                  🎥 वार्षिकोत्सव व वीडियो वीथिका
                 </a>
                 <a
                   href="#contact"

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
-import type { School } from '../../types';
+import type { School, SchoolMediaVideo } from '../../types';
 import {
   Building2,
   Plus,
@@ -27,10 +27,15 @@ import {
   AlertTriangle,
   Sliders,
   QrCode,
-  Save
+  Save,
+  Play,
+  Film,
+  Trash2,
+  ExternalLink
 } from 'lucide-react';
 import { generateSchoolOnboardingWhatsAppUrl } from '../../utils/whatsapp';
 import { downloadStudentCsvTemplate } from '../../utils/csvExport';
+import { extractYouTubeEmbedInfo, isValidYouTubeChannelUrl } from '../../utils/youtube';
 
 interface SchoolManagementModalProps {
   isOpen: boolean;
@@ -102,6 +107,54 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
   const [enableAuditLogging, setEnableAuditLogging] = useState(false);
   const [isSavingFeatures, setIsSavingFeatures] = useState(false);
 
+  // YouTube Channel & Media Videos State
+  const [youtubeChannelUrl, setYoutubeChannelUrl] = useState('');
+  const [mediaVideos, setMediaVideos] = useState<SchoolMediaVideo[]>([]);
+  const [showAddVideoForm, setShowAddVideoForm] = useState(false);
+  const [newVideoTitle, setNewVideoTitle] = useState('');
+  const [newVideoUrl, setNewVideoUrl] = useState('');
+  const [newVideoCategory, setNewVideoCategory] = useState<'वार्षिकोत्सव' | 'क्रीड़ा समारोह' | 'दैनिक वंदना' | 'विज्ञान मेला' | 'सांस्कृतिक' | 'अन्य'>('वार्षिकोत्सव');
+  const [newVideoDesc, setNewVideoDesc] = useState('');
+
+  const handleAddVideo = () => {
+    if (!newVideoTitle.trim()) {
+      showWarning('कृपया वीडियो का शीर्षक दर्ज करें।');
+      return;
+    }
+    if (!newVideoUrl.trim()) {
+      showWarning('कृपया वैध YouTube वीडियो या प्लेलिस्ट लिंक दर्ज करें।');
+      return;
+    }
+    const embedInfo = extractYouTubeEmbedInfo(newVideoUrl.trim());
+    if (!embedInfo.isValid) {
+      showWarning('प्रदान किया गया लिंक मान्य YouTube वीडियो/शॉर्ट/प्लेलिस्ट नहीं है। कृपया सही लिंक दर्ज करें।');
+      return;
+    }
+    const newVideo: SchoolMediaVideo = {
+      id: `vid_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: newVideoTitle.trim(),
+      youtubeUrl: newVideoUrl.trim(),
+      category: newVideoCategory,
+      description: newVideoDesc.trim() || undefined,
+      date: new Date().toISOString().split('T')[0],
+      featured: mediaVideos.length === 0
+    };
+    setMediaVideos(prev => [newVideo, ...prev]);
+    setNewVideoTitle('');
+    setNewVideoUrl('');
+    setNewVideoDesc('');
+    setShowAddVideoForm(false);
+    showSuccess('वीडियो सूची में जोड़ा गया! स्थायी रूप से सुरक्षित करने हेतु नीचे "सुविधा सेटिंग्स सुरक्षित करें" पर क्लिक करें।');
+  };
+
+  const handleRemoveVideo = (videoId: string) => {
+    setMediaVideos(prev => prev.filter(v => v.id !== videoId));
+  };
+
+  const handleToggleFeaturedVideo = (videoId: string) => {
+    setMediaVideos(prev => prev.map(v => v.id === videoId ? { ...v, featured: !v.featured } : v));
+  };
+
   const handleExportArchive = async (schoolId: string) => {
     setIsExporting(true);
     try {
@@ -160,9 +213,15 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       showWarning('कृपया अधिकृत UPI VPA (उदा. ssmgorakhpur@sbi) अवश्य भरें या सुविधा अक्षम करें।');
       return;
     }
+    if (youtubeChannelUrl.trim() && !isValidYouTubeChannelUrl(youtubeChannelUrl.trim())) {
+      showWarning('कृपया वैध YouTube चैनल लिंक (जैसे https://youtube.com/@channelName) दर्ज करें।');
+      return;
+    }
     try {
       setIsSavingFeatures(true);
       await updateSchoolInfo(currentSchool.id, {
+        youtubeChannelUrl: youtubeChannelUrl.trim(),
+        mediaVideos: mediaVideos,
         features: {
           enableDynamicUpi,
           upiVpa: upiVpa.trim(),
@@ -172,7 +231,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
           enableAuditLogging
         }
       });
-      showSuccess('शाखा सुविधा सेटिंग्स सफलतापूर्वक सुरक्षित की गईं!');
+      showSuccess('शाखा सुविधा सेटिंग्स एवं वीडियो वीथिका सफलतापूर्वक सुरक्षित की गईं!');
       await refreshFromDb();
     } catch (err: any) {
       showError('सेटिंग्स सहेजने में त्रुटि: ' + (err.message || 'Error'));
@@ -187,6 +246,8 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
       setActiveTab(initialMode);
       setPlan(initialPlan);
       setCreatedSchool(null);
+      setYoutubeChannelUrl(currentSchool?.youtubeChannelUrl || '');
+      setMediaVideos(currentSchool?.mediaVideos || []);
       if (currentSchool?.features) {
         setEnableDynamicUpi(Boolean(currentSchool.features.enableDynamicUpi));
         setUpiVpa(currentSchool.features.upiVpa || '');
@@ -1350,6 +1411,239 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
                       className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${enableAuditLogging ? 'translate-x-5' : 'translate-x-0'}`}
                     />
                   </button>
+                </div>
+              </div>
+
+              {/* Feature 4: YouTube Channel & Media Showcase */}
+              <div className="p-5 sm:p-6 rounded-2xl border-2 border-rose-200 bg-white shadow-xs space-y-5">
+                <div className="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                      <Film className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-bold text-stone-900">
+                          आधिकारिक YouTube चैनल एवं वीडियो वीथिका (Video Gallery)
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                          वार्षिकोत्सव एवं सांस्कृतिक
+                        </span>
+                      </div>
+                      <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                        विद्यालय के वार्षिकोत्सव (Annual Function), क्रीड़ा प्रतियोगिता, वंदना सत्र एवं सांस्कृतिक कार्यक्रमों के YouTube वीडियो व आधिकारिक चैनल को यहां जोड़ें। यह मुख्य होमपेज व छात्र पोर्टल पर सीधे सुरक्षित प्राइवेसी मोड (youtube-nocookie) में प्रदर्शित होंगे।
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAddVideoForm(!showAddVideoForm)}
+                    className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 flex items-center gap-1.5 transition shrink-0 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>नया वीडियो जोड़ें</span>
+                  </button>
+                </div>
+
+                {/* Channel Link Input */}
+                <div className="bg-stone-50/80 p-4 rounded-xl border border-stone-200 space-y-2">
+                  <label className="block text-xs font-bold text-stone-700">
+                    आधिकारिक YouTube चैनल URL (Official YouTube Channel Link)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="उदा. https://www.youtube.com/@ssmgorakhpur या https://youtube.com/channel/..."
+                      value={youtubeChannelUrl}
+                      onChange={e => setYoutubeChannelUrl(e.target.value)}
+                      className="flex-1 px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-mono text-stone-800"
+                    />
+                    {youtubeChannelUrl && (
+                      <a
+                        href={youtubeChannelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0"
+                        title="चैनल खोलकर देखें"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>जांचें</span>
+                      </a>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-stone-500 block">
+                    होमपेज पर अभिभावक व आगंतुक "आधिकारिक चैनल पर जाएं" बटन दबाकर सीधे आपके चैनल पर पहुंच सकते हैं।
+                  </span>
+                </div>
+
+                {/* Add Video Form Drawer */}
+                {showAddVideoForm && (
+                  <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/40 space-y-3 animate-in fade-in duration-200">
+                    <h5 className="text-xs font-bold text-rose-950 flex items-center gap-1.5">
+                      <Play className="w-3.5 h-3.5 text-rose-600" />
+                      <span>नया YouTube वीडियो विवरण</span>
+                    </h5>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                          वीडियो शीर्षक (Title) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="उदा. वार्षिकोत्सव 2026 - सांस्कृतिक नृत्य"
+                          value={newVideoTitle}
+                          onChange={e => setNewVideoTitle(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                          श्रेणी (Category)
+                        </label>
+                        <select
+                          value={newVideoCategory}
+                          onChange={e => setNewVideoCategory(e.target.value as any)}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-medium text-stone-800"
+                        >
+                          <option value="वार्षिकोत्सव">वार्षिकोत्सव (Annual Function)</option>
+                          <option value="सांस्कृतिक">सांस्कृतिक कार्यक्रम (Cultural Event)</option>
+                          <option value="क्रीड़ा समारोह">क्रीड़ा समारोह (Sports Day)</option>
+                          <option value="दैनिक वंदना">दैनिक वंदना सत्र (Daily Prayer)</option>
+                          <option value="विज्ञान मेला">विज्ञान मेला (Science Exhibition)</option>
+                          <option value="अन्य">अन्य गतिविधियां (Other)</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                          YouTube वीडियो / शॉर्ट / प्लेलिस्ट URL <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="उदा. https://www.youtube.com/watch?v=... या https://youtu.be/..."
+                          value={newVideoUrl}
+                          onChange={e => setNewVideoUrl(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-mono"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                          संक्षिप्त विवरण (वैकल्पिक)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="उदा. शिशु भारती के नन्हें मुन्नों द्वारा मनमोहक देशभक्ति प्रस्तुति"
+                          value={newVideoDesc}
+                          onChange={e => setNewVideoDesc(e.target.value)}
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-rose-200/60">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddVideoForm(false)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-200/60 transition cursor-pointer"
+                      >
+                        रद्द करें
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddVideo}
+                        className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>सूची में जोड़ें</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Video List */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-stone-500 font-medium">
+                    <span>जोड़े गए वीडियो ({mediaVideos.length})</span>
+                    {mediaVideos.length > 0 && <span>होमपेज पर प्रदर्शित होने वाले वीडियो</span>}
+                  </div>
+
+                  {mediaVideos.length === 0 ? (
+                    <div className="p-6 text-center border border-dashed border-stone-300 rounded-xl bg-stone-50/50">
+                      <Film className="w-8 h-8 text-stone-400 mx-auto mb-2 opacity-60" />
+                      <p className="text-xs text-stone-600 font-medium">अभी कोई वीडियो नहीं जोड़ा गया है।</p>
+                      <p className="text-[11px] text-stone-400 mt-0.5">
+                        वार्षिकोत्सव व सांस्कृतिक प्रस्तुतियों का लिंक जोड़ने हेतु ऊपर "नया वीडियो जोड़ें" बटन दबाएं।
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+                      {mediaVideos.map(video => {
+                        const embed = extractYouTubeEmbedInfo(video.youtubeUrl);
+                        return (
+                          <div
+                            key={video.id}
+                            className="p-3 rounded-xl border border-stone-200 bg-stone-50 hover:bg-white hover:border-rose-300 transition shadow-2xs flex flex-col justify-between gap-2"
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <div className="w-16 h-11 rounded-lg bg-stone-800 shrink-0 overflow-hidden relative border border-stone-300 flex items-center justify-center">
+                                {embed.thumbnailUrl ? (
+                                  <img
+                                    src={embed.thumbnailUrl}
+                                    alt={video.title}
+                                    className="w-full h-full object-cover"
+                                    onError={e => {
+                                      (e.target as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <Play className="w-5 h-5 text-rose-500" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h6 className="text-xs font-bold text-stone-800 truncate" title={video.title}>
+                                  {video.title}
+                                </h6>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-stone-200 text-stone-700">
+                                    {video.category}
+                                  </span>
+                                  {video.featured && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800">
+                                      ★ मुख्य
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-stone-200 text-[11px]">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFeaturedVideo(video.id)}
+                                className={`text-[10px] font-medium transition cursor-pointer ${
+                                  video.featured ? 'text-amber-700 font-bold' : 'text-stone-500 hover:text-amber-600'
+                                }`}
+                              >
+                                {video.featured ? '★ मुख्य वीडियो' : 'मुख्य बनाएं'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveVideo(video.id)}
+                                className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded transition cursor-pointer"
+                                title="हटाएं"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 

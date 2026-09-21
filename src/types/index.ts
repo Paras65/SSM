@@ -72,10 +72,22 @@ export interface School {
   website?: string;
   features?: SchoolFeatures;
   sankulCluster?: string;
+  youtubeChannelUrl?: string;
+  mediaVideos?: SchoolMediaVideo[];
   enrolledStudentsCount?: number;
   totalTeachersCount?: number;
   attendanceRate?: number;
   feeRecoveryRate?: number;
+}
+
+export interface SchoolMediaVideo {
+  id: string;
+  title: string;
+  youtubeUrl: string;
+  category: 'वार्षिकोत्सव' | 'क्रीड़ा समारोह' | 'दैनिक वंदना' | 'विज्ञान मेला' | 'सांस्कृतिक' | 'अन्य';
+  description?: string;
+  date?: string;
+  featured?: boolean;
 }
 
 export interface StudentAcademicHistory {

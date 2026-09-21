@@ -31,7 +31,17 @@ const schoolSchema = new mongoose.Schema({
     enableStaffAttendanceLop: { type: Boolean, default: false },
     lopDeductionRate: { type: Number, default: 1 },
     enableAuditLogging: { type: Boolean, default: false }
-  }
+  },
+  youtubeChannelUrl: { type: String, default: '' },
+  mediaVideos: [{
+    id: { type: String, required: true },
+    title: { type: String, required: true },
+    youtubeUrl: { type: String, required: true },
+    category: { type: String, default: 'वार्षिकोत्सव' },
+    description: { type: String, default: '' },
+    date: { type: String, default: '' },
+    featured: { type: Boolean, default: false }
+  }]
 }, {
   timestamps: true
 });

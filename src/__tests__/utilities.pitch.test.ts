@@ -8,6 +8,7 @@ import {
 } from '../utils/whatsapp';
 import { generateRichDemoData } from '../utils/demoDataSeeder';
 import { generateFullBackupJSON, parseAndValidateBackupJSON } from '../utils/backupExport';
+import { extractYouTubeEmbedInfo, isValidYouTubeChannelUrl, formatYouTubeChannelUrl } from '../utils/youtube';
 import type { School } from '../types';
 
 describe('Pitching & Field-Ready Utilities Suite', () => {
@@ -203,6 +204,69 @@ describe('Pitching & Field-Ready Utilities Suite', () => {
         school: { id: 'sch-1' },
         data: {}
       }))).toThrow('बैकअप फ़ाइल में अनिवार्य संग्रह');
+    });
+  });
+
+  describe('YouTube Integration Utilities (DPDP Privacy-Friendly)', () => {
+    it('extracts embed info from standard watch URL', () => {
+      const info = extractYouTubeEmbedInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+      expect(info.isValid).toBe(true);
+      expect(info.videoId).toBe('dQw4w9WgXcQ');
+      expect(info.isPlaylist).toBe(false);
+      expect(info.embedUrl).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1');
+      expect(info.thumbnailUrl).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg');
+    });
+
+    it('extracts embed info from short share URL (youtu.be)', () => {
+      const info = extractYouTubeEmbedInfo('https://youtu.be/dQw4w9WgXcQ?si=abcdef123');
+      expect(info.isValid).toBe(true);
+      expect(info.videoId).toBe('dQw4w9WgXcQ');
+      expect(info.isPlaylist).toBe(false);
+      expect(info.embedUrl).toContain('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    });
+
+    it('extracts embed info from YouTube Shorts URL', () => {
+      const info = extractYouTubeEmbedInfo('https://www.youtube.com/shorts/dQw4w9WgXcQ');
+      expect(info.isValid).toBe(true);
+      expect(info.videoId).toBe('dQw4w9WgXcQ');
+      expect(info.isPlaylist).toBe(false);
+      expect(info.embedUrl).toContain('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    });
+
+    it('extracts embed info from YouTube Playlist URL', () => {
+      const info = extractYouTubeEmbedInfo('https://www.youtube.com/playlist?list=PLr6-Sj5Z1b2n6ABCDEF');
+      expect(info.isValid).toBe(true);
+      expect(info.isPlaylist).toBe(true);
+      expect(info.playlistId).toBe('PLr6-Sj5Z1b2n6ABCDEF');
+      expect(info.embedUrl).toBe('https://www.youtube-nocookie.com/embed/videoseries?list=PLr6-Sj5Z1b2n6ABCDEF&rel=0&modestbranding=1');
+    });
+
+    it('handles invalid or non-YouTube URLs gracefully', () => {
+      const invalidUrl = extractYouTubeEmbedInfo('https://google.com');
+      expect(invalidUrl.isValid).toBe(false);
+      expect(invalidUrl.embedUrl).toBeNull();
+
+      const emptyUrl = extractYouTubeEmbedInfo('');
+      expect(emptyUrl.isValid).toBe(false);
+      expect(emptyUrl.embedUrl).toBeNull();
+    });
+
+    it('validates official YouTube channel URLs properly', () => {
+      expect(isValidYouTubeChannelUrl('https://www.youtube.com/@ssmgorakhpur')).toBe(true);
+      expect(isValidYouTubeChannelUrl('https://youtube.com/channel/UC1234567890abcdef')).toBe(true);
+      expect(isValidYouTubeChannelUrl('https://youtube.com/c/vidyabharti')).toBe(true);
+      expect(isValidYouTubeChannelUrl('https://youtube.com/user/vidyabharti')).toBe(true);
+      expect(isValidYouTubeChannelUrl('@ssmgorakhpur')).toBe(true);
+
+      expect(isValidYouTubeChannelUrl('https://facebook.com/ssm')).toBe(false);
+      expect(isValidYouTubeChannelUrl('https://youtube.com/watch?v=123')).toBe(false);
+      expect(isValidYouTubeChannelUrl('')).toBe(false);
+    });
+
+    it('formats clean channel URL for direct redirection', () => {
+      expect(formatYouTubeChannelUrl('@ssmgorakhpur')).toBe('https://www.youtube.com/@ssmgorakhpur');
+      expect(formatYouTubeChannelUrl('https://youtube.com/@vidyabharti')).toBe('https://youtube.com/@vidyabharti');
+      expect(formatYouTubeChannelUrl('')).toBe('');
     });
   });
 });

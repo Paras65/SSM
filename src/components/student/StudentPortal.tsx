@@ -10,8 +10,9 @@ import { AdmitCardModal } from '../admin/AdmitCardModal';
 import { CharacterCertificateModal } from '../admin/CharacterCertificateModal';
 import { BonafideCertificateModal } from '../admin/BonafideCertificateModal';
 import { HelpTooltip } from '../common/HelpTooltip';
-import type { Homework, Exam, Student, FeeRecord, ReportCard, AttendanceRecord } from '../../types';
+import type { Homework, Exam, Student, FeeRecord, ReportCard, AttendanceRecord, SchoolMediaVideo } from '../../types';
 import { SSM_CLASSES } from '../../types';
+import { extractYouTubeEmbedInfo } from '../../utils/youtube';
 import {
   ArrowLeft,
   Calendar,
@@ -26,7 +27,11 @@ import {
   CheckSquare,
   Square,
   Clock,
-  LogOut
+  LogOut,
+  Play,
+  Film,
+  ExternalLink,
+  X
 } from 'lucide-react';
 
 export const StudentPortal: React.FC = () => {
@@ -121,6 +126,7 @@ export const StudentPortal: React.FC = () => {
   const [showAdmitCardModal, setShowAdmitCardModal] = useState(false);
   const [showCharacterModal, setShowCharacterModal] = useState(false);
   const [showBonafideModal, setShowBonafideModal] = useState(false);
+  const [activeVideoModal, setActiveVideoModal] = useState<SchoolMediaVideo | null>(null);
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
 
   const isAnyStudentModalOpen = Boolean(
@@ -131,7 +137,8 @@ export const StudentPortal: React.FC = () => {
     showLeaveModal ||
     showAdmitCardModal ||
     showCharacterModal ||
-    showBonafideModal
+    showBonafideModal ||
+    activeVideoModal
   );
 
   const closeAllStudentModals = useCallback(() => {
@@ -143,6 +150,7 @@ export const StudentPortal: React.FC = () => {
     setShowAdmitCardModal(false);
     setShowCharacterModal(false);
     setShowBonafideModal(false);
+    setActiveVideoModal(null);
   }, []);
 
   useEffect(() => {
@@ -776,6 +784,98 @@ export const StudentPortal: React.FC = () => {
           </div>
         </div>
 
+        {/* School Video Gallery & Annual Function Showcase */}
+        {((currentSchool.mediaVideos && currentSchool.mediaVideos.length > 0) || currentSchool.youtubeChannelUrl) && (
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <Film className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider">
+                    वार्षिकोत्सव एवं सांस्कृतिक वीडियो वीथिका
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    विद्यालय के सांस्कृतिक कार्यक्रम, वंदना एवं क्रीड़ा आयोजनों की झलकियां
+                  </p>
+                </div>
+              </div>
+
+              {currentSchool.youtubeChannelUrl && (
+                <a
+                  href={currentSchool.youtubeChannelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>आधिकारिक YouTube चैनल</span>
+                </a>
+              )}
+            </div>
+
+            {currentSchool.mediaVideos && currentSchool.mediaVideos.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {currentSchool.mediaVideos.map(video => {
+                  const embed = extractYouTubeEmbedInfo(video.youtubeUrl);
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => setActiveVideoModal(video)}
+                      className="group cursor-pointer rounded-xl border border-stone-200 overflow-hidden hover:border-rose-400 hover:shadow-md transition bg-stone-50 flex flex-col"
+                    >
+                      <div className="aspect-video bg-stone-900 relative overflow-hidden flex items-center justify-center">
+                        {embed.thumbnailUrl ? (
+                          <img
+                            src={embed.thumbnailUrl}
+                            alt={video.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-stone-800 flex items-center justify-center">
+                            <Film className="w-8 h-8 text-stone-600" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                            <Play className="w-5 h-5 ml-0.5 fill-current" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 flex-1 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                            {video.category}
+                          </span>
+                          <h4 className="text-xs font-bold text-stone-900 mt-1.5 line-clamp-2">
+                            {video.title}
+                          </h4>
+                          {video.description && (
+                            <p className="text-[11px] text-stone-500 mt-1 line-clamp-1">
+                              {video.description}
+                            </p>
+                          )}
+                        </div>
+                        {video.date && (
+                          <span className="text-[10px] text-stone-400 mt-2 block">
+                            {video.date}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-stone-500 text-center py-4">
+                वर्तमान में कोई वीडियो उपलब्ध नहीं है। अधिक वीडियो देखने हेतु आधिकारिक चैनल लिंक पर जाएं।
+              </p>
+            )}
+          </div>
+        )}
+
       </main>
       )}
 
@@ -838,6 +938,53 @@ export const StudentPortal: React.FC = () => {
           student={currentStudent}
           onClose={() => setShowBonafideModal(false)}
         />
+      )}
+
+      {/* Video Modal Player */}
+      {activeVideoModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+          onClick={() => setActiveVideoModal(null)}
+        >
+          <div
+            className="bg-stone-900 text-white rounded-2xl overflow-hidden max-w-3xl w-full border border-stone-800 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-stone-800">
+              <h3 className="text-sm font-bold truncate pr-4 text-stone-100">
+                {activeVideoModal.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setActiveVideoModal(null)}
+                className="w-8 h-8 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 flex items-center justify-center cursor-pointer transition shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="aspect-video w-full bg-black">
+              {extractYouTubeEmbedInfo(activeVideoModal.youtubeUrl).embedUrl ? (
+                <iframe
+                  src={extractYouTubeEmbedInfo(activeVideoModal.youtubeUrl).embedUrl || undefined}
+                  title={activeVideoModal.title}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-stone-400 text-sm">
+                  वीडियो लोड करने में असमर्थ।
+                </div>
+              )}
+            </div>
+            {activeVideoModal.description && (
+              <div className="p-4 text-xs text-stone-300 bg-stone-950/60 border-t border-stone-800">
+                {activeVideoModal.description}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
     </div>

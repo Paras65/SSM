@@ -33,7 +33,7 @@ function getSchoolProjection(req) {
       // Fallback to public projection
     }
   }
-  return 'id name hindiName city state prant affiliationNo established tagline currentAcademicYear status';
+  return 'id name hindiName city state prant affiliationNo established tagline currentAcademicYear status youtubeChannelUrl mediaVideos';
 }
 
 // GET /api/schools - List all schools (public minimal directory or authenticated full list)
