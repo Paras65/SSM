@@ -75,6 +75,8 @@ studentSchema.index({ schoolId: 1, status: 1 });
 studentSchema.index({ schoolId: 1, academicYear: 1 });
 studentSchema.index({ schoolId: 1, pen: 1 });
 studentSchema.index({ schoolId: 1, familyId: 1 });
+studentSchema.index({ schoolId: 1, contact: 1 });
+studentSchema.index({ contact: 1 });
 
 module.exports = mongoose.model('Student', studentSchema);
 

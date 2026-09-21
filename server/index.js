@@ -138,6 +138,7 @@ app.use('/api/auth/teacher-login', rateLimitEndpoint(120, true));
 app.use('/api/auth/parent-login', rateLimitEndpoint(120, true));
 app.use('/api/admissions', rateLimitEndpoint(60, false));
 app.post('/api/schools', rateLimitEndpoint(20, false));
+app.put('/api/schools/:id', rateLimitEndpoint(30, false));
 
 // API Routes
 app.use('/api', apiRoutes);

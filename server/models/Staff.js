@@ -25,6 +25,8 @@ const staffSchema = new mongoose.Schema({
 
 staffSchema.index({ schoolId: 1, status: 1 });
 staffSchema.index({ schoolId: 1, designation: 1 });
+staffSchema.index({ schoolId: 1, phone: 1 });
+staffSchema.index({ phone: 1 });
 
 module.exports = mongoose.model('Staff', staffSchema);
 
