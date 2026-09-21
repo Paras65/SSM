@@ -13,53 +13,6 @@ import {
   Film
 } from 'lucide-react';
 
-const DEFAULT_SHOWCASE_VIDEOS: (SchoolMediaVideo & { schoolName: string; branchId: string })[] = [
-  {
-    id: 'demo-vid-1',
-    title: 'वार्षिकोत्सव 2026: सामूहिक सांस्कृतिक नृत्य एवं देशभक्ति नाटक',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    category: 'वार्षिकोत्सव',
-    description: 'वार्षिक समारोह में भैया-बहिनों द्वारा प्रस्तुत भावपूर्ण नृत्य, राष्ट्रवंदना एवं सांस्कृतिक झांकी।',
-    date: '2026-02-15',
-    featured: true,
-    schoolName: 'गोरखपुर शाखा',
-    branchId: 'ssm-gorakhpur'
-  },
-  {
-    id: 'demo-vid-2',
-    title: 'वार्षिक क्रीड़ा एवं एथलेटिक्स समारोह 2026 (कबड्डी, खो-खो व दौड़)',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    category: 'क्रीड़ा समारोह',
-    description: 'शारीरिक विकास एवं सौहार्द हेतु अंतर-सदन पारंपरिक खेलकूद प्रतियोगिता एवं पुरस्कार वितरण।',
-    date: '2026-01-20',
-    featured: true,
-    schoolName: 'गोरखपुर शाखा',
-    branchId: 'ssm-gorakhpur'
-  },
-  {
-    id: 'demo-vid-3',
-    title: 'प्रातः कालीन दैनिक सरस्वती वंदना, एकात्मता स्तोत्र एवं शांति पाठ',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    category: 'दैनिक वंदना',
-    description: 'प्रातः काल में अनुशासित सामूहिक वंदना, संस्कृत श्लोकोच्चारण एवं योग प्राणायाम अभ्यास।',
-    date: '2026-03-01',
-    featured: false,
-    schoolName: 'दिल्ली शाखा',
-    branchId: 'ssm-delhi'
-  },
-  {
-    id: 'demo-vid-4',
-    title: 'अखिल भारतीय ज्ञान-विज्ञान मेला एवं वैदिक गणित मॉडल प्रदर्शनी',
-    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    category: 'विज्ञान मेला',
-    description: 'छात्र-छात्राओं द्वारा निर्मित पर्यावरण संरक्षण, रोबोटिक्स एवं प्राचीन भारतीय गणितीय प्रमेयों की प्रदर्शनी।',
-    date: '2025-11-14',
-    featured: false,
-    schoolName: 'वाराणसी शाखा',
-    branchId: 'ssm-varanasi'
-  }
-];
-
 const CATEGORIES = ['All', 'वार्षिकोत्सव', 'क्रीड़ा समारोह', 'दैनिक वंदना', 'विज्ञान मेला', 'सांस्कृतिक'] as const;
 
 interface VideoShowcaseSectionProps {
@@ -91,11 +44,6 @@ export const VideoShowcaseSection: React.FC<VideoShowcaseSectionProps> = ({ isEm
         });
       }
     });
-
-    // If no schools have customized videos yet, provide default cultural demo set
-    if (list.length === 0) {
-      return DEFAULT_SHOWCASE_VIDEOS;
-    }
 
     return list;
   }, [schools]);

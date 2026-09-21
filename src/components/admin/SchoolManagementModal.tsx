@@ -149,6 +149,7 @@ export const SchoolManagementModal: React.FC<SchoolManagementModalProps> = ({
 
   const handleRemoveVideo = (videoId: string) => {
     setMediaVideos(prev => prev.filter(v => v.id !== videoId));
+    showSuccess('वीडियो सूची से हटाया गया! परिवर्तन स्थायी करने हेतु नीचे "सुविधा सेटिंग्स सुरक्षित करें" बटन अवश्य दबाएं।');
   };
 
   const handleToggleFeaturedVideo = (videoId: string) => {
