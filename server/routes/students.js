@@ -121,27 +121,38 @@ router.post('/bulk', requireAdminAuth, requireSchoolScope, async (req, res) => {
     if (!Array.isArray(rawStudents) || rawStudents.length === 0) {
       return res.status(400).json({ error: 'छात्र सूची (Students array) आवश्यक है।' });
     }
-    const targetSchoolId = schoolId || req.userSchoolId || 'ssm-gorakhpur';
+    if (rawStudents.length > 500) {
+      return res.status(400).json({ error: 'एक बार में अधिकतम 500 छात्रों का थोक आयात अनुमत है। (Bulk limit: 500 students per batch)' });
+    }
+    const targetSchoolId = req.userSchoolId || schoolId || 'ssm-gorakhpur';
     const timestamp = Date.now().toString(36);
     const randomSuffix = Math.random().toString(36).substring(2, 6);
 
-    const docs = rawStudents.map((s, idx) => ({
-      ...s,
-      id: s.id || `ssm-${targetSchoolId}-${timestamp}-${randomSuffix}-${idx + 1}`,
-      schoolId: targetSchoolId,
-      rollNo: s.rollNo ? s.rollNo.toString() : (101 + idx).toString(),
-      name: s.name || `छात्र ${idx + 1}`,
-      gender: s.gender === 'Bahin' ? 'Bahin' : 'Bhaiya',
-      class: s.class || 'Class 6',
-      section: s.section || 'A',
-      fatherName: s.fatherName || 'श्री अभिभावक',
-      motherName: s.motherName || 'श्रीमती माता जी',
-      contact: s.contact || '+91 98765 43210',
-      address: s.address || 'स्थानिक पता',
-      dob: s.dob || '2014-01-01',
-      admissionDate: s.admissionDate || new Date().toISOString().split('T')[0],
-      bloodGroup: s.bloodGroup || 'B+'
-    }));
+    const docs = rawStudents.map((s, idx) => {
+      let pin = s.pin;
+      if (pin && typeof pin === 'string' && !pin.startsWith('scrypt:')) {
+        pin = hashPasscode(pin);
+      }
+
+      return {
+        ...s,
+        id: s.id || `ssm-${targetSchoolId}-${timestamp}-${randomSuffix}-${idx + 1}`,
+        schoolId: targetSchoolId,
+        rollNo: s.rollNo ? String(s.rollNo).trim().slice(0, 20) : (101 + idx).toString(),
+        name: String(s.name || `छात्र ${idx + 1}`).trim().slice(0, 100),
+        gender: s.gender === 'Bahin' ? 'Bahin' : 'Bhaiya',
+        class: String(s.class || 'Class 6').trim().slice(0, 50),
+        section: String(s.section || 'A').trim().slice(0, 10),
+        fatherName: String(s.fatherName || 'श्री अभिभावक').trim().slice(0, 100),
+        motherName: String(s.motherName || 'श्रीमती माता जी').trim().slice(0, 100),
+        contact: String(s.contact || '+91 98765 43210').trim().slice(0, 25),
+        address: String(s.address || 'स्थानिक पता').trim().slice(0, 250),
+        dob: String(s.dob || '2014-01-01').trim().slice(0, 15),
+        pin: pin || '',
+        admissionDate: String(s.admissionDate || new Date().toISOString().split('T')[0]).trim().slice(0, 15),
+        bloodGroup: String(s.bloodGroup || 'B+').trim().slice(0, 10)
+      };
+    });
 
     const inserted = await Student.insertMany(docs, { ordered: false });
     await recordAuditLog({
