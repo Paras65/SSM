@@ -39,6 +39,53 @@ interface ScannedRow {
   pin: string;
 }
 
+export const normalizeStudentName = (name: string): string => {
+  return name
+    .replace(/^(भैया\s+|बहिन\s+|Bhaiya\s+|Bahin\s+)/i, '')
+    .trim()
+    .toLowerCase();
+};
+
+export const isStudentAlreadyEnrolled = (
+  row: ScannedRow,
+  existingStudents: Student[]
+): { duplicate: boolean; reason?: string } => {
+  const normRowName = normalizeStudentName(row.name);
+  const normFather = row.fatherName.trim().toLowerCase();
+  const normRoll = row.rollNo.trim();
+
+  // 1. Same Class + Section + Roll collision
+  if (normRoll) {
+    const rollMatch = existingStudents.find(
+      s => s.class === row.class && s.section === row.section && s.rollNo.trim() === normRoll
+    );
+    if (rollMatch) {
+      return {
+        duplicate: true,
+        reason: `कक्षा ${row.class} (${row.section}) में अनुक्रमांक ${normRoll} पर छात्र '${rollMatch.name}' पहले से पंजीकृत हैं`
+      };
+    }
+  }
+
+  // 2. Same Class + Student Name + Father Name collision
+  if (normRowName && normFather) {
+    const nameMatch = existingStudents.find(
+      s =>
+        s.class === row.class &&
+        normalizeStudentName(s.name) === normRowName &&
+        s.fatherName.trim().toLowerCase() === normFather
+    );
+    if (nameMatch) {
+      return {
+        duplicate: true,
+        reason: `छात्र '${nameMatch.name}' (पिता: ${nameMatch.fatherName}) कक्षा ${row.class} में पहले से पंजीकृत हैं`
+      };
+    }
+  }
+
+  return { duplicate: false };
+};
+
 export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onClose }) => {
   const { addStudent, students, currentSchool } = useSchool();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
@@ -432,7 +479,28 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
       return;
     }
 
-    // Per-row async submission — failures keep modal open with error highlights
+    // 2. Duplicate Detection: Separate already enrolled students from new students
+    const duplicateRows: { row: ScannedRow; reason: string }[] = [];
+    const rowsToEnroll: ScannedRow[] = [];
+
+    rows.forEach(row => {
+      const check = isStudentAlreadyEnrolled(row, students);
+      if (check.duplicate) {
+        duplicateRows.push({ row, reason: check.reason || 'पहले से पंजीकृत' });
+      } else {
+        rowsToEnroll.push(row);
+      }
+    });
+
+    if (rowsToEnroll.length === 0 && duplicateRows.length > 0) {
+      showInfo(
+        `ℹ️ तालिका के सभी ${duplicateRows.length} छात्र पहले से विद्यालय में पंजीकृत हैं। डुप्लीकेट प्रविष्टि रोकने हेतु कोई नया रिकॉर्ड नहीं बनाया गया।`
+      );
+      onClose();
+      return;
+    }
+
+    // Per-row async submission for only NEW students
     setIsEnrolling(true);
     const admissionDate = new Date().toISOString().split('T')[0];
     const newlyFailedIds = new Set<string>();
@@ -440,7 +508,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     let authErrorOccurred = false;
     let lastErrorMsg = '';
 
-    for (const row of rows) {
+    for (const row of rowsToEnroll) {
       const trimmedName = row.name.trim();
       const prefix = row.gender === 'Bhaiya' ? 'Bhaiya' : 'Bahin';
       const fullName =
@@ -490,8 +558,11 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     setIsEnrolling(false);
 
     if (newlyFailedIds.size === 0) {
-      // All succeeded — close modal
-      showSuccess(`🎉 बधाई! रजिस्टर से कुल ${succeededIds.size} छात्र सफलतापूर्वक पंजीकृत किए गए!`);
+      // All succeeded — close modal with clear report of new vs duplicate skipped
+      const skippedNote = duplicateRows.length > 0
+        ? ` (${duplicateRows.length} पूर्व-पंजीकृत छात्र डुप्लीकेट होने से सुरक्षित छोड़ दिए गए)`
+        : '';
+      showSuccess(`🎉 बधाई! कुल ${succeededIds.size} नए छात्र सफलतापूर्वक पंजीकृत किए गए!${skippedNote}`);
       onClose();
     } else {
       // Modal NEVER closes on error! Keep remaining failed rows in the grid with highlights
@@ -504,7 +575,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
           `🔒 प्रमाणीकरण त्रुटि (401 Unauthorized): व्यवस्थापक सत्र समाप्त हो गया है। आपका डेटा तालिका में सुरक्षित है। कृपया व्यवस्थापक पासकोड से पुनः लॉगिन करें और 'सभी छात्र पंजीकृत करें' दबाएं।`
         );
       } else {
-        const failedList = rows
+        const failedList = rowsToEnroll
           .filter(r => newlyFailedIds.has(r.id))
           .map((r, i) => `रोल ${r.rollNo || i + 1} (${r.name || 'अज्ञात'})`)
           .slice(0, 3)
@@ -882,10 +953,14 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                             const missingContact = !row.contact.trim();
                             const hasUiError = missingName || missingFather || missingContact;
                             const hasDbError = failedRowIds.has(row.id);
+                            const dupCheck = isStudentAlreadyEnrolled(row, students);
+                            const isDuplicate = dupCheck.duplicate;
                             const rowClass = hasDbError
                               ? 'bg-orange-50 hover:bg-orange-100 ring-1 ring-inset ring-orange-400'
                               : hasUiError
                               ? 'bg-red-50 hover:bg-red-100'
+                              : isDuplicate
+                              ? 'bg-amber-50/70 hover:bg-amber-100/70 ring-1 ring-inset ring-amber-300'
                               : 'hover:bg-amber-50/50';
                             return (
                             <tr key={row.id} className={`transition ${rowClass}`}>
@@ -898,27 +973,43 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                                 />
                               </td>
                               <td className="p-1">
-                                <input
-                                  id={`scan-name-${idx}`}
-                                  type="text"
-                                  placeholder="छात्र नाम *"
-                                  value={row.name}
-                                  onChange={e => handleRowChange(row.id, 'name', e.target.value)}
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      if (idx === rows.length - 1) {
-                                        handleAddRow();
-                                        setTimeout(() => {
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    id={`scan-name-${idx}`}
+                                    type="text"
+                                    placeholder="छात्र नाम *"
+                                    value={row.name}
+                                    onChange={e => handleRowChange(row.id, 'name', e.target.value)}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        if (idx === rows.length - 1) {
+                                          handleAddRow();
+                                          setTimeout(() => {
+                                            document.getElementById(`scan-name-${idx + 1}`)?.focus();
+                                          }, 40);
+                                        } else {
                                           document.getElementById(`scan-name-${idx + 1}`)?.focus();
-                                        }, 40);
-                                      } else {
-                                        document.getElementById(`scan-name-${idx + 1}`)?.focus();
+                                        }
                                       }
-                                    }
-                                  }}
-                                  className={`w-full px-1.5 py-1 text-xs border rounded bg-white font-medium text-stone-900 focus:ring-1 focus:ring-orange-500 ${missingName ? 'border-red-400 bg-red-50 placeholder-red-400' : 'border-stone-200'}`}
-                                />
+                                    }}
+                                    className={`w-full px-1.5 py-1 text-xs border rounded bg-white font-medium text-stone-900 focus:ring-1 focus:ring-orange-500 ${
+                                      missingName
+                                        ? 'border-red-400 bg-red-50 placeholder-red-400'
+                                        : isDuplicate
+                                        ? 'border-amber-400 bg-amber-50/40'
+                                        : 'border-stone-200'
+                                    }`}
+                                  />
+                                  {isDuplicate && (
+                                    <span
+                                      title={dupCheck.reason}
+                                      className="shrink-0 px-1 py-0.5 text-[9px] font-bold bg-amber-200 text-amber-900 border border-amber-400 rounded cursor-help"
+                                    >
+                                      पंजीकृत
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="p-1">
                                 <select
@@ -1031,11 +1122,18 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
         <div className="bg-stone-50 border-t border-stone-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-3 text-xs text-stone-600 flex-wrap">
             {rows.length > 0 && (() => {
-                const incompleteCount = rows.filter(r => !r.name.trim() || !r.fatherName.trim() || !r.contact.trim()).length;
+                const incompleteCount = rows.filter(r => !r.name.trim() || !r.fatherName.trim() || !r.contact.trim() || !r.rollNo.trim()).length;
                 const dbErrorCount = failedRowIds.size;
+                const duplicateCount = rows.filter(r => isStudentAlreadyEnrolled(r, students).duplicate).length;
+                const newCount = rows.length - duplicateCount;
                 return (
                   <span className="font-semibold text-stone-700 flex items-center gap-2 flex-wrap">
                     कुल छात्र: <strong className="text-stone-900">{rows.length}</strong>
+                    {duplicateCount > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-[11px] font-bold" title="ये छात्र पहले से नामांकित हैं और डुप्लीकेट प्रविष्टि रोकने हेतु स्वतः छोड़ दिए जाएंगे">
+                        ⚠️ {duplicateCount} पूर्व-पंजीकृत (डुप्लीकेट स्किप)
+                      </span>
+                    )}
                     {incompleteCount > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[11px] font-bold">
                         🔴 {incompleteCount} अधूरे फ़ील्ड
@@ -1048,7 +1146,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                     )}
                     {incompleteCount === 0 && dbErrorCount === 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 border border-green-300 rounded-full text-[11px] font-bold">
-                        ✓ सभी पूर्ण
+                        ✓ {newCount > 0 ? `${newCount} नए छात्र तैयार` : 'सभी पूर्व-पंजीकृत'}
                       </span>
                     )}
                   </span>
@@ -1067,26 +1165,40 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
               रद्द करें (Cancel)
             </button>
 
-            {rows.length > 0 && (
-              <button
-                type="button"
-                onClick={handleEnrollAll}
-                disabled={isEnrolling}
-                className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:opacity-60 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
-              >
-                {isEnrolling ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>पंजीकृत हो रहे हैं...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>सभी {rows.length} छात्र पंजीकृत करें</span>
-                  </>
-                )}
-              </button>
-            )}
+            {rows.length > 0 && (() => {
+              const duplicateCount = rows.filter(r => isStudentAlreadyEnrolled(r, students).duplicate).length;
+              const newCount = rows.length - duplicateCount;
+              return (
+                <button
+                  type="button"
+                  onClick={handleEnrollAll}
+                  disabled={isEnrolling || (newCount === 0 && duplicateCount > 0)}
+                  className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:opacity-60 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
+                >
+                  {isEnrolling ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>पंजीकृत हो रहे हैं...</span>
+                    </>
+                  ) : newCount === 0 && duplicateCount > 0 ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>सभी {rows.length} छात्र पहले से पंजीकृत हैं (स्किप)</span>
+                    </>
+                  ) : duplicateCount > 0 ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{newCount} नए छात्र पंजीकृत करें ({duplicateCount} डुप्लीकेट छोड़ें)</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>सभी {rows.length} छात्र पंजीकृत करें</span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>
