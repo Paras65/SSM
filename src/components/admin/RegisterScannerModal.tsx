@@ -368,18 +368,39 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     showSuccess(`सभी पंक्तियों में कक्षा: ${defaultClass}, वर्ग: ${defaultSection} लागू किया गया।`);
   };
 
-  // Bulk Register All Students
+  // Bulk Register All Students — with pre-submit required-field validation
   const handleEnrollAll = () => {
-    const validRows = rows.filter(r => r.name.trim() && r.fatherName.trim());
-    if (validRows.length === 0) {
-      showWarning('कृपया कम से कम एक छात्र का नाम एवं पिता का नाम दर्ज करें।');
+    if (rows.length === 0) {
+      showWarning('कोई छात्र रिकॉर्ड नहीं है। पहले स्कैन करें अथवा मैन्युअल पंक्ति जोड़ें।');
       return;
     }
 
+    // Identify rows missing required fields
+    const missingRows: { rowNo: number; rollNo: string; issues: string[] }[] = [];
+    rows.forEach((row, idx) => {
+      const issues: string[] = [];
+      if (!row.name.trim()) issues.push('छात्र नाम');
+      if (!row.fatherName.trim()) issues.push('पिता का नाम');
+      if (issues.length > 0) {
+        missingRows.push({ rowNo: idx + 1, rollNo: row.rollNo || String(idx + 1), issues });
+      }
+    });
+
+    if (missingRows.length > 0) {
+      const details = missingRows
+        .map(m => `पंक्ति ${m.rowNo} (रोल ${m.rollNo}): ${m.issues.join(', ')} खाली है`)
+        .join(' | ');
+      showWarning(
+        `⚠️ ${missingRows.length} पंक्तियों में आवश्यक जानकारी अधूरी है — ${details}। कृपया इन्हें भरने के बाद पुनः प्रयास करें। अधूरी पंक्तियाँ लाल रंग में हाइलाइट हैं।`
+      );
+      return;
+    }
+
+    // All rows valid — enroll
     let enrolledCount = 0;
     const admissionDate = new Date().toISOString().split('T')[0];
 
-    validRows.forEach(row => {
+    rows.forEach(row => {
       const trimmedName = row.name.trim();
       const prefix = row.gender === 'Bhaiya' ? 'Bhaiya' : 'Bahin';
       const fullName =
@@ -766,8 +787,12 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                             </td>
                           </tr>
                         ) : (
-                          rows.map((row, idx) => (
-                            <tr key={row.id} className="hover:bg-amber-50/50 transition">
+                          rows.map((row, idx) => {
+                            const missingName = !row.name.trim();
+                            const missingFather = !row.fatherName.trim();
+                            const hasError = missingName || missingFather;
+                            return (
+                            <tr key={row.id} className={`transition ${hasError ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-amber-50/50'}`}>
                               <td className="p-1">
                                 <input
                                   type="text"
@@ -796,7 +821,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                                       }
                                     }
                                   }}
-                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white font-medium text-stone-900 focus:ring-1 focus:ring-orange-500"
+                                  className={`w-full px-1.5 py-1 text-xs border rounded bg-white font-medium text-stone-900 focus:ring-1 focus:ring-orange-500 ${missingName ? 'border-red-400 bg-red-50 placeholder-red-400' : 'border-stone-200'}`}
                                 />
                               </td>
                               <td className="p-1">
@@ -852,7 +877,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                                       }
                                     }
                                   }}
-                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white text-stone-800 focus:ring-1 focus:ring-orange-500"
+                                  className={`w-full px-1.5 py-1 text-xs border rounded bg-white text-stone-800 focus:ring-1 focus:ring-orange-500 ${missingFather ? 'border-red-400 bg-red-50 placeholder-red-400' : 'border-stone-200'}`}
                                 />
                               </td>
                               <td className="p-1">
@@ -895,7 +920,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                                 </button>
                               </td>
                             </tr>
-                          ))
+                          ); })
                         )}
                       </tbody>
                     </table>
@@ -909,15 +934,25 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
         {/* Footer Actions */}
         <div className="bg-stone-50 border-t border-stone-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-3 text-xs text-stone-600">
-            {rows.length > 0 && (
-              <span className="font-semibold text-stone-700">
-                वैध पंक्तियाँ:{' '}
-                <strong className="text-orange-700">
-                  {rows.filter(r => r.name.trim() && r.fatherName.trim()).length}
-                </strong>{' '}
-                / {rows.length}
-              </span>
-            )}
+            {rows.length > 0 && (() => {
+                const incompleteCount = rows.filter(r => !r.name.trim() || !r.fatherName.trim()).length;
+                return (
+                  <span className="font-semibold text-stone-700 flex items-center gap-2">
+                    कुल छात्र: <strong className="text-stone-900">{rows.length}</strong>
+                    {incompleteCount > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[11px] font-bold">
+                        ⚠ {incompleteCount} अधूरे (लाल)
+                      </span>
+                    )}
+                    {incompleteCount === 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 border border-green-300 rounded-full text-[11px] font-bold">
+                        ✓ सभी पूर्ण
+                      </span>
+                    )}
+                  </span>
+                );
+              })()
+            }
           </div>
 
           <div className="flex items-center gap-2">
@@ -936,7 +971,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                 className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>सभी {rows.filter(r => r.name.trim() && r.fatherName.trim()).length} छात्र पंजीकृत करें</span>
+                <span>सभी {rows.length} छात्र पंजीकृत करें</span>
               </button>
             )}
           </div>
