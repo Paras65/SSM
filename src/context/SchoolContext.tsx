@@ -558,7 +558,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return res.count;
       }
     } catch (err) {
+      // Rollback: remove optimistically added bulk students on failure
+      setStudents(prev => prev.filter(s => !preparedList.some(p => p.id === s.id)));
       console.error('Error in bulk saving students to MongoDB:', err);
+      throw err;
     }
     return preparedList.length;
   };

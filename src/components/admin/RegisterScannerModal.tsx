@@ -17,7 +17,8 @@ import {
   ZoomOut,
   RefreshCw,
   ArrowRight,
-  Eye
+  Eye,
+  Download
 } from 'lucide-react';
 
 interface RegisterScannerModalProps {
@@ -87,7 +88,7 @@ export const isStudentAlreadyEnrolled = (
 };
 
 export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onClose }) => {
-  const { addStudent, students, currentSchool } = useSchool();
+  const { addStudent, bulkAddStudents, students, currentSchool } = useSchool();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const [activeTab, setActiveTab] = useState<'camera' | 'upload' | 'grid'>('camera');
@@ -97,6 +98,10 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
+
+  // Multi-page batch tracking
+  const [scannedPageCount, setScannedPageCount] = useState(1);
+  const [justEnrolledCount, setJustEnrolledCount] = useState<number | null>(null);
 
   // Scanned Rows
   const [rows, setRows] = useState<ScannedRow[]>([]);
@@ -214,6 +219,7 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          ctx.filter = 'contrast(1.18) brightness(1.02)';
           ctx.drawImage(img, 0, 0, width, height);
           resolve(canvas.toDataURL('image/jpeg', 0.85));
         } else {
@@ -287,6 +293,11 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
             name = `${gender} ${name}`;
           }
 
+          const rawSchoolPhone = currentSchool?.phone || '9876543210';
+          const fallbackPhone = rawSchoolPhone.replace(/\D/g, '').slice(-10) || '9876543210';
+          const rawContact = String(item.contact || '').trim();
+          const contact = rawContact || fallbackPhone;
+
           return {
             id: `scan-${Date.now()}-${idx}`,
             rollNo: String(item.rollNo || idx + 1),
@@ -296,7 +307,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
             section: String(item.section || defaultSection),
             fatherName: String(item.fatherName || ''),
             motherName: String(item.motherName || ''),
-            contact: String(item.contact || ''),
+            contact,
             dob: String(item.dob || '2014-01-01'),
             address: String(item.address || ''),
             pin: String(item.pin || '')
@@ -445,6 +456,53 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     }
   };
 
+  // Export Scanned Rows to CSV for local offline record
+  const exportScannedToCsv = () => {
+    if (rows.length === 0) {
+      showWarning('डाउनलोड करने हेतु कोई पंक्ति उपलब्ध नहीं है।');
+      return;
+    }
+    const headers = ['अनुक्रमांक', 'छात्र नाम', 'लिंग', 'कक्षा', 'वर्ग', 'पिता का नाम', 'माता का नाम', 'मोबाइल', 'जन्मतिथि', 'पता', 'पिन'];
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r =>
+        [
+          `"${r.rollNo}"`,
+          `"${r.name}"`,
+          `"${r.gender}"`,
+          `"${r.class}"`,
+          `"${r.section}"`,
+          `"${r.fatherName}"`,
+          `"${r.motherName}"`,
+          `"${r.contact}"`,
+          `"${r.dob}"`,
+          `"${r.address}"`,
+          `"${r.pin}"`
+        ].join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SSM_Register_Scan_${defaultClass.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSuccess(`📥 ${rows.length} छात्रों का डेटा CSV फ़ाइल में डाउनलोड हो गया!`);
+  };
+
+  // Ready next page scanning in continuous multi-page session
+  const handleScanNextPage = () => {
+    setCapturedImage(null);
+    setRows([]);
+    setFailedRowIds(new Set());
+    setScannedPageCount(prev => prev + 1);
+    setJustEnrolledCount(null);
+    setActiveTab('camera');
+    showInfo(`📄 पृष्ठ ${scannedPageCount + 1} स्कैन करने हेतु तैयार।`);
+  };
+
   // Bulk Register All Students — with pre-submit required-field validation
   const [isEnrolling, setIsEnrolling] = useState(false);
 
@@ -500,15 +558,13 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
       return;
     }
 
-    // Per-row async submission for only NEW students
+    // Bulk async submission for only NEW students (1 single fast network request)
     setIsEnrolling(true);
     const admissionDate = new Date().toISOString().split('T')[0];
-    const newlyFailedIds = new Set<string>();
-    const succeededIds = new Set<string>();
-    let authErrorOccurred = false;
-    let lastErrorMsg = '';
+    const rawSchoolPhone = currentSchool?.phone || '9876543210';
+    const fallbackPhone = rawSchoolPhone.replace(/\D/g, '').slice(-10) || '9876543210';
 
-    for (const row of rowsToEnroll) {
+    const preparedStudents: Partial<Student>[] = rowsToEnroll.map((row, idx) => {
       const trimmedName = row.name.trim();
       const prefix = row.gender === 'Bhaiya' ? 'Bhaiya' : 'Bahin';
       const fullName =
@@ -519,15 +575,17 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
           ? trimmedName
           : `${prefix} ${trimmedName}`;
 
-      const newStudent: Omit<Student, 'id'> = {
+      return {
+        id: `ssm-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}-${idx + 1}`,
+        schoolId: currentSchool.id,
         name: fullName,
-        rollNo: row.rollNo || String(students.length + succeededIds.size + 1),
+        rollNo: row.rollNo || String(students.length + idx + 1),
         class: row.class,
         section: row.section,
         gender: row.gender,
         fatherName: row.fatherName.trim(),
         motherName: row.motherName.trim(),
-        contact: row.contact.trim(),
+        contact: row.contact.trim() || fallbackPhone,
         address: row.address.trim(),
         dob: row.dob || '2014-01-01',
         pin: row.pin.trim(),
@@ -536,52 +594,32 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
         status: 'active',
         socialCategory: 'General'
       };
+    });
 
-      try {
-        await addStudent(newStudent);
-        succeededIds.add(row.id);
-      } catch (err: any) {
-        newlyFailedIds.add(row.id);
-        lastErrorMsg = err?.message || String(err);
-        if (
-          lastErrorMsg.includes('401') ||
-          lastErrorMsg.includes('अनधिकृत') ||
-          lastErrorMsg.includes('Unauthorized') ||
-          lastErrorMsg.includes('सत्र समाप्त') ||
-          lastErrorMsg.includes('टोकन')
-        ) {
-          authErrorOccurred = true;
-        }
-      }
-    }
-
-    setIsEnrolling(false);
-
-    if (newlyFailedIds.size === 0) {
-      // All succeeded — close modal with clear report of new vs duplicate skipped
+    try {
+      const count = await bulkAddStudents(preparedStudents);
+      setIsEnrolling(false);
       const skippedNote = duplicateRows.length > 0
         ? ` (${duplicateRows.length} पूर्व-पंजीकृत छात्र डुप्लीकेट होने से सुरक्षित छोड़ दिए गए)`
         : '';
-      showSuccess(`🎉 बधाई! कुल ${succeededIds.size} नए छात्र सफलतापूर्वक पंजीकृत किए गए!${skippedNote}`);
-      onClose();
-    } else {
-      // Modal NEVER closes on error! Keep remaining failed rows in the grid with highlights
-      setRows(prev => prev.filter(r => !succeededIds.has(r.id)));
-      setFailedRowIds(newlyFailedIds);
-      setActiveTab('grid');
-
-      if (authErrorOccurred) {
+      showSuccess(`🎉 बधाई! कुल ${count} नए छात्र सफलतापूर्वक पंजीकृत किए गए!${skippedNote}`);
+      setJustEnrolledCount(count);
+    } catch (err: any) {
+      setIsEnrolling(false);
+      const errorMsg = err?.message || String(err);
+      if (
+        errorMsg.includes('401') ||
+        errorMsg.includes('अनधिकृत') ||
+        errorMsg.includes('Unauthorized') ||
+        errorMsg.includes('सत्र समाप्त') ||
+        errorMsg.includes('टोकन')
+      ) {
         showError(
-          `🔒 प्रमाणीकरण त्रुटि (401 Unauthorized): व्यवस्थापक सत्र समाप्त हो गया है। आपका डेटा तालिका में सुरक्षित है। कृपया व्यवस्थापक पासकोड से पुनः लॉगिन करें और 'सभी छात्र पंजीकृत करें' दबाएं।`
+          `🔒 प्रमाणीकरण त्रुटि (401 Unauthorized): व्यवस्थापक सत्र समाप्त हो गया है। आपका डेटा तालिका में सुरक्षित है। कृपया व्यवस्थापक पासकोड से पुनः लॉगिन करें और 'पंजीकृत करें' दबाएं।`
         );
       } else {
-        const failedList = rowsToEnroll
-          .filter(r => newlyFailedIds.has(r.id))
-          .map((r, i) => `रोल ${r.rollNo || i + 1} (${r.name || 'अज्ञात'})`)
-          .slice(0, 3)
-          .join(', ');
         showError(
-          `❌ ${succeededIds.size > 0 ? `${succeededIds.size} छात्र पंजीकृत हुए, किंतु ` : ''}${newlyFailedIds.size} छात्र DB में सुरक्षित नहीं हो सके (${failedList})। त्रुटि: ${lastErrorMsg || 'सत्यापन विफलता'}। कृपया नारंगी हाइलाइट पंक्तियों को जांचें और पुनः प्रयास करें।`
+          `❌ डेटाबेस में छात्रों को सहेजने में विफलता: ${errorMsg}। आपका डेटा तालिका में सुरक्षित है, कृपया पुनः प्रयास करें।`
         );
       }
     }
@@ -703,6 +741,15 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                   title="यदि रजिस्टर में फ़ोन नंबर नहीं था, तो रिक्त पंक्तियों में विद्यालय का फ़ोन नंबर भरें"
                 >
                   📞 रिक्त फ़ोन भरें
+                </button>
+                <button
+                  type="button"
+                  onClick={exportScannedToCsv}
+                  className="px-2 py-1 bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded font-semibold text-[11px] cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                  title="स्कैन किए गए डेटा को CSV फ़ाइल के रूप में डाउनलोड करें"
+                >
+                  <Download className="w-3 h-3 text-stone-600" />
+                  <span>CSV बैकअप</span>
                 </button>
               </>
             )}
@@ -1156,49 +1203,75 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isEnrolling}
-              className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-200 rounded-lg cursor-pointer transition disabled:opacity-50"
-            >
-              रद्द करें (Cancel)
-            </button>
-
-            {rows.length > 0 && (() => {
-              const duplicateCount = rows.filter(r => isStudentAlreadyEnrolled(r, students).duplicate).length;
-              const newCount = rows.length - duplicateCount;
-              return (
+            {justEnrolledCount !== null ? (
+              <>
+                <span className="text-xs font-bold text-green-700 bg-green-100 px-3 py-1.5 rounded-lg border border-green-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span>पृष्ठ {scannedPageCount} के {justEnrolledCount} छात्र नामांकित!</span>
+                </span>
                 <button
                   type="button"
-                  onClick={handleEnrollAll}
-                  disabled={isEnrolling || (newCount === 0 && duplicateCount > 0)}
-                  className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:opacity-60 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
+                  onClick={handleScanNextPage}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
                 >
-                  {isEnrolling ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>पंजीकृत हो रहे हैं...</span>
-                    </>
-                  ) : newCount === 0 && duplicateCount > 0 ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>सभी {rows.length} छात्र पहले से पंजीकृत हैं (स्किप)</span>
-                    </>
-                  ) : duplicateCount > 0 ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{newCount} नए छात्र पंजीकृत करें ({duplicateCount} डुप्लीकेट छोड़ें)</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>सभी {rows.length} छात्र पंजीकृत करें</span>
-                    </>
-                  )}
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>📄 अगला पृष्ठ स्कैन करें (Page {scannedPageCount + 1})</span>
                 </button>
-              );
-            })()}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition"
+                >
+                  <span>✓ कार्य संपन्न (Done & Close)</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isEnrolling}
+                  className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-200 rounded-lg cursor-pointer transition disabled:opacity-50"
+                >
+                  रद्द करें (Cancel)
+                </button>
+
+                {rows.length > 0 && (() => {
+                  const duplicateCount = rows.filter(r => isStudentAlreadyEnrolled(r, students).duplicate).length;
+                  const newCount = rows.length - duplicateCount;
+                  return (
+                    <button
+                      type="button"
+                      onClick={handleEnrollAll}
+                      disabled={isEnrolling || (newCount === 0 && duplicateCount > 0)}
+                      className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:opacity-60 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
+                    >
+                      {isEnrolling ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>पंजीकृत हो रहे हैं...</span>
+                        </>
+                      ) : newCount === 0 && duplicateCount > 0 ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>सभी {rows.length} छात्र पहले से पंजीकृत हैं (स्किप)</span>
+                        </>
+                      ) : duplicateCount > 0 ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>{newCount} नए छात्र पंजीकृत करें ({duplicateCount} डुप्लीकेट छोड़ें)</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>सभी {rows.length} छात्र पंजीकृत करें</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })()}
+              </>
+            )}
           </div>
         </div>
       </div>
