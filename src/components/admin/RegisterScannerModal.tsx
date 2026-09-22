@@ -18,7 +18,12 @@ import {
   RefreshCw,
   ArrowRight,
   Eye,
-  Download
+  Download,
+  Calendar,
+  MapPin,
+  ListOrdered,
+  Search,
+  Wand2
 } from 'lucide-react';
 
 interface RegisterScannerModalProps {
@@ -87,6 +92,126 @@ export const isStudentAlreadyEnrolled = (
   }
 
   return { duplicate: false };
+};
+
+// 1. IntelliSense Gender Inference from Indian Hindi & English Names
+export const guessGenderFromName = (name: string): Gender | null => {
+  const clean = name.replace(/^(भैया\s+|बहिन\s+|Bhaiya\s+|Bahin\s+)/i, '').trim().toLowerCase();
+  if (!clean) return null;
+
+  const femaleKeywords = [
+    'कुमारी', 'देवी', 'कौर', 'दीदी', 'बेगम', 'सुल्ताना',
+    'priya', 'devi', 'kumari', 'pooja', 'puja', 'neha', 'anjali', 'aaradhya',
+    'ananya', 'sakshi', 'suman', 'sunita', 'kavita', 'muskan', 'shreya',
+    'prachi', 'aditi', 'khushi', 'rani', 'radha', 'sita', 'gita', 'geeta',
+    'aarti', 'arti', 'sonam', 'swati', 'divya', 'sneha', 'jyoti', 'kiran',
+    'komal', 'manisha', 'megha', 'nisha', 'payal', 'poonam', 'preeti', 'priti',
+    'rakhi', 'rekha', 'ritu', 'roshni', 'rupa', 'sapna', 'sarita', 'seema',
+    'shikha', 'shital', 'sheetal', 'shobha', 'sonali', 'varsha', 'vidya'
+  ];
+
+  for (const kw of femaleKeywords) {
+    if (clean.includes(kw)) return 'Bahin';
+  }
+
+  // Hindi feminine vowel ending 'ी' check (e.g. आरती, अंजलि, रोशनी, स्वाति)
+  if (clean.endsWith('ी') || clean.endsWith('ीं')) {
+    if (!clean.includes('शास्त्री') && !clean.includes('जोशी') && !clean.includes('गोस्वामी') && !clean.includes('त्यागी')) {
+      return 'Bahin';
+    }
+  }
+
+  const maleKeywords = [
+    'कुमार', 'सिंह', 'प्रसाद', 'लाल', 'चन्द', 'चंद', 'राम', 'शर्मा', 'वर्मा',
+    'केशव', 'माधव', 'आर्यन', 'आयुष', 'अमन', 'शिवम', 'राहुल', 'अमित', 'विकास',
+    'दीपक', 'संदीप', 'रोहन', 'आदित्य', 'अंकित', 'अनुराग', 'अशोक', 'भारत',
+    'चेतन', 'दर्शन', 'गौरव', 'गोपाल', 'हर्ष', 'करण', 'मनीष', 'मयंक', 'मोहित',
+    'नमन', 'निखिल', 'पंकज', 'प्रवीण', 'प्रशांत', 'राजेश', 'राकेश', 'ऋषभ',
+    'रोहित', 'सचिन', 'संजय', 'सौरभ', 'शुभम', 'सुमित', 'सुरेश', 'तरुण', 'उमेश',
+    'विशाल', 'विवेक', 'यथार्थ', 'yash', 'aryan', 'ayush', 'aman', 'rohan'
+  ];
+
+  for (const kw of maleKeywords) {
+    if (clean.includes(kw)) return 'Bhaiya';
+  }
+
+  return null;
+};
+
+// 2. IntelliSense Father Name Honorific Standardization
+export const formatFatherName = (fatherName: string): string => {
+  let clean = fatherName
+    .replace(/^श्रीमान\s+/i, 'श्री ')
+    .replace(/^shri\s+/i, 'श्री ')
+    .replace(/^mr\.?\s+/i, 'श्री ')
+    .replace(/^भैया\s+/i, '')
+    .replace(/^बहिन\s+/i, '')
+    .replace(/^Bhaiya\s+/i, '')
+    .replace(/^Bahin\s+/i, '')
+    .replace(/["'“”‘’]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!clean) return '';
+  if (!clean.startsWith('श्री ') && !clean.startsWith('स्व. ') && !clean.startsWith('स्वर्गीय ')) {
+    clean = `श्री ${clean}`;
+  }
+  return clean;
+};
+
+// 3. IntelliSense Age Calculation from DOB
+export const calculateAgeFromDob = (dobString: string): number | null => {
+  if (!dobString) return null;
+  const birthDate = new Date(dobString);
+  if (isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age >= 0 && age < 100 ? age : null;
+};
+
+// 4. IntelliSense Age Appropriateness Checker for Class
+export const isAgeAppropriateForClass = (age: number, cls: string): { appropriate: boolean; expected: number } => {
+  const match = cls.match(/\d+/);
+  const classNum = match ? parseInt(match[0], 10) : 6;
+  const expected = 5 + classNum;
+  const diff = Math.abs(age - expected);
+  return {
+    appropriate: diff <= 2,
+    expected
+  };
+};
+
+// 5. IntelliSense Sibling / Family Matcher against School Records
+export const findSiblingForScannedRow = (
+  row: ScannedRow,
+  existingStudents: Student[]
+): Student | null => {
+  const cleanPhone = row.contact.replace(/\D/g, '').slice(-10);
+  const normFather = row.fatherName.replace(/^श्री\s+/i, '').trim().toLowerCase();
+  const normName = row.name.trim().toLowerCase();
+
+  return (
+    existingStudents.find(s => {
+      // Must not match the same student
+      if (s.class === row.class && s.rollNo.trim() === row.rollNo.trim()) return false;
+      if (normName && s.name.trim().toLowerCase() === normName) return false;
+
+      const sPhone = s.contact ? s.contact.replace(/\D/g, '').slice(-10) : '';
+      const sFather = s.fatherName ? s.fatherName.replace(/^श्री\s+/i, '').trim().toLowerCase() : '';
+
+      if (cleanPhone.length === 10 && sPhone === cleanPhone && sPhone !== '9876543210') {
+        return true;
+      }
+      if (normFather && sFather && normFather === sFather && row.address && s.address && s.address.toLowerCase() === row.address.toLowerCase()) {
+        return true;
+      }
+      return false;
+    }) || null
+  );
 };
 
 export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({
@@ -398,8 +523,35 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     setRows(prev =>
       prev.map(row => {
         if (row.id !== id) return row;
+        if (field === 'name') {
+          // Real-time IntelliSense Gender Guesser when typing name
+          const guessed = guessGenderFromName(value);
+          if (guessed && guessed !== row.gender) {
+            return { ...row, name: value, gender: guessed };
+          }
+          return { ...row, name: value };
+        }
         if (field === 'gender') {
-          return { ...row, gender: value as Gender };
+          const newGender = value as Gender;
+          let updatedName = row.name;
+          if (newGender === 'Bahin') {
+            if (updatedName.startsWith('भैया ')) {
+              updatedName = 'बहिन ' + updatedName.slice(5).trim();
+            } else if (updatedName.startsWith('Bhaiya ')) {
+              updatedName = 'Bahin ' + updatedName.slice(7).trim();
+            } else if (!updatedName.startsWith('बहिन ') && !updatedName.startsWith('Bahin ') && updatedName.trim()) {
+              updatedName = 'Bahin ' + updatedName.trim();
+            }
+          } else if (newGender === 'Bhaiya') {
+            if (updatedName.startsWith('बहिन ')) {
+              updatedName = 'भैया ' + updatedName.slice(5).trim();
+            } else if (updatedName.startsWith('Bahin ')) {
+              updatedName = 'Bhaiya ' + updatedName.slice(6).trim();
+            } else if (!updatedName.startsWith('भैया ') && !updatedName.startsWith('Bhaiya ') && updatedName.trim()) {
+              updatedName = 'Bhaiya ' + updatedName.trim();
+            }
+          }
+          return { ...row, gender: newGender, name: updatedName };
         }
         return { ...row, [field]: value };
       })
@@ -484,6 +636,264 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     } else {
       showInfo('सभी पंक्तियों में पहले से फ़ोन नंबर दर्ज है।');
     }
+  };
+
+  // 1-Click Sequence Roll Numbers: 1, 2, 3...
+  const autoSequenceRollNumbers = () => {
+    if (rows.length === 0) return;
+    setRows(prev =>
+      prev.map((r, i) => ({
+        ...r,
+        rollNo: String(i + 1)
+      }))
+    );
+    showSuccess(`🔢 सभी ${rows.length} छात्रों के अनुक्रमांक 1 से ${rows.length} तक स्वतः क्रमबद्ध किए गए।`);
+  };
+
+  // 1-Click Clean and Sanitize Names & Prefixes
+  const sanitizeAllNamesAndPrefixes = () => {
+    if (rows.length === 0) return;
+    setRows(prev =>
+      prev.map(r => {
+        const cleanName = r.name.replace(/["'“”‘’]/g, '').replace(/\s+/g, ' ').trim();
+        const isBahin = r.gender === 'Bahin' || cleanName.startsWith('बहिन ') || cleanName.startsWith('Bahin ');
+        const targetGender: Gender = isBahin ? 'Bahin' : 'Bhaiya';
+        const strippedName = cleanName.replace(/^(भैया\s+|बहिन\s+|Bhaiya\s+|Bahin\s+)/i, '').trim();
+        const prefix = targetGender === 'Bahin' ? 'Bahin' : 'Bhaiya';
+        const finalName = strippedName ? `${prefix} ${strippedName}` : cleanName;
+        return {
+          ...r,
+          gender: targetGender,
+          name: finalName
+        };
+      })
+    );
+    showSuccess(`✨ सभी ${rows.length} छात्रों के नाम व लिंग प्रिफ़िक्स (भैया/बहिन) संवार दिए गए हैं।`);
+  };
+
+  // Compute approximate birth year based on class
+  const getExpectedBirthYearForClass = (cls: string): number => {
+    const currentYear = new Date().getFullYear();
+    const match = cls.match(/\d+/);
+    if (match) {
+      const classNum = parseInt(match[0], 10);
+      const expectedAge = 5 + classNum; // e.g. Class 2 -> age 7 -> year 2019
+      return currentYear - expectedAge;
+    }
+    const lower = cls.toLowerCase();
+    if (lower.includes('nur') || lower.includes('शिशु')) return currentYear - 3;
+    if (lower.includes('lkg') || lower.includes('अरुण')) return currentYear - 4;
+    if (lower.includes('ukg') || lower.includes('उदय') || lower.includes('प्रभात')) return currentYear - 5;
+    return currentYear - 11;
+  };
+
+  // 1-Click Fill Default DOB for empty cells based on class
+  const fillDefaultDobForEmpty = () => {
+    if (rows.length === 0) return;
+    const year = getExpectedBirthYearForClass(defaultClass);
+    const defaultDob = `${year}-07-01`;
+    let filled = 0;
+    setRows(prev =>
+      prev.map(r => {
+        if (!r.dob || r.dob === '2014-01-01' || r.dob.trim() === '') {
+          filled++;
+          return { ...r, dob: defaultDob };
+        }
+        return r;
+      })
+    );
+    showSuccess(`📅 ${filled > 0 ? filled : 'सभी'} छात्रों की डिफ़ॉल्ट जन्मतिथि '${defaultDob}' (${defaultClass} के अनुसार) भरी गई।`);
+  };
+
+  // 1-Click Fill Common Village / Town Address
+  const fillDefaultAddressForEmpty = () => {
+    if (rows.length === 0) return;
+    const defaultLocality = currentSchool?.city || 'स्थानीय नगर';
+    const chosen = window.prompt(
+      'सभी रिक्त पतों के लिए स्थानीय गांव / मोहल्ला / शहर का नाम दर्ज करें:',
+      defaultLocality
+    );
+    if (chosen === null) return;
+    const finalAddress = chosen.trim() || defaultLocality;
+    let filled = 0;
+    setRows(prev =>
+      prev.map(r => {
+        if (!r.address.trim()) {
+          filled++;
+          return { ...r, address: finalAddress };
+        }
+        return r;
+      })
+    );
+    showSuccess(`🏡 ${filled > 0 ? filled : 0} छात्रों में स्थानीय पता '${finalAddress}' भरा गया।`);
+  };
+
+  // 1-Click Jump & Focus to Next Incomplete Field
+  const jumpToNextMissingField = () => {
+    if (rows.length === 0) return;
+    for (let idx = 0; idx < rows.length; idx++) {
+      const row = rows[idx];
+      let targetId: string | null = null;
+      let fieldName = '';
+
+      if (!row.rollNo.trim()) {
+        targetId = `scan-roll-${idx}`;
+        fieldName = 'अनुक्रमांक';
+      } else if (!row.name.trim()) {
+        targetId = `scan-name-${idx}`;
+        fieldName = 'छात्र का नाम';
+      } else if (!row.fatherName.trim()) {
+        targetId = `scan-father-${idx}`;
+        fieldName = 'पिता का नाम';
+      } else if (!row.contact.trim()) {
+        targetId = `scan-contact-${idx}`;
+        fieldName = 'मोबाइल नंबर';
+      }
+
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus();
+          showInfo(`🔍 पंक्ति ${idx + 1} (रोल: ${row.rollNo || idx + 1}) में '${fieldName}' अधूरा है।`);
+          return;
+        }
+      }
+    }
+    showSuccess('🎉 बहुत बढ़िया! तालिका में कोई भी अनिवार्य फ़ील्ड अधूरा नहीं है। आप सीधे पंजीकृत कर सकते हैं।');
+  };
+
+  // Missing fields count for badge counter
+  const missingFieldsCount = useMemo(() => {
+    let count = 0;
+    rows.forEach(r => {
+      if (!r.name.trim()) count++;
+      if (!r.fatherName.trim()) count++;
+      if (!r.contact.trim()) count++;
+      if (!r.rollNo.trim()) count++;
+    });
+    return count;
+  }, [rows]);
+
+  // 1-Click Auto-Fill Sibling Family Data (Father, Mother, Address, PIN, Contact)
+  const handleAutoFillSiblingForRow = (rowId: string, sibling: Student) => {
+    setRows(prev =>
+      prev.map(r => {
+        if (r.id !== rowId) return r;
+        const formattedFather = sibling.fatherName ? formatFatherName(sibling.fatherName) : r.fatherName;
+        return {
+          ...r,
+          fatherName: r.fatherName.trim() ? r.fatherName : formattedFather,
+          motherName: r.motherName.trim() ? r.motherName : (sibling.motherName || ''),
+          address: r.address.trim() ? r.address : (sibling.address || ''),
+          pin: r.pin.trim() ? r.pin : (sibling.pin || ''),
+          contact: r.contact.trim() ? r.contact : (sibling.contact || '')
+        };
+      })
+    );
+    showSuccess(`💡 सहोदर छात्र '${sibling.name}' (${sibling.class}) का पारिवारिक रिकॉर्ड स्वतः भर दिया गया!`);
+  };
+
+  // 1-Click AI Smart Auto-Repair & IntelliSense Fixer across the entire table
+  const handleSmartIntelliSenseAutoFix = () => {
+    if (rows.length === 0) return;
+    let nameFixes = 0;
+    let genderFixes = 0;
+    let fatherFixes = 0;
+    let phoneFixes = 0;
+    let dobFixes = 0;
+    let siblingLinks = 0;
+
+    const classYear = getExpectedBirthYearForClass(defaultClass);
+    const defaultDob = `${classYear}-07-01`;
+
+    setRows(prev =>
+      prev.map((r, i) => {
+        // 1. Clean name and intelligent gender guessing
+        const cleanName = r.name.replace(/["'“”‘’]/g, '').replace(/\s+/g, ' ').trim();
+        const guessedGender = guessGenderFromName(cleanName);
+        let finalGender: Gender = r.gender;
+
+        if (guessedGender && guessedGender !== r.gender) {
+          finalGender = guessedGender;
+          genderFixes++;
+        }
+
+        const strippedName = cleanName.replace(/^(भैया\s+|बहिन\s+|Bhaiya\s+|Bahin\s+)/i, '').trim();
+        const prefix = finalGender === 'Bahin' ? 'Bahin' : 'Bhaiya';
+        const formattedName = strippedName ? `${prefix} ${strippedName}` : cleanName;
+        if (formattedName !== r.name) nameFixes++;
+
+        // 2. Format Father Name
+        let formattedFather = formatFatherName(r.fatherName);
+        if (formattedFather !== r.fatherName && formattedFather.trim()) fatherFixes++;
+
+        // 3. Clean & Format Phone
+        let cleanContact = r.contact.replace(/\D/g, '').slice(-10);
+        if (!cleanContact) {
+          const rawSchoolPhone = currentSchool?.phone || '9876543210';
+          cleanContact = rawSchoolPhone.replace(/\D/g, '').slice(-10) || '9876543210';
+        }
+        if (cleanContact !== r.contact) phoneFixes++;
+
+        // 4. DOB check
+        let finalDob = r.dob;
+        if (!finalDob || finalDob === '2014-01-01' || finalDob.trim() === '') {
+          finalDob = defaultDob;
+          dobFixes++;
+        }
+
+        // 5. Sibling Link
+        const sibling = findSiblingForScannedRow(
+          { ...r, contact: cleanContact, fatherName: formattedFather },
+          students
+        );
+        let finalMother = r.motherName;
+        let finalAddress = r.address;
+        let finalPin = r.pin;
+
+        if (sibling) {
+          if (!formattedFather.trim() && sibling.fatherName) {
+            formattedFather = formatFatherName(sibling.fatherName);
+            fatherFixes++;
+          }
+          if (!finalMother.trim() && sibling.motherName) {
+            finalMother = sibling.motherName;
+            siblingLinks++;
+          }
+          if (!finalAddress.trim() && sibling.address) {
+            finalAddress = sibling.address;
+            siblingLinks++;
+          }
+          if (!finalPin.trim() && sibling.pin) {
+            finalPin = sibling.pin;
+          }
+        }
+
+        // 6. Roll Number
+        const finalRoll = r.rollNo.trim() || String(i + 1);
+
+        return {
+          ...r,
+          rollNo: finalRoll,
+          name: formattedName,
+          gender: finalGender,
+          class: defaultClass,
+          section: defaultSection,
+          fatherName: formattedFather,
+          motherName: finalMother,
+          contact: cleanContact,
+          dob: finalDob,
+          address: finalAddress,
+          pin: finalPin
+        };
+      })
+    );
+
+    const totalFixes = nameFixes + genderFixes + fatherFixes + phoneFixes + dobFixes + siblingLinks;
+    showSuccess(
+      `🧠 AI स्मार्ट ऑटो-करेक्ट संपन्न! ${totalFixes} सुधार लागू किए गए (नाम व लिंग: ${nameFixes + genderFixes}, पिता: ${fatherFixes}, फ़ोन: ${phoneFixes}, जन्मतिथि: ${dobFixes}, सहोदर लिंक: ${siblingLinks})।`
+    );
   };
 
   // Export Scanned Rows to CSV for local offline record
@@ -759,10 +1169,10 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                 <button
                   type="button"
                   onClick={applyClassToAll}
-                  className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded font-semibold text-[11px] cursor-pointer"
-                  title="सभी पंक्तियों में यह कक्षा व वर्ग लागू करें"
+                  className="px-2.5 py-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded font-bold text-[11px] cursor-pointer shadow-2xs transition active:scale-95"
+                  title={`सभी पंक्तियों में कक्षा '${defaultClass}' एवं वर्ग '${defaultSection}' लागू करें`}
                 >
-                  सब पर लागू करें
+                  🎯 सभी छात्र: {defaultClass} ({defaultSection}) करें
                 </button>
                 <button
                   type="button"
@@ -999,6 +1409,100 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                     </div>
                   </div>
 
+                  {/* Quick Autofill & Data Correction Toolbar */}
+                  {rows.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-amber-50/60 border border-amber-200 rounded-xl text-xs shadow-2xs">
+                      <span className="text-[11px] font-bold text-stone-600 mr-1 flex items-center gap-1">
+                        <Wand2 className="w-3.5 h-3.5 text-orange-600" />
+                        <span>त्वरित भराव:</span>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={handleSmartIntelliSenseAutoFix}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold text-[11px] cursor-pointer shadow-xs transition active:scale-95"
+                        title="AI बौद्धिक ऑटो-करेक्ट: नाम, भैया/बहिन प्रिफ़िक्स, पिता का नाम (श्री), फोन व सहोदर स्वतः जोड़ें"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                        <span>🧠 AI स्मार्ट ऑटो-करेक्ट</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={applyClassToAll}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-[11px] cursor-pointer shadow-xs transition active:scale-95"
+                        title={`सभी पंक्तियों में कक्षा '${defaultClass}' एवं वर्ग '${defaultSection}' लागू करें`}
+                      >
+                        <span>🎯 कक्षा {defaultClass} ({defaultSection}) सब पर लागू</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={autoSequenceRollNumbers}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded-lg font-semibold text-[11px] cursor-pointer shadow-2xs transition active:scale-95"
+                        title="सभी छात्रों के अनुक्रमांक 1, 2, 3... क्रमबद्ध करें"
+                      >
+                        <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
+                        <span>🔢 रोल 1, 2, 3...</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={sanitizeAllNamesAndPrefixes}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded-lg font-semibold text-[11px] cursor-pointer shadow-2xs transition active:scale-95"
+                        title="अनावश्यक चिन्ह/स्पेस हटाएं व लिंग अनुसार भैया/बहिन प्रिफ़िक्स संवारें"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <span>✨ नाम व प्रिफ़िक्स</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={fillDefaultContactToEmpty}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded-lg font-semibold text-[11px] cursor-pointer shadow-2xs transition active:scale-95"
+                        title="रिक्त फोन नंबरों में विद्यालय संपर्क नंबर भरें"
+                      >
+                        <span>📞 रिक्त फ़ोन</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={fillDefaultDobForEmpty}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded-lg font-semibold text-[11px] cursor-pointer shadow-2xs transition active:scale-95"
+                        title={`कक्षा '${defaultClass}' के आयु मानक अनुसार रिक्त जन्मतिथि भरें`}
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-green-600" />
+                        <span>📅 डिफ़ॉल्ट जन्मतिथि</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={fillDefaultAddressForEmpty}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 rounded-lg font-semibold text-[11px] cursor-pointer shadow-2xs transition active:scale-95"
+                        title="रिक्त पतों में स्थानीय गांव/मोहल्ला भरें"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                        <span>🏡 रिक्त पता</span>
+                      </button>
+
+                      {missingFieldsCount > 0 ? (
+                        <button
+                          type="button"
+                          onClick={jumpToNextMissingField}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-800 border border-red-300 rounded-lg font-bold text-[11px] cursor-pointer shadow-2xs transition active:scale-95 animate-pulse ml-auto"
+                          title="अगली अधूरी/लाल फ़ील्ड पर जाएं और भरें"
+                        >
+                          <Search className="w-3.5 h-3.5 text-red-600" />
+                          <span>🔍 अगला अधूरा फ़ील्ड ({missingFieldsCount})</span>
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-green-700 bg-green-100 border border-green-300 rounded-lg ml-auto">
+                          ✓ सभी आवश्यक फ़ील्ड पूर्ण
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex-1 overflow-auto border border-stone-200 rounded-xl bg-white shadow-2xs">
                     <table className="w-full text-xs text-left border-collapse">
                       <thead className="bg-stone-100 text-stone-700 font-bold sticky top-0 z-10 border-b border-stone-200">
@@ -1028,10 +1532,17 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                             const missingName = !row.name.trim();
                             const missingFather = !row.fatherName.trim();
                             const missingContact = !row.contact.trim();
-                            const hasUiError = missingName || missingFather || missingContact;
+                            const missingRoll = !row.rollNo.trim();
+                            const hasUiError = missingName || missingFather || missingContact || missingRoll;
                             const hasDbError = failedRowIds.has(row.id);
                             const dupCheck = isStudentAlreadyEnrolled(row, students);
                             const isDuplicate = dupCheck.duplicate;
+                            const sibling = findSiblingForScannedRow(row, students);
+                            const age = calculateAgeFromDob(row.dob);
+                            const ageCheck = age !== null ? isAgeAppropriateForClass(age, row.class) : null;
+                            const cleanContact = row.contact.trim();
+                            const isValidMobile = cleanContact.length === 10 && /^[6-9]/.test(cleanContact);
+                            const isPartialMobile = cleanContact.length > 0 && cleanContact.length < 10;
                             const rowClass = hasDbError
                               ? 'bg-orange-50 hover:bg-orange-100 ring-1 ring-inset ring-orange-400'
                               : hasUiError
@@ -1043,10 +1554,14 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                             <tr key={row.id} className={`transition ${rowClass}`}>
                               <td className="p-1">
                                 <input
+                                  id={`scan-roll-${idx}`}
                                   type="text"
+                                  placeholder="रोल *"
                                   value={row.rollNo}
                                   onChange={e => handleRowChange(row.id, 'rollNo', e.target.value)}
-                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white"
+                                  className={`w-full px-1.5 py-1 text-xs border rounded bg-white font-mono font-medium ${
+                                    missingRoll ? 'border-red-400 bg-red-50 placeholder-red-400' : 'border-stone-200'
+                                  }`}
                                 />
                               </td>
                               <td className="p-1">
@@ -1128,6 +1643,12 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                                   placeholder="पिता का नाम *"
                                   value={row.fatherName}
                                   onChange={e => handleRowChange(row.id, 'fatherName', e.target.value)}
+                                  onBlur={e => {
+                                    const formatted = formatFatherName(e.target.value);
+                                    if (formatted && formatted !== e.target.value) {
+                                      handleRowChange(row.id, 'fatherName', formatted);
+                                    }
+                                  }}
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
@@ -1143,26 +1664,76 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                                   }}
                                   className={`w-full px-1.5 py-1 text-xs border rounded bg-white text-stone-800 focus:ring-1 focus:ring-orange-500 ${missingFather ? 'border-red-400 bg-red-50 placeholder-red-400' : 'border-stone-200'}`}
                                 />
+                                {sibling && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAutoFillSiblingForRow(row.id, sibling)}
+                                    className="mt-0.5 flex items-center gap-1 text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded px-1.5 py-0.5 font-medium transition cursor-pointer text-left w-full truncate shadow-2xs"
+                                    title={`सहोदर छात्र: ${sibling.name} (${sibling.class})। 1-क्लिक में परिवार विवरण स्वतः भरें।`}
+                                  >
+                                    <span className="shrink-0">💡 सहोदर:</span>
+                                    <span className="truncate font-bold">{sibling.name} ({sibling.class})</span>
+                                    <span className="shrink-0 text-indigo-500 underline ml-auto">[भरें]</span>
+                                  </button>
+                                )}
                               </td>
                               <td className="p-1">
-                                <input
-                                  type="text"
-                                  placeholder="मोबाइल *"
-                                  maxLength={10}
-                                  value={row.contact}
-                                  onChange={e =>
-                                    handleRowChange(row.id, 'contact', e.target.value.replace(/\D/g, ''))
-                                  }
-                                  className={`w-full px-1.5 py-1 text-xs border rounded bg-white ${missingContact ? 'border-red-400 bg-red-50 placeholder-red-400' : 'border-stone-200'}`}
-                                />
+                                <div className="relative flex items-center">
+                                  <input
+                                    id={`scan-contact-${idx}`}
+                                    type="text"
+                                    placeholder="मोबाइल *"
+                                    maxLength={10}
+                                    value={row.contact}
+                                    onChange={e =>
+                                      handleRowChange(row.id, 'contact', e.target.value.replace(/\D/g, ''))
+                                    }
+                                    className={`w-full px-1.5 py-1 text-xs border rounded bg-white ${
+                                      missingContact
+                                        ? 'border-red-400 bg-red-50 placeholder-red-400'
+                                        : isPartialMobile
+                                        ? 'border-amber-400 bg-amber-50/50 pr-5'
+                                        : isValidMobile
+                                        ? 'border-green-400/80 pr-5'
+                                        : 'border-stone-200'
+                                    }`}
+                                  />
+                                  {isValidMobile && (
+                                    <span className="absolute right-1.5 text-[10px] text-green-600 font-bold pointer-events-none" title="वैध 10-अंकीय मोबाइल">
+                                      ✓
+                                    </span>
+                                  )}
+                                  {isPartialMobile && (
+                                    <span className="absolute right-1.5 text-[9px] text-amber-600 font-semibold pointer-events-none" title={`${10 - cleanContact.length} अंक बाकी`}>
+                                      {10 - cleanContact.length}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="p-1">
                                 <input
                                   type="date"
                                   value={row.dob}
                                   onChange={e => handleRowChange(row.id, 'dob', e.target.value)}
-                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white"
+                                  className={`w-full px-1.5 py-1 text-xs border rounded bg-white ${
+                                    age !== null && ageCheck && !ageCheck.appropriate
+                                      ? 'border-amber-400 bg-amber-50/40'
+                                      : 'border-stone-200'
+                                  }`}
                                 />
+                                {age !== null && (
+                                  <div className="flex items-center justify-between text-[10px] mt-0.5 px-0.5">
+                                    <span className="text-stone-500 font-medium">{age} वर्ष</span>
+                                    {ageCheck && !ageCheck.appropriate && (
+                                      <span
+                                        className="text-amber-700 font-semibold cursor-help"
+                                        title={`अपेक्षित आयु: ~${ageCheck.expected} वर्ष (${row.class})`}
+                                      >
+                                        ⚠️ {age < ageCheck.expected ? 'कम' : 'अधिक'}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </td>
                               <td className="p-1">
                                 <input
@@ -1212,9 +1783,15 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                       </span>
                     )}
                     {incompleteCount > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[11px] font-bold">
-                        🔴 {incompleteCount} अधूरे फ़ील्ड
-                      </span>
+                      <button
+                        type="button"
+                        onClick={jumpToNextMissingField}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-100 hover:bg-red-200 text-red-800 border border-red-300 rounded-full text-[11px] font-bold cursor-pointer shadow-2xs transition active:scale-95 animate-pulse"
+                        title="अगली अधूरी पंक्ति पर जाएं और रिक्त फ़ील्ड भरें"
+                      >
+                        <Search className="w-3 h-3 text-red-600" />
+                        <span>🔴 {incompleteCount} पंक्तियाँ अधूरी (🔍 भरें)</span>
+                      </button>
                     )}
                     {dbErrorCount > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-300 rounded-full text-[11px] font-bold">
