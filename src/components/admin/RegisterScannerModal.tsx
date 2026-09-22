@@ -40,7 +40,7 @@ interface ScannedRow {
 }
 
 export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onClose }) => {
-  const { addStudent, students } = useSchool();
+  const { addStudent, students, currentSchool } = useSchool();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   const [activeTab, setActiveTab] = useState<'camera' | 'upload' | 'grid'>('camera');
@@ -324,6 +324,13 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
   };
 
   const handleRowChange = (id: string, field: keyof ScannedRow, value: string) => {
+    if (failedRowIds.has(id)) {
+      setFailedRowIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
     setRows(prev =>
       prev.map(row => {
         if (row.id !== id) return row;
@@ -370,6 +377,27 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     showSuccess(`सभी पंक्तियों में कक्षा: ${defaultClass}, वर्ग: ${defaultSection} लागू किया गया।`);
   };
 
+  // Fill school contact in any rows where contact is empty
+  const fillDefaultContactToEmpty = () => {
+    const rawSchoolPhone = currentSchool?.phone || '9876543210';
+    const cleanPhone = rawSchoolPhone.replace(/\D/g, '').slice(-10) || '9876543210';
+    let filled = 0;
+    setRows(prev =>
+      prev.map(r => {
+        if (!r.contact.trim()) {
+          filled++;
+          return { ...r, contact: cleanPhone };
+        }
+        return r;
+      })
+    );
+    if (filled > 0) {
+      showSuccess(`📞 ${filled} रिक्त पंक्तियों में विद्यालय फ़ोन (${cleanPhone}) भर दिया गया!`);
+    } else {
+      showInfo('सभी पंक्तियों में पहले से फ़ोन नंबर दर्ज है।');
+    }
+  };
+
   // Bulk Register All Students — with pre-submit required-field validation
   const [isEnrolling, setIsEnrolling] = useState(false);
 
@@ -379,13 +407,14 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
       return;
     }
 
-    // Pre-submit UI validation — check required fields (name, fatherName, contact)
+    // Pre-submit UI validation — check required fields (name, fatherName, contact, rollNo)
     const missingRows: { rowNo: number; rollNo: string; issues: string[] }[] = [];
     rows.forEach((row, idx) => {
       const issues: string[] = [];
       if (!row.name.trim()) issues.push('छात्र नाम');
       if (!row.fatherName.trim()) issues.push('पिता का नाम');
       if (!row.contact.trim()) issues.push('मोबाइल नंबर');
+      if (!row.rollNo.trim()) issues.push('रोल नंबर');
       if (issues.length > 0) {
         missingRows.push({ rowNo: idx + 1, rollNo: row.rollNo || String(idx + 1), issues });
       }
@@ -393,10 +422,12 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
 
     if (missingRows.length > 0) {
       const details = missingRows
-        .map(m => `पंक्ति ${m.rowNo} (रोल ${m.rollNo}): ${m.issues.join(', ')} खाली है`)
+        .slice(0, 3)
+        .map(m => `पंक्ति ${m.rowNo} (रोल ${m.rollNo}): ${m.issues.join(', ')}`)
         .join(' | ');
+      const moreText = missingRows.length > 3 ? ` एवं ${missingRows.length - 3} अन्य पंक्तियाँ` : '';
       showWarning(
-        `⚠️ ${missingRows.length} पंक्तियों में आवश्यक जानकारी अधूरी है — ${details}। लाल हाइलाइट पंक्तियाँ भरें।`
+        `⚠️ ${missingRows.length} पंक्तियों में आवश्यक जानकारी अधूरी है — ${details}${moreText}। लाल रंग में हाइलाइट रिक्त फ़ील्ड भरें (या ऊपर '📞 रिक्त फ़ोन भरें' दबाएं)।`
       );
       return;
     }
@@ -406,6 +437,8 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
     const admissionDate = new Date().toISOString().split('T')[0];
     const newlyFailedIds = new Set<string>();
     const succeededIds = new Set<string>();
+    let authErrorOccurred = false;
+    let lastErrorMsg = '';
 
     for (const row of rows) {
       const trimmedName = row.name.trim();
@@ -439,8 +472,18 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
       try {
         await addStudent(newStudent);
         succeededIds.add(row.id);
-      } catch {
+      } catch (err: any) {
         newlyFailedIds.add(row.id);
+        lastErrorMsg = err?.message || String(err);
+        if (
+          lastErrorMsg.includes('401') ||
+          lastErrorMsg.includes('अनधिकृत') ||
+          lastErrorMsg.includes('Unauthorized') ||
+          lastErrorMsg.includes('सत्र समाप्त') ||
+          lastErrorMsg.includes('टोकन')
+        ) {
+          authErrorOccurred = true;
+        }
       }
     }
 
@@ -451,17 +494,25 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
       showSuccess(`🎉 बधाई! रजिस्टर से कुल ${succeededIds.size} छात्र सफलतापूर्वक पंजीकृत किए गए!`);
       onClose();
     } else {
-      // Remove succeeded rows, keep failed rows open with orange highlight
+      // Modal NEVER closes on error! Keep remaining failed rows in the grid with highlights
       setRows(prev => prev.filter(r => !succeededIds.has(r.id)));
       setFailedRowIds(newlyFailedIds);
       setActiveTab('grid');
-      const failedList = rows
-        .filter(r => newlyFailedIds.has(r.id))
-        .map((r, i) => `पंक्ति ${i + 1} (${r.name || 'अज्ञात'})`)
-        .join(', ');
-      showError(
-        `❌ ${succeededIds.size} छात्र सफलतापूर्वक पंजीकृत हुए। ${newlyFailedIds.size} छात्रों की जानकारी DB में सहेजी नहीं जा सकी — ${failedList}। कृपया नारंगी हाइलाइट पंक्तियों की जानकारी जांचें और पुनः प्रयास करें।`
-      );
+
+      if (authErrorOccurred) {
+        showError(
+          `🔒 प्रमाणीकरण त्रुटि (401 Unauthorized): व्यवस्थापक सत्र समाप्त हो गया है। आपका डेटा तालिका में सुरक्षित है। कृपया व्यवस्थापक पासकोड से पुनः लॉगिन करें और 'सभी छात्र पंजीकृत करें' दबाएं।`
+        );
+      } else {
+        const failedList = rows
+          .filter(r => newlyFailedIds.has(r.id))
+          .map((r, i) => `रोल ${r.rollNo || i + 1} (${r.name || 'अज्ञात'})`)
+          .slice(0, 3)
+          .join(', ');
+        showError(
+          `❌ ${succeededIds.size > 0 ? `${succeededIds.size} छात्र पंजीकृत हुए, किंतु ` : ''}${newlyFailedIds.size} छात्र DB में सुरक्षित नहीं हो सके (${failedList})। त्रुटि: ${lastErrorMsg || 'सत्यापन विफलता'}। कृपया नारंगी हाइलाइट पंक्तियों को जांचें और पुनः प्रयास करें।`
+        );
+      }
     }
   };
 
@@ -565,14 +616,24 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
               <option value="B">Sec B</option>
             </select>
             {rows.length > 0 && (
-              <button
-                type="button"
-                onClick={applyClassToAll}
-                className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded font-semibold text-[11px] cursor-pointer"
-                title="सभी पंक्तियों में यह कक्षा व वर्ग लागू करें"
-              >
-                सब पर लागू करें
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={applyClassToAll}
+                  className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded font-semibold text-[11px] cursor-pointer"
+                  title="सभी पंक्तियों में यह कक्षा व वर्ग लागू करें"
+                >
+                  सब पर लागू करें
+                </button>
+                <button
+                  type="button"
+                  onClick={fillDefaultContactToEmpty}
+                  className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded font-semibold text-[11px] cursor-pointer"
+                  title="यदि रजिस्टर में फ़ोन नंबर नहीं था, तो रिक्त पंक्तियों में विद्यालय का फ़ोन नंबर भरें"
+                >
+                  📞 रिक्त फ़ोन भरें
+                </button>
+              </>
             )}
           </div>
         </div>
