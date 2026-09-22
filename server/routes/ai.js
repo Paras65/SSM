@@ -45,7 +45,7 @@ router.post('/generate', aiLimiter, async (req, res) => {
       generationConfig.responseMimeType = responseMimeType;
     }
 
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
@@ -96,7 +96,7 @@ router.post('/generate-question-paper', aiLimiter, async (req, res) => {
       return res.status(503).json({ error: 'सर्वर पर कोई बौद्धिक सेवा कुंजी विन्यासित नहीं है।' });
     }
 
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
@@ -154,43 +154,54 @@ router.post('/vision', aiLimiter, async (req, res) => {
 
     const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  inlineData: {
-                    mimeType,
-                    data: cleanBase64
-                  }
-                },
-                { text: prompt || 'Extract student details' }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: 'application/json'
-          }
-        })
-      }
-    );
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    let lastError = null;
 
-    if (!response.ok) {
-      const errBody = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: errBody?.error?.message || 'Vision API त्रुटि' });
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      inlineData: {
+                        mimeType,
+                        data: cleanBase64
+                      }
+                    },
+                    { text: prompt || 'Extract student details' }
+                  ]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.1,
+                responseMimeType: 'application/json'
+              }
+            })
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          return res.json(data);
+        } else {
+          const errBody = await response.json().catch(() => ({}));
+          lastError = errBody?.error?.message || `HTTP ${response.status}`;
+        }
+      } catch (err) {
+        lastError = err.message;
+      }
     }
 
-    const data = await response.json();
-    return res.json(data);
+    return res.status(502).json({ error: lastError || 'Vision API विफलता' });
   } catch (err) {
     return res.status(500).json({ error: 'Vision API विफलता: ' + err.message });
   }
@@ -208,45 +219,48 @@ router.get('/test-key', aiLimiter, async (req, res) => {
     });
   }
 
-  try {
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Respond with the single word: OK' }] }],
-          generationConfig: { maxOutputTokens: 5, temperature: 0.1 }
-        })
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  let lastError = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Respond with the single word: OK' }] }],
+            generationConfig: { maxOutputTokens: 5, temperature: 0.1 }
+          })
+        }
+      );
+
+      const latency = Date.now() - startTime;
+
+      if (response.ok) {
+        return res.json({
+          success: true,
+          message: `कुंजी सर्वर पर 100% सुरक्षित एवं कार्यशील है!`,
+          latency
+        });
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        lastError = errData?.error?.message || `HTTP ${response.status}`;
       }
-    );
-
-    const latency = Date.now() - startTime;
-
-    if (response.ok) {
-      return res.json({
-        success: true,
-        message: `कुंजी सर्वर पर 100% सुरक्षित एवं कार्यशील है!`,
-        latency
-      });
-    } else {
-      const errData = await response.json().catch(() => ({}));
-      return res.status(400).json({
-        success: false,
-        message: errData?.error?.message || `HTTP ${response.status}`,
-        latency
-      });
+    } catch (err) {
+      lastError = err.message;
     }
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-      latency: Date.now() - startTime
-    });
   }
+
+  return res.status(400).json({
+    success: false,
+    message: lastError || 'सत्यापन विफल',
+    latency: Date.now() - startTime
+  });
 });
 
 module.exports = router;

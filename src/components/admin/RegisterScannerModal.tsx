@@ -217,25 +217,60 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
     processImageWithAI(dataUrl);
   };
 
+  // Helper to optimize large camera/upload images for fast OCR transmission (<1MB)
+  const optimizeImageForOCR = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1600;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        } else {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
+
   // Handle File Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const result = reader.result as string;
-      setCapturedImage(result);
-      processImageWithAI(result);
+      const optimized = await optimizeImageForOCR(result);
+      setCapturedImage(optimized);
+      processImageWithAI(optimized);
     };
     reader.readAsDataURL(file);
   };
 
   // AI Extraction logic using Gemini Vision with seamless fast-entry fallback
-  const processImageWithAI = async (imageDataUrl: string) => {
+  const processImageWithAI = async (rawImageDataUrl: string) => {
     setIsScanning(true);
     setActiveTab('grid');
 
+    const imageDataUrl = await optimizeImageForOCR(rawImageDataUrl);
     const mimeType = imageDataUrl.match(/^data:(image\/[a-z]+);base64,/)?.[1] || 'image/jpeg';
     let parsed: Array<Partial<ScannedRow>> | null = null;
 

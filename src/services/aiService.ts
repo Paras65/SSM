@@ -111,7 +111,7 @@ export const generateSmartText = async (
 
   // 2. Direct fallback call if client key is present
   if (effectiveKey) {
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     for (const model of modelsToTry) {
       try {
         const response = await fetch(
@@ -204,40 +204,47 @@ export const generateSmartVision = async <T = any>(
 
   // 2. Direct fallback call
   if (effectiveKey) {
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': effectiveKey
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': effectiveKey
+            },
+            body: JSON.stringify({
+              contents: [
                 {
-                  inlineData: {
-                    mimeType,
-                    data: cleanBase64
-                  }
-                },
-                { text: prompt }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: 'application/json'
+                  parts: [
+                    {
+                      inlineData: {
+                        mimeType,
+                        data: cleanBase64
+                      }
+                    },
+                    { text: prompt }
+                  ]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.1,
+                responseMimeType: 'application/json'
+              }
+            })
           }
-        })
-      }
-    );
+        );
 
-    if (response.ok) {
-      const data = await response.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-      return JSON.parse(cleanJsonFence(rawText)) as T;
+        if (response.ok) {
+          const data = await response.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+          return JSON.parse(cleanJsonFence(rawText)) as T;
+        }
+      } catch {
+        // Try next fallback model
+      }
     }
   }
 
@@ -272,45 +279,47 @@ export const testSmartKeyHealth = async (): Promise<SmartKeyHealthResult> => {
 
   // 2. Direct fallback test
   if (effectiveKey) {
-    try {
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': effectiveKey
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: 'Respond with the single word: OK' }] }],
-            generationConfig: { maxOutputTokens: 5, temperature: 0.1 }
-          })
-        }
-      );
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    let lastError = null;
 
-      const latency = Date.now() - startTime;
-      if (response.ok) {
-        return {
-          success: true,
-          message: `कुंजी 100% कार्यशील एवं सक्रिय है! (प्रतिक्रिया समय: ${latency}ms)`,
-          latency
-        };
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        const errMsg = errData?.error?.message || `HTTP ${response.status}`;
-        return {
-          success: false,
-          message: `कुंजी सत्यापन विफल (${errMsg})।`,
-          latency
-        };
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': effectiveKey
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: 'Respond with the single word: OK' }] }],
+              generationConfig: { maxOutputTokens: 5, temperature: 0.1 }
+            })
+          }
+        );
+
+        const latency = Date.now() - startTime;
+        if (response.ok) {
+          return {
+            success: true,
+            message: `कुंजी 100% कार्यशील एवं सक्रिय है! (प्रतिक्रिया समय: ${latency}ms)`,
+            latency
+          };
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          lastError = errData?.error?.message || `HTTP ${response.status}`;
+        }
+      } catch (err: any) {
+        lastError = err.message;
       }
-    } catch (err: any) {
-      return {
-        success: false,
-        message: `सत्यापन त्रुटि: ${err.message}`,
-        latency: Date.now() - startTime
-      };
     }
+
+    return {
+      success: false,
+      message: `कुंजी सत्यापन विफल (${lastError})।`,
+      latency: Date.now() - startTime
+    };
   }
 
   return {
