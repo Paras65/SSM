@@ -33,7 +33,7 @@ interface AdminStudentsTabProps {
   onOpenCharacterCertificate: (student: Student) => void;
   onOpenBonafideCertificate: (student: Student) => void;
   onOpenDakhilKharij?: () => void;
-  onOpenRegisterScanner?: () => void;
+  onOpenRegisterScanner?: (selectedClass?: string) => void;
   onOpenPrintableAdmissionForm?: () => void;
 }
 
@@ -203,7 +203,7 @@ const AdminStudentsTabComponent: React.FC<AdminStudentsTabProps> = ({
 
           {onOpenRegisterScanner && (
             <button
-              onClick={onOpenRegisterScanner}
+              onClick={() => onOpenRegisterScanner(selectedClass !== 'ALL' ? selectedClass : undefined)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition active:scale-95"
               title="हार्ड कॉपी रजिस्टर या फॉर्म की फोटो खींचकर सीधे AI से छात्र जोड़ें (Direct Scan)"
             >

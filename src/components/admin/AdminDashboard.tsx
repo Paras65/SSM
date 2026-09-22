@@ -149,7 +149,10 @@ export const AdminDashboard: React.FC = () => {
     setActivePhotoStudent(student);
   };
 
-  const handleOpenRegisterScanner = () => {
+  const [scannerInitialClass, setScannerInitialClass] = useState<string | undefined>(undefined);
+
+  const handleOpenRegisterScanner = (cls?: string) => {
+    setScannerInitialClass(cls);
     if (!isPro) {
       requirePro(
         'हार्ड-कॉपी रजिस्टर स्मार्ट स्कैनर (OCR)',
@@ -1754,7 +1757,11 @@ export const AdminDashboard: React.FC = () => {
 
         {showRegisterScannerModal && (
           <RegisterScannerModal
-            onClose={() => setShowRegisterScannerModal(false)}
+            initialClass={scannerInitialClass}
+            onClose={() => {
+              setShowRegisterScannerModal(false);
+              setScannerInitialClass(undefined);
+            }}
           />
         )}
 

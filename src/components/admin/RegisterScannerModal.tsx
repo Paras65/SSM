@@ -23,6 +23,8 @@ import {
 
 interface RegisterScannerModalProps {
   onClose: () => void;
+  initialClass?: string;
+  initialSection?: string;
 }
 
 interface ScannedRow {
@@ -87,7 +89,11 @@ export const isStudentAlreadyEnrolled = (
   return { duplicate: false };
 };
 
-export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onClose }) => {
+export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({
+  onClose,
+  initialClass,
+  initialSection
+}) => {
   const { addStudent, bulkAddStudents, students, currentSchool } = useSchool();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
 
@@ -105,8 +111,8 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
 
   // Scanned Rows
   const [rows, setRows] = useState<ScannedRow[]>([]);
-  const [defaultClass, setDefaultClass] = useState<string>('Class 6');
-  const [defaultSection, setDefaultSection] = useState<string>('A');
+  const [defaultClass, setDefaultClass] = useState<string>(initialClass || 'Class 6');
+  const [defaultSection, setDefaultSection] = useState<string>(initialSection || 'A');
   // Tracks row IDs that failed DB save — to re-highlight after attempted submit
   const [failedRowIds, setFailedRowIds] = useState<Set<string>>(new Set());
 
@@ -303,8 +309,8 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
             rollNo: String(item.rollNo || idx + 1),
             name,
             gender,
-            class: String(item.class || defaultClass),
-            section: String(item.section || defaultSection),
+            class: defaultClass,
+            section: defaultSection,
             fatherName: String(item.fatherName || ''),
             motherName: String(item.motherName || ''),
             contact,
@@ -421,6 +427,30 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
 
   const handleDeleteRow = (id: string) => {
     setRows(prev => prev.filter(r => r.id !== id));
+  };
+
+  // Automatically apply Class change to defaultClass and all rows synchronously
+  const handleDefaultClassChange = (newClass: string) => {
+    setDefaultClass(newClass);
+    setRows(prev =>
+      prev.map(r => ({
+        ...r,
+        class: newClass
+      }))
+    );
+    showInfo(`कक्षा बदलकर '${newClass}' कर दी गई है (सभी पंक्तियों में लागू)।`);
+  };
+
+  // Automatically apply Section change to defaultSection and all rows synchronously
+  const handleDefaultSectionChange = (newSection: string) => {
+    setDefaultSection(newSection);
+    setRows(prev =>
+      prev.map(r => ({
+        ...r,
+        section: newSection
+      }))
+    );
+    showInfo(`वर्ग बदलकर '${newSection}' कर दिया गया है।`);
   };
 
   // Apply default Class / Section to all rows
@@ -707,8 +737,8 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
             <span className="text-stone-600 font-semibold">डिफ़ॉल्ट कक्षा:</span>
             <select
               value={defaultClass}
-              onChange={e => setDefaultClass(e.target.value)}
-              className="px-2 py-1 border border-stone-300 rounded bg-white font-medium text-xs"
+              onChange={e => handleDefaultClassChange(e.target.value)}
+              className="px-2 py-1 border border-stone-300 rounded bg-white font-medium text-xs focus:ring-1 focus:ring-orange-500"
             >
               {SSM_CLASSES.map(cls => (
                 <option key={cls} value={cls}>
@@ -718,8 +748,8 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
             </select>
             <select
               value={defaultSection}
-              onChange={e => setDefaultSection(e.target.value)}
-              className="px-2 py-1 border border-stone-300 rounded bg-white font-medium text-xs"
+              onChange={e => handleDefaultSectionChange(e.target.value)}
+              className="px-2 py-1 border border-stone-300 rounded bg-white font-medium text-xs focus:ring-1 focus:ring-orange-500"
             >
               <option value="A">Sec A</option>
               <option value="B">Sec B</option>
