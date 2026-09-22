@@ -485,8 +485,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err) {
       // Rollback: remove optimistically added student on failure
       setStudents(prev => prev.filter(s => s.id !== tempId));
-      showError('छात्र रिकॉर्ड सहेजने में त्रुटि हुई! (Failed to save student)');
       console.error('Error saving student to MongoDB:', err);
+      throw err; // Re-throw so callers (e.g. bulk scanner) can detect per-row failures
     }
   };
 

@@ -55,6 +55,8 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
   const [rows, setRows] = useState<ScannedRow[]>([]);
   const [defaultClass, setDefaultClass] = useState<string>('Class 6');
   const [defaultSection, setDefaultSection] = useState<string>('A');
+  // Tracks row IDs that failed DB save — to re-highlight after attempted submit
+  const [failedRowIds, setFailedRowIds] = useState<Set<string>>(new Set());
 
   // Helper to generate starter blank rows for seamless fast-typing without AI dependency
   const createDefaultRows = (count: number = 5): ScannedRow[] => {
@@ -369,18 +371,21 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
   };
 
   // Bulk Register All Students — with pre-submit required-field validation
-  const handleEnrollAll = () => {
+  const [isEnrolling, setIsEnrolling] = useState(false);
+
+  const handleEnrollAll = async () => {
     if (rows.length === 0) {
       showWarning('कोई छात्र रिकॉर्ड नहीं है। पहले स्कैन करें अथवा मैन्युअल पंक्ति जोड़ें।');
       return;
     }
 
-    // Identify rows missing required fields
+    // Pre-submit UI validation — check required fields (name, fatherName, contact)
     const missingRows: { rowNo: number; rollNo: string; issues: string[] }[] = [];
     rows.forEach((row, idx) => {
       const issues: string[] = [];
       if (!row.name.trim()) issues.push('छात्र नाम');
       if (!row.fatherName.trim()) issues.push('पिता का नाम');
+      if (!row.contact.trim()) issues.push('मोबाइल नंबर');
       if (issues.length > 0) {
         missingRows.push({ rowNo: idx + 1, rollNo: row.rollNo || String(idx + 1), issues });
       }
@@ -391,16 +396,18 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
         .map(m => `पंक्ति ${m.rowNo} (रोल ${m.rollNo}): ${m.issues.join(', ')} खाली है`)
         .join(' | ');
       showWarning(
-        `⚠️ ${missingRows.length} पंक्तियों में आवश्यक जानकारी अधूरी है — ${details}। कृपया इन्हें भरने के बाद पुनः प्रयास करें। अधूरी पंक्तियाँ लाल रंग में हाइलाइट हैं।`
+        `⚠️ ${missingRows.length} पंक्तियों में आवश्यक जानकारी अधूरी है — ${details}। लाल हाइलाइट पंक्तियाँ भरें।`
       );
       return;
     }
 
-    // All rows valid — enroll
-    let enrolledCount = 0;
+    // Per-row async submission — failures keep modal open with error highlights
+    setIsEnrolling(true);
     const admissionDate = new Date().toISOString().split('T')[0];
+    const newlyFailedIds = new Set<string>();
+    const succeededIds = new Set<string>();
 
-    rows.forEach(row => {
+    for (const row of rows) {
       const trimmedName = row.name.trim();
       const prefix = row.gender === 'Bhaiya' ? 'Bhaiya' : 'Bahin';
       const fullName =
@@ -413,7 +420,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
 
       const newStudent: Omit<Student, 'id'> = {
         name: fullName,
-        rollNo: row.rollNo || String(students.length + enrolledCount + 1),
+        rollNo: row.rollNo || String(students.length + succeededIds.size + 1),
         class: row.class,
         section: row.section,
         gender: row.gender,
@@ -429,12 +436,33 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
         socialCategory: 'General'
       };
 
-      addStudent(newStudent);
-      enrolledCount++;
-    });
+      try {
+        await addStudent(newStudent);
+        succeededIds.add(row.id);
+      } catch {
+        newlyFailedIds.add(row.id);
+      }
+    }
 
-    showSuccess(`🎉 बधाई! रजिस्टर से कुल ${enrolledCount} छात्र सफलतापूर्वक पंजीकृत किए गए!`);
-    onClose();
+    setIsEnrolling(false);
+
+    if (newlyFailedIds.size === 0) {
+      // All succeeded — close modal
+      showSuccess(`🎉 बधाई! रजिस्टर से कुल ${succeededIds.size} छात्र सफलतापूर्वक पंजीकृत किए गए!`);
+      onClose();
+    } else {
+      // Remove succeeded rows, keep failed rows open with orange highlight
+      setRows(prev => prev.filter(r => !succeededIds.has(r.id)));
+      setFailedRowIds(newlyFailedIds);
+      setActiveTab('grid');
+      const failedList = rows
+        .filter(r => newlyFailedIds.has(r.id))
+        .map((r, i) => `पंक्ति ${i + 1} (${r.name || 'अज्ञात'})`)
+        .join(', ');
+      showError(
+        `❌ ${succeededIds.size} छात्र सफलतापूर्वक पंजीकृत हुए। ${newlyFailedIds.size} छात्रों की जानकारी DB में सहेजी नहीं जा सकी — ${failedList}। कृपया नारंगी हाइलाइट पंक्तियों की जानकारी जांचें और पुनः प्रयास करें।`
+      );
+    }
   };
 
   return (
@@ -772,7 +800,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                           <th className="p-2 w-24">कक्षा</th>
                           <th className="p-2 w-16">वर्ग</th>
                           <th className="p-2 min-w-[140px]">पिता का नाम *</th>
-                          <th className="p-2 min-w-[100px]">मोबाइल</th>
+                          <th className="p-2 min-w-[100px]">मोबाइल *</th>
                           <th className="p-2 w-28">जन्मतिथि</th>
                           <th className="p-2 min-w-[120px]">पता</th>
                           <th className="p-2 w-10 text-center">हटाएं</th>
@@ -790,9 +818,16 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                           rows.map((row, idx) => {
                             const missingName = !row.name.trim();
                             const missingFather = !row.fatherName.trim();
-                            const hasError = missingName || missingFather;
+                            const missingContact = !row.contact.trim();
+                            const hasUiError = missingName || missingFather || missingContact;
+                            const hasDbError = failedRowIds.has(row.id);
+                            const rowClass = hasDbError
+                              ? 'bg-orange-50 hover:bg-orange-100 ring-1 ring-inset ring-orange-400'
+                              : hasUiError
+                              ? 'bg-red-50 hover:bg-red-100'
+                              : 'hover:bg-amber-50/50';
                             return (
-                            <tr key={row.id} className={`transition ${hasError ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-amber-50/50'}`}>
+                            <tr key={row.id} className={`transition ${rowClass}`}>
                               <td className="p-1">
                                 <input
                                   type="text"
@@ -883,13 +918,13 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                               <td className="p-1">
                                 <input
                                   type="text"
-                                  placeholder="मोबाइल"
+                                  placeholder="मोबाइल *"
                                   maxLength={10}
                                   value={row.contact}
                                   onChange={e =>
                                     handleRowChange(row.id, 'contact', e.target.value.replace(/\D/g, ''))
                                   }
-                                  className="w-full px-1.5 py-1 text-xs border border-stone-200 rounded bg-white"
+                                  className={`w-full px-1.5 py-1 text-xs border rounded bg-white ${missingContact ? 'border-red-400 bg-red-50 placeholder-red-400' : 'border-stone-200'}`}
                                 />
                               </td>
                               <td className="p-1">
@@ -933,18 +968,24 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
 
         {/* Footer Actions */}
         <div className="bg-stone-50 border-t border-stone-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-3 text-xs text-stone-600">
+          <div className="flex items-center gap-3 text-xs text-stone-600 flex-wrap">
             {rows.length > 0 && (() => {
-                const incompleteCount = rows.filter(r => !r.name.trim() || !r.fatherName.trim()).length;
+                const incompleteCount = rows.filter(r => !r.name.trim() || !r.fatherName.trim() || !r.contact.trim()).length;
+                const dbErrorCount = failedRowIds.size;
                 return (
-                  <span className="font-semibold text-stone-700 flex items-center gap-2">
+                  <span className="font-semibold text-stone-700 flex items-center gap-2 flex-wrap">
                     कुल छात्र: <strong className="text-stone-900">{rows.length}</strong>
                     {incompleteCount > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 border border-red-300 rounded-full text-[11px] font-bold">
-                        ⚠ {incompleteCount} अधूरे (लाल)
+                        🔴 {incompleteCount} अधूरे फ़ील्ड
                       </span>
                     )}
-                    {incompleteCount === 0 && (
+                    {dbErrorCount > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-300 rounded-full text-[11px] font-bold">
+                        🟠 {dbErrorCount} DB त्रुटि
+                      </span>
+                    )}
+                    {incompleteCount === 0 && dbErrorCount === 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 border border-green-300 rounded-full text-[11px] font-bold">
                         ✓ सभी पूर्ण
                       </span>
@@ -959,7 +1000,8 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-200 rounded-lg cursor-pointer transition"
+              disabled={isEnrolling}
+              className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-200 rounded-lg cursor-pointer transition disabled:opacity-50"
             >
               रद्द करें (Cancel)
             </button>
@@ -968,10 +1010,20 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
               <button
                 type="button"
                 onClick={handleEnrollAll}
-                className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
+                disabled={isEnrolling}
+                className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:opacity-60 text-white rounded-lg text-xs font-bold shadow-md cursor-pointer transition active:scale-98"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>सभी {rows.length} छात्र पंजीकृत करें</span>
+                {isEnrolling ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>पंजीकृत हो रहे हैं...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>सभी {rows.length} छात्र पंजीकृत करें</span>
+                  </>
+                )}
               </button>
             )}
           </div>
