@@ -11,16 +11,16 @@ const { recordAuditLog } = require('../utils/routeHelpers');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { keyGeneratorIpFallback: false, xForwardedForHeader: false },
   keyGenerator: (req) => {
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
     const target = req.body?.rollNo || req.body?.phone || req.body?.schoolId || req.body?.clusterName || '';
-    return `${ip}_${target}`;
+    return `auth_${ip}_${target}`;
   },
-  message: { error: 'अत्यधिक लॉगिन प्रयास! कृपया 15 मिनट बाद पुनः प्रयास करें।' },
+  message: { error: 'अत्यधिक लॉगिन प्रयास! कृपया 15 मिनट बाद पुनः प्रयास करें। (Too many attempts. Account locked for 15 minutes.)' },
   skip: () => process.env.NODE_ENV === 'test'
 });
 

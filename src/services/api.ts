@@ -20,20 +20,49 @@ import type {
   EmailDiagnosticInfo
 } from '../types';
 import { sessionSync } from './sessionSync';
+import { purgeServiceWorkerAuthCache } from './pwa';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
+export type AuthPortalScope = 'admin' | 'teacher' | 'student' | 'sankul' | 'auto';
+
+let currentScope: AuthPortalScope = 'auto';
+
 /**
- * Returns Bearer token header if admin, teacher or student is authenticated
+ * Sets the active portal scope to ensure strict least-privilege token dispatching (SOC 2 CC6.1).
+ */
+export function setApiAuthScope(scope: AuthPortalScope) {
+  currentScope = scope;
+}
+
+/**
+ * Returns Bearer token header strictly scoped to the active portal or authenticated session.
+ * Prevents accidental cross-portal privilege leaks.
  */
 function getAuthHeaders(): Record<string, string> {
-  const adminToken = sessionStorage.getItem('ssm_admin_authenticated') === 'true'
-    ? sessionStorage.getItem('ssm_admin_token')
-    : null;
-  const teacherToken = sessionStorage.getItem('ssm_teacher_token');
-  const studentToken = sessionStorage.getItem('ssm_student_token');
-  const sankulToken = sessionStorage.getItem('ssm_sankul_token');
-  const token = adminToken || teacherToken || studentToken || sankulToken;
+  let token: string | null = null;
+
+  if (currentScope === 'admin') {
+    token = sessionStorage.getItem('ssm_admin_authenticated') === 'true'
+      ? sessionStorage.getItem('ssm_admin_token')
+      : null;
+  } else if (currentScope === 'teacher') {
+    token = sessionStorage.getItem('ssm_teacher_token');
+  } else if (currentScope === 'student') {
+    token = sessionStorage.getItem('ssm_student_token');
+  } else if (currentScope === 'sankul') {
+    token = sessionStorage.getItem('ssm_sankul_token');
+  } else {
+    // 'auto' scope: strictly check authenticated flags without leaking admin tokens to other contexts
+    const adminToken = sessionStorage.getItem('ssm_admin_authenticated') === 'true'
+      ? sessionStorage.getItem('ssm_admin_token')
+      : null;
+    const teacherToken = sessionStorage.getItem('ssm_teacher_token');
+    const studentToken = sessionStorage.getItem('ssm_student_token');
+    const sankulToken = sessionStorage.getItem('ssm_sankul_token');
+    token = adminToken || teacherToken || sankulToken || studentToken;
+  }
+
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
@@ -61,6 +90,7 @@ async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Re
 
 /**
  * Safely parse JSON responses and reject with server error message if !res.ok
+ * Purges tokens and Service Worker cache on HTTP 401 unauthorized.
  */
 async function handleJsonResponse<T>(res: Response, defaultError = 'अनपेक्षित त्रुटि हुई'): Promise<T> {
   let data: any = null;
@@ -84,6 +114,8 @@ async function handleJsonResponse<T>(res: Response, defaultError = 'अनपे
       sessionStorage.removeItem('ssm_student_id');
       sessionStorage.removeItem('ssm_sankul_token');
       sessionStorage.removeItem('ssm_sankul_name');
+      // Invalidate any local PWA cached API artifacts on auth failure
+      purgeServiceWorkerAuthCache().catch(() => {});
     }
     const message = data?.error || data?.message || defaultError;
     throw new Error(message);

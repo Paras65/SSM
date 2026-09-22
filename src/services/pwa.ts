@@ -82,3 +82,22 @@ export const subscribeOnlineStatus = (callback: OnlineCallback) => {
     onlineListeners.delete(callback);
   };
 };
+
+/**
+ * Enterprise security: Purges all authenticated API CacheStorage entries from the Service Worker
+ * upon logout, session timeout, or authentication revocation (SOC 2 CC6.1 / ISO 27001 A.5.15).
+ */
+export const purgeServiceWorkerAuthCache = async (): Promise<void> => {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'PURGE_AUTH_CACHE' });
+  }
+  if ('caches' in window) {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter(k => k.includes('-api')).map(k => caches.delete(k))
+      );
+    } catch {}
+  }
+};
+

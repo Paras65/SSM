@@ -67,8 +67,28 @@ app.use(compression({
 
 // Security Middlewares
 app.use(helmet({
-  crossOriginResourcePolicy: false,
-  contentSecurityPolicy: false
+  crossOriginResourcePolicy: { policy: 'same-origin' },
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https://*"],
+      connectSrc: ["'self'", "https://*"],
+      frameAncestors: ["'none'"],
+      formAction: ["'self'"],
+      objectSrc: ["'none'"]
+    }
+  } : false,
+  dnsPrefetchControl: { allow: false },
+  frameguard: { action: 'deny' },
+  hsts: process.env.NODE_ENV === 'production' ? {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  } : false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
 const corsOptions = {
@@ -106,6 +126,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Enforce strict no-store headers on all API endpoints to prevent intermediate or local caching of sensitive PII
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Rate limiting using express-rate-limit (survives restarts, production-safe)
 const rateLimit = require('express-rate-limit');
 
@@ -132,14 +161,14 @@ function rateLimitEndpoint(maxAttempts = 10, useCompositeKey = false) {
   });
 }
 
-app.use('/api/auth/login', rateLimitEndpoint(30, false));
-app.use('/api/auth/sankul-login', rateLimitEndpoint(30, false));
-app.use('/api/auth/student-login', rateLimitEndpoint(120, true));
-app.use('/api/auth/teacher-login', rateLimitEndpoint(120, true));
-app.use('/api/auth/parent-login', rateLimitEndpoint(120, true));
-app.use('/api/admissions', rateLimitEndpoint(60, false));
-app.post('/api/schools', rateLimitEndpoint(20, false));
-app.put('/api/schools/:id', rateLimitEndpoint(30, false));
+app.use('/api/auth/login', rateLimitEndpoint(15, false));
+app.use('/api/auth/sankul-login', rateLimitEndpoint(15, false));
+app.use('/api/auth/student-login', rateLimitEndpoint(60, true));
+app.use('/api/auth/teacher-login', rateLimitEndpoint(60, true));
+app.use('/api/auth/parent-login', rateLimitEndpoint(60, true));
+app.use('/api/admissions', rateLimitEndpoint(30, false));
+app.post('/api/schools', rateLimitEndpoint(15, false));
+app.put('/api/schools/:id', rateLimitEndpoint(20, false));
 
 // API Routes
 app.use('/api', apiRoutes);

@@ -1,12 +1,16 @@
 // Cache version — bump this string on every production deploy to invalidate old caches
-const CACHE_VERSION = 'ssm-pwa-v4';
+const CACHE_VERSION = 'ssm-pwa-v5-hardened';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
-const API_CACHE = `${CACHE_VERSION}-api`;
+const API_CACHE = `${CACHE_VERSION}-api-public`;
 
-// API cache TTL: 24 hours (in milliseconds)
-const API_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+// Public, non-sensitive endpoints permitted for offline fallback
+const PUBLIC_OFFLINE_ALLOWLIST = [
+  '/api/status',
+  '/api/schools/public'
+];
 
 const STATIC_ASSETS = [
+  '/',
   '/manifest.json',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
@@ -37,27 +41,18 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function isFresh(response) {
-  if (!response) return false;
-  const cachedAt = response.headers.get('sw-cached-at');
-  if (!cachedAt) return true; // treat entries without timestamp as fresh
-  return Date.now() - Number(cachedAt) < API_CACHE_TTL_MS;
-}
-
-async function cacheApiResponse(request, response) {
-  if (!response || response.status !== 200) return response;
-  const cache = await caches.open(API_CACHE);
-  const headers = new Headers(response.headers);
-  headers.set('sw-cached-at', String(Date.now()));
-  const stamped = new Response(await response.clone().arrayBuffer(), {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
-  cache.put(request, stamped);
-  return response;
-}
+// ── Immediate Cache Purge on Logout / Auth Invalidation ──────────────────────
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'PURGE_AUTH_CACHE') {
+    event.waitUntil(
+      caches.delete(API_CACHE).then(() => {
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ success: true });
+        }
+      })
+    );
+  }
+});
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
@@ -67,16 +62,42 @@ self.addEventListener('fetch', event => {
   // Only handle same-origin GET requests
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // 1. API — Network-First with 24h stale cache fallback
+  // 1. API Requests — Zero Caching for Authenticated or Sensitive Routes
   if (url.pathname.startsWith('/api/')) {
+    const hasAuth = request.headers.has('Authorization');
+    const isPublicAllowed = PUBLIC_OFFLINE_ALLOWLIST.some(path => url.pathname === path);
+
+    // Any authenticated request or non-whitelisted route: Strictly Network-Only (No Cache)
+    if (hasAuth || !isPublicAllowed) {
+      event.respondWith(
+        fetch(request).catch(() => {
+          return new Response(
+            JSON.stringify({ 
+              offline: true, 
+              error: 'सुरक्षित डेटा केवल ऑनलाइन उपलब्ध है। (Secure data requires an active connection.)' 
+            }),
+            { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+          );
+        })
+      );
+      return;
+    }
+
+    // Public read-only endpoints: Network-First with strict no-store verification
     event.respondWith(
       fetch(request)
-        .then(response => cacheApiResponse(request, response))
+        .then(async response => {
+          const cacheControl = response.headers.get('Cache-Control') || '';
+          if (response.status === 200 && !cacheControl.includes('no-store') && !cacheControl.includes('private')) {
+            const cache = await caches.open(API_CACHE);
+            cache.put(request, response.clone());
+          }
+          return response;
+        })
         .catch(async () => {
           const cached = await caches.match(request);
-          if (cached && isFresh(cached)) return cached;
-          return new Response(
-            JSON.stringify({ offline: true, error: 'Network unavailable. Cached data may be outdated.' }),
+          return cached || new Response(
+            JSON.stringify({ offline: true, error: 'Network unavailable.' }),
             { status: 503, headers: { 'Content-Type': 'application/json' } }
           );
         })
@@ -107,7 +128,7 @@ self.addEventListener('fetch', event => {
           const cached = await caches.match('/index.html') || await caches.match('/');
           if (cached) return cached;
           return new Response(
-            '<!DOCTYPE html><html><body><h1>सरस्वती शिशु मंदिर</h1><p>इंटरनेट कनेक्शन अनुपलब्ध है। कृपया नेटवर्क जांचें।</p></body></html>',
+            '<!DOCTYPE html><html><body><h1>सरस्वती शिशु मंदिर ईआरपी</h1><p>इंटरनेट कनेक्शन अनुपलब्ध है। कृपया नेटवर्क जांचें।</p></body></html>',
             { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
           );
         })
