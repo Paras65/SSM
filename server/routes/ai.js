@@ -45,13 +45,14 @@ router.post('/generate', aiLimiter, async (req, res) => {
       generationConfig.responseMimeType = responseMimeType;
     }
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
       try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          url,
           {
             method: 'POST',
             headers: {
@@ -96,13 +97,14 @@ router.post('/generate-question-paper', aiLimiter, async (req, res) => {
       return res.status(503).json({ error: 'सर्वर पर कोई बौद्धिक सेवा कुंजी विन्यासित नहीं है।' });
     }
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
       try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          url,
           {
             method: 'POST',
             headers: {
@@ -154,13 +156,14 @@ router.post('/vision', aiLimiter, async (req, res) => {
 
     const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
       try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          url,
           {
             method: 'POST',
             headers: {
@@ -191,18 +194,23 @@ router.post('/vision', aiLimiter, async (req, res) => {
 
         if (response.ok) {
           const data = await response.json();
+          console.log(`[AI Vision] Successfully processed image with model: ${model}`);
           return res.json(data);
         } else {
           const errBody = await response.json().catch(() => ({}));
           lastError = errBody?.error?.message || `HTTP ${response.status}`;
+          console.warn(`[AI Vision] Model ${model} returned error (${response.status}): ${lastError}`);
         }
       } catch (err) {
         lastError = err.message;
+        console.warn(`[AI Vision] Model ${model} request failed: ${err.message}`);
       }
     }
 
+    console.error(`[AI Vision] All models failed. Last error: ${lastError}`);
     return res.status(502).json({ error: lastError || 'Vision API विफलता' });
   } catch (err) {
+    console.error(`[AI Vision] Internal error: ${err.message}`);
     return res.status(500).json({ error: 'Vision API विफलता: ' + err.message });
   }
 });
@@ -219,13 +227,14 @@ router.get('/test-key', aiLimiter, async (req, res) => {
     });
   }
 
-  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
   let lastError = null;
 
   for (const model of modelsToTry) {
     try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        url,
         {
           method: 'POST',
           headers: {

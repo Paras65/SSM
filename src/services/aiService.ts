@@ -71,6 +71,77 @@ export const cleanJsonFence = (text: string): string => {
 };
 
 /**
+ * Robust extractor for structured JSON rows from any Gemini response shape.
+ * Handles arrays, wrapped objects ({ students: [...] }, { records: [...] }, etc.),
+ * markdown code fences, and text-embedded JSON.
+ */
+export const extractJsonRows = (input: any): any[] => {
+  if (!input) return [];
+
+  // 1. If already an array
+  if (Array.isArray(input)) return input;
+
+  // 2. If it's a string, attempt robust parsing
+  if (typeof input === 'string') {
+    let text = input.trim();
+    // Strip markdown code fences if present
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    // Direct JSON parse attempt
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === 'object') return extractJsonRows(parsed);
+    } catch {}
+
+    // Find first '[' and last ']'
+    const startBracket = text.indexOf('[');
+    const endBracket = text.lastIndexOf(']');
+    if (startBracket !== -1 && endBracket > startBracket) {
+      try {
+        const slice = text.slice(startBracket, endBracket + 1);
+        const parsed = JSON.parse(slice);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+
+    // Find first '{' and last '}'
+    const startBrace = text.indexOf('{');
+    const endBrace = text.lastIndexOf('}');
+    if (startBrace !== -1 && endBrace > startBrace) {
+      try {
+        const slice = text.slice(startBrace, endBrace + 1);
+        const parsed = JSON.parse(slice);
+        if (parsed && typeof parsed === 'object') return extractJsonRows(parsed);
+      } catch {}
+    }
+  }
+
+  // 3. If it's an object, look for known array properties or any child array
+  if (typeof input === 'object' && input !== null) {
+    const candidateKeys = ['students', 'records', 'rows', 'data', 'items', 'list', 'entries', 'result', 'candidates'];
+    for (const key of candidateKeys) {
+      if (Array.isArray(input[key]) && input[key].length > 0) {
+        if (key === 'candidates') {
+          const partText = input.candidates[0]?.content?.parts?.[0]?.text;
+          if (partText) return extractJsonRows(partText);
+        } else {
+          return input[key];
+        }
+      }
+    }
+
+    for (const val of Object.values(input)) {
+      if (Array.isArray(val) && val.length > 0) {
+        return val;
+      }
+    }
+  }
+
+  return [];
+};
+
+/**
  * Generates text via the secure backend proxy (/api/ai/generate) with
  * automatic direct fallback if the proxy is unavailable.
  */
@@ -194,21 +265,34 @@ export const generateSmartVision = async <T = any>(
 
       if (proxyRes.ok) {
         const proxyData = await proxyRes.json();
-        const rawText = proxyData?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-        return JSON.parse(cleanJsonFence(rawText)) as T;
+        const extracted = extractJsonRows(proxyData);
+        if (extracted && extracted.length > 0) {
+          return extracted as unknown as T;
+        }
+        const rawText = proxyData?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const fromText = extractJsonRows(rawText);
+          if (fromText && fromText.length > 0) return fromText as unknown as T;
+        }
+      } else {
+        const errData = await proxyRes.json().catch(() => ({}));
+        console.warn('[AI Vision Proxy Error]', proxyRes.status, errData);
       }
-    } catch {
-      // Backend proxy unavailable, fallback to direct call
+    } catch (err) {
+      console.warn('[AI Vision Proxy Network Error]', err);
     }
   }
 
   // 2. Direct fallback call
   if (effectiveKey) {
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
+    let lastError: string | null = null;
+
     for (const model of modelsToTry) {
       try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(effectiveKey)}`;
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          url,
           {
             method: 'POST',
             headers: {
@@ -239,16 +323,32 @@ export const generateSmartVision = async <T = any>(
 
         if (response.ok) {
           const data = await response.json();
-          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-          return JSON.parse(cleanJsonFence(rawText)) as T;
+          const extracted = extractJsonRows(data);
+          if (extracted && extracted.length > 0) {
+            return extracted as unknown as T;
+          }
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawText) {
+            const fromText = extractJsonRows(rawText);
+            if (fromText && fromText.length > 0) return fromText as unknown as T;
+          }
+          return [] as unknown as T;
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          lastError = errData?.error?.message || `HTTP ${response.status}`;
+          console.warn(`[AI Vision Direct] Model ${model} returned:`, lastError);
         }
-      } catch {
-        // Try next fallback model
+      } catch (err: any) {
+        lastError = err?.message || String(err);
       }
+    }
+
+    if (lastError) {
+      throw new Error(`Vision AI सेवा त्रुटि: ${lastError}`);
     }
   }
 
-  throw new Error('Vision AI सेवा से संपर्क नहीं हो सका।');
+  throw new Error('Vision AI सेवा से संपर्क नहीं हो सका। कृपया API कुंजी एवं इंटरनेट कनेक्शन जांचें।');
 };
 
 /**
@@ -279,13 +379,14 @@ export const testSmartKeyHealth = async (): Promise<SmartKeyHealthResult> => {
 
   // 2. Direct fallback test
   if (effectiveKey) {
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
     let lastError = null;
 
     for (const model of modelsToTry) {
       try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(effectiveKey)}`;
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          url,
           {
             method: 'POST',
             headers: {

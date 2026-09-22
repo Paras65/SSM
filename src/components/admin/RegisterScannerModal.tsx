@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { useToast } from '../../context/ToastContext';
 import { SSM_CLASSES, type Gender, type Student } from '../../types';
-import { generateSmartVision } from '../../services/aiService';
+import { generateSmartVision, extractJsonRows } from '../../services/aiService';
 import {
   Camera,
   Upload,
@@ -73,80 +73,6 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
       pin: ''
     }));
   };
-
-  // Sample Register Extracted Rows (Matching standard/test register image)
-  const sampleRegisterRows: ScannedRow[] = useMemo(() => [
-    {
-      id: `sample-1`,
-      rollNo: '1',
-      name: 'Bhaiya केशव शास्त्री',
-      gender: 'Bhaiya',
-      class: defaultClass,
-      section: defaultSection,
-      fatherName: 'श्री रामनाथ शास्त्री',
-      motherName: 'श्रीमती कमला शास्त्री',
-      contact: '9876543210',
-      dob: '2013-05-12',
-      address: 'रामपुर',
-      pin: '273001'
-    },
-    {
-      id: `sample-2`,
-      rollNo: '2',
-      name: 'Bahin आद्या तिवारी',
-      gender: 'Bahin',
-      class: defaultClass,
-      section: defaultSection,
-      fatherName: 'श्री विवेक तिवारी',
-      motherName: 'श्रीमती नीलम तिवारी',
-      contact: '8765432109',
-      dob: '2012-08-21',
-      address: 'विद्या नगर',
-      pin: '273001'
-    },
-    {
-      id: `sample-3`,
-      rollNo: '3',
-      name: 'Bhaiya माधव सिंह',
-      gender: 'Bhaiya',
-      class: defaultClass,
-      section: defaultSection,
-      fatherName: 'श्री सुरेश सिंह',
-      motherName: 'श्रीमती सरोज सिंह',
-      contact: '7654321098',
-      dob: '2012-11-05',
-      address: 'सरस्वती पुरम',
-      pin: '273001'
-    },
-    {
-      id: `sample-4`,
-      rollNo: '4',
-      name: 'Bahin रिया अग्रवाल',
-      gender: 'Bahin',
-      class: defaultClass,
-      section: defaultSection,
-      fatherName: 'श्री अंकित अग्रवाल',
-      motherName: 'श्रीमती रेखा अग्रवाल',
-      contact: '9988776655',
-      dob: '2013-02-14',
-      address: 'शांति नगर',
-      pin: '273001'
-    },
-    {
-      id: `sample-5`,
-      rollNo: '5',
-      name: 'Bhaiya रोहन वर्मा',
-      gender: 'Bhaiya',
-      class: defaultClass,
-      section: defaultSection,
-      fatherName: 'श्री विकास वर्मा',
-      motherName: 'श्रीमती पूजा वर्मा',
-      contact: '8877665544',
-      dob: '2012-09-30',
-      address: 'आदर्श नगर',
-      pin: '273001'
-    }
-  ], [defaultClass, defaultSection]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -272,7 +198,6 @@ export const RegisterScannerModal: React.FC<RegisterScannerModalProps> = ({ onCl
 
     const imageDataUrl = await optimizeImageForOCR(rawImageDataUrl);
     const mimeType = imageDataUrl.match(/^data:(image\/[a-z]+);base64,/)?.[1] || 'image/jpeg';
-    let parsed: Array<Partial<ScannedRow>> | null = null;
 
     try {
       const promptText = `You are an expert OCR table parser specialized in Indian School Student Registers (दाखिल-खारिज पंजिका / S.R. Register / Attendance Register / Handwritten Admission Form).
@@ -293,39 +218,53 @@ For each student, produce a JSON object with:
 Return strictly a JSON array of objects. No markdown backticks, no explanations. Example:
 [{"rollNo":"1","name":"Bhaiya केशव शर्मा","gender":"Bhaiya","class":"${defaultClass}","section":"${defaultSection}","fatherName":"श्री राजेश शर्मा","motherName":"","contact":"","dob":"2014-05-10","address":"रामपुर","pin":""}]`;
 
-      parsed = await generateSmartVision<Array<Partial<ScannedRow>>>(imageDataUrl, mimeType, promptText);
+      const response = await generateSmartVision<any>(imageDataUrl, mimeType, promptText);
+      const rawRows = extractJsonRows(response);
 
-      if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
-        setRows(sampleRegisterRows);
-        showSuccess('✨ फोटो से 5 छात्रों का विवरण स्वतः पहचानकर तालिका में भर दिया गया है!');
-        return;
-      }
+      if (Array.isArray(rawRows) && rawRows.length > 0) {
+        const formattedRows: ScannedRow[] = rawRows.map((item: any, idx: number) => {
+          const rawName = String(item.name || '').trim();
+          const isBahin = item.gender === 'Bahin' || rawName.startsWith('बहिन ') || rawName.startsWith('Bahin ');
+          const gender: Gender = isBahin ? 'Bahin' : 'Bhaiya';
 
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const formattedRows: ScannedRow[] = parsed.map((item, idx) => ({
-          id: `scan-${Date.now()}-${idx}`,
-          rollNo: String(item.rollNo || idx + 1),
-          name: String(item.name || ''),
-          gender: (item.gender === 'Bahin' ? 'Bahin' : 'Bhaiya') as Gender,
-          class: String(item.class || defaultClass),
-          section: String(item.section || defaultSection),
-          fatherName: String(item.fatherName || ''),
-          motherName: String(item.motherName || ''),
-          contact: String(item.contact || ''),
-          dob: String(item.dob || '2014-01-01'),
-          address: String(item.address || ''),
-          pin: String(item.pin || '')
-        }));
+          let name = rawName;
+          if (
+            name &&
+            !name.startsWith('भैया ') &&
+            !name.startsWith('बहिन ') &&
+            !name.startsWith('Bhaiya ') &&
+            !name.startsWith('Bahin ')
+          ) {
+            name = `${gender} ${name}`;
+          }
+
+          return {
+            id: `scan-${Date.now()}-${idx}`,
+            rollNo: String(item.rollNo || idx + 1),
+            name,
+            gender,
+            class: String(item.class || defaultClass),
+            section: String(item.section || defaultSection),
+            fatherName: String(item.fatherName || ''),
+            motherName: String(item.motherName || ''),
+            contact: String(item.contact || ''),
+            dob: String(item.dob || '2014-01-01'),
+            address: String(item.address || ''),
+            pin: String(item.pin || '')
+          };
+        });
+
         setRows(formattedRows);
         showSuccess(`✨ AI ने सफलतापूर्वक ${formattedRows.length} छात्रों का विवरण रजिस्टर से पढ़ लिया है!`);
       } else {
-        setRows(prev => (prev.length === 0 ? createDefaultRows(5) : prev));
-        showInfo('📸 फोटो लोड हो गई है। आप स्क्रीन पर रजिस्टर देखकर दाईं ओर त्वरित प्रविष्टि कर सकते हैं।');
+        setRows(prev => (prev.length > 0 ? prev : createDefaultRows(5)));
+        showError('⚠️ फोटो से छात्रों का विवरण स्वतः नहीं पढ़ा जा सका। कृपया स्पष्ट व सीधी फोटो अपलोड करें, अथवा बाईं ओर रजिस्टर देखकर सीधे भरें।');
       }
     } catch (err: unknown) {
-      console.warn('Scan AI unavailable, falling back to smart register parser:', err);
-      setRows(sampleRegisterRows);
-      showSuccess('✨ फोटो से 5 छात्रों का विवरण स्वतः पहचानकर तालिका में भर दिया गया है!');
+      console.error('Scan AI error:', err);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setRows(prev => (prev.length > 0 ? prev : createDefaultRows(5)));
+      showError(`⚠️ AI स्कैनिंग में विफलता: ${errorMsg}। आप बाईं ओर रजिस्टर देखकर तालिका में प्रविष्टि कर सकते हैं।`);
     } finally {
       setIsScanning(false);
     }
@@ -781,8 +720,7 @@ Return strictly a JSON array of objects. No markdown backticks, no explanations.
                           if (capturedImage) {
                             processImageWithAI(capturedImage);
                           } else {
-                            setRows(sampleRegisterRows);
-                            showSuccess('✨ फोटो से 5 छात्रों का विवरण स्वतः पहचानकर तालिका में भर दिया गया!');
+                            showWarning('कृपया पहले कैमरा या अपलोड टैब से रजिस्टर की फोटो लें।');
                           }
                         }}
                         className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 active:from-orange-800 active:to-amber-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition active:scale-95"
